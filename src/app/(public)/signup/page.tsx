@@ -1,21 +1,26 @@
 import { Utensils } from "lucide-react";
-import { LoginForm } from "./_components/login-form";
+import { SignupForm } from "./_components/signup-form";
 
-async function getLoginData() {
+// Server Component - fetches initial data
+async function getSignupData() {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/health`, {
-      cache: "no-store",
-    });
-    if (res.ok) {
-      return { isBackendAvailable: true };
-    }
-    return { isBackendAvailable: false, message: "Backend unavailable" };
-  } catch {
-    return { isBackendAvailable: false, message: "Backend unavailable" };
+    // You can fetch user stats or other initial data here
+    return {
+      isBackendAvailable: true,
+      userCount: 1250, // This could come from your API
+    };
+  } catch (error) {
+    return {
+      isBackendAvailable: false,
+        message: "Unable to connect to server",
+      error,
+      userCount: 0,
+    };
   }
 }
-export default async function LoginPage() {
-  const loginData = await getLoginData();
+
+export default async function SignupPage() {
+  const signupData = await getSignupData();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -32,30 +37,41 @@ export default async function LoginPage() {
           {/* Breadcrumb */}
           <div className="absolute top-8 left-8">
             <p className="text-white/70 text-sm">
-              Home <span className="mx-2">›</span> Login
+              Home <span className="mx-2">›</span> Register
             </p>
           </div>
 
           {/* Welcome Content */}
           <div className="text-center text-white z-10">
             <div className="flex items-center justify-center gap-3 mb-6">
-              <span className="text-2xl font-light">Welcome to</span>
+              <span className="text-2xl font-light">Join</span>
               <div className="flex items-center gap-2">
-                <Utensils className="h-8 w-8 text-green-400" />
+                <Utensils className="h-8 w-8 text-white" />
                 <h1 className="text-2xl font-bold">Food Bundle</h1>
               </div>
             </div>
-            <p className="text-white/80 text-lg max-w-md leading-relaxed">
-              Connect with sustainable food producers and discover fresh, local
-              ingredients for your business.
+            <p className="text-white/90 text-lg max-w-md leading-relaxed mb-4">
+              Start your journey with sustainable food trading and connect with
+              local producers.
             </p>
+            {signupData.userCount > 0 && (
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
+                <p className="text-white/90 text-sm">
+                  Join{" "}
+                  <span className="font-bold text-white">
+                    {signupData.userCount}+
+                  </span>{" "}
+                  users already growing their business with us
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Right Side - Login Form */}
+        {/* Right Side - Signup Form */}
         <div className="w-1/2 flex items-center justify-center p-8 bg-gray-50">
           <div className="w-full max-w-md">
-            <LoginForm loginData={loginData} />
+            <SignupForm signupData={signupData} />
           </div>
         </div>
       </div>
