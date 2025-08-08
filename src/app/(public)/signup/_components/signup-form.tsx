@@ -42,58 +42,106 @@ export function SignupForm({ signupData }: Props) {
   const [success, setSuccess] = useState("");
   const router = useRouter();
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setIsLoading(true);
-    setError("");
-    setSuccess("");
-
-    const formData = new FormData(e.currentTarget);
-    const password = formData.get("password") as string;
-    const confirmPassword = formData.get("confirmPassword") as string;
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      if (selectedRole === "farmer") {
-        const farmerData: ICreateFarmerData = {
-          email: formData.get("email") as string,
-          password,
-          location: formData.get("location") as string,
-          phone: formData.get("phone") as string,
-        };
-        await authService.registerFarmer(farmerData);
-      } else if (selectedRole === "restaurant") {
-        const restaurantData: ICreateRestaurantData = {
-          name: formData.get("name") as string,
-          email: formData.get("email") as string,
-          password,
-          location: formData.get("location") as string,
-          phone: formData.get("phone") as string,
-        };
-        await authService.registerRestaurant(restaurantData);
-      }
-
-      setSuccess("Account created successfully! Redirecting to login...");
-
-      setTimeout(() => {
-        router.push("/login");
-      }, 2000);
-    } catch (error: any) {
-      console.error("Registration error:", error);
-      setError(
-        error.response?.data?.message || error.message || "Registration failed"
-      );
-    } finally {
-      setIsLoading(false);
-    }
+  function isValidPhone(phone: string) {
+    return /^\+?[0-9]{10,15}$/.test(phone);
   }
 
-  // Role selection step
+async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  e.preventDefault();
+  setIsLoading(true);
+  setError("");
+  setSuccess("");
+
+  const formData = new FormData(e.currentTarget);
+  const password = formData.get("password") as string;
+  const confirmPassword = formData.get("confirmPassword") as string;
+  const email = formData.get("email") as string;
+  const phone = formData.get("phone") as string;
+  const name = formData.get("name") as string;
+  const location = formData.get("location") as string;
+  
+
+ if (!name) {
+   setError("Name is required");
+   setIsLoading(false);
+   return;
+ }
+ if (!phone) {
+   setError("Phone number is required");
+   setIsLoading(false);
+   return;
+ }
+ if (!isValidPhone(phone)) {
+   setError("Invalid phone number. Format should be like +250783456789.");
+   setIsLoading(false);
+   return;
+ }
+
+ if (!location) {
+   setError("Location is required");
+   setIsLoading(false);
+   return;
+ }
+
+ if (password !== confirmPassword) {
+   setError("Passwords do not match");
+   setIsLoading(false);
+   return;
+ }
+
+ if (!password) {
+   setError("Password is required");
+   setIsLoading(false);
+   return;
+ }
+
+ if (selectedRole === "restaurant") {
+   if (!email) {
+     setError("Email is required for restaurants");
+     setIsLoading(false);
+     return;
+   }
+   if (!name) {
+     setError("Restaurant name is required");
+     setIsLoading(false);
+     return;
+   }
+  }
+
+  try {
+    if (selectedRole === "farmer") {
+      const farmerData: ICreateFarmerData = {
+        email,
+        password,
+        location,
+        phone,
+      };
+      await authService.registerFarmer(farmerData);
+    } else if (selectedRole === "restaurant") {
+      const restaurantData: ICreateRestaurantData = {
+        name,
+        email,
+        password,
+        location,
+        phone,
+      };
+      await authService.registerRestaurant(restaurantData);
+    }
+
+    setSuccess("Account created successfully! Redirecting to login...");
+    setTimeout(() => {
+      router.push("/login");
+    }, 2000);
+  } catch (error: any) {
+    console.error("Registration error:", error);
+    setError(
+      error.response?.data?.message || error.message || "Registration failed"
+    );
+  } finally {
+    setIsLoading(false);
+  }
+}
+
   if (!selectedRole) {
     return (
       <Card className="w-full shadow-xl border-0">
@@ -209,7 +257,6 @@ export function SignupForm({ signupData }: Props) {
                 name="name"
                 placeholder="Restaurant Name"
                 className="pl-10 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500"
-                required
                 disabled={!signupData.isBackendAvailable}
               />
             </div>
@@ -220,9 +267,12 @@ export function SignupForm({ signupData }: Props) {
             <Input
               type="email"
               name="email"
-              placeholder="Email Address"
+              placeholder={
+                selectedRole === "farmer"
+                  ? "Email Address (Optional)"
+                  : "Email Address"
+              }
               className="pl-10 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500"
-              required
               disabled={!signupData.isBackendAvailable}
             />
           </div>
@@ -232,7 +282,7 @@ export function SignupForm({ signupData }: Props) {
             <Input
               type="tel"
               name="phone"
-              placeholder="Phone Number (Optional)"
+              placeholder ="Phone Number"
               className="pl-10 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500"
               disabled={!signupData.isBackendAvailable}
             />
@@ -245,7 +295,6 @@ export function SignupForm({ signupData }: Props) {
               name="location"
               placeholder="Location (e.g., Kigali, Nyarugenge)"
               className="pl-10 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500"
-              required
               disabled={!signupData.isBackendAvailable}
             />
           </div>
@@ -257,7 +306,6 @@ export function SignupForm({ signupData }: Props) {
               name="password"
               placeholder="Password"
               className="pl-10 pr-10 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500"
-              required
               disabled={!signupData.isBackendAvailable}
             />
             <button
@@ -281,7 +329,6 @@ export function SignupForm({ signupData }: Props) {
               name="confirmPassword"
               placeholder="Confirm Password"
               className="pl-10 pr-10 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500"
-              required
               disabled={!signupData.isBackendAvailable}
             />
             <button

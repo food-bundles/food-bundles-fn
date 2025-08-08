@@ -24,25 +24,37 @@ export function LoginForm({ loginData }: Props) {
   const [error, setError] = useState("");
   const router = useRouter();
 
+  function isValidPhone(phone: string) {
+    return /^\+?[0-9]{10,15}$/.test(phone);
+  }
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
+    const identifier = formData.get("identifier") as string;
     const password = formData.get("password") as string;
 
-    const loginPayload: ILoginData = {
-      email,
-      password,
-    };
+     if (!identifier.includes("@") && !isValidPhone(identifier)) {
+       setError(
+         "Invalid phone number. It must be 10–15 digits and can start with '+'."
+       );
+       setIsLoading(false);
+       return;
+     }
+
+    let loginPayload: ILoginData;
+    if (identifier.includes("@")) {
+      loginPayload = { email: identifier.toLowerCase(), password };
+    } else {
+      loginPayload = { phone: identifier, password };
+    }
 
     try {
       const response = await authService.login(loginPayload);
 
-      // JWT token is now set in HTTP-only cookie by the server
-      // Redirect based on user role
       const redirectPath =
         response.user?.role === "farmer"
           ? "/farmer/dashboard"
@@ -83,9 +95,9 @@ export function LoginForm({ loginData }: Props) {
           <div className="relative">
             <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
             <Input
-              type="email"
-              name="email"
-              placeholder="Email Address"
+              type="text"
+              name="identifier" 
+              placeholder="Email or Phone"
               className="pl-10 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500"
               required
               disabled={!loginData.isBackendAvailable}
