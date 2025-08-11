@@ -1,4 +1,5 @@
 import { Footer } from "@/components/footer";
+import Header from "@/components/header";
 
 export default function PublicLayout({
   children,
@@ -10,7 +11,10 @@ export default function PublicLayout({
       <div>
       {children}
       </div>
+        <div className=" sticky top-0 z-50  bg-white"> <Header /></div>
+          {children}
       <div><Footer /></div>
+
     </div>    
   );
 }
