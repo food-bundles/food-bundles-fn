@@ -166,7 +166,7 @@ export function ProductCard({ product }: Props) {
             {!showQuantityInput ? (
               <Button
                 onClick={handleAddToCart}
-                className="bg-teal-500 hover:bg-teal-600 text-white px-6 py-2 rounded-md font-medium transition-colors duration-200"
+                className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-md font-medium transition-colors duration-200"
               >
                 <ShoppingCart className="h-4 w-4 mr-2" />
                 Add to Cart
@@ -184,7 +184,7 @@ export function ProductCard({ product }: Props) {
                     // Optional: hide input when focus is lost
                     setShowQuantityInput(false);
                   }}
-                  className="w-16 h-10 text-center text-lg font-semibold border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  className="w-16 h-10 text-center text-lg font-semibold border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
             )}

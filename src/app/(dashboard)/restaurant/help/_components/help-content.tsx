@@ -79,7 +79,7 @@ export function HelpContent({ contactInfo, faqs }: Props) {
     <div className="space-y-8">
       {/* Header */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">
+        <h1 className="text-xl font-bold text-gray-900 mb-4">
           How can we help you today?
         </h1>
       </div>
@@ -91,7 +91,9 @@ export function HelpContent({ contactInfo, faqs }: Props) {
             <div className="flex items-center gap-3">
               <AlertTriangle className="h-6 w-6 text-green-600" />
               <div>
-                <h3 className="font-semibold text-green-900">Emergency Issue</h3>
+                <h3 className="font-semibold text-green-900">
+                  Emergency Issue
+                </h3>
                 <p className="text-sm text-green-700">
                   Our customer support team is available to assist you with any
                   questions or issues you may have.
@@ -105,8 +107,6 @@ export function HelpContent({ contactInfo, faqs }: Props) {
         </CardContent>
       </Card>
 
-      {/* Contact Information */}
-      <Card>
         <CardHeader>
           <CardTitle className="text-xl font-bold">
             Contact Information
@@ -115,27 +115,23 @@ export function HelpContent({ contactInfo, faqs }: Props) {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Phone Support */}
-            <div className="flex items-start gap-3">
-              <div className="bg-blue-100 p-2 rounded-full">
+            <div className="flex flex-col items-center justify-center space-y-4 ">
+              <div className=" flex items-center justify-center bg-blue-100 p-2 rounded-full">
                 <Phone className="h-5 w-5 text-blue-600" />
               </div>
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-1">
-                  Phone Support
-                </h4>
-                <p className="text-sm text-gray-600 mb-1">
-                  {contactInfo.phone}
-                </p>
-                <p className="text-xs text-gray-500">{contactInfo.hours}</p>
-              </div>
+              <h4 className="font-semibold text-gray-900 mb-1">
+                Phone Support
+              </h4>
+              <p className="text-sm text-gray-600 mb-1">{contactInfo.phone}</p>
+              <p className="text-xs text-gray-500">{contactInfo.hours}</p>
             </div>
 
             {/* Email Support */}
-            <div className="flex items-start gap-3">
-              <div className="bg-green-100 p-2 rounded-full">
+            <div className="flex flex-col items-center justify-center space-y-4 ">
+              <div className="flex items-center justify-center bg-green-100 p-2 rounded-full">
                 <Mail className="h-5 w-5 text-green-600" />
               </div>
-              <div>
+              <div className="flex flex-col items-center">
                 <h4 className="font-semibold text-gray-900 mb-1">
                   Email Support
                 </h4>
@@ -149,11 +145,11 @@ export function HelpContent({ contactInfo, faqs }: Props) {
             </div>
 
             {/* WhatsApp Support */}
-            <div className="flex items-start gap-3">
-              <div className="bg-green-100 p-2 rounded-full">
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <div className="flex flex-col items-center justify-center bg-green-100 p-2 rounded-full ">
                 <MessageCircle className="h-5 w-5 text-green-600" />
               </div>
-              <div>
+              <div className="flex flex-col items-center">
                 <h4 className="font-semibold text-gray-900 mb-1">
                   WhatsApp Support
                 </h4>
@@ -165,11 +161,11 @@ export function HelpContent({ contactInfo, faqs }: Props) {
             </div>
 
             {/* Live Chat */}
-            <div className="flex items-start gap-3">
-              <div className="bg-purple-100 p-2 rounded-full">
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <div className="flex flex-col itmes-center justify-center bg-purple-100 p-2 rounded-full">
                 <Users className="h-5 w-5 text-purple-600" />
               </div>
-              <div>
+              <div className="flex flex-col items-center">
                 <h4 className="font-semibold text-gray-900 mb-1">Live Chat</h4>
                 <p className="text-sm text-gray-600 mb-1">
                   Chat with Assistant team
@@ -179,7 +175,6 @@ export function HelpContent({ contactInfo, faqs }: Props) {
             </div>
           </div>
         </CardContent>
-      </Card>
 
       {/* Send us a message */}
       <Card>
@@ -294,8 +289,8 @@ export function HelpContent({ contactInfo, faqs }: Props) {
                 }
               />
               <label htmlFor="notifications" className="text-sm text-gray-700">
-                I would like to receive notifications about my support request via
-                email and WhatsApp
+                I would like to receive notifications about my support request
+                via email and WhatsApp
               </label>
             </div>
 
@@ -310,39 +305,39 @@ export function HelpContent({ contactInfo, faqs }: Props) {
       </Card>
 
       {/* FAQ Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl font-bold">
-            Frequently Asked Questions
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {faqs.map((faq) => (
-              <div key={faq.id} className="border border-gray-200 rounded-lg">
-                <button
-                  onClick={() => toggleFAQ(faq.id)}
-                  className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
-                >
-                  <span className="font-medium text-gray-900">
-                    {faq.question}
-                  </span>
-                  {expandedFAQ === faq.id ? (
-                    <ChevronDown className="h-5 w-5 text-gray-500" />
-                  ) : (
-                    <ChevronRight className="h-5 w-5 text-gray-500" />
-                  )}
-                </button>
-                {expandedFAQ === faq.id && (
-                  <div className="px-4 pb-4 text-gray-600 border-t border-gray-100">
-                    <p className="pt-3">{faq.answer}</p>
-                  </div>
+      {/* <Card> */}
+      <CardHeader>
+        <CardTitle className="text-xl font-bold">
+          Frequently Asked Questions
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {faqs.map((faq) => (
+            <div key={faq.id} className="">
+              <button
+                onClick={() => toggleFAQ(faq.id)}
+                className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
+              >
+                <span className="font-medium text-gray-900">
+                  {faq.question}
+                </span>
+                {expandedFAQ === faq.id ? (
+                  <ChevronDown className="h-5 w-5 text-gray-500" />
+                ) : (
+                  <ChevronRight className="h-5 w-5 text-gray-500" />
                 )}
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              </button>
+              {expandedFAQ === faq.id && (
+                <div className="px-4 pb-4 text-gray-600 ">
+                  <p className="pt-3">{faq.answer}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </CardContent>
+      {/* </Card> */}
     </div>
   );
 }

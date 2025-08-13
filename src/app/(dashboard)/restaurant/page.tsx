@@ -114,7 +114,7 @@ export default async function RestaurantDashboard() {
 
       <main className="container mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-xl font-bold text-gray-900">
             Your products to day
           </h1>
 

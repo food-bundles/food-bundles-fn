@@ -196,7 +196,7 @@ export function ConfirmationContent({ orderData }: Props) {
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className="bg-teal-100 p-2 rounded-full flex-shrink-0">
+                  <div className="bg-green-100 p-2 rounded-full flex-shrink-0">
                     <CreditCard className="h-4 w-4 text-green-600" />
                   </div>
                   <div className="min-w-0">
@@ -212,30 +212,34 @@ export function ConfirmationContent({ orderData }: Props) {
 
               {/* Action Buttons */}
               <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-3">
-                <Button className="bg-green-600 hover:bg-green-700 text-white flex items-center justify-center gap-2 text-sm">
-                  <Eye className="h-4 w-4" />
-                  View Orders
-                </Button>
+                <Link href="/restaurant/orders">
+                  <Button className="bg-green-600 hover:bg-green-700 cursor-pointer text-white flex items-center justify-center gap-2 text-sm">
+                    <Eye className="h-4 w-4" />
+                    View Orders
+                  </Button>
+                </Link>
                 <Button
                   variant="outline"
-                  className="flex items-center justify-center gap-2 bg-transparent text-sm"
+                  className="flex items-center justify-center cursor-pointer gap-2 bg-transparent text-sm"
                 >
                   <Printer className="h-4 w-4" />
                   Print Receipt
                 </Button>
+                <Link href="/restaurant/help">
                 <Button
                   variant="outline"
-                  className="flex items-center justify-center gap-2 bg-transparent text-sm"
+                  className="flex items-center justify-center cursor-pointer gap-2 bg-transparent text-sm"
                 >
                   <Phone className="h-4 w-4" />
                   Contact Customer
-                </Button>
+                  </Button>
+                </Link>
               </div>
 
               <div className="text-center mt-4 sm:mt-6">
                 <Link
                   href="/restaurant/dashboard"
-                  className="text-teal-600 hover:text-teal-700 transition-colors text-sm sm:text-base"
+                  className="text-green-600 hover:text-green-700 transition-colors text-sm sm:text-base"
                 >
                   Continue Shopping →
                 </Link>

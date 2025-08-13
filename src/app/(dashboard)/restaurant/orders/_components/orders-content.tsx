@@ -102,7 +102,7 @@ export function OrdersContent({ orders }: Props) {
                 }}
                 className={
                   selectedStatus === filter.value
-                    ? "bg-blue-600 hover:bg-blue-700 text-white"
+                    ? "bg-green-600 hover:bg-green-700 text-white"
                     : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                 }
               >

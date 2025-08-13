@@ -1,4 +1,3 @@
-// src/app/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Poppins } from "next/font/google";
 import "./globals.css";
@@ -14,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 const poppins = Poppins({
-  weight: ["400", "500", "600", "700"], // Add weights you need
+  weight: ["400", "500", "600", "700"], 
   subsets: ["latin"],
   variable: "--font-poppins",
 });
@@ -30,6 +29,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
+        suppressHydrationWarning
         className={`${geistSans.variable} ${geistMono.variable} ${poppins.variable} antialiased`}
       >
         {children}

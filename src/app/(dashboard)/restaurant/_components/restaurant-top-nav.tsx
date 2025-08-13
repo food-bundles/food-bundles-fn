@@ -13,7 +13,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import NotificationsDrawer from "./notificationDrawer";
 
-// Sample notifications data - replace with your actual data source
 const sampleNotifications = [
   {
     id: "1",

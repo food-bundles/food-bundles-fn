@@ -26,17 +26,22 @@ type RestaurantSettings = {
     };
   };
   shoppingPreferences: {
-    preferredSuppliers: Array<{
+    preferredProducts: Array<{
       id: string;
       name: string;
       category: string;
-      logo: string;
+      isCustom: boolean;
     }>;
     deliveryPreferences: {
       timeSlot: "morning" | "afternoon" | "evening";
       specialInstructions: string;
     };
   };
+  availableProducts: Array<{
+    id: string;
+    name: string;
+    category: string;
+  }>;
 };
 
 async function getRestaurantSettings(): Promise<RestaurantSettings> {
@@ -49,7 +54,7 @@ async function getRestaurantSettings(): Promise<RestaurantSettings> {
       ownerName: "John Smith",
       email: "contact@umucyo.com",
       phone: "(555) 123-4567",
-      profilePhoto: "/modern-restaurant-interior.png",
+      profilePhoto: "/imgs/profile.jpg",
     },
     restaurantDetails: {
       type: "Fine Dining",
@@ -75,24 +80,24 @@ async function getRestaurantSettings(): Promise<RestaurantSettings> {
       },
     },
     shoppingPreferences: {
-      preferredSuppliers: [
+      preferredProducts: [
         {
           id: "1",
-          name: "Farm Fresh Foods",
-          category: "Produce, Dairy",
-          logo: "/imgs/flesh.svg",
+          name: "Organic Tomatoes",
+          category: "VEGETABLES",
+          isCustom: false,
         },
         {
           id: "2",
-          name: "Organic Meats Co.",
-          category: "Meats, Poultry",
-          logo: "/imgs/flesh.svg",
+          name: "Free-Range Eggs",
+          category: "VEGETABLES",
+          isCustom: false,
         },
         {
-          id: "3",
-          name: "Global Spices",
-          category: "Spices, Herbs",
-          logo: "/imgs/flesh.svg",
+          id: "custom-1",
+          name: "Artisan Sourdough Bread",
+          category: "GRAINS",
+          isCustom: true,
         },
       ],
       deliveryPreferences: {
@@ -100,6 +105,23 @@ async function getRestaurantSettings(): Promise<RestaurantSettings> {
         specialInstructions: "Please deliver to the back entrance",
       },
     },
+    availableProducts: [
+      { id: "1", name: "Organic Tomatoes", category: "VEGETABLES" },
+      { id: "2", name: "Free-Range Eggs", category: "VEGETABLES" },
+      { id: "3", name: "Grass-Fed Ground Beef", category: "VEGETABLES" },
+      { id: "4", name: "Organic Spinach", category: "VEGETABLES" },
+      { id: "5", name: "Fresh Atlantic Salmon", category: "VEGETABLES" },
+      { id: "6", name: "Premium Beef Sirloin", category: "VEGETABLES" },
+      { id: "7", name: "Organic Mixed Greens", category: "VEGETABLES" },
+      { id: "8", name: "Fresh Herbs Bundle", category: "HERBS_SPICES" },
+      { id: "9", name: "Artisan Cheese Selection", category: "VEGETABLES" },
+      { id: "10", name: "Seasonal Fruit Mix", category: "FRUITS" },
+      { id: "11", name: "Whole Grain Bread", category: "GRAINS" },
+      { id: "12", name: "Sweet Potatoes", category: "TUBERS" },
+      { id: "13", name: "Black Beans", category: "LEGUMES" },
+      { id: "14", name: "Fresh Basil", category: "HERBS_SPICES" },
+      { id: "15", name: "Organic Carrots", category: "VEGETABLES" },
+    ],
   };
 }
 
@@ -108,17 +130,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-
       <main className="container mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Restaurant Settings
-          </h1>
-          <p className="text-gray-600">
-            Manage your restaurant profile and preferences
-          </p>
-        </div>
-
         <SettingsContent settings={settings} />
       </main>
     </div>

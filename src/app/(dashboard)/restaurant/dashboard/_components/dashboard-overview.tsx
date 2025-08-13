@@ -421,11 +421,11 @@ export function DashboardOverview({ data }: Props) {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">
-          Restaurant Dashboard Overview
+        <h1 className="text-xl font-bold text-gray-900">
+          Dashboard Overview
         </h1>
         <p className="text-gray-600 mt-1">{data.date}</p>
       </div>

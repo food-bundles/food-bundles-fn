@@ -47,7 +47,6 @@ export function CartContent({ cartItems: initialItems }: Props) {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <div className="w-1 h-8 bg-gray-900 rounded"></div>
           My Cart
         </h1>
         <Button
@@ -143,40 +142,39 @@ function CartItemRow({
             Unit Price: Rwf {item.unitPrice.toFixed(2)}/{item.unit}
           </p>
         </div>
+      </div>
+      {/* use start */}
+      <div className="flex items-center justify-between gap-10">
+        <div className="w-[20rem]  flex items-center space-x-4">
+          <div className=" flex items-start">
+            <input
+              ref={inputRef}
+              type="number"
+              min="1"
+              value={quantity}
+              onChange={handleQuantityChange}
+              onKeyDown={handleKeyDown}
+              className="w-20 h-10 text-center text-lg font-semibold border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
           </div>
-          {/* use start */}
-    <div className="flex items-center justify-between gap-10">
-      <div className="w-[20rem]  flex items-center space-x-4">
-        <div className=" flex items-start">
-          <input
-            ref={inputRef}
-            type="number"
-            min="1"
-            value={quantity}
-            onChange={handleQuantityChange}
-            onKeyDown={handleKeyDown}
-            className="w-20 h-10 text-center text-lg font-semibold border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-          />
+          <div className="text-center items-end">
+            <p className="font-semibold text-gray-900">
+              {totalAmount.toFixed(2)} Rwf
+            </p>
+          </div>
         </div>
-        <div className="text-center items-end">
-          <p className="font-semibold text-gray-900">
-           {totalAmount.toFixed(2)} Rwf
-          </p>
-        </div>
-      </div>
 
-      <div className="">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onDelete(item.id)}
-          className="text-red-600 border-red-200 hover:bg-red-50"
-        >
-          Remove 
-          {/* <Trash2 className="h-3 w-3 ml-1" /> */}
-        </Button>
+        <div className="">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onDelete(item.id)}
+            className="text-red-600 border-red-200 hover:bg-red-50"
+          >
+            Remove
+          </Button>
+        </div>
       </div>
-    </div>
     </div>
   );
 }

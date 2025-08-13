@@ -10,7 +10,7 @@ export default function RestaurantLayout({ children }: LayoutProps) {
   return (
     <div className="flex flex-col min-h-screen">
       <TopResNav />
-      <main className="flex-grow container mx-auto px-4 py-8">{children}</main>
+      <main className="flex-grow container mx-auto">{children}</main>
       <Footer />
     </div>
   );

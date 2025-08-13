@@ -121,7 +121,7 @@ export default function NotificationsDrawer({
       )}
 
       <div
-        className={`fixed top-0 right-0 h-full w-[540px] bg-white text-gray-900 z-50 transform transition-all duration-300 ease-in-out overflow-y-auto shadow-2xl border-l border-gray-200 ${
+        className={`fixed top-0 right-0 h-full w-[540px] bg-white text-gray-900 z-50 transform transition-all duration-300 ease-in-out overflow-y-auto shadow-2xl border-l border-gray-200 scrollbar-hide ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
@@ -212,7 +212,10 @@ export default function NotificationsDrawer({
                         <h3 className="font-semibold text-gray-900 text-sm">
                           {notification.title}
                         </h3>
-                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        <div
+                          className="flex items-center gap-2"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           {getStatusBadge(notification)}
                         </div>
                       </div>
@@ -224,7 +227,10 @@ export default function NotificationsDrawer({
                           {notification.timestamp}
                         </p>
                         <button
-                          onClick={() => handleDelete(notification.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(notification.id);
+                          }}
                           className="px-2 py-1 bg-red-200 text-red-800 text-xs font-medium rounded-full hover:bg-red-300 transition-colors"
                         >
                           Delete
@@ -237,7 +243,6 @@ export default function NotificationsDrawer({
             )}
           </div>
 
-          {/* Bottom spacing */}
           <div className="h-8"></div>
         </div>
       </div>

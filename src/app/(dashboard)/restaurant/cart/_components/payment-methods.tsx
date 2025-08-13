@@ -40,7 +40,7 @@ export function PaymentMethods() {
     return formatted.slice(0, 19); // Limit to 16 digits + 3 spaces
   };
 
-  const formatExpiryDate = (value:string) => {
+  const formatExpiryDate = (value: string) => {
     // Remove all non-digits
     const digits = value.replace(/\D/g, "");
     // Add slash after 2 digits
@@ -50,7 +50,7 @@ export function PaymentMethods() {
     return digits;
   };
 
-  const formatPhoneNumber = (value:string) => {
+  const formatPhoneNumber = (value: string) => {
     // Ensure it starts with +250 for Rwanda
     if (!value.startsWith("+250")) {
       return "+250" + value.replace(/\D/g, "").slice(0, 9);
@@ -60,7 +60,7 @@ export function PaymentMethods() {
     return "+" + digits.slice(0, 12); // +250 + 9 digits
   };
 
-  const handleCardNumberChange = (e: { target: { value: string; }; }) => {
+  const handleCardNumberChange = (e: { target: { value: string } }) => {
     const formatted = formatCardNumber(e.target.value);
     setCardNumber(formatted);
   };
@@ -92,7 +92,7 @@ export function PaymentMethods() {
               key={method.id}
               className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
                 selectedMethod === method.id
-                  ? "border-teal-500 bg-teal-50"
+                  ? "border-green-500 bg-green-50"
                   : "border-gray-200 hover:border-gray-300"
               }`}
               onClick={() => setSelectedMethod(method.id)}
@@ -101,7 +101,7 @@ export function PaymentMethods() {
                 <method.icon
                   className={`h-8 w-8 ${
                     selectedMethod === method.id
-                      ? "text-teal-600"
+                      ? "text-green-600"
                       : "text-gray-400"
                   }`}
                 />
@@ -112,7 +112,7 @@ export function PaymentMethods() {
                   </p>
                 </div>
                 {selectedMethod === method.id && (
-                  <div className="w-4 h-4 bg-teal-500 rounded-full flex items-center justify-center">
+                  <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
                     <div className="w-2 h-2 bg-white rounded-full"></div>
                   </div>
                 )}
@@ -135,7 +135,7 @@ export function PaymentMethods() {
                   value={cardNumber}
                   onChange={handleCardNumberChange}
                   placeholder="1234 5678 9012 3456"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -148,7 +148,7 @@ export function PaymentMethods() {
                     value={expiryDate}
                     onChange={handleExpiryChange}
                     placeholder="MM/YY"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -160,7 +160,7 @@ export function PaymentMethods() {
                     value={cvv}
                     onChange={handleCvvChange}
                     placeholder="123"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -182,7 +182,7 @@ export function PaymentMethods() {
                 value={phoneNumber}
                 onChange={handlePhoneChange}
                 placeholder="+250788734867"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
               <p className="text-sm text-gray-500 mt-1">
                 Enter your mobile money number (e.g., +250788734867)
