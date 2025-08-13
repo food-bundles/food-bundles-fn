@@ -1,31 +1,5 @@
 import { OrdersContent } from "./_components/orders-content";
-
-type OrderStatus =
-  | "pending"
-  | "confirmed"
-  | "processing"
-  | "ready"
-  | "delivered"
-  | "cancelled"
-  | "refunded";
-
-type Order = {
-  id: string;
-  orderNumber: string;
-  orderDate: string;
-  payable: number;
-  status: OrderStatus;
-  logistics: {
-    assigned: boolean;
-    assignedTo?: string;
-  };
-  customerName: string;
-  items: Array<{
-    name: string;
-    quantity: number;
-    price: number;
-  }>;
-};
+import type { Order } from "./_components/orders-columns";
 
 // Dummy orders data
 async function getOrders(): Promise<Order[]> {
@@ -137,12 +111,9 @@ export default async function OrdersPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-
-      <main className="container mx-auto px-6  py-8">
+      <main className="container mx-auto px-6 py-8">
         <div className="mb-8">
-          <h1 className="text-xl font-bold text-gray-900 mb-2">
-            My Orders
-          </h1>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">My Orders</h1>
         </div>
 
         <OrdersContent orders={orders} />

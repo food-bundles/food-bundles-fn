@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Utensils, Bell, ChevronDown, ShoppingCart } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -63,8 +64,16 @@ const sampleNotifications = [
 
 export function TopResNav() {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-
   const unreadCount = sampleNotifications.filter((n) => !n.isRead).length;
+  const pathname = usePathname();
+
+  const navLinks = [
+    { href: "/restaurant", label: "Shop" },
+    { href: "/restaurant/orders", label: "Orders" },
+    { href: "/restaurant/help", label: "Help & Support" },
+    { href: "/restaurant/settings", label: "Settings" },
+    { href: "/restaurant/dashboard", label: "Dashboard" },
+  ];
 
   return (
     <>
@@ -82,49 +91,35 @@ export function TopResNav() {
 
             {/* Navigation */}
             <nav className="hidden md:flex items-center gap-8">
-              <Link
-                href="/restaurant"
-                className="flex items-center gap-2 text-green-600 font-medium"
-              >
-                <div className="w-4 h-4 bg-green-600 rounded-sm"></div>
-                Shop
-              </Link>
-              <Link
-                href="/restaurant/orders"
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-              >
-                <div className="w-4 h-4 bg-gray-400 rounded-sm"></div>
-                Orders
-              </Link>
-              <Link
-                href="/restaurant/help"
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-              >
-                <div className="w-4 h-4 bg-gray-400 rounded-sm"></div>
-                Help & Support
-              </Link>
-              <Link
-                href="/restaurant/settings"
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-              >
-                <div className="w-4 h-4 bg-gray-400 rounded-sm"></div>
-                Settings
-              </Link>
-              <Link
-                href="/restaurant/dashboard"
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-              >
-                <div className="w-4 h-4 bg-gray-400 rounded-sm"></div>
-                Dashboard
-              </Link>
+              {navLinks.map((link) => {
+                const isActive = pathname === link.href;
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`flex items-center gap-2 font-medium transition-colors ${
+                      isActive
+                        ? "text-green-600"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    <div
+                      className={`w-4 h-4 rounded-sm ${
+                        isActive ? "bg-green-600" : "bg-gray-400"
+                      }`}
+                    ></div>
+                    {link.label}
+                  </Link>
+                );
+              })}
             </nav>
 
-            {/* cart */}
+            {/* Cart + Notifications + Profile */}
             <div className="flex items-center gap-4">
               <Link href="/restaurant/cart">
                 <Button variant="ghost" size="icon" className="relative">
                   <ShoppingCart className="h-5 w-5" />
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center bg-green-500  text-white text-xs">
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center bg-green-500 text-white text-xs">
                     3
                   </Badge>
                 </Button>
@@ -143,8 +138,6 @@ export function TopResNav() {
                 </Badge>
               </Button>
 
-              {/* User Profile */}
-
               {/* User Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -156,14 +149,12 @@ export function TopResNav() {
                     <ChevronDown className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <Link href="/restaurant/settings">
-                  <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem>Profile</DropdownMenuItem>
-                    <DropdownMenuItem className="text-red-600">
-                      Sign out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </Link>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem>Profile</DropdownMenuItem>
+                  <DropdownMenuItem className="text-red-600">
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
               </DropdownMenu>
             </div>
           </div>

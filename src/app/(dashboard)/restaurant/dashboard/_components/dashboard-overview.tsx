@@ -18,6 +18,9 @@ import {
 } from "@/components/ui/select";
 import Link from "next/link";
 import Image from "next/image";
+import { recentOrdersColumns, type RecentOrder } from "./recent-orders-columns";
+import { StatusFilter } from "@/components/status-filter";
+import { DataTable } from "@/components/data-table";
 
 type DashboardData = {
   date: string;
@@ -76,20 +79,8 @@ type Props = {
 
 export function DashboardOverview({ data }: Props) {
   const [chartPeriod, setChartPeriod] = useState<"week" | "month">("week");
-  const [chartType, setChartType] = useState<"line" | "bar">("bar");
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "delivered":
-        return "bg-green-100 text-green-800";
-      case "processing":
-        return "bg-blue-100 text-blue-800";
-      case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
+  const [chartType, setChartType] = useState<"line" | "bar">("line");
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -420,13 +411,32 @@ export function DashboardOverview({ data }: Props) {
     );
   };
 
+  const recentOrdersData: RecentOrder[] = data.recentOrders.map((order) => ({
+    id: order.id,
+    customer: order.customer,
+    products: order.products,
+    total: order.total,
+    status: order.status,
+    date: order.date,
+  }));
+
+  const statusFilters = [
+    { label: "All", value: "all" },
+    { label: "Delivered", value: "delivered" },
+    { label: "Processing", value: "processing" },
+    { label: "Pending", value: "pending" },
+  ];
+
+  const filteredOrdersData =
+    selectedStatus === "all"
+      ? recentOrdersData
+      : recentOrdersData.filter((order) => order.status === selectedStatus);
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-bold text-gray-900">
-          Dashboard Overview
-        </h1>
+        <h1 className="text-xl font-bold text-gray-900">Dashboard Overview</h1>
         <p className="text-gray-600 mt-1">{data.date}</p>
       </div>
 
@@ -629,80 +639,26 @@ export function DashboardOverview({ data }: Props) {
         </Card>
       </div>
 
-      {/* Recent Orders */}
+      {/* Recent Orders - Using reusable DataTable component */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Orders Requested by Restaurant</CardTitle>
+          <CardTitle>Recent Orders</CardTitle>
           <Button variant="ghost" size="sm" asChild>
             <Link href="/restaurant/dashboard/orders">View All Orders</Link>
           </Button>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">
-                    ORDER ID
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">
-                    CUSTOMER
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">
-                    PRODUCTS
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">
-                    TOTAL
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">
-                    STATUS
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">
-                    DATE
-                  </th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-600">
-                    ACTIONS
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.recentOrders.map((order) => (
-                  <tr
-                    key={order.id}
-                    className="border-b border-gray-100 hover:bg-gray-50"
-                  >
-                    <td className="py-3 px-4 font-medium text-blue-600">
-                      {order.id}
-                    </td>
-                    <td className="py-3 px-4 text-gray-900">
-                      {order.customer}
-                    </td>
-                    <td className="py-3 px-4 text-gray-600">
-                      {order.products}
-                    </td>
-                    <td className="py-3 px-4 font-medium text-gray-900">
-                      {formatCurrency(order.total)}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                          order.status
-                        )}`}
-                      >
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-gray-600">{order.date}</td>
-                    <td className="py-3 px-4">
-                      <Button variant="ghost" size="sm">
-                        Details
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <CardContent className="space-y-4">
+          <StatusFilter
+            filters={statusFilters}
+            selectedStatus={selectedStatus}
+            onStatusChange={setSelectedStatus}
+          />
+          <DataTable
+            columns={recentOrdersColumns}
+            data={filteredOrdersData}
+            searchKey="customer"
+            searchPlaceholder="Search customers..."
+          />
         </CardContent>
       </Card>
     </div>
