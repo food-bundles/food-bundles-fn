@@ -29,7 +29,7 @@ export function CheckoutProgress({ currentStep }: Props) {
         <div className="absolute top-5 left-5 right-7 h-0.5 bg-gray-300" />
 
         <div
-          className="absolute top-5 left-3 h-0.5 bg-teal-500 transition-all duration-300 ease-in-out"
+          className="absolute top-5 left-3 h-0.5 bg-green-500 transition-all duration-300 ease-in-out"
           style={{
             width:
               currentIndex === 0
@@ -50,9 +50,9 @@ export function CheckoutProgress({ currentStep }: Props) {
                 <div
                   className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${
                     isCompleted
-                      ? "bg-teal-500 text-white"
+                      ? "bg-green-500 text-white"
                       : isActive
-                      ? "bg-teal-500 text-white"
+                      ? "bg-green-500 text-white"
                       : "bg-white border-2 border-gray-300 text-gray-500"
                   }`}
                 >
@@ -65,7 +65,7 @@ export function CheckoutProgress({ currentStep }: Props) {
                 <span
                   className={`mt-3 text-sm ${
                     isActive || isCompleted
-                      ? "text-teal-600 font-medium"
+                      ? "text-green-600 font-medium"
                       : "text-gray-400"
                   }`}
                 >

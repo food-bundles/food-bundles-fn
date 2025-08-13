@@ -55,8 +55,8 @@ export function CartContent({ cartItems: initialItems }: Props) {
           onClick={handleClearCart}
           className="text-red-600 border-red-200 hover:bg-red-50 bg-transparent"
         >
-          <Trash2 className="h-4 w-4 mr-2" />
           Clear Cart
+          <Trash2 className="h-4 w-4 mr-2" />
         </Button>
       </div>
 
@@ -172,7 +172,8 @@ function CartItemRow({
           onClick={() => onDelete(item.id)}
           className="text-red-600 border-red-200 hover:bg-red-50"
         >
-          Remove <Trash2 className="h-3 w-3 ml-1" />
+          Remove 
+          {/* <Trash2 className="h-3 w-3 ml-1" /> */}
         </Button>
       </div>
     </div>

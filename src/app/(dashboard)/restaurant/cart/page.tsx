@@ -3,7 +3,6 @@ import Link from "next/link";
 import { CartContent } from "./_components/cart-content";
 import { OrderSummary } from "./_components/order-summary";
 import { CheckoutProgress } from "./_components/checkout-progress";
-import { TopNavigation } from "../_components/restaurant-top-nav";
 
 type CartItem = {
   id: string;
@@ -16,7 +15,6 @@ type CartItem = {
   category: string;
 };
 
-// Dummy cart data
 async function getCartItems(): Promise<CartItem[]> {
   await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -71,7 +69,6 @@ export default async function CartPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TopNavigation />
 
       <main className="container mx-auto px-6 py-8">
         <div className="flex items-center gap-4 mb-8">
@@ -96,6 +93,7 @@ export default async function CartPage() {
               discount={discount}
               deliveryFee={deliveryFee}
               total={total}
+              variant="cart"
             />
           </div>
         </div>

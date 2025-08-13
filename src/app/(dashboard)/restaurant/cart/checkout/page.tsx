@@ -3,18 +3,17 @@ import Link from "next/link";
 import { CheckoutProgress } from "../_components/checkout-progress";
 import { PaymentMethods } from "../_components/payment-methods";
 import { DeliveryForm } from "../_components/delivery-form";
-import { CheckoutSummary } from "../_components/checkout-summary";
-import { TopNavigation } from "../../_components/restaurant-top-nav";
+import { OrderSummary } from "../_components/order-summary";
 
 async function getCheckoutData() {
   await new Promise((resolve) => setTimeout(resolve, 100));
 
   return {
-    totalQuantities: 11,
-    subtotal: 192900,
+    totalQuantities: 13,
+    subtotal: 168.87,
     discount: 0.0,
     deliveryFee: 0.0,
-    total: 192900,
+    total: 168.87,
   };
 }
 
@@ -23,7 +22,6 @@ export default async function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TopNavigation />
 
       <main className="container mx-auto px-6 py-8">
         <div className="flex justify-between">
@@ -45,7 +43,14 @@ export default async function CheckoutPage() {
             <DeliveryForm />
           </div>
           <div className="lg:col-span-1">
-            <CheckoutSummary {...checkoutData} />
+            <OrderSummary
+              totalQuantities={checkoutData.totalQuantities}
+              subtotal={checkoutData.subtotal}
+              discount={checkoutData.discount}
+              deliveryFee={checkoutData.deliveryFee}
+              total={checkoutData.total}
+              variant="checkout"
+            />
           </div>
         </div>
       </main>

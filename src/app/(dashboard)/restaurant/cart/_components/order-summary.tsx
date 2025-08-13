@@ -10,6 +10,8 @@ type Props = {
   discount: number;
   deliveryFee: number;
   total: number;
+  variant?: "cart" | "checkout" | "confirmation";
+  onAction?: () => void; 
 };
 
 export function OrderSummary({
@@ -18,12 +20,42 @@ export function OrderSummary({
   discount,
   deliveryFee,
   total,
+  variant = "cart",
+  onAction,
 }: Props) {
   const router = useRouter();
 
-  const handleCheckout = () => {
-    router.push("/restaurant/cart/checkout");
+  const getButtonConfig = () => {
+    switch (variant) {
+      case "cart":
+        return {
+          text: "Checkout",
+          action: () => router.push("/restaurant/cart/checkout"),
+        };
+      case "checkout":
+        return {
+          text: "Continue Checkout",
+          action: () => {
+            setTimeout(() => {
+              router.push("/restaurant/cart/confirmation");
+            }, 1000);
+          },
+        };
+      case "confirmation":
+        return {
+          text: "Continue Shopping",
+          action: () => router.push("/restaurant"),
+        };
+      default:
+        return {
+          text: "Continue",
+          action: () => {},
+        };
+    }
   };
+
+  const { text, action } = getButtonConfig();
+  const finalAction = onAction || action;
 
   return (
     <Card className="sticky top-6">
@@ -38,7 +70,7 @@ export function OrderSummary({
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Subtotal</span>
-            <span className="font-medium">Rwf {subtotal.toFixed(2)}</span>
+            <span className="font-medium">Rwf {subtotal.toLocaleString()}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Discount</span>
@@ -51,16 +83,16 @@ export function OrderSummary({
           <div className="border-t pt-3">
             <div className="flex justify-between font-semibold">
               <span>Total</span>
-              <span>{total.toFixed(0)}</span>
+              <span>Rwf {total.toLocaleString()}</span>
             </div>
           </div>
         </div>
 
         <Button
-          onClick={handleCheckout}
+          onClick={finalAction}
           className="w-full bg-gray-900 hover:bg-gray-800 text-white py-3"
         >
-         Checkout
+          {text}
         </Button>
       </CardContent>
     </Card>
