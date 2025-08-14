@@ -19,7 +19,6 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { recentOrdersColumns, type RecentOrder } from "./recent-orders-columns";
-import { StatusFilter } from "@/components/status-filter";
 import { DataTable } from "@/components/data-table";
 
 type DashboardData = {
@@ -80,7 +79,6 @@ type Props = {
 export function DashboardOverview({ data }: Props) {
   const [chartPeriod, setChartPeriod] = useState<"week" | "month">("week");
   const [chartType, setChartType] = useState<"line" | "bar">("line");
-  const [selectedStatus, setSelectedStatus] = useState<string>("all");
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -411,26 +409,16 @@ export function DashboardOverview({ data }: Props) {
     );
   };
 
-  const recentOrdersData: RecentOrder[] = data.recentOrders.map((order) => ({
-    id: order.id,
-    customer: order.customer,
-    products: order.products,
-    total: order.total,
-    status: order.status,
-    date: order.date,
-  }));
-
-  const statusFilters = [
-    { label: "All", value: "all" },
-    { label: "Delivered", value: "delivered" },
-    { label: "Processing", value: "processing" },
-    { label: "Pending", value: "pending" },
-  ];
-
-  const filteredOrdersData =
-    selectedStatus === "all"
-      ? recentOrdersData
-      : recentOrdersData.filter((order) => order.status === selectedStatus);
+  const recentOrdersData: RecentOrder[] = data.recentOrders
+    .slice(0, 3)
+    .map((order) => ({
+      id: order.id,
+      customer: order.customer,
+      products: order.products,
+      total: order.total,
+      status: order.status,
+      date: order.date,
+    }));
 
   return (
     <div className="space-y-6">
@@ -647,17 +635,14 @@ export function DashboardOverview({ data }: Props) {
             <Link href="/restaurant/dashboard/orders">View All Orders</Link>
           </Button>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <StatusFilter
-            filters={statusFilters}
-            selectedStatus={selectedStatus}
-            onStatusChange={setSelectedStatus}
-          />
+        <CardContent>
           <DataTable
             columns={recentOrdersColumns}
-            data={filteredOrdersData}
-            searchKey="customer"
-            searchPlaceholder="Search customers..."
+            data={recentOrdersData}
+            showSearch={false}
+            showColumnVisibility={false}
+            showPagination={false}
+            showRowSelection={false}
           />
         </CardContent>
       </Card>
