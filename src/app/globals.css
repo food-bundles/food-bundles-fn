@@ -113,10 +113,29 @@
 }
 
 @layer base {
-  * {
+   * {
     @apply border-border outline-ring/50;
+    font-family: var(--font-poppins), sans-serif;
+    font-weight: 400;
+    font-style: normal;
   }
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Special case: navigation links */
+  .nav-link ul {
+    font-family: "Courier New", Courier, monospace;
+  }
+
+  @layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;  
+    scrollbar-width: none;  
+  }
+  .scrollbar-hide::-webkit-scrollbar { 
+    display: none;  
+  }
+}
+
 }

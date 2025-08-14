@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import type React from "react";
+
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { Star, Minus, Plus } from "lucide-react";
+import { Star, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -28,35 +30,65 @@ type Props = {
 };
 
 export function ProductCard({ product }: Props) {
+  const [showQuantityInput, setShowQuantityInput] = useState(false);
   const [quantity, setQuantity] = useState(1);
-
-  const handleQuantityChange = (change: number) => {
-    setQuantity(Math.max(1, quantity + change));
-  };
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleAddToCart = () => {
-    console.log(
-      `Adding ${quantity} ${product.unit} of ${product.productName} to cart`
-    );
-    // Here you would typically call your cart service
+    if (!showQuantityInput) {
+      setShowQuantityInput(true);
+    } else {
+      console.log(
+        `Adding ${quantity} ${product.unit} of ${product.productName} to cart`
+      );
+      // Here you would typically call your cart service
+      // Reset to button state after adding
+      setShowQuantityInput(false);
+      setQuantity(1);
+    }
   };
+
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Number.parseInt(e.target.value) || 1;
+    setQuantity(Math.max(1, value));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setQuantity((prev) => prev + 1);
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setQuantity((prev) => Math.max(1, prev - 1));
+    } else if (e.key === "Enter") {
+      handleAddToCart();
+    }
+  };
+
+  // Focus input when it becomes visible
+  useEffect(() => {
+    if (showQuantityInput && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [showQuantityInput]);
 
   const getCategoryBadge = (category: string) => {
     const badges = {
-      VEGETABLES: { label: "Organic", color: "bg-green-100 text-green-800" },
-      FRUITS: { label: "Fresh", color: "bg-orange-100 text-orange-800" },
-      GRAINS: { label: "Artisan", color: "bg-amber-100 text-amber-800" },
-      TUBERS: { label: "Farm Fresh", color: "bg-yellow-100 text-yellow-800" },
-      LEGUMES: { label: "Organic", color: "bg-green-100 text-green-800" },
+      VEGETABLES: { label: "Organic", color: "bg-green-100 text-green-600" },
+      FRUITS: { label: "Fresh", color: "bg-orange-100 text-orange-600" },
+      GRAINS: { label: "Artisan", color: "bg-amber-100 text-amber-600" },
+      TUBERS: { label: "Farm Fresh", color: "bg-yellow-100 text-yellow-600" },
+      LEGUMES: { label: "Organic", color: "bg-green-100 text-green-600" },
       HERBS_SPICES: {
         label: "Premium",
-        color: "bg-purple-100 text-purple-800",
+        color: "bg-purple-100 text-purple-600",
       },
     };
     return (
       badges[category as keyof typeof badges] || {
         label: "Fresh",
-        color: "bg-blue-100 text-blue-800",
+        color: "bg-blue-100 text-blue-600",
       }
     );
   };
@@ -64,38 +96,45 @@ export function ProductCard({ product }: Props) {
   const categoryBadge = getCategoryBadge(product.category);
 
   return (
-    <Card className="group hover:shadow-lg transition-shadow duration-200">
+    <Card className="w-full max-w-sm bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden py-0">
       <CardContent className="p-0">
+        {/* Product Image */}
         <div className="relative">
           <Image
             src={product.images[0] || "/placeholder.svg"}
             alt={product.productName}
             width={300}
             height={200}
-            className="w-full h-48 object-cover rounded-t-lg"
+            className="w-full h-48 object-cover"
           />
           {product.bonus > 0 && (
-            <Badge className="absolute top-2 left-2 bg-red-500 text-white">
+            <div className="absolute top-3 right-3 bg-red-500 text-white text-sm font-semibold px-2 py-1 rounded">
               -{product.bonus}%
-            </Badge>
+            </div>
           )}
-          <div className="absolute top-2 right-2">
-            <Badge className={`${categoryBadge.color} text-xs`}>
-              {categoryBadge.label}
-            </Badge>
-          </div>
         </div>
 
-        <div className="p-4">
-          <div className="mb-2">
-            <p className="text-sm text-gray-600">{product.createdBy}</p>
-            <h3 className="font-semibold text-gray-900 group-hover:text-green-600 transition-colors">
-              {product.productName}
-            </h3>
+        {/* Product Info */}
+        <div className="p-4 space-y-3">
+          {/* Category Badge and Supplier */}
+          <div className="flex items-center justify-between">
+            <Badge
+              className={`text-xs font-medium ${categoryBadge.color} border-0`}
+            >
+              <span className="w-2 h-2 bg-current rounded-full mr-1"></span>
+              {categoryBadge.label}
+            </Badge>
+            <span className="text-sm text-gray-500">{product.createdBy}</span>
           </div>
 
-          <div className="flex items-center gap-1 mb-3">
-            <div className="flex items-center">
+          {/* Product Name */}
+          <h3 className="text-lg font-semibold text-gray-900 leading-tight">
+            {product.productName}
+          </h3>
+
+          {/* Rating and Sold Count */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={i}
@@ -106,50 +145,50 @@ export function ProductCard({ product }: Props) {
                   }`}
                 />
               ))}
-            </div>
-            <span className="text-sm text-gray-600">({product.rating})</span>
-          </div>
-
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <span className="text-lg font-bold text-gray-900">
-                ${product.unitPrice.toFixed(2)}/{product.unit}
+              <span className="text-sm text-gray-600 ml-1">
+                ({product.rating})
               </span>
-              {product.soldCount > 0 && (
-                <p className="text-xs text-gray-500">
-                  {product.soldCount.toLocaleString()} sold
-                </p>
-              )}
             </div>
+
+            {product.soldCount > 0 && (
+              <Badge className="bg-orange-100 text-orange-600 text-xs font-medium border-0">
+                {product.soldCount.toLocaleString()} sold
+              </Badge>
+            )}
           </div>
 
-          <div className="flex items-center gap-2 mb-3">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => handleQuantityChange(-1)}
-              disabled={quantity <= 1}
-            >
-              <Minus className="h-4 w-4" />
-            </Button>
-            <span className="w-8 text-center font-medium">{quantity}</span>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => handleQuantityChange(1)}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
+          {/* Price and Add to Cart */}
+          <div className="flex items-center justify-between pt-2">
+            <div className="text-xl font-bold text-gray-900">
+              ${product.unitPrice.toFixed(2)}/{product.unit}
+            </div>
 
-          <Button
-            onClick={handleAddToCart}
-            className="w-full bg-teal-600 hover:bg-teal-700 text-white"
-          >
-            Add to Cart
-          </Button>
+            {!showQuantityInput ? (
+              <Button
+                onClick={handleAddToCart}
+                className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-md font-medium transition-colors duration-200"
+              >
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Add to Cart
+              </Button>
+            ) : (
+              <div className="flex items-center">
+                <input
+                  ref={inputRef}
+                  type="number"
+                  min="1"
+                  value={quantity}
+                  onChange={handleQuantityChange}
+                  onKeyDown={handleKeyDown}
+                  onBlur={() => {
+                    // Optional: hide input when focus is lost
+                    setShowQuantityInput(false);
+                  }}
+                  className="w-16 h-10 text-center text-lg font-semibold border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+              </div>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

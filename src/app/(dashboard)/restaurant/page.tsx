@@ -1,6 +1,5 @@
 import { Search} from "lucide-react";
 import { ProductGrid } from "./_components/product-grid";
-import { TopNavigation } from "./_components/restaurant-top-nav";
 
 type ProductCategory =
   | "VEGETABLES"
@@ -18,7 +17,7 @@ async function getProducts() {
       id: "1",
       productName: "Organic Tomatoes",
       unitPrice: 4.99,
-      unit: "lb",
+      unit: "kg",
       bonus: 15,
       createdBy: "Green Valley Farms",
       expiryDate: new Date("2024-02-15"),
@@ -33,7 +32,7 @@ async function getProducts() {
       id: "2",
       productName: "Free-Range Eggs",
       unitPrice: 6.99,
-      unit: "dozen",
+      unit: "kg",
       bonus: 0,
       createdBy: "Happy Hen Farmstead",
       expiryDate: new Date("2024-01-20"),
@@ -48,7 +47,7 @@ async function getProducts() {
       id: "3",
       productName: "Grass-Fed Ground Beef",
       unitPrice: 9.99,
-      unit: "lb",
+      unit: "kg",
       bonus: 30,
       createdBy: "Sunset Ranch",
       expiryDate: new Date("2024-01-18"),
@@ -63,7 +62,7 @@ async function getProducts() {
       id: "4",
       productName: "Organic Spinach",
       unitPrice: 3.49,
-      unit: "bunch",
+      unit: "kg",
       bonus: 0,
       createdBy: "Green Valley Farms",
       expiryDate: new Date("2024-01-16"),
@@ -78,7 +77,7 @@ async function getProducts() {
       id: "5",
       productName: "Artisan Sourdough Bread",
       unitPrice: 7.99,
-      unit: "loaf",
+      unit: "kg",
       bonus: 5,
       createdBy: "Hearth Bakery",
       expiryDate: new Date("2024-01-17"),
@@ -93,7 +92,7 @@ async function getProducts() {
       id: "6",
       productName: "Fresh Atlantic Salmon",
       unitPrice: 18.99,
-      unit: "lb",
+      unit: "kg",
       bonus: 15,
       createdBy: "Ocean Harvest",
       expiryDate: new Date("2024-01-16"),
@@ -112,11 +111,10 @@ export default async function RestaurantDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TopNavigation />
 
       <main className="container mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-xl font-bold text-gray-900">
             Your products to day
           </h1>
 

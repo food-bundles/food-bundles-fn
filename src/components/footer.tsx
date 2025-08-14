@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Leaf } from "lucide-react";
+import { Leaf, Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 
 export function Footer() {
   return (
@@ -15,8 +15,8 @@ export function Footer() {
               <span className="text-xl font-semibold">FoodBundle</span>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed">
-              Connecting farms to tables with sustainable producers and food
-              trading
+              Connecting farms to tables with sustainable practices and fair
+              trading.
             </p>
           </div>
 
@@ -34,7 +34,7 @@ export function Footer() {
                 href="/how-it-works"
                 className="block text-gray-400 hover:text-white transition-colors text-sm"
               >
-                How It Works
+                How it Works
               </Link>
               <Link
                 href="/farmers"
@@ -87,10 +87,42 @@ export function Footer() {
             <h3 className="text-lg font-semibold">Contact Us</h3>
             <div className="space-y-2 text-sm text-gray-400">
               <p>123 Market Street</p>
-              <p>Farmville, CA 94102</p>
-              <p>hello@foodbundle.com</p>
+              <p>Farmville, CA 94123</p>
+              <p>info@foodbundle.com</p>
               <p>(555) 123-4567</p>
             </div>
+          </div>
+        </div>
+
+        <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+          <p className="text-gray-400 text-sm">
+            © 2023 FoodBundle. All rights reserved.
+          </p>
+          <div className="flex space-x-4 mt-4 md:mt-0">
+            <Link
+              href="#"
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              <Facebook className="h-5 w-5" />
+            </Link>
+            <Link
+              href="#"
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              <Twitter className="h-5 w-5" />
+            </Link>
+            <Link
+              href="#"
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              <Instagram className="h-5 w-5" />
+            </Link>
+            <Link
+              href="#"
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              <Linkedin className="h-5 w-5" />
+            </Link>
           </div>
         </div>
       </div>

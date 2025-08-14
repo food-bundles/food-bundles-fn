@@ -57,8 +57,8 @@ export function LoginForm({ loginData }: Props) {
 
       const redirectPath =
         response.user?.role === "farmer"
-          ? "/farmer/dashboard"
-          : "/restaurant/dashboard";
+          ? "/farmer"
+          : "/restaurant";
       router.push(redirectPath);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
