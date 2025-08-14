@@ -8,10 +8,7 @@ export default function PublicLayout({
 }>) {
   return (
     <div>
-      <div>
-      {children}
-      </div>
-        <div className=" sticky top-0 z-50  bg-white"> <Header /></div>
+        <div className=" sticky top-0 z-50  bg-white "> <Header /></div>
           {children}
       <div><Footer /></div>
 
