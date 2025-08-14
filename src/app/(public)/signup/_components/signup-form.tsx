@@ -61,11 +61,11 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
   const location = formData.get("location") as string;
   
 
- if (!name) {
-   setError("Name is required");
-   setIsLoading(false);
-   return;
- }
+//  if (!name) {
+//    setError("Name is required");
+//    setIsLoading(false);
+//    return;
+//  }
  if (!phone) {
    setError("Phone number is required");
    setIsLoading(false);
