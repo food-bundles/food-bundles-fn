@@ -41,21 +41,21 @@ const menuItems = [
 
 export function AdminSidebar() {
   return (
-    <div className="w-64 h-screen bg-gray-800 text-white flex flex-col">
+    <div className="w-64 min-w-64 h-screen bg-gray-800 text-white flex flex-col flex-shrink-0">
       {/* Logo */}
-      <div className="p-4 border-b border-gray-700">
+      <div className="p-4 border-b border-gray-700 flex-shrink-0">
         <h1 className="text-xl font-bold">Food Bundle</h1>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-4">
+      <nav className="flex-1 py-4 overflow-auto scrollbar-hide">
         <ul className="space-y-1 px-3 pb-4">
           {menuItems.map((item, index) => (
             <li key={index}>
               <a
                 href={item.href}
                 className={cn(
-                  "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap",
                   item.active
                     ? "bg-green-600 text-white"
                     : "text-gray-300 hover:bg-gray-700 hover:text-white"
@@ -68,7 +68,7 @@ export function AdminSidebar() {
           ))}
         </ul>
         {/* Help Center */}
-        <div className="p-4 border-t border-gray-700">
+        <div className="p-4 border-t border-gray-700 flex-shrink-0">
           <div className="bg-green-100 rounded-lg p-4 text-center">
             {/* Outer circle */}
             <div className="w-16 h-16 bg-green-300 rounded-full flex items-center justify-center mx-auto mb-5">

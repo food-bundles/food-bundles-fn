@@ -22,6 +22,13 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -79,6 +86,27 @@ export function DataTable<TData, TValue>({
       rowSelection,
     },
   });
+
+  const getPageNumbers = () => {
+    const currentPage = table.getState().pagination.pageIndex + 1;
+    const totalPages = table.getPageCount();
+    const pages = [];
+
+    // Show up to 5 page numbers
+    const maxPages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxPages / 2));
+    const endPage = Math.min(totalPages, startPage + maxPages - 1);
+
+    if (endPage - startPage + 1 < maxPages) {
+      startPage = Math.max(1, endPage - maxPages + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+
+    return pages;
+  };
 
   return (
     <div className="w-full">
@@ -177,31 +205,80 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
       {(showPagination || showRowSelection) && (
-        <div className="flex items-center justify-end space-x-2 py-4">
+        <div className="flex items-center justify-between py-4">
           {showRowSelection && (
-            <div className="flex-1 text-sm text-muted-foreground">
+            <div className="text-sm text-muted-foreground">
               {table.getFilteredSelectedRowModel().rows.length} of{" "}
               {table.getFilteredRowModel().rows.length} row(s) selected.
             </div>
           )}
+
           {showPagination && (
-            <div className="space-x-2">
+            <div className="flex items-center space-x-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => table.previousPage()}
                 disabled={!table.getCanPreviousPage()}
+                className="px-3 py-1"
               >
                 Previous
               </Button>
+
+              {getPageNumbers().map((pageNumber) => (
+                <Button
+                  key={pageNumber}
+                  variant={
+                    table.getState().pagination.pageIndex + 1 === pageNumber
+                      ? "default"
+                      : "outline"
+                  }
+                  size="sm"
+                  onClick={() => table.setPageIndex(pageNumber - 1)}
+                  className={`px-3 py-1 ${
+                    table.getState().pagination.pageIndex + 1 === pageNumber
+                      ? "bg-green-600 hover:bg-green-700 text-white"
+                      : ""
+                  }`}
+                >
+                  {pageNumber}
+                </Button>
+              ))}
+
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => table.nextPage()}
                 disabled={!table.getCanNextPage()}
+                className="px-3 py-1"
               >
                 Next
               </Button>
+            </div>
+          )}
+
+          {showPagination && (
+            <div className="flex items-center space-x-2">
+              <Select
+                value={`${table.getState().pagination.pageSize}`}
+                onValueChange={(value) => {
+                  table.setPageSize(Number(value));
+                }}
+              >
+                <SelectTrigger className="h-8 w-[70px]">
+                  <SelectValue
+                    placeholder={table.getState().pagination.pageSize}
+                  />
+                </SelectTrigger>
+                <SelectContent side="top">
+                  {[5, 10, 20, 30, 40, 50].map((pageSize) => (
+                    <SelectItem key={pageSize} value={`${pageSize}`}>
+                      {pageSize}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <span className="text-sm text-muted-foreground">Show</span>
             </div>
           )}
         </div>
