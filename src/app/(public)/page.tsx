@@ -1,103 +1,161 @@
-import Image from "next/image";
+import Home from "@/components/home"
+import FeaturedProducts from "@/components/featured_products"
+import HowItWorks from "@/components/how_it_work"
+import WhyChoose from "@/components/why_choose"
+import Promotions from "@/components/promotion"
+import ContactUs from "@/components/contact_us"
 
-export default function Home() {
+
+// Mock data fetching functions (replace with actual API calls)
+async function getHomeData() {
+  // Simulate API call
+  return {
+    title: "Fresh From Farm\nto Table",
+    subtitle: "Farm to Table Excellence",
+    description:
+      "Connecting local farmers with restaurants for sustainable food systems. Build direct relationships and create a more efficient supply chain.",
+    primaryButton: {
+      text: "Submit Your Product →",
+      href: "/submit-product",
+    },
+    secondaryButton: {
+      text: "Shop Now →",
+      href: "/shop",
+    },
+    heroImage: {
+      src: "/images/FRAME.png",
+      alt: "Fresh produce arranged in a circle with wooden cutting board center",
+    },
+    decorativeElements: {
+      stars: {
+        large: {
+          src: "/images/Vector 1.png",
+          alt: "Decorative star",
+        },
+        small: {
+          src: "/images/Vector 1.png",
+          alt: "Decorative star",
+        },
+      },
+    },
+  }
+}
+
+async function getFeaturedProductsData() {
+  // Simulate API call
+  return {
+    title: "Featured Fresh Products",
+    subtitle: "Explore our curated selection of seasonal produce from local farms",
+    products: [
+      {
+        id: "550e8400-e29b-41d4-a716-446655440001",
+        productName: "Organic Tomatoes",
+        unitPrice: 4.99,
+        unit: "lb",
+        category: "VEGETABLES",
+        sku: "TOM-ORG-001",
+        quantity: 50.0,
+        images: ["/images/tomatoes.svg"],
+        status: "ACTIVE",
+      },
+      {
+        id: "550e8400-e29b-41d4-a716-446655440002",
+        productName: "Fresh Asparagus",
+        unitPrice: 6.49,
+        unit: "bunch",
+        category: "VEGETABLES",
+        sku: "ASP-FRS-002",
+        quantity: 25.0,
+        images: ["/images/asparagus.svg"],
+        status: "ACTIVE",
+      },
+      {
+        id: "550e8400-e29b-41d4-a716-446655440003",
+        productName: "Rainbow Carrots",
+        unitPrice: 3.7,
+        unit: "lb",
+        category: "VEGETABLES",
+        sku: "CAR-RBW-003",
+        quantity: 75.0,
+        images: ["/images/carrots.svg"],
+        status: "ACTIVE",
+      },
+      {
+        id: "550e8400-e29b-41d4-a716-446655440004",
+        productName: "Organic Spinach",
+        unitPrice: 5.2,
+        unit: "bag",
+        category: "HERBS_SPICES",
+        sku: "SPN-ORG-004",
+        quantity: 30.0,
+        images: ["/images/spinach.svg"],
+        status: "ACTIVE",
+      },
+    ],
+  }
+}
+
+async function getPromotionsData() {
+  // Simulate API call
+  return {
+    title: "Weekly Special Offers",
+    products: [
+      {
+        id: "promo-001",
+        productName: "Organic Heirloom Tomatoes",
+        description: "Premium vine-ripened tomatoes, hand-picked at peak freshness. Perfect for gourmet restaurants.",
+        unitPrice: 6.99,
+        originalPrice: 9.99,
+        discountPercentage: 30,
+        unit: "lb",
+        quantity: 50.0,
+        images: ["/images/tomatoes.svg"],
+        farmName: "Sunset Valley Farm",
+        category: "VEGETABLES",
+        sku: "TOM-PROMO-001",
+      },
+      {
+        id: "promo-002",
+        productName: "Premium Organic Spinach",
+        description: "Fresh baby spinach leaves, grown without pesticides. Rich in nutrients and perfect for salads.",
+        unitPrice: 4.49,
+        originalPrice: 6.99,
+        discountPercentage: 35,
+        unit: "bag",
+        quantity: 30.0,
+        images: ["/images/spinach.svg"],
+        farmName: "Green Leaf Gardens",
+        category: "HERBS_SPICES",
+        sku: "SPN-PROMO-002",
+      },
+    ],
+  }
+}
+
+export default async function LandingPage() {
+  // Fetch all data in parallel
+  const [homeData, featuredProductsData, promotionsData] = await Promise.all([
+    getHomeData(),
+    getFeaturedProductsData(),
+    getPromotionsData(),
+  ])
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-screen bg-gradient-to-br from-green-50/30 to-orange-50/30 relative overflow-hidden">
+      {/* Background decorative circles */}
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-green-100/20 rounded-full -translate-y-32 translate-x-16"></div>
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-orange-100/30 rounded-full translate-y-32 -translate-x-16"></div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      {/* Header Component - Sticky */}
+      {/* <Header /> */}
+
+      {/* Page Sections */}
+      <Home data={homeData} />
+      <HowItWorks />
+      <FeaturedProducts data={featuredProductsData} />
+       <Promotions data={promotionsData} />
+      <WhyChoose />
+      <ContactUs />
     </div>
-  );
+  )
 }
