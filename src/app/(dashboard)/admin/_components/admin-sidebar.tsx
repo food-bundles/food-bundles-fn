@@ -34,17 +34,15 @@ const menuItems = [
   { icon: TrendingUp, label: "Sales", href: "/admin/sales" },
   { icon: Users, label: "Farmers", href: "/admin/farmers" },
   { icon: Building, label: "Restaurants", href: "/admin/restaurants" },
-//   { icon: Settings, label: "Administration", href: "/admin/administration" },
-//   { icon: MessageSquare, label: "Messages", href: "/admin/messages" },
   { icon: LogOut, label: "Logout", href: "/logout" },
 ];
 
 export function AdminSidebar() {
   return (
-    <div className="w-64 min-w-64 h-screen bg-gray-800 text-white flex flex-col flex-shrink-0">
+    <div className="w-64 min-w-64 h-screen border-r border-gray-200 bg-gray-50 text-white flex flex-col flex-shrink-0">
       {/* Logo */}
-      <div className="p-4 border-b border-gray-700 flex-shrink-0">
-        <h1 className="text-xl font-bold">Food Bundle</h1>
+      <div className="p-4 flex-shrink-0">
+        <h1 className="text-xl font-bold text-black">Food Bundle</h1>
       </div>
 
       {/* Navigation */}
@@ -58,7 +56,7 @@ export function AdminSidebar() {
                   "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap",
                   item.active
                     ? "bg-green-600 text-white"
-                    : "text-gray-300 hover:bg-gray-700 hover:text-white"
+                    : "text-gray-800 hover:bg-green-100 "
                 )}
               >
                 <item.icon className="mr-3 h-5 w-5" />
@@ -68,7 +66,7 @@ export function AdminSidebar() {
           ))}
         </ul>
         {/* Help Center */}
-        <div className="p-4 border-t border-gray-700 flex-shrink-0">
+        <div className="p-4 flex-shrink-0">
           <div className="bg-green-100 rounded-lg p-4 text-center">
             {/* Outer circle */}
             <div className="w-16 h-16 bg-green-300 rounded-full flex items-center justify-center mx-auto mb-5">
