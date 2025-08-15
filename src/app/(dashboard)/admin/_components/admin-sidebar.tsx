@@ -10,11 +10,11 @@ import {
   TrendingUp,
   Users,
   Building,
-//   Settings,
-//   MessageSquare,
   LogOut,
   HelpCircle,
 } from "lucide-react";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
@@ -22,7 +22,6 @@ const menuItems = [
     icon: FileText,
     label: "Farmer Submission",
     href: "/admin/farmer-submissions",
-    active: true,
   },
   {
     icon: ShoppingCart,
@@ -38,8 +37,10 @@ const menuItems = [
 ];
 
 export function AdminSidebar() {
+  const pathname = usePathname();
+
   return (
-    <div className="w-64 min-w-64 h-screen border-r border-gray-200 bg-gray-50 text-white flex flex-col flex-shrink-0">
+    <div className="w-64 min-w-64 h-screen border-r border-gray-200 bg-gray-50 flex flex-col flex-shrink-0">
       {/* Logo */}
       <div className="p-4 flex-shrink-0">
         <h1 className="text-xl font-bold text-black">Food Bundle</h1>
@@ -48,23 +49,27 @@ export function AdminSidebar() {
       {/* Navigation */}
       <nav className="flex-1 py-4 overflow-auto scrollbar-hide">
         <ul className="space-y-1 px-3 pb-4">
-          {menuItems.map((item, index) => (
-            <li key={index}>
-              <a
-                href={item.href}
-                className={cn(
-                  "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap",
-                  item.active
-                    ? "bg-green-600 text-white"
-                    : "text-gray-800 hover:bg-green-100 "
-                )}
-              >
-                <item.icon className="mr-3 h-5 w-5" />
-                {item.label}
-              </a>
-            </li>
-          ))}
+          {menuItems.map((item, index) => {
+            const isActive = pathname === item.href;
+            return (
+              <li key={index}>
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap",
+                    isActive
+                      ? "bg-green-600 hover:bg-green-700 text-white"
+                      : "text-gray-800 hover:bg-green-100"
+                  )}
+                >
+                  <item.icon className="mr-3 h-5 w-5" />
+                  {item.label}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
+
         {/* Help Center */}
         <div className="p-4 flex-shrink-0">
           <div className="bg-green-100 rounded-lg p-4 text-center">

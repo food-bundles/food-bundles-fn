@@ -168,8 +168,8 @@ export default function FarmerSubmissionsPage() {
         data={filteredData}
         searchKey="farmerName"
         searchPlaceholder="Search offers..."
-        showSearch={false}
-        showColumnVisibility={false}
+        showSearch={true}
+        showColumnVisibility={true}
       />
     </div>
   );

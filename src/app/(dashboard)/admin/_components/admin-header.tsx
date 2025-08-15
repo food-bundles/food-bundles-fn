@@ -17,7 +17,7 @@ export function AdminHeader() {
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center ">
           <button className="p-2 hover:bg-green-100  cursor-pointer  rounded-full">
             <Bell className="h-5 w-5  text-green-600" />
           </button>
@@ -28,7 +28,7 @@ export function AdminHeader() {
             <Settings className="h-5 w-5 text-green-600" />
           </button>
           <div className="flex items-center space-x-2">
-            <Avatar className="h-10 w-10">
+            <Avatar className="h-10 w-10 border-2 hover:border-green-600 cursor-pointer ">
               <AvatarImage src="/imgs/profile.jpg?height=32&width=32" />
               <AvatarFallback>BS</AvatarFallback>
             </Avatar>
