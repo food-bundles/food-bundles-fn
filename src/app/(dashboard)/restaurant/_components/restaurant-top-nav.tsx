@@ -150,7 +150,9 @@ export function TopResNav() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem>Profile</DropdownMenuItem>
+                  <Link href="/restaurant/settings">
+                    <DropdownMenuItem>Profile</DropdownMenuItem>
+                  </Link>
                   <Link href="/">
                   <DropdownMenuItem className="text-red-600">
                     Sign out

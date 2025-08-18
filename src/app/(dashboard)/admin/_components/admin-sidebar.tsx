@@ -63,7 +63,7 @@ const menuItems = [
       },
     ],
   },
-  { icon: LogOut, label: "Logout", href: "/logout" },
+  { icon: LogOut, label: "Logout", href: "/" },
 ];
 
 export function AdminSidebar() {
