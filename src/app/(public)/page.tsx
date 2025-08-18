@@ -4,6 +4,8 @@ import HowItWorks from "@/components/how_it_work"
 import WhyChoose from "@/components/why_choose"
 import Promotions from "@/components/promotion"
 import ContactUs from "@/components/contact_us"
+import Header from "@/components/header"
+import { Footer } from "react-day-picker"
 
 
 // Mock data fetching functions (replace with actual API calls)
@@ -150,12 +152,14 @@ export default async function LandingPage() {
       {/* <Header /> */}
 
       {/* Page Sections */}
+      <Header />
       <Home data={homeData} />
       <HowItWorks />
       <FeaturedProducts data={featuredProductsData} />
        <Promotions data={promotionsData} />
       <WhyChoose />
       <ContactUs />
+      <Footer />
     </div>
   )
 }
