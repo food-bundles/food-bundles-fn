@@ -6,12 +6,12 @@ import {
   farmerSubmissionsColumns,
   type FarmerSubmission,
 } from "./_components/farmer-submissions-columns";
-import { Filters } from "./_components/filters";
-import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import {
+  createCommonFilters,
+  TableFilters,
+} from "../../../../components/filters";
 import { DataTable } from "@/components/data-table";
 
-// Sample data matching the image
 const farmerSubmissions: FarmerSubmission[] = [
   {
     id: "1",
@@ -80,25 +80,30 @@ const farmerSubmissions: FarmerSubmission[] = [
   },
 ];
 
+// Filter options
+const statusOptions = [
+  { label: "All Status", value: "all" },
+  { label: "Pending", value: "Pending" },
+  { label: "Accepted", value: "Accepted" },
+  { label: "Rejected", value: "Rejected" },
+];
+
+const categoryOptions = [
+  { label: "All Categories", value: "all" },
+  { label: "Organic Vegetables", value: "organic" },
+  { label: "Fresh Produce", value: "fresh" },
+  { label: "Grains", value: "grains" },
+  { label: "Fruits", value: "fruits" },
+];
+
 export default function FarmerSubmissionsPage() {
   const [searchValue, setSearchValue] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
-  const [columnVisibility, setColumnVisibility] = useState<
-    Record<string, boolean>
-  >({});
-
-  const handleColumnVisibilityChange = (columnId: string, visible: boolean) => {
-    setColumnVisibility((prev) => ({
-      ...prev,
-      [columnId]: visible,
-    }));
-  };
 
   const filteredData = useMemo(() => {
     return farmerSubmissions.filter((submission) => {
-      // Search filter
       if (
         searchValue &&
         !submission.farmerName
@@ -110,12 +115,10 @@ export default function FarmerSubmissionsPage() {
         return false;
       }
 
-      // Status filter
       if (selectedStatus !== "all" && submission.status !== selectedStatus) {
         return false;
       }
 
-      // Category filter (simplified - in real app would be based on actual product categories)
       if (selectedCategory !== "all") {
         const isOrganic = submission.product.toLowerCase().includes("organic");
         const isFresh = submission.product.toLowerCase().includes("fresh");
@@ -134,42 +137,56 @@ export default function FarmerSubmissionsPage() {
           return false;
       }
 
-      // Date filter would be implemented based on actual submission dates
-      // For now, we'll skip date filtering since sample data doesn't have dates
-
       return true;
     });
   }, [searchValue, selectedStatus, selectedCategory, selectedDate]);
 
-  return (
-    <div className="space-y-6 p-6 h-full overflow-auto">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Farmer Submissions</h1>
-        <Button className="bg-green-600 hover:bg-green-700 flex-shrink-0">
-          <Download className="mr-2 h-4 w-4" />
-          Export Data
-        </Button>
-      </div>
-      <Filters
-        searchValue={searchValue}
-        onSearchChange={setSearchValue}
-        selectedStatus={selectedStatus}
-        onStatusChange={setSelectedStatus}
-        selectedCategory={selectedCategory}
-        onCategoryChange={setSelectedCategory}
-        selectedDate={selectedDate}
-        onDateChange={setSelectedDate}
-        columnVisibility={columnVisibility}
-        onColumnVisibilityChange={handleColumnVisibilityChange}
-      />
+  const filters = [
+    createCommonFilters.search(searchValue, setSearchValue, "Search offers..."),
+    createCommonFilters.status(
+      selectedStatus,
+      setSelectedStatus,
+      statusOptions
+    ),
+    createCommonFilters.category(
+      selectedCategory,
+      setSelectedCategory,
+      categoryOptions
+    ),
+    createCommonFilters.date(selectedDate, setSelectedDate, "Date"),
+  ];
 
+  const handleExport = async () => {
+    try {
+      console.log("Exporting data...", {
+        filters: {
+          search: searchValue,
+          status: selectedStatus,
+          category: selectedCategory,
+          date: selectedDate,
+        },
+        totalRecords: filteredData.length,
+      });
+
+      alert("Export functionality will be handled by backend");
+    } catch (error) {
+      console.error("Export failed:", error);
+    }
+  };
+
+  return (
+    <div className="p-6">
       <DataTable
         columns={farmerSubmissionsColumns}
         data={filteredData}
-        searchKey="farmerName"
-        searchPlaceholder="Search offers..."
-        showSearch={true}
+        title="Farmer Submissions"
+        showExport={true}
+        onExport={handleExport}
+        customFilters={<TableFilters filters={filters} />}
+        showSearch={false}
         showColumnVisibility={true}
+        showPagination={true}
+        showRowSelection={true}
       />
     </div>
   );

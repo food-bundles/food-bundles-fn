@@ -1,18 +1,10 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { ArrowUpDown, Eye, Edit } from "lucide-react";
 
 export type OrderStatus =
   | "pending"
@@ -25,38 +17,41 @@ export type OrderStatus =
 
 export type Order = {
   id: string;
-  orderNumber: string;
-  orderDate: string;
-  payable: number;
-  status: OrderStatus;
-  logistics: {
-    assigned: boolean;
-    assignedTo?: string;
-  };
+  orderId: string;
   customerName: string;
-  items: Array<{
-    name: string;
-    quantity: number;
-    price: number;
-  }>;
+  orderedDate: string;
+  items: string;
+  totalAmount: number;
+  deliveryAddress: string;
+  status: OrderStatus;
 };
 
-const getStatusBadgeVariant = (status: OrderStatus) => {
+const getStatusColor = (status: OrderStatus) => {
   switch (status) {
     case "pending":
-      return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      return "bg-yellow-100 text-yellow-800 hover:bg-yellow-200";
     case "confirmed":
+      return "bg-blue-100 text-blue-800 hover:bg-blue-200";
     case "processing":
+      return "bg-orange-100 text-orange-800 hover:bg-orange-200";
     case "ready":
-      return "bg-blue-100 text-blue-800 border-blue-200";
+      return "bg-purple-100 text-purple-800 hover:bg-purple-200";
     case "delivered":
-      return "bg-green-100 text-green-800 border-green-200";
+      return "bg-green-100 text-green-800 hover:bg-green-200";
     case "cancelled":
+      return "bg-red-100 text-red-800 hover:bg-red-200";
     case "refunded":
-      return "bg-red-100 text-red-800 border-red-200";
+      return "bg-gray-100 text-gray-800 hover:bg-gray-200";
     default:
-      return "bg-gray-100 text-gray-800 border-gray-200";
+      return "bg-gray-100 text-gray-800 hover:bg-gray-200";
   }
+};
+
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(amount);
 };
 
 export const ordersColumns: ColumnDef<Order>[] = [
@@ -83,12 +78,13 @@ export const ordersColumns: ColumnDef<Order>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "orderNumber",
+    accessorKey: "orderId",
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium"
         >
           Order ID
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -96,47 +92,83 @@ export const ordersColumns: ColumnDef<Order>[] = [
       );
     },
     cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("orderNumber")}</div>
+      <div className="font-medium text-blue-600">
+        #{row.getValue("orderId")}
+      </div>
     ),
   },
   {
-    accessorKey: "orderDate",
+    accessorKey: "customerName",
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium"
+        >
+          Customer Name
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => (
+      <div className="font-medium">{row.getValue("customerName")}</div>
+    ),
+  },
+  {
+    accessorKey: "orderedDate",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium"
         >
           Order Date
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
+    cell: ({ row }) => <div>{row.getValue("orderedDate")}</div>,
+  },
+  {
+    accessorKey: "items",
+    header: "Items",
     cell: ({ row }) => (
-      <div className="text-gray-600">{row.getValue("orderDate")}</div>
+      <div className="font-medium">{row.getValue("items")}</div>
     ),
   },
   {
-    accessorKey: "payable",
+    accessorKey: "totalAmount",
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 font-medium"
         >
-          Payable
+          Total Amount
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
-    cell: ({ row }) => {
-      const amount = Number.parseFloat(row.getValue("payable"));
-      const formatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(amount);
-      return <div className="font-medium">{formatted}</div>;
-    },
+    cell: ({ row }) => (
+      <div className="font-medium text-green-600">
+        {formatCurrency(row.getValue("totalAmount"))}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "deliveryAddress",
+    header: "Delivery Address",
+    cell: ({ row }) => (
+      <div
+        className="max-w-[200px] truncate"
+        title={row.getValue("deliveryAddress")}
+      >
+        {row.getValue("deliveryAddress")}
+      </div>
+    ),
   },
   {
     accessorKey: "status",
@@ -144,61 +176,36 @@ export const ordersColumns: ColumnDef<Order>[] = [
     cell: ({ row }) => {
       const status = row.getValue("status") as OrderStatus;
       return (
-        <Badge
-          variant="outline"
-          className={`capitalize ${getStatusBadgeVariant(status)}`}
-        >
-          {status}
+        <Badge className={getStatusColor(status)}>
+          {status.charAt(0).toUpperCase() + status.slice(1)}
         </Badge>
       );
     },
   },
   {
-    accessorKey: "logistics",
-    header: "Logistics",
-    cell: ({ row }) => {
-      const logistics = row.getValue("logistics") as Order["logistics"];
+    id: "actions",
+    header: "Actions",
+    cell: () => {
       return (
         <div className="flex items-center gap-2">
-          <div
-            className={`w-2 h-2 rounded-full ${
-              logistics.assigned ? "bg-green-500" : "bg-red-500"
-            }`}
-          />
-          <span className="text-sm text-gray-600">
-            {logistics.assigned ? logistics.assignedTo : "Not assigned"}
-          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 text-green-600 hover:text-green-800 hover:bg-green-50"
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
         </div>
       );
     },
-  },
-  {
-    id: "actions",
+    enableSorting: false,
     enableHiding: false,
-    cell: ({ row }) => {
-      const order = row.original;
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(order.id)}
-            >
-              Copy order ID
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>View details</DropdownMenuItem>
-            <DropdownMenuItem>View customer</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
   },
 ];

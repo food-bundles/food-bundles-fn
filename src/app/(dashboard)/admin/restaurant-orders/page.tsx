@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Filters } from "./_components/filters";
 import { Order, ordersColumns } from "./_components/order-colmuns";
+import {
+  createCommonFilters,
+  TableFilters,
+} from "../../../../components/filters";
 import { DataTable } from "@/components/data-table";
-import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
 
 // Sample data
 const sampleOrders: Order[] = [
@@ -111,55 +112,89 @@ const sampleOrders: Order[] = [
   },
 ];
 
+const statusOptions = [
+  { label: "All Status", value: "all" },
+  { label: "Pending", value: "pending" },
+  { label: "Confirmed", value: "confirmed" },
+  { label: "Processing", value: "processing" },
+  { label: "Ready", value: "ready" },
+  { label: "Delivered", value: "delivered" },
+  { label: "Cancelled", value: "cancelled" },
+  { label: "Refunded", value: "refunded" },
+];
+
 export default function OrdersPage() {
   const [searchValue, setSearchValue] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
 
   const filteredData = useMemo(() => {
     return sampleOrders.filter((order) => {
-      const matchesSearch =
-        order.orderId.toLowerCase().includes(searchValue.toLowerCase()) ||
-        order.restaurantName
+      if (
+        searchValue &&
+        !order.orderId.toLowerCase().includes(searchValue.toLowerCase()) &&
+        !order.restaurantName
           .toLowerCase()
-          .includes(searchValue.toLowerCase()) ||
-        order.logisticUser.toLowerCase().includes(searchValue.toLowerCase());
+          .includes(searchValue.toLowerCase()) &&
+        !order.logisticUser.toLowerCase().includes(searchValue.toLowerCase())
+      ) {
+        return false;
+      }
 
-      const matchesStatus =
-        statusFilter === "all" || order.status === statusFilter;
+      if (selectedStatus !== "all" && order.status !== selectedStatus) {
+        return false;
+      }
 
-      const matchesDate =
-        !dateFilter ||
-        order.orderedDate === dateFilter.toISOString().split("T")[0];
+      if (
+        selectedDate &&
+        order.orderedDate !== selectedDate.toISOString().split("T")[0]
+      ) {
+        return false;
+      }
 
-      return matchesSearch && matchesStatus && matchesDate;
+      return true;
     });
-  }, [searchValue, statusFilter, dateFilter]);
+  }, [searchValue, selectedStatus, selectedDate]);
+
+  const filters = [
+    createCommonFilters.search(searchValue, setSearchValue, "Search orders..."),
+    createCommonFilters.status(
+      selectedStatus,
+      setSelectedStatus,
+      statusOptions
+    ),
+    createCommonFilters.date(selectedDate, setSelectedDate, "Date"),
+  ];
+
+  const handleExport = async () => {
+    try {
+      console.log("Exporting orders data...", {
+        filters: {
+          search: searchValue,
+          status: selectedStatus,
+          date: selectedDate,
+        },
+        totalRecords: filteredData.length,
+      });
+      alert("Export functionality will be handled by backend");
+    } catch (error) {
+      console.error("Export failed:", error);
+    }
+  };
 
   return (
-    <div className="space-y-6 py-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Restaurant Orders</h1>
-        <Button className="bg-green-600 hover:bg-green-700 text-white">
-          <Download className="mr-2 h-4 w-4" />
-          Export Data
-        </Button>
-      </div>
-
-      <Filters
-        searchValue={searchValue}
-        onSearchChange={setSearchValue}
-        statusFilter={statusFilter}
-        onStatusChange={setStatusFilter}
-        dateFilter={dateFilter}
-        onDateChange={setDateFilter}
-      />
-
+    <div className="p-6">
       <DataTable
         columns={ordersColumns}
         data={filteredData}
+        title="Restaurant Orders"
+        showExport={true}
+        onExport={handleExport}
+        customFilters={<TableFilters filters={filters} />}
         showSearch={false}
-        // showColumnVisibility={false}
+        showColumnVisibility={true}
+        showPagination={true}
+        showRowSelection={true}
       />
     </div>
   );

@@ -8,12 +8,12 @@ export function AdminHeader() {
     <header className=" bg-gray-50 border-b border-gray-200">
       <div className=" px-6 py-4 flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <button className="p-1 hover:bg-green-700 rounded">
-            <Menu className="h-10 w-10" />
+          <button className="p-1 cursor-pointer">
+            <Menu className="h-6 w-6" />
           </button>
           <div>
             <h1 className="text-lg font-semibold">Dashboard</h1>
-            <p className="text-sm text-gray-800">Welcome back, John Doe</p>
+            <p className="text-sm text-gray-800">Welcome back, Admin Sostene</p>
           </div>
         </div>
 
