@@ -14,7 +14,7 @@ export function CheckoutProgress({ currentStep }: Props) {
       label: "Checkout",
       completed: currentStep === "confirmation",
     },
-    { id: "confirmation", label: "Confirmation", completed: false },
+    { id: "confirmation", label: "Succuss", completed: false },
   ];
 
   const getCurrentStepIndex = () => {

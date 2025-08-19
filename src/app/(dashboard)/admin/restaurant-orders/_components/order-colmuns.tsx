@@ -18,11 +18,11 @@ export type OrderStatus =
 export type Order = {
   id: string;
   orderId: string;
-  customerName: string;
+  restaurantName: string;
   orderedDate: string;
-  items: string;
-  totalAmount: number;
-  deliveryAddress: string;
+  qty: string;
+  payables: number;
+  logisticUser: string;
   status: OrderStatus;
 };
 
@@ -98,7 +98,7 @@ export const ordersColumns: ColumnDef<Order>[] = [
     ),
   },
   {
-    accessorKey: "customerName",
+    accessorKey: "restaurantName",
     header: ({ column }) => {
       return (
         <Button
@@ -106,13 +106,13 @@ export const ordersColumns: ColumnDef<Order>[] = [
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium"
         >
-          Customer Name
+          Restaurant Name
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
     cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("customerName")}</div>
+      <div className="font-medium">{row.getValue("restaurantName")}</div>
     ),
   },
   {
@@ -124,7 +124,7 @@ export const ordersColumns: ColumnDef<Order>[] = [
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium"
         >
-          Order Date
+          Ordered Date
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
@@ -132,14 +132,12 @@ export const ordersColumns: ColumnDef<Order>[] = [
     cell: ({ row }) => <div>{row.getValue("orderedDate")}</div>,
   },
   {
-    accessorKey: "items",
-    header: "Items",
-    cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("items")}</div>
-    ),
+    accessorKey: "qty",
+    header: "Qty",
+    cell: ({ row }) => <div className="font-medium">{row.getValue("qty")}</div>,
   },
   {
-    accessorKey: "totalAmount",
+    accessorKey: "payables",
     header: ({ column }) => {
       return (
         <Button
@@ -147,28 +145,21 @@ export const ordersColumns: ColumnDef<Order>[] = [
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium"
         >
-          Total Amount
+          Payables
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
     cell: ({ row }) => (
       <div className="font-medium text-green-600">
-        {formatCurrency(row.getValue("totalAmount"))}
+        {formatCurrency(row.getValue("payables"))}
       </div>
     ),
   },
   {
-    accessorKey: "deliveryAddress",
-    header: "Delivery Address",
-    cell: ({ row }) => (
-      <div
-        className="max-w-[200px] truncate"
-        title={row.getValue("deliveryAddress")}
-      >
-        {row.getValue("deliveryAddress")}
-      </div>
-    ),
+    accessorKey: "logisticUser",
+    header: "Logistic User",
+    cell: ({ row }) => <div>{row.getValue("logisticUser")}</div>,
   },
   {
     accessorKey: "status",

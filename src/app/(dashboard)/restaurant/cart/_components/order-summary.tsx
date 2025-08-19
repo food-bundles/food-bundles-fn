@@ -34,7 +34,7 @@ export function OrderSummary({
         };
       case "checkout":
         return {
-          text: "Continue Checkout",
+          text: "Buy now",
           action: () => {
             setTimeout(() => {
               router.push("/restaurant/cart/confirmation");

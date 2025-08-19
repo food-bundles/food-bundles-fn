@@ -1,122 +1,215 @@
-import { OrdersContent } from "./_components/orders-content";
-import type { Order } from "./_components/orders-columns";
+"use client";
 
-// Dummy orders data
-async function getOrders(): Promise<Order[]> {
-  await new Promise((resolve) => setTimeout(resolve, 100));
+import { useState, useMemo } from "react";
+import { DataTable } from "@/components/data-table";
+import { Order, ordersColumns } from "./_components/orders-columns";
+import {
+  createCommonFilters,
+  TableFilters,
+} from "../../../../components/filters";
 
-  return [
-    {
-      id: "1",
-      orderNumber: "#ORD-87429",
-      orderDate: "July 12, 2024",
-      payable: 31.95,
-      status: "pending",
-      logistics: { assigned: false },
-      customerName: "John Doe",
-      items: [
-        { name: "Organic Tomatoes", quantity: 2, price: 9.98 },
-        { name: "Free-Range Eggs", quantity: 1, price: 6.99 },
-        { name: "Artisan Sourdough Bread", quantity: 1, price: 7.99 },
-      ],
-    },
-    {
-      id: "2",
-      orderNumber: "#ORD-87430",
-      orderDate: "July 12, 2024",
-      payable: 45.5,
-      status: "confirmed",
-      logistics: { assigned: true, assignedTo: "John D." },
-      customerName: "Sarah Johnson",
-      items: [
-        { name: "Fresh Atlantic Salmon", quantity: 1, price: 18.99 },
-        { name: "Organic Spinach", quantity: 3, price: 10.47 },
-        { name: "Grass-Fed Ground Beef", quantity: 1, price: 9.99 },
-      ],
-    },
-    {
-      id: "3",
-      orderNumber: "#ORD-87418",
-      orderDate: "July 11, 2024",
-      payable: 28.99,
-      status: "processing",
-      logistics: { assigned: true, assignedTo: "Alex S." },
-      customerName: "Mike Chen",
-      items: [
-        { name: "Artisan Sourdough Bread", quantity: 2, price: 15.98 },
-        { name: "Organic Tomatoes", quantity: 1, price: 4.99 },
-        { name: "Free-Range Eggs", quantity: 1, price: 6.99 },
-      ],
-    },
-    {
-      id: "4",
-      orderNumber: "#ORD-87415",
-      orderDate: "July 11, 2024",
-      payable: 56.75,
-      status: "ready",
-      logistics: { assigned: true, assignedTo: "Michael T." },
-      customerName: "Lisa Rodriguez",
-      items: [
-        { name: "Fresh Atlantic Salmon", quantity: 2, price: 37.98 },
-        { name: "Organic Spinach", quantity: 2, price: 6.98 },
-        { name: "Grass-Fed Ground Beef", quantity: 1, price: 9.99 },
-      ],
-    },
-    {
-      id: "5",
-      orderNumber: "#ORD-87402",
-      orderDate: "July 10, 2024",
-      payable: 89.99,
-      status: "delivered",
-      logistics: { assigned: true, assignedTo: "Sarah L." },
-      customerName: "David Wilson",
-      items: [
-        { name: "Fresh Atlantic Salmon", quantity: 3, price: 56.97 },
-        { name: "Artisan Sourdough Bread", quantity: 2, price: 15.98 },
-        { name: "Organic Tomatoes", quantity: 2, price: 9.98 },
-      ],
-    },
-    {
-      id: "6",
-      orderNumber: "#ORD-87390",
-      orderDate: "July 10, 2024",
-      payable: 12.75,
-      status: "cancelled",
-      logistics: { assigned: false },
-      customerName: "Emma Davis",
-      items: [
-        { name: "Organic Spinach", quantity: 2, price: 6.98 },
-        { name: "Free-Range Eggs", quantity: 1, price: 6.99 },
-      ],
-    },
-    {
-      id: "7",
-      orderNumber: "#ORD-87388",
-      orderDate: "July 09, 2024",
-      payable: 67.25,
-      status: "refunded",
-      logistics: { assigned: false },
-      customerName: "Robert Brown",
-      items: [
-        { name: "Fresh Atlantic Salmon", quantity: 2, price: 37.98 },
-        { name: "Grass-Fed Ground Beef", quantity: 2, price: 19.98 },
-        { name: "Artisan Sourdough Bread", quantity: 1, price: 7.99 },
-      ],
-    },
+// Sample restaurant orders data
+const sampleOrders: Order[] = [
+  {
+    id: "1",
+    orderId: "ORD-001",
+    customerName: "John Smith",
+    orderedDate: "2024-01-15",
+    items: "2x Margherita Pizza, 1x Caesar Salad",
+    totalAmount: 28.5,
+    deliveryAddress: "123 Main St, Downtown",
+    status: "pending",
+  },
+  {
+    id: "2",
+    orderId: "ORD-002",
+    customerName: "Sarah Johnson",
+    orderedDate: "2024-01-14",
+    items: "1x Chicken Burger, 1x Fries, 1x Coke",
+    totalAmount: 15.75,
+    deliveryAddress: "456 Oak Ave, Midtown",
+    status: "confirmed",
+  },
+  {
+    id: "3",
+    orderId: "ORD-003",
+    customerName: "Mike Chen",
+    orderedDate: "2024-01-14",
+    items: "3x Sushi Rolls, 1x Miso Soup",
+    totalAmount: 42.0,
+    deliveryAddress: "789 Pine St, Uptown",
+    status: "processing",
+  },
+  {
+    id: "4",
+    orderId: "ORD-004",
+    customerName: "Lisa Rodriguez",
+    orderedDate: "2024-01-13",
+    items: "1x Pasta Carbonara, 1x Garlic Bread",
+    totalAmount: 18.25,
+    deliveryAddress: "321 Elm St, Westside",
+    status: "ready",
+  },
+  {
+    id: "5",
+    orderId: "ORD-005",
+    customerName: "David Wilson",
+    orderedDate: "2024-01-13",
+    items: "2x Fish Tacos, 1x Guacamole",
+    totalAmount: 22.5,
+    deliveryAddress: "654 Maple Dr, Eastside",
+    status: "delivered",
+  },
+  {
+    id: "6",
+    orderId: "ORD-006",
+    customerName: "Emma Davis",
+    orderedDate: "2024-01-12",
+    items: "1x Veggie Wrap, 1x Smoothie",
+    totalAmount: 12.75,
+    deliveryAddress: "987 Cedar Ln, Southside",
+    status: "cancelled",
+  },
+  {
+    id: "7",
+    orderId: "ORD-007",
+    customerName: "Robert Brown",
+    orderedDate: "2024-01-12",
+    items: "1x Steak Dinner, 1x Wine",
+    totalAmount: 65.0,
+    deliveryAddress: "147 Birch St, Northside",
+    status: "refunded",
+  },
+  {
+    id: "8",
+    orderId: "ORD-008",
+    customerName: "Anna Taylor",
+    orderedDate: "2024-01-11",
+    items: "2x Chicken Wings, 1x Beer",
+    totalAmount: 19.5,
+    deliveryAddress: "258 Spruce Ave, Central",
+    status: "delivered",
+  },
+  {
+    id: "9",
+    orderId: "ORD-009",
+    customerName: "Chris Martinez",
+    orderedDate: "2024-01-11",
+    items: "1x BBQ Ribs, 1x Coleslaw, 1x Cornbread",
+    totalAmount: 32.75,
+    deliveryAddress: "369 Willow St, Harbor",
+    status: "processing",
+  },
+  {
+    id: "10",
+    orderId: "ORD-010",
+    customerName: "Jessica Lee",
+    orderedDate: "2024-01-10",
+    items: "1x Poke Bowl, 1x Green Tea",
+    totalAmount: 16.25,
+    deliveryAddress: "741 Ash Rd, Riverside",
+    status: "confirmed",
+  },
+];
+
+const statusOptions = [
+  { label: "All Status", value: "all" },
+  { label: "Pending", value: "pending" },
+  { label: "Confirmed", value: "confirmed" },
+  { label: "Processing", value: "processing" },
+  { label: "Ready", value: "ready" },
+  { label: "Delivered", value: "delivered" },
+  { label: "Cancelled", value: "cancelled" },
+  { label: "Refunded", value: "refunded" },
+];
+
+export default function RestaurantOrdersPage() {
+  const [searchValue, setSearchValue] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+
+  const filteredData = useMemo(() => {
+    return sampleOrders.filter((order) => {
+      if (
+        searchValue &&
+        !order.orderId.toLowerCase().includes(searchValue.toLowerCase()) &&
+        !order.customerName.toLowerCase().includes(searchValue.toLowerCase()) &&
+        !order.items.toLowerCase().includes(searchValue.toLowerCase())
+      ) {
+        return false;
+      }
+
+      if (selectedStatus !== "all" && order.status !== selectedStatus) {
+        return false;
+      }
+
+      if (
+        selectedDate &&
+        order.orderedDate !== selectedDate.toISOString().split("T")[0]
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [searchValue, selectedStatus, selectedDate]);
+
+  const filters = [
+    createCommonFilters.search(
+      searchValue,
+      setSearchValue,
+      "Search orders, customers, or items..."
+    ),
+    createCommonFilters.status(
+      selectedStatus,
+      setSelectedStatus,
+      statusOptions
+    ),
+    createCommonFilters.date(selectedDate, setSelectedDate, "Order Date"),
   ];
-}
 
-export default async function OrdersPage() {
-  const orders = await getOrders();
+  const handleExport = async () => {
+    try {
+      console.log("Exporting restaurant orders data...", {
+        filters: {
+          search: searchValue,
+          status: selectedStatus,
+          date: selectedDate,
+        },
+        totalRecords: filteredData.length,
+      });
+      alert("Export functionality will be handled by backend");
+    } catch (error) {
+      console.error("Export failed:", error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="container mx-auto px-6 py-8">
         <div className="mb-8">
-          <h1 className="text-xl font-bold text-gray-900 mb-2">My Orders</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Restaurant Orders
+          </h1>
+          <p className="text-gray-600">
+            Manage and track all your restaurant orders
+          </p>
         </div>
 
-        <OrdersContent orders={orders} />
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          <DataTable
+            columns={ordersColumns}
+            data={filteredData}
+            title="Orders Management"
+            showExport={true}
+            onExport={handleExport}
+            customFilters={<TableFilters filters={filters} />}
+            showSearch={false}
+            showColumnVisibility={true}
+            showPagination={true}
+            showRowSelection={true}
+          />
+        </div>
       </main>
     </div>
   );
