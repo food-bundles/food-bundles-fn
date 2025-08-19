@@ -9,15 +9,20 @@ import {
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import Image from "next/image"
 
 export default function Header() {
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between max-w-7xl mx-auto py-6 bg-white/80 backdrop-blur-md border-b border-gray-100/50">
       {/* Logo */}
       <Link href="/" className="flex items-center gap-2">
-        <div className="w-6 h-6 bg-green-600 rounded-sm flex items-center justify-center">
-          <Leaf className="w-4 h-4 text-white" />
-        </div>
+        <Image
+           src="/imgs/Food_bundle_logo.png"
+           alt= ""
+           width={40}
+           height={40}
+           className="rounded-full object-cover w-10 h-10"
+        />
         <span className="text-xl font-semibold text-gray-900">FoodBundle</span>
       </Link>
 

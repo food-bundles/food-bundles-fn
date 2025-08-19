@@ -1,12 +1,11 @@
-import Home from "@/components/home"
-import FeaturedProducts from "@/components/featured_products"
-import HowItWorks from "@/components/how_it_work"
-import WhyChoose from "@/components/why_choose"
-import Promotions from "@/components/promotion"
-import ContactUs from "@/components/contact_us"
-import Header from "@/components/header"
-import { Footer } from "react-day-picker"
-
+import Home from "@/components/home";
+import FeaturedProducts from "@/components/featured_products";
+import HowItWorks from "@/components/how_it_work";
+import WhyChoose from "@/components/why_choose";
+import Promotions from "@/components/promotion";
+import ContactUs from "@/components/contact_us";
+import Header from "@/components/header";
+import { Footer } from "react-day-picker";
 
 // Mock data fetching functions (replace with actual API calls)
 async function getHomeData() {
@@ -25,29 +24,30 @@ async function getHomeData() {
       href: "/shop",
     },
     heroImage: {
-      src: "/images/FRAME.png",
+      src: "/imgs/FRAME.png",
       alt: "Fresh produce arranged in a circle with wooden cutting board center",
     },
     decorativeElements: {
       stars: {
         large: {
-          src: "/images/Vector 1.png",
+          src: "/imgs/Vector 1.png",
           alt: "Decorative star",
         },
         small: {
-          src: "/images/Vector 1.png",
+          src: "/imgs/Vector 1.png",
           alt: "Decorative star",
         },
       },
     },
-  }
+  };
 }
 
 async function getFeaturedProductsData() {
   // Simulate API call
   return {
     title: "Featured Fresh Products",
-    subtitle: "Explore our curated selection of seasonal produce from local farms",
+    subtitle:
+      "Explore our curated selection of seasonal produce from local farms",
     products: [
       {
         id: "550e8400-e29b-41d4-a716-446655440001",
@@ -57,7 +57,7 @@ async function getFeaturedProductsData() {
         category: "VEGETABLES",
         sku: "TOM-ORG-001",
         quantity: 50.0,
-        images: ["/images/tomatoes.svg"],
+        images: ["/imgs/tomatoes.svg"],
         status: "ACTIVE",
       },
       {
@@ -68,7 +68,7 @@ async function getFeaturedProductsData() {
         category: "VEGETABLES",
         sku: "ASP-FRS-002",
         quantity: 25.0,
-        images: ["/images/asparagus.svg"],
+        images: ["/imgs/asparagus.svg"],
         status: "ACTIVE",
       },
       {
@@ -79,7 +79,7 @@ async function getFeaturedProductsData() {
         category: "VEGETABLES",
         sku: "CAR-RBW-003",
         quantity: 75.0,
-        images: ["/images/carrots.svg"],
+        images: ["/imgs/eggs.svg"],
         status: "ACTIVE",
       },
       {
@@ -90,11 +90,11 @@ async function getFeaturedProductsData() {
         category: "HERBS_SPICES",
         sku: "SPN-ORG-004",
         quantity: 30.0,
-        images: ["/images/spinach.svg"],
+        images: ["/imgs/eggs.svg"],
         status: "ACTIVE",
       },
     ],
-  }
+  };
 }
 
 async function getPromotionsData() {
@@ -105,13 +105,14 @@ async function getPromotionsData() {
       {
         id: "promo-001",
         productName: "Organic Heirloom Tomatoes",
-        description: "Premium vine-ripened tomatoes, hand-picked at peak freshness. Perfect for gourmet restaurants.",
+        description:
+          "Premium vine-ripened tomatoes, hand-picked at peak freshness. Perfect for gourmet restaurants.",
         unitPrice: 6.99,
         originalPrice: 9.99,
         discountPercentage: 30,
         unit: "lb",
         quantity: 50.0,
-        images: ["/images/tomatoes.svg"],
+        images: ["/imgs/tomatoes.svg"],
         farmName: "Sunset Valley Farm",
         category: "VEGETABLES",
         sku: "TOM-PROMO-001",
@@ -119,19 +120,20 @@ async function getPromotionsData() {
       {
         id: "promo-002",
         productName: "Premium Organic Spinach",
-        description: "Fresh baby spinach leaves, grown without pesticides. Rich in nutrients and perfect for salads.",
+        description:
+          "Fresh baby spinach leaves, grown without pesticides. Rich in nutrients and perfect for salads.",
         unitPrice: 4.49,
         originalPrice: 6.99,
         discountPercentage: 35,
         unit: "bag",
         quantity: 30.0,
-        images: ["/images/spinach.svg"],
+        images: ["/imgs/eggs.svg"],
         farmName: "Green Leaf Gardens",
         category: "HERBS_SPICES",
         sku: "SPN-PROMO-002",
       },
     ],
-  }
+  };
 }
 
 export default async function LandingPage() {
@@ -140,7 +142,7 @@ export default async function LandingPage() {
     getHomeData(),
     getFeaturedProductsData(),
     getPromotionsData(),
-  ])
+  ]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50/30 to-orange-50/30 relative overflow-hidden">
@@ -156,10 +158,10 @@ export default async function LandingPage() {
       <Home data={homeData} />
       <HowItWorks />
       <FeaturedProducts data={featuredProductsData} />
-       <Promotions data={promotionsData} />
+      <Promotions data={promotionsData} />
       <WhyChoose />
       <ContactUs />
       <Footer />
     </div>
-  )
+  );
 }

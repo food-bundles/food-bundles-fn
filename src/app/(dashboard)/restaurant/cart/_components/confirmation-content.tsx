@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Check, Clock, CreditCard, Eye, Printer, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import Image from "next/image";
 
 type OrderData = {
   orderNumber: string;
@@ -105,6 +106,25 @@ export function ConfirmationContent({ orderData }: Props) {
         <div className="w-full max-w-3xl mx-auto mt-4">
           <Card className="bg-green-50 border-green-200 shadow-lg">
             <CardContent className="p-4 sm:p-6 lg:p-8">
+              {/* Platform Logo Header */}
+              <div className="flex justify-center mb-6 sm:mb-8">
+                <div className="flex items-center gap-3">
+                <Image
+                      src="/imgs/Food_bundle_logo.png"
+                      alt= ""
+                      width={40}
+                      height={40}
+                      className="rounded-full object-cover w-10 h-10"
+                   />
+                  <div>
+                    <h1 className="text-xl font-bold text-gray-900">
+                      Food Bundle
+                    </h1>
+                    <p className="text-sm text-gray-600">Order Receipt</p>
+                  </div>
+                </div>
+              </div>
+
               {/* Order Information Header */}
               <div className="mb-6 sm:mb-8">
                 <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">
@@ -226,12 +246,12 @@ export function ConfirmationContent({ orderData }: Props) {
                   Print Receipt
                 </Button>
                 <Link href="/restaurant/help">
-                <Button
-                  variant="outline"
-                  className="flex items-center justify-center cursor-pointer gap-2 bg-transparent text-sm"
-                >
-                  <Phone className="h-4 w-4" />
-                  Contact Customer
+                  <Button
+                    variant="outline"
+                    className="flex items-center justify-center cursor-pointer gap-2 bg-transparent text-sm"
+                  >
+                    <Phone className="h-4 w-4" />
+                    Contact Customer
                   </Button>
                 </Link>
               </div>

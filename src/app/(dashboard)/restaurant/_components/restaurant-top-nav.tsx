@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Utensils, Bell, ChevronDown, ShoppingCart } from "lucide-react";
+import { Bell, ChevronDown, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import NotificationsDrawer from "./notificationDrawer";
+import Image from "next/image";
 
 const sampleNotifications = [
   {
@@ -81,9 +82,16 @@ export function TopResNav() {
         <div className="container mx-auto px-6">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-green-600 rounded flex items-center justify-center">
-                <Utensils className="h-5 w-5 text-white" />
-              </div>
+              {/* <div className="w-8 h-8 bg-green-600 rounded flex items-center justify-center"> */}
+              <Image
+                 src="/imgs/Food_bundle_logo.png"
+                 alt= ""
+                 width={40}
+                 height={40}
+                 className="rounded-full object-cover w-10 h-10"
+              />
+                {/* <Utensils className="h-5 w-5 text-white" /> */}
+              {/* </div> */}
               <span className="text-xl font-bold text-gray-900">
                 Food bundles
               </span>
