@@ -21,6 +21,7 @@ import {
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
+import Image from "next/image";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
@@ -97,7 +98,14 @@ export function AdminSidebar() {
   return (
     <div className="w-64 min-w-64 h-screen border-r border-gray-200 bg-gray-50 flex flex-col flex-shrink-0">
       {/* Logo */}
-      <div className="p-4 flex-shrink-0">
+      <div className="p-4 flex items-center gap-2 flex-shrink-0">
+        <Image
+          src="/imgs/Food_bundle_logo.png"
+          alt="Logo"
+          width={40}
+          height={40}
+          className="w-8 h-8 rounded-full object-cover"
+        />
         <h1 className="text-xl font-bold text-black">Food Bundle</h1>
       </div>
 
@@ -118,7 +126,7 @@ export function AdminSidebar() {
                       className={cn(
                         "w-full flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap justify-between",
                         isActive
-                          ? "bg-green-600 hover:bg-green-700 text-white"
+                          ? "bg-green-500 hover:bg-green-600 text-white"
                           : "text-gray-800 hover:bg-green-100"
                       )}
                     >
@@ -143,8 +151,8 @@ export function AdminSidebar() {
                                 className={cn(
                                   "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap",
                                   isSubActive
-                                    ? "bg-green-600 hover:bg-green-700 text-white"
-                                    : "text-gray-600 hover:bg-green-100"
+                                    ? "bg-trsansparent text-green-600 hover:text-green-700"
+                                    : "text-gray-600 "
                                 )}
                               >
                                 <subItem.icon className="mr-3 h-4 w-4" />
@@ -162,7 +170,7 @@ export function AdminSidebar() {
                     className={cn(
                       "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap",
                       isActive
-                        ? "bg-green-600 hover:bg-green-700 text-white"
+                        ? "bg-green-500 hover:bg-green-600 text-white"
                         : "text-gray-800 hover:bg-green-100"
                     )}
                   >

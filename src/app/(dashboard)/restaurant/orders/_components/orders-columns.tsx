@@ -4,7 +4,8 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowUpDown, Eye, Edit } from "lucide-react";
+import { ArrowUpDown, Eye } from "lucide-react";
+import { CiEdit } from "react-icons/ci";
 
 export type OrderStatus =
   | "pending"
@@ -191,16 +192,16 @@ export const ordersColumns: ColumnDef<Order>[] = [
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50 cursor-pointer"
           >
             <Eye className="h-4 w-4" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 text-green-600 hover:text-green-800 hover:bg-green-50"
+            className="h-8 w-8 p-0 text-green-600 hover:text-green-800 hover:bg-green-50 cursor-pointer"
           >
-            <Edit className="h-4 w-4" />
+            <CiEdit className="h-4 w-4" />
           </Button>
         </div>
       );

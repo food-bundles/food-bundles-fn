@@ -84,13 +84,13 @@ export function TopResNav() {
             <div className="flex items-center gap-2">
               {/* <div className="w-8 h-8 bg-green-600 rounded flex items-center justify-center"> */}
               <Image
-                 src="/imgs/Food_bundle_logo.png"
-                 alt= ""
-                 width={40}
-                 height={40}
-                 className="rounded-full object-cover w-10 h-10"
+                src="/imgs/Food_bundle_logo.png"
+                alt=""
+                width={40}
+                height={40}
+                className="rounded-full object-cover w-10 h-10"
               />
-                {/* <Utensils className="h-5 w-5 text-white" /> */}
+              {/* <Utensils className="h-5 w-5 text-white" /> */}
               {/* </div> */}
               <span className="text-xl font-bold text-gray-900">
                 Food bundles
@@ -113,7 +113,7 @@ export function TopResNav() {
                   >
                     <div
                       className={`w-4 h-4 rounded-sm ${
-                        isActive ? "bg-green-600" : "bg-gray-400"
+                        isActive ? "bg-green-600" : ""
                       }`}
                     ></div>
                     {link.label}
@@ -125,7 +125,11 @@ export function TopResNav() {
             {/* Cart + Notifications + Profile */}
             <div className="flex items-center gap-4">
               <Link href="/restaurant/cart">
-                <Button variant="ghost" size="icon" className="relative">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative hover:bg-green-100 cursor-pointer"
+                >
                   <ShoppingCart className="h-5 w-5" />
                   <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center bg-green-500 text-white text-xs">
                     3
@@ -137,11 +141,11 @@ export function TopResNav() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="relative"
+                className="relative hover:bg-green-100 cursor-pointer"
                 onClick={() => setIsNotificationsOpen(true)}
               >
                 <Bell className="h-5 w-5" />
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center bg-red-500 text-white text-xs">
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center bg-red-500 text-white text-xs ">
                   {unreadCount}
                 </Badge>
               </Button>
@@ -149,7 +153,10 @@ export function TopResNav() {
               {/* User Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    className="flex items-center gap-2 hover:bg-green-100 py-5 cursor-pointer"
+                  >
                     <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
                       <span className="text-white text-sm font-medium">U</span>
                     </div>
@@ -162,8 +169,8 @@ export function TopResNav() {
                     <DropdownMenuItem>Profile</DropdownMenuItem>
                   </Link>
                   <Link href="/">
-                  <DropdownMenuItem className="text-red-600">
-                    Sign out
+                    <DropdownMenuItem className="text-red-600">
+                      Sign out
                     </DropdownMenuItem>
                   </Link>
                 </DropdownMenuContent>

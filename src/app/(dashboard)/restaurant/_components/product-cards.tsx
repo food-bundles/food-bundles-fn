@@ -124,7 +124,7 @@ export function ProductCard({ product }: Props) {
               <span className="w-2 h-2 bg-current rounded-full mr-1"></span>
               {categoryBadge.label}
             </Badge>
-            <span className="text-sm text-gray-500">{product.createdBy}</span>
+            {/* <span className="text-sm text-gray-500">{product.createdBy}</span> */}
           </div>
 
           {/* Product Name */}
@@ -160,7 +160,7 @@ export function ProductCard({ product }: Props) {
           {/* Price and Add to Cart */}
           <div className="flex items-center justify-between pt-2">
             <div className="text-xl font-bold text-gray-900">
-              ${product.unitPrice.toFixed(2)}/{product.unit}
+              {product.unitPrice.toFixed(2)}/{product.unit}
             </div>
 
             {!showQuantityInput ? (

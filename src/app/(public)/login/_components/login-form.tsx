@@ -37,13 +37,13 @@ export function LoginForm({ loginData }: Props) {
     const identifier = formData.get("identifier") as string;
     const password = formData.get("password") as string;
 
-     if (!identifier.includes("@") && !isValidPhone(identifier)) {
-       setError(
-         "Invalid phone number. It must be 10–15 digits and can start with '+'."
-       );
-       setIsLoading(false);
-       return;
-     }
+    if (!identifier.includes("@") && !isValidPhone(identifier)) {
+      setError(
+        "Invalid phone number. It must be 10–15 digits and can start with '+'."
+      );
+      setIsLoading(false);
+      return;
+    }
 
     let loginPayload: ILoginData;
     if (identifier.includes("@")) {
@@ -56,11 +56,9 @@ export function LoginForm({ loginData }: Props) {
       const response = await authService.login(loginPayload);
 
       const redirectPath =
-        response.user?.role === "farmer"
-          ? "/farmer"
-          : "/restaurant";
+        response.user?.role === "farmer" ? "/farmer" : "/restaurant";
       router.push(redirectPath);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Login error:", error);
       setError(
@@ -96,7 +94,7 @@ export function LoginForm({ loginData }: Props) {
             <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
             <Input
               type="text"
-              name="identifier" 
+              name="identifier"
               placeholder="Email or Phone"
               className="pl-10 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500"
               required
@@ -139,7 +137,7 @@ export function LoginForm({ loginData }: Props) {
 
           <Button
             type="submit"
-            className="w-full h-12 bg-green-600 hover:bg-green-700"
+            className="w-full h-12 bg-green-500 hover:bg-green-600"
             disabled={isLoading || !loginData.isBackendAvailable}
           >
             {isLoading ? "Signing in..." : "Sign In"}

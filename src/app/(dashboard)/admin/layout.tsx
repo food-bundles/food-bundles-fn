@@ -17,7 +17,6 @@ export default function AdminLayout({
         <main className="flex-grow overflow-auto min-h-0">
           <div className="container mx-auto max-w-full px-4">{children}</div>
         </main>
-        {/* <main className="flex-grow container mx-auto">{children}</main> */}
       </div>
     </div>
   );

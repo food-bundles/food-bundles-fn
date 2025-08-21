@@ -36,7 +36,7 @@ export const farmerColumns: ColumnDef<Farmer>[] = [
     header: "Farmer ID",
     cell: ({ row }) => (
       <div className="font-mono text-sm">
-        {row.getValue("id")?.toString().slice(0, 8)}...
+        {row.getValue("id")?.toString().slice(0, 8)}
       </div>
     ),
   },

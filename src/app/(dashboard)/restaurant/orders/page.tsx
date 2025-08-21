@@ -187,20 +187,12 @@ export default function RestaurantOrdersPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="container mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Restaurant Orders
-          </h1>
-          <p className="text-gray-600">
-            Manage and track all your restaurant orders
-          </p>
-        </div>
-
         <div className="bg-white rounded-lg shadow-sm p-6">
           <DataTable
             columns={ordersColumns}
             data={filteredData}
             title="Orders Management"
+            descrption="Manage and track all your restaurant orders"
             showExport={true}
             onExport={handleExport}
             customFilters={<TableFilters filters={filters} />}

@@ -632,7 +632,7 @@ export function DashboardOverview({ data }: Props) {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Recent Orders</CardTitle>
           <Button variant="ghost" size="sm" asChild>
-            <Link href="/restaurant/dashboard/orders">View All Orders</Link>
+            <Link href="/restaurant/orders">View All Orders</Link>
           </Button>
         </CardHeader>
         <CardContent>

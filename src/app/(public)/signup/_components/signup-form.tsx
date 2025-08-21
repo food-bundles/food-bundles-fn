@@ -46,101 +46,100 @@ export function SignupForm({ signupData }: Props) {
     return /^\+?[0-9]{10,15}$/.test(phone);
   }
 
-async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-  e.preventDefault();
-  setIsLoading(true);
-  setError("");
-  setSuccess("");
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+    setSuccess("");
 
-  const formData = new FormData(e.currentTarget);
-  const password = formData.get("password") as string;
-  const confirmPassword = formData.get("confirmPassword") as string;
-  const email = formData.get("email") as string;
-  const phone = formData.get("phone") as string;
-  const name = formData.get("name") as string;
-  const location = formData.get("location") as string;
-  
+    const formData = new FormData(e.currentTarget);
+    const password = formData.get("password") as string;
+    const confirmPassword = formData.get("confirmPassword") as string;
+    const email = formData.get("email") as string;
+    const phone = formData.get("phone") as string;
+    const name = formData.get("name") as string;
+    const location = formData.get("location") as string;
 
-//  if (!name) {
-//    setError("Name is required");
-//    setIsLoading(false);
-//    return;
-//  }
- if (!phone) {
-   setError("Phone number is required");
-   setIsLoading(false);
-   return;
- }
- if (!isValidPhone(phone)) {
-   setError("Invalid phone number. Format should be like +250783456789.");
-   setIsLoading(false);
-   return;
- }
-
- if (!location) {
-   setError("Location is required");
-   setIsLoading(false);
-   return;
- }
-
- if (password !== confirmPassword) {
-   setError("Passwords do not match");
-   setIsLoading(false);
-   return;
- }
-
- if (!password) {
-   setError("Password is required");
-   setIsLoading(false);
-   return;
- }
-
- if (selectedRole === "restaurant") {
-   if (!email) {
-     setError("Email is required for restaurants");
-     setIsLoading(false);
-     return;
-   }
-   if (!name) {
-     setError("Restaurant name is required");
-     setIsLoading(false);
-     return;
-   }
-  }
-
-  try {
-    if (selectedRole === "farmer") {
-      const farmerData: ICreateFarmerData = {
-        email,
-        password,
-        location,
-        phone,
-      };
-      await authService.registerFarmer(farmerData);
-    } else if (selectedRole === "restaurant") {
-      const restaurantData: ICreateRestaurantData = {
-        name,
-        email,
-        password,
-        location,
-        phone,
-      };
-      await authService.registerRestaurant(restaurantData);
+    //  if (!name) {
+    //    setError("Name is required");
+    //    setIsLoading(false);
+    //    return;
+    //  }
+    if (!phone) {
+      setError("Phone number is required");
+      setIsLoading(false);
+      return;
+    }
+    if (!isValidPhone(phone)) {
+      setError("Invalid phone number. Format should be like +250783456789.");
+      setIsLoading(false);
+      return;
     }
 
-    setSuccess("Account created successfully! Redirecting to login...");
-    setTimeout(() => {
-      router.push("/login");
-    }, 2000);
-  } catch (error: any) {
-    console.error("Registration error:", error);
-    setError(
-      error.response?.data?.message || error.message || "Registration failed"
-    );
-  } finally {
-    setIsLoading(false);
+    if (!location) {
+      setError("Location is required");
+      setIsLoading(false);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!password) {
+      setError("Password is required");
+      setIsLoading(false);
+      return;
+    }
+
+    if (selectedRole === "restaurant") {
+      if (!email) {
+        setError("Email is required for restaurants");
+        setIsLoading(false);
+        return;
+      }
+      if (!name) {
+        setError("Restaurant name is required");
+        setIsLoading(false);
+        return;
+      }
+    }
+
+    try {
+      if (selectedRole === "farmer") {
+        const farmerData: ICreateFarmerData = {
+          email,
+          password,
+          location,
+          phone,
+        };
+        await authService.registerFarmer(farmerData);
+      } else if (selectedRole === "restaurant") {
+        const restaurantData: ICreateRestaurantData = {
+          name,
+          email,
+          password,
+          location,
+          phone,
+        };
+        await authService.registerRestaurant(restaurantData);
+      }
+
+      setSuccess("Account created successfully! Redirecting to login...");
+      setTimeout(() => {
+        router.push("/login");
+      }, 2000);
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      setError(
+        error.response?.data?.message || error.message || "Registration failed"
+      );
+    } finally {
+      setIsLoading(false);
+    }
   }
-}
 
   if (!selectedRole) {
     return (
@@ -163,9 +162,7 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
                 <Tractor className="h-6 w-6 text-green-600" />
               </div>
               <div className="text-left">
-                <h3 className="font-semibold text-gray-900">
-                  I m a Farmer
-                </h3>
+                <h3 className="font-semibold text-gray-900">I m a Farmer</h3>
                 <p className="text-sm text-gray-600">
                   Sell fresh produce to restaurants
                 </p>
@@ -282,7 +279,7 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
             <Input
               type="tel"
               name="phone"
-              placeholder ="Phone Number"
+              placeholder="Phone Number"
               className="pl-10 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500"
               disabled={!signupData.isBackendAvailable}
             />
@@ -347,7 +344,7 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
 
           <Button
             type="submit"
-            className="w-full h-12 bg-green-600 hover:bg-green-700"
+            className="w-full h-12 bg-green-500 hover:bg-green-600"
             disabled={isLoading || !signupData.isBackendAvailable}
           >
             {isLoading ? "Creating Account..." : "Create Account"}

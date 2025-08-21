@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Paperclip,
   AlertTriangle,
+  PhoneOutgoing,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -85,96 +86,100 @@ export function HelpContent({ contactInfo, faqs }: Props) {
       </div>
 
       {/* Emergency Issue */}
-      <Card className="border-green-200 bg-green-50">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="h-6 w-6 text-green-600" />
+      <Card className="relative overflow-hidden border-none bg-red-50 shadow-md">
+        <CardContent className="relative z-10 p-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-3 animate-bounce">
+              <div className="p-2 bg-red-100 rounded-full shadow-md">
+                <AlertTriangle className="h-8 w-8 text-red-700 animate-pulse" />
+              </div>
               <div>
-                <h3 className="font-semibold text-green-900">
+                <h3 className="text-lg font-bold text-red-900 tracking-wide uppercase">
                   Emergency Issue
                 </h3>
-                <p className="text-sm text-green-700">
-                  Our customer support team is available to assist you with any
-                  questions or issues you may have.
+                <p className="text-sm text-red-700 mt-1 max-w-sm">
+                  Our support team is available right now to assist you. Don’t
+                  wait get immediate help.
                 </p>
               </div>
+              <span className="text-2xl ml-5">👉</span>
             </div>
-            <Button className="bg-green-600 hover:bg-green-700 text-white">
-              Call 911
-            </Button>
+
+            <div className="flex items-center gap-2">
+              <Button
+                size="lg"
+                className="relative bg-red-600 hover:bg-red-700 text-white font-bold shadow-xl rounded-full px-6 py-3 hover:scale-105 transition-transform duration-300"
+              >
+                <PhoneOutgoing className="font-bold" /> Call 911
+              </Button>
+              {/* Animated Hand */}
+            </div>
           </div>
         </CardContent>
       </Card>
 
-        <CardHeader>
-          <CardTitle className="text-xl font-bold">
-            Contact Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Phone Support */}
-            <div className="flex flex-col items-center justify-center space-y-4 ">
-              <div className=" flex items-center justify-center bg-blue-100 p-2 rounded-full">
-                <Phone className="h-5 w-5 text-blue-600" />
-              </div>
+      <CardHeader>
+        <CardTitle className="text-xl font-bold">Contact Information</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Phone Support */}
+          <div className="flex flex-col items-center justify-center space-y-4 ">
+            <div className=" flex items-center justify-center bg-blue-100 p-2 rounded-full">
+              <Phone className="h-5 w-5 text-blue-600" />
+            </div>
+            <h4 className="font-semibold text-gray-900 mb-1">Phone Support</h4>
+            <p className="text-sm text-gray-600 mb-1">{contactInfo.phone}</p>
+            <p className="text-xs text-gray-500">{contactInfo.hours}</p>
+          </div>
+
+          {/* Email Support */}
+          <div className="flex flex-col items-center justify-center space-y-4 ">
+            <div className="flex items-center justify-center bg-green-100 p-2 rounded-full">
+              <Mail className="h-5 w-5 text-green-600" />
+            </div>
+            <div className="flex flex-col items-center">
               <h4 className="font-semibold text-gray-900 mb-1">
-                Phone Support
+                Email Support
               </h4>
-              <p className="text-sm text-gray-600 mb-1">{contactInfo.phone}</p>
-              <p className="text-xs text-gray-500">{contactInfo.hours}</p>
-            </div>
-
-            {/* Email Support */}
-            <div className="flex flex-col items-center justify-center space-y-4 ">
-              <div className="flex items-center justify-center bg-green-100 p-2 rounded-full">
-                <Mail className="h-5 w-5 text-green-600" />
-              </div>
-              <div className="flex flex-col items-center">
-                <h4 className="font-semibold text-gray-900 mb-1">
-                  Email Support
-                </h4>
-                <p className="text-sm text-gray-600 mb-1">
-                  {contactInfo.email}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {contactInfo.responseTime}
-                </p>
-              </div>
-            </div>
-
-            {/* WhatsApp Support */}
-            <div className="flex flex-col items-center justify-center space-y-4">
-              <div className="flex flex-col items-center justify-center bg-green-100 p-2 rounded-full ">
-                <MessageCircle className="h-5 w-5 text-green-600" />
-              </div>
-              <div className="flex flex-col items-center">
-                <h4 className="font-semibold text-gray-900 mb-1">
-                  WhatsApp Support
-                </h4>
-                <p className="text-sm text-gray-600 mb-1">
-                  {contactInfo.whatsapp}
-                </p>
-                <p className="text-xs text-gray-500">24/7 chat support</p>
-              </div>
-            </div>
-
-            {/* Live Chat */}
-            <div className="flex flex-col items-center justify-center space-y-4">
-              <div className="flex flex-col itmes-center justify-center bg-purple-100 p-2 rounded-full">
-                <Users className="h-5 w-5 text-purple-600" />
-              </div>
-              <div className="flex flex-col items-center">
-                <h4 className="font-semibold text-gray-900 mb-1">Live Chat</h4>
-                <p className="text-sm text-gray-600 mb-1">
-                  Chat with Assistant team
-                </p>
-                <p className="text-xs text-gray-500">Available now</p>
-              </div>
+              <p className="text-sm text-gray-600 mb-1">{contactInfo.email}</p>
+              <p className="text-xs text-gray-500">
+                {contactInfo.responseTime}
+              </p>
             </div>
           </div>
-        </CardContent>
+
+          {/* WhatsApp Support */}
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <div className="flex flex-col items-center justify-center bg-green-100 p-2 rounded-full ">
+              <MessageCircle className="h-5 w-5 text-green-600" />
+            </div>
+            <div className="flex flex-col items-center">
+              <h4 className="font-semibold text-gray-900 mb-1">
+                WhatsApp Support
+              </h4>
+              <p className="text-sm text-gray-600 mb-1">
+                {contactInfo.whatsapp}
+              </p>
+              <p className="text-xs text-gray-500">24/7 chat support</p>
+            </div>
+          </div>
+
+          {/* Live Chat */}
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <div className="flex flex-col itmes-center justify-center bg-purple-100 p-2 rounded-full">
+              <Users className="h-5 w-5 text-purple-600" />
+            </div>
+            <div className="flex flex-col items-center">
+              <h4 className="font-semibold text-gray-900 mb-1">Live Chat</h4>
+              <p className="text-sm text-gray-600 mb-1">
+                Chat with Assistant team
+              </p>
+              <p className="text-xs text-gray-500">Available now</p>
+            </div>
+          </div>
+        </div>
+      </CardContent>
 
       {/* Send us a message */}
       <Card>
@@ -296,7 +301,7 @@ export function HelpContent({ contactInfo, faqs }: Props) {
 
             <Button
               type="submit"
-              className="bg-green-600 hover:bg-green-700 text-white"
+              className="bg-green-500 hover:bg-green-600 text-white"
             >
               Send Message
             </Button>

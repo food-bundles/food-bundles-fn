@@ -24,7 +24,7 @@ export function StatusFilter({
             onClick={() => onStatusChange(filter.value)}
             className={
               selectedStatus === filter.value
-                ? "bg-green-600 hover:bg-green-700 text-white"
+                ? "bg-green-500 hover:bg-green-600 text-white"
                 : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
             }
           >

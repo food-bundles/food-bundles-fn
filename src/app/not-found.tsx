@@ -1,27 +1,77 @@
 /* eslint-disable react/no-unescaped-entities */
-// app/not-found.tsx
 "use client";
 
-import Link from "next/link";
-import { Backpack } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
+// import { Card } from "@/components/ui/card";
+import { Avatar} from "@/components/ui/avatar";
+import { ArrowLeft,ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function NotFound() {
+  const router = useRouter();
+
+  const handleGoBack = () => {
+    router.back();
+  };
+
+  const handleGoHome = () => {
+    router.push("/");
+  };
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center text-center p-6">
-      <h1 className="text-4xl font-bold mb-4 text-gray-800">
-        404 - Page Not Found
-      </h1>
-      <p className="text-gray-600 mb-6 text-lg">
-        The page you're looking for doesn't exist or has been moved.
-      </p>
-      <Button asChild className="bg-yellow-600 hover:bg-yellow-700 text-white">
-        <Link href="/">
-          <Backpack />
-          Back to Home
-        </Link>
-      </Button>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="max-w-md w-full text-center space-y-8">
+        {/* Avatar Section */}
+        <div className="flex justify-center">
+          <div className=" p-6">
+            <Avatar className="w-24 h-24 mx-auto mb-4">
+              <Image
+                src="/imgs/page_not-found.svg"
+                alt="Logo"
+                width={100}
+                height={100}
+              />
+            </Avatar>
+            <div className="space-y-2">
+              <h1 className="text-6xl font-bold text-primary font-[family-name:var(--font-playfair)]">
+                404
+              </h1>
+              <h2 className="text-2xl font-semibold text-foreground font-[family-name:var(--font-playfair)]">
+                Oops! Page Not Found
+              </h2>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground font-[family-name:var(--font-source-sans)]">
+            The page you're looking for might have been moved, deleted, or never
+            existed.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button
+              onClick={handleGoBack}
+              variant="outline"
+              className="flex items-center gap-2 font-[family-name:var(--font-source-sans)] bg-transparent cursor-pointer text-green-500 border border-green-500"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Go Back
+            </Button>
+            <Button
+              onClick={handleGoHome}
+              variant="outline"
+              className="flex items-center gap-2 font-[family-name:var(--font-source-sans)] bg-transparent cursor-pointer text-green-500 border border-green-500"
+            >
+              Go Home
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
