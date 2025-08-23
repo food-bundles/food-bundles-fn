@@ -24,11 +24,6 @@ export const authService = {
     return response.data;
   },
 
-  logout: async () => {
-    const axiosClient = createAxiosClient();
-    const response = await axiosClient.post("/");
-    return response.data;
-  },
 
   getCurrentUser: async () => {
     const axiosClient = createAxiosClient();

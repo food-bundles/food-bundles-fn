@@ -7,7 +7,7 @@ import Link from "next/link";
 
 export function AdminHeader() {
   const unreadNotifications = 4;
-  const unreadMessages = 2; 
+  const unreadMessages = 2;
 
   return (
     <header className=" bg-gray-50 border-b border-gray-200">

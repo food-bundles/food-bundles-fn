@@ -30,6 +30,13 @@ export interface ICreateRestaurantData {
   location: string;
   password: string;
 }
+export interface ICreateAdministratorsData {
+  username: string;
+  email: string;
+  phone?: string;
+  password: string;
+  role: "ADMIN" | "AGGREGATOR" |"FOOD_BUNDLE" | "LOGISTIC_OFFICER";
+}
 
 export interface IUpdateFarmerData {
   location?: string;
@@ -68,6 +75,28 @@ export interface IPaginationResult<T> {
     hasPrev: boolean;
   };
 }
+export enum UserRole {
+  FARMER = "FARMER",
+  RESTAURANT = "RESTAURANT",
+  ADMIN = "ADMIN",
+  LOGISTIC = "LOGISTIC",
+  AGGREGATOR = "AGGREGATOR",
+  FOOD_BUNDLE = "FOOD_BUNDLE",
+}
+// export type UserRole = "FARMER" | "RESTAURANT" | "ADMIN" |"LOGISTIC" |"AGGREGATOR" | "FOOD_BUNDLE";
 
+export interface IUser {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: UserRole;
+}
 
-export type UserRole = "farmer" | "restaurant";
+export interface AuthContextType {
+  user: IUser | null;
+  loading: boolean;
+  login: (loginData: ILoginData) => Promise<void>;
+  logout: () => Promise<void>;
+  checkAuth: () => Promise<void>;
+}

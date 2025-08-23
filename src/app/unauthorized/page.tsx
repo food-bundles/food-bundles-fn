@@ -2,25 +2,24 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-// import { Card } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight} from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
-export default function NotFound() {
+export default function Unauthorized() {
   const router = useRouter();
 
   const handleGoBack = () => {
     router.back();
   };
 
-  const handleLogin = () => {
-    router.push("/login");
-  };
-
   const handleGoHome = () => {
     router.push("/");
+  };
+
+  const handleLogin = () => {
+    router.push("/login");
   };
 
   return (
@@ -28,21 +27,21 @@ export default function NotFound() {
       <div className="max-w-md w-full text-center space-y-8">
         {/* Avatar Section */}
         <div className="flex justify-center">
-          <div className=" p-6">
+          <div className="p-6">
             <Avatar className="w-24 h-24 mx-auto mb-4">
               <Image
-                src="/imgs/page_not-found.svg"
+                src="/imgs/401-vector.svg"
                 alt="Logo"
                 width={100}
                 height={100}
               />
             </Avatar>
             <div className="space-y-2">
-              <h1 className="text-6xl font-bold text-foregroundfont-[family-name:var(--font-playfair)]">
-                404
+              <h1 className="text-6xl font-bold text-[#EF4444] font-[family-name:var(--font-playfair)]">
+                401
               </h1>
               <h2 className="text-2xl font-semibold text-foreground font-[family-name:var(--font-playfair)]">
-                Oops! Page Not Found
+                Access Denied
               </h2>
             </div>
           </div>
@@ -50,8 +49,9 @@ export default function NotFound() {
 
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground font-[family-name:var(--font-source-sans)]">
-            The page you're looking for might have been moved, deleted, or never
-            existed.
+            You don't have permission to access this resource. Please log in
+            with an authorized account or contact support if you believe this is
+            an error.
           </p>
         </div>
 

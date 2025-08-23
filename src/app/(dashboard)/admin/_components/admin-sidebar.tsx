@@ -91,7 +91,7 @@ export function AdminSidebar() {
     return pathname === item.href;
   };
 
-  const isSubItemActive = (subItem:any) => {
+  const isSubItemActive = (subItem: any) => {
     return pathname === subItem.href;
   };
 

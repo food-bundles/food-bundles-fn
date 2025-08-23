@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ILoginData } from "@/lib/types";
+import { ILoginData, UserRole } from "@/lib/types";
 import { authService } from "@/app/services/authService";
 
 type Props = {
@@ -26,6 +26,24 @@ export function LoginForm({ loginData }: Props) {
 
   function isValidPhone(phone: string) {
     return /^\+?[0-9]{10,15}$/.test(phone);
+  }
+
+  function getRedirectPath(userRole: UserRole): string {
+    switch (userRole) {
+      case UserRole.FARMER:
+        return "/farmer";
+      case UserRole.RESTAURANT: 
+        return "/restaurant";
+      case UserRole.ADMIN:
+      case UserRole.LOGISTIC:
+      case UserRole.AGGREGATOR:
+        return "/admin";
+      default:
+        console.warn(
+          `Unknown user role: ${userRole}. Redirecting to default path.`
+        );
+        return "/dashboard"; // fallback path
+    }
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -55,9 +73,19 @@ export function LoginForm({ loginData }: Props) {
     try {
       const response = await authService.login(loginPayload);
 
-      const redirectPath =
-        response.user?.role === "farmer" ? "/farmer" : "/restaurant";
-      router.push(redirectPath);
+      console.log(
+        "================================================= Login response :",
+        response
+      );
+
+      // Improved role-based redirection
+      const userRole = response.data?.user?.role;
+      if (userRole) {
+        const redirectPath = getRedirectPath(userRole as UserRole);
+        router.push(redirectPath);
+      } else {
+        setError("User role not found. Please contact support.");
+      }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Login error:", error);

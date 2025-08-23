@@ -94,7 +94,7 @@ export function SignupForm({ signupData }: Props) {
       return;
     }
 
-    if (selectedRole === "restaurant") {
+    if (selectedRole === "RESTAURANT") {
       if (!email) {
         setError("Email is required for restaurants");
         setIsLoading(false);
@@ -108,7 +108,7 @@ export function SignupForm({ signupData }: Props) {
     }
 
     try {
-      if (selectedRole === "farmer") {
+      if (selectedRole === UserRole.FARMER) {
         const farmerData: ICreateFarmerData = {
           email,
           password,
@@ -116,7 +116,7 @@ export function SignupForm({ signupData }: Props) {
           phone,
         };
         await authService.registerFarmer(farmerData);
-      } else if (selectedRole === "restaurant") {
+      } else if (selectedRole === "RESTAURANT") {
         const restaurantData: ICreateRestaurantData = {
           name,
           email,
@@ -153,7 +153,7 @@ export function SignupForm({ signupData }: Props) {
 
         <CardContent className="p-6 space-y-4">
           <Button
-            onClick={() => setSelectedRole("farmer")}
+            onClick={() => setSelectedRole(UserRole.FARMER)}
             variant="outline"
             className="w-full h-20 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all"
           >
@@ -171,7 +171,7 @@ export function SignupForm({ signupData }: Props) {
           </Button>
 
           <Button
-            onClick={() => setSelectedRole("restaurant")}
+            onClick={() => setSelectedRole(UserRole.RESTAURANT)}
             variant="outline"
             className="w-full h-20 border-2 border-gray-200 hover:border-green-500 hover:bg-green-50 transition-all"
           >
@@ -221,7 +221,9 @@ export function SignupForm({ signupData }: Props) {
           </Button>
         </div>
         <h2 className="text-2xl font-bold text-gray-900">
-          Create {selectedRole === "farmer" ? "Farmer" : "Restaurant"} Account
+          Create{" "}
+          {selectedRole === UserRole.FARMER ? UserRole.FARMER : "Restaurant"}{" "}
+          Account
         </h2>
         <p className="text-gray-600 text-sm">Join our community today</p>
       </CardHeader>
@@ -246,7 +248,7 @@ export function SignupForm({ signupData }: Props) {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {selectedRole === "restaurant" && (
+          {selectedRole === "RESTAURANT" && (
             <div className="relative">
               <Building2 className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
@@ -265,7 +267,7 @@ export function SignupForm({ signupData }: Props) {
               type="email"
               name="email"
               placeholder={
-                selectedRole === "farmer"
+                selectedRole === UserRole.FARMER
                   ? "Email Address (Optional)"
                   : "Email Address"
               }
