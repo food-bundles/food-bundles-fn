@@ -18,10 +18,11 @@ import {
   UserCog,
   Soup,
 } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname} from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
 import Image from "next/image";
+import { authService } from "@/app/services/authService";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
@@ -64,12 +65,12 @@ const menuItems = [
       },
     ],
   },
-  { icon: LogOut, label: "Logout", href: "/" },
 ];
 
 export function AdminSidebar() {
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState(new Set());
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const toggleExpanded = (index: number) => {
     const newExpanded = new Set(expandedItems);
@@ -79,6 +80,18 @@ export function AdminSidebar() {
       newExpanded.add(index);
     }
     setExpandedItems(newExpanded);
+  };
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await authService.logout();
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      window.location.href = "/login";
+    } catch (error) {
+      console.error("Logout error:", error);
+      window.location.href = "/login";
+    }
   };
 
   const isItemActive = (item: any) => {
@@ -181,14 +194,28 @@ export function AdminSidebar() {
               </li>
             );
           })}
+
+          {/* Logout Button */}
+          <li>
+            <button
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className={cn(
+                "w-full flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap",
+                "text-gray-800 hover:bg-red-100 hover:text-red-600",
+                isLoggingOut && "opacity-50 cursor-not-allowed"
+              )}
+            >
+              <LogOut className="mr-3 h-5 w-5" />
+              {isLoggingOut ? "Logging out..." : "Logout"}
+            </button>
+          </li>
         </ul>
 
         {/* Help Center */}
         <div className="p-4 flex-shrink-0">
           <div className="bg-green-100 rounded-lg p-4 text-center">
-            {/* Outer circle */}
             <div className="w-16 h-16 bg-green-300 rounded-full flex items-center justify-center mx-auto mb-5">
-              {/* Inner circle */}
               <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
                 <HelpCircle className="h-6 w-6 text-white" />
               </div>

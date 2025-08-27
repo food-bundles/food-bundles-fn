@@ -91,6 +91,7 @@ export interface IUser {
   email: string;
   phone?: string;
   role: UserRole;
+  profileImage: string;
 }
 
 export interface AuthContextType {

@@ -13,6 +13,7 @@ interface AuthContextType {
   login: (loginData: ILoginData) => Promise<void>;
   checkAuth: () => Promise<void>;
   hasRole: (roles: UserRole[]) => boolean;
+  getUserProfileImage: () => string; 
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -72,7 +73,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         if (response.success) {
           await checkAuth();
-
           return;
         }
 
@@ -87,8 +87,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     [checkAuth]
   );
 
- 
-
   const hasRole = useCallback(
     (roles: UserRole[]): boolean => {
       if (!user) return false;
@@ -96,6 +94,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
     },
     [user]
   );
+
+  const getUserProfileImage = useCallback((): string => {
+    if (user?.profileImage) {
+      if (user.profileImage.startsWith("http")) {
+        return user.profileImage;
+      }
+      return `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads/profiles/${user.profileImage}`;
+    }
+
+    return "/imgs/profile.jpg";
+  }, [user]);
 
   const isAuthenticated = !!user;
 
@@ -106,6 +115,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     login,
     checkAuth,
     hasRole,
+    getUserProfileImage,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
