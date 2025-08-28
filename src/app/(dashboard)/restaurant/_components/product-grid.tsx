@@ -16,7 +16,9 @@ type ProductCategory =
   | "GRAINS"
   | "TUBERS"
   | "LEGUMES"
-  | "HERBS_SPICES";
+  | "HERBS_SPICES"
+  | "ANIMAL_PRODUCTS"
+  | "OTHER";
 
 type Product = {
   id: string;
@@ -25,13 +27,16 @@ type Product = {
   unit: string;
   bonus: number;
   createdBy: string;
-  expiryDate: Date;
+  expiryDate: Date | null;
   images: string[];
   quantity: number;
   sku: string;
   category: ProductCategory;
-  rating: number;
-  soldCount: number;
+  rating?: number;
+  soldCount?: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 type Props = {
@@ -54,6 +59,8 @@ export function ProductGrid({ products }: Props) {
     { value: "TUBERS", label: "Tubers" },
     { value: "LEGUMES", label: "Legumes" },
     { value: "HERBS_SPICES", label: "Herbs & Spices" },
+    { value: "ANIMAL_PRODUCTS", label: "Animal Products" },
+    { value: "OTHER", label: "Other" },
   ];
 
   return (

@@ -61,6 +61,7 @@ interface DataTableProps<TData, TValue> {
 
   // Header configuration
   title?: string;
+  descrption?: string;
   showExport?: boolean;
   onExport?: () => void;
   showAddButton?: boolean;
@@ -88,6 +89,7 @@ export function DataTable<TData, TValue>({
   columns,
   data,
   title,
+  descrption,
   showExport = false,
   onExport,
   showAddButton = false,
@@ -148,14 +150,19 @@ export function DataTable<TData, TValue>({
       {(title || showAddButton || showExport) && (
         <div className="flex items-center justify-between">
           {title && (
-            <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+            <>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+                <p className="text-gray-600 text-sm">{descrption}</p>
+              </div>
+            </>
           )}
           <div className="flex items-center gap-4">
             {/* Add button - completely optional */}
             {showAddButton && addButtonLabel && onAddButton && (
               <Button
                 onClick={onAddButton}
-                className="bg-green-600 hover:bg-green-700 flex-shrink-0"
+                className="bg-green-500 hover:bg-green-600 flex-shrink-0"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 {addButtonLabel}
@@ -165,7 +172,7 @@ export function DataTable<TData, TValue>({
             {showExport && (
               <Button
                 onClick={onExport}
-                className="bg-green-600 hover:bg-green-700 flex-shrink-0"
+                className="bg-green-500 hover:bg-green-600 flex-shrink-0"
               >
                 <Download className="mr-2 h-4 w-4" />
                 Export
@@ -303,7 +310,7 @@ export function DataTable<TData, TValue>({
                   onClick={() => table.setPageIndex(pageNumber - 1)}
                   className={`px-3 py-1 ${
                     table.getState().pagination.pageIndex + 1 === pageNumber
-                      ? "bg-green-600 hover:bg-green-700 text-white"
+                      ? "bg-green-500 hover:bg-green-600 text-white"
                       : ""
                   }`}
                 >

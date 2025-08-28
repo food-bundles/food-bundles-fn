@@ -5,7 +5,7 @@ import WhyChoose from "@/components/why_choose";
 import Promotions from "@/components/promotion";
 import ContactUs from "@/components/contact_us";
 import Header from "@/components/header";
-import { Footer } from "react-day-picker";
+import { Footer } from "@/components/footer";
 
 // Mock data fetching functions (replace with actual API calls)
 async function getHomeData() {

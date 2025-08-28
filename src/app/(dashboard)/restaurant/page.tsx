@@ -1,5 +1,7 @@
-import { Search} from "lucide-react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Search } from "lucide-react";
 import { ProductGrid } from "./_components/product-grid";
+import { productService } from "@/app/services/productService";
 
 type ProductCategory =
   | "VEGETABLES"
@@ -7,115 +9,57 @@ type ProductCategory =
   | "GRAINS"
   | "TUBERS"
   | "LEGUMES"
-  | "HERBS_SPICES";
+  | "HERBS_SPICES"
+  | "ANIMAL_PRODUCTS"
+  | "OTHER";
 
-async function getProducts() {
-  await new Promise((resolve) => setTimeout(resolve, 100));
+type Product = {
+  id: string;
+  productName: string;
+  unitPrice: number;
+  unit: string;
+  bonus: number;
+  createdBy: string;
+  expiryDate: Date | null;
+  images: string[];
+  quantity: number;
+  sku: string;
+  category: ProductCategory;
+  rating?: number;
+  soldCount?: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+};
 
-  return [
-    {
-      id: "1",
-      productName: "Organic Tomatoes",
-      unitPrice: 4.99,
-      unit: "kg",
-      bonus: 15,
-      createdBy: "Green Valley Farms",
-      expiryDate: new Date("2024-02-15"),
-      images: ["/imgs/tomatoes.svg"],
-      quantity: 50.0,
-      sku: "ORG-TOM-001",
-      category: "VEGETABLES" as ProductCategory,
-      rating: 4.2,
-      soldCount: 858,
-    },
-    {
-      id: "2",
-      productName: "Free-Range Eggs",
-      unitPrice: 6.99,
-      unit: "kg",
-      bonus: 0,
-      createdBy: "Happy Hen Farmstead",
-      expiryDate: new Date("2024-01-20"),
-      images: ["/imgs/eggs.svg"],
-      quantity: 30.0,
-      sku: "EGG-FR-002",
-      category: "VEGETABLES" as ProductCategory,
-      rating: 4.8,
-      soldCount: 1245,
-    },
-    {
-      id: "3",
-      productName: "Grass-Fed Ground Beef",
-      unitPrice: 9.99,
-      unit: "kg",
-      bonus: 30,
-      createdBy: "Sunset Ranch",
-      expiryDate: new Date("2024-01-18"),
-      images: ["/imgs/ground-beef.svg"],
-      quantity: 25.0,
-      sku: "BEEF-GF-003",
-      category: "VEGETABLES" as ProductCategory,
-      rating: 4.1,
-      soldCount: 3521,
-    },
-    {
-      id: "4",
-      productName: "Organic Spinach",
-      unitPrice: 3.49,
-      unit: "kg",
-      bonus: 0,
-      createdBy: "Green Valley Farms",
-      expiryDate: new Date("2024-01-16"),
-      images: ["/imgs/spanish.svg"],
-      quantity: 40.0,
-      sku: "ORG-SPN-004",
-      category: "VEGETABLES" as ProductCategory,
-      rating: 4.9,
-      soldCount: 2150,
-    },
-    {
-      id: "5",
-      productName: "Artisan Sourdough Bread",
-      unitPrice: 7.99,
-      unit: "kg",
-      bonus: 5,
-      createdBy: "Hearth Bakery",
-      expiryDate: new Date("2024-01-17"),
-      images: ["/imgs/bread.svg"],
-      quantity: 15.0,
-      sku: "BRD-SD-005",
-      category: "GRAINS" as ProductCategory,
-      rating: 4.6,
-      soldCount: 876,
-    },
-    {
-      id: "6",
-      productName: "Fresh Atlantic Salmon",
-      unitPrice: 18.99,
-      unit: "kg",
-      bonus: 15,
-      createdBy: "Ocean Harvest",
-      expiryDate: new Date("2024-01-16"),
-      images: ["/imgs/flesh.svg"],
-      quantity: 12.0,
-      sku: "SAL-ATL-006",
-      category: "VEGETABLES" as ProductCategory,
-      rating: 4.4,
-      soldCount: 1892,
-    },
-  ];
+async function getProducts(): Promise<Product[]> {
+  try {
+    const response = await productService.getAllProducts();
+
+    // Transform API response to match component expectations
+    return response.data.map((product: any) => ({
+      ...product,
+      expiryDate: product.expiryDate ? new Date(product.expiryDate) : null,
+      // Add default values for missing fields
+      rating: product.rating || undefined,
+      soldCount: product.soldCount || undefined,
+    }));
+  } catch (error) {
+    console.error("Failed to fetch products:", error);
+    // Return empty array on error
+    return [];
+  }
 }
 
-export default async function RestaurantDashboard() {
+export default async function RestaurantShop() {
   const products = await getProducts();
 
   return (
     <div className="min-h-screen bg-gray-50">
-
       <main className="container mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-xl font-bold text-gray-900">
-            Your products to day
+            Available Products
           </h1>
 
           <div className="flex items-center gap-4">
@@ -130,7 +74,15 @@ export default async function RestaurantDashboard() {
           </div>
         </div>
 
-        <ProductGrid products={products} />
+        {products.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">
+              No products available at the moment.
+            </p>
+          </div>
+        ) : (
+          <ProductGrid products={products} />
+        )}
       </main>
     </div>
   );

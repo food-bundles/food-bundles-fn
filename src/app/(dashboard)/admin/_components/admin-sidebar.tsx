@@ -18,9 +18,11 @@ import {
   UserCog,
   Soup,
 } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname} from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
+import Image from "next/image";
+import { authService } from "@/app/services/authService";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/admin" },
@@ -63,12 +65,12 @@ const menuItems = [
       },
     ],
   },
-  { icon: LogOut, label: "Logout", href: "/" },
 ];
 
 export function AdminSidebar() {
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState(new Set());
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const toggleExpanded = (index: number) => {
     const newExpanded = new Set(expandedItems);
@@ -78,6 +80,18 @@ export function AdminSidebar() {
       newExpanded.add(index);
     }
     setExpandedItems(newExpanded);
+  };
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await authService.logout();
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      window.location.href = "/login";
+    } catch (error) {
+      console.error("Logout error:", error);
+      window.location.href = "/login";
+    }
   };
 
   const isItemActive = (item: any) => {
@@ -90,14 +104,21 @@ export function AdminSidebar() {
     return pathname === item.href;
   };
 
-  const isSubItemActive = (subItem:any) => {
+  const isSubItemActive = (subItem: any) => {
     return pathname === subItem.href;
   };
 
   return (
     <div className="w-64 min-w-64 h-screen border-r border-gray-200 bg-gray-50 flex flex-col flex-shrink-0">
       {/* Logo */}
-      <div className="p-4 flex-shrink-0">
+      <div className="p-4 flex items-center gap-2 flex-shrink-0">
+        <Image
+          src="/imgs/Food_bundle_logo.png"
+          alt="Logo"
+          width={40}
+          height={40}
+          className="w-8 h-8 rounded-full object-cover"
+        />
         <h1 className="text-xl font-bold text-black">Food Bundle</h1>
       </div>
 
@@ -118,7 +139,7 @@ export function AdminSidebar() {
                       className={cn(
                         "w-full flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap justify-between",
                         isActive
-                          ? "bg-green-600 hover:bg-green-700 text-white"
+                          ? "bg-green-500 hover:bg-green-600 text-white"
                           : "text-gray-800 hover:bg-green-100"
                       )}
                     >
@@ -143,8 +164,8 @@ export function AdminSidebar() {
                                 className={cn(
                                   "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap",
                                   isSubActive
-                                    ? "bg-green-600 hover:bg-green-700 text-white"
-                                    : "text-gray-600 hover:bg-green-100"
+                                    ? "bg-trsansparent text-green-600 hover:text-green-700"
+                                    : "text-gray-600 "
                                 )}
                               >
                                 <subItem.icon className="mr-3 h-4 w-4" />
@@ -162,7 +183,7 @@ export function AdminSidebar() {
                     className={cn(
                       "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap",
                       isActive
-                        ? "bg-green-600 hover:bg-green-700 text-white"
+                        ? "bg-green-500 hover:bg-green-600 text-white"
                         : "text-gray-800 hover:bg-green-100"
                     )}
                   >
@@ -173,14 +194,28 @@ export function AdminSidebar() {
               </li>
             );
           })}
+
+          {/* Logout Button */}
+          <li>
+            <button
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className={cn(
+                "w-full flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap",
+                "text-gray-800 hover:bg-red-100 hover:text-red-600",
+                isLoggingOut && "opacity-50 cursor-not-allowed"
+              )}
+            >
+              <LogOut className="mr-3 h-5 w-5" />
+              {isLoggingOut ? "Logging out..." : "Logout"}
+            </button>
+          </li>
         </ul>
 
         {/* Help Center */}
         <div className="p-4 flex-shrink-0">
           <div className="bg-green-100 rounded-lg p-4 text-center">
-            {/* Outer circle */}
             <div className="w-16 h-16 bg-green-300 rounded-full flex items-center justify-center mx-auto mb-5">
-              {/* Inner circle */}
               <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
                 <HelpCircle className="h-6 w-6 text-white" />
               </div>

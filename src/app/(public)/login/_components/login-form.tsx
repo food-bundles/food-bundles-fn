@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ILoginData } from "@/lib/types";
+import { ILoginData, UserRole } from "@/lib/types";
 import { authService } from "@/app/services/authService";
 
 type Props = {
@@ -28,6 +28,24 @@ export function LoginForm({ loginData }: Props) {
     return /^\+?[0-9]{10,15}$/.test(phone);
   }
 
+  function getRedirectPath(userRole: UserRole): string {
+    switch (userRole) {
+      case UserRole.FARMER:
+        return "/farmer";
+      case UserRole.RESTAURANT: 
+        return "/restaurant";
+      case UserRole.ADMIN:
+      case UserRole.LOGISTIC:
+      case UserRole.AGGREGATOR:
+        return "/admin";
+      default:
+        console.warn(
+          `Unknown user role: ${userRole}. Redirecting to default path.`
+        );
+        return "/dashboard"; // fallback path
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setIsLoading(true);
@@ -37,13 +55,13 @@ export function LoginForm({ loginData }: Props) {
     const identifier = formData.get("identifier") as string;
     const password = formData.get("password") as string;
 
-     if (!identifier.includes("@") && !isValidPhone(identifier)) {
-       setError(
-         "Invalid phone number. It must be 10–15 digits and can start with '+'."
-       );
-       setIsLoading(false);
-       return;
-     }
+    if (!identifier.includes("@") && !isValidPhone(identifier)) {
+      setError(
+        "Invalid phone number. It must be 10–15 digits and can start with '+'."
+      );
+      setIsLoading(false);
+      return;
+    }
 
     let loginPayload: ILoginData;
     if (identifier.includes("@")) {
@@ -55,12 +73,20 @@ export function LoginForm({ loginData }: Props) {
     try {
       const response = await authService.login(loginPayload);
 
-      const redirectPath =
-        response.user?.role === "farmer"
-          ? "/farmer"
-          : "/restaurant";
-      router.push(redirectPath);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      console.log(
+        "================================================= Login response :",
+        response
+      );
+
+      // Improved role-based redirection
+      const userRole = response.data?.user?.role;
+      if (userRole) {
+        const redirectPath = getRedirectPath(userRole as UserRole);
+        router.push(redirectPath);
+      } else {
+        setError("User role not found. Please contact support.");
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Login error:", error);
       setError(
@@ -96,7 +122,7 @@ export function LoginForm({ loginData }: Props) {
             <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
             <Input
               type="text"
-              name="identifier" 
+              name="identifier"
               placeholder="Email or Phone"
               className="pl-10 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500"
               required
@@ -139,7 +165,7 @@ export function LoginForm({ loginData }: Props) {
 
           <Button
             type="submit"
-            className="w-full h-12 bg-green-600 hover:bg-green-700"
+            className="w-full h-12 bg-green-500 hover:bg-green-600"
             disabled={isLoading || !loginData.isBackendAvailable}
           >
             {isLoading ? "Signing in..." : "Sign In"}

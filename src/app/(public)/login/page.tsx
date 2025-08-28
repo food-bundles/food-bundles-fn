@@ -19,6 +19,7 @@ export default async function LoginPage() {
   const loginData = await getLoginData();
 
   return (
+    <>
     <div className="min-h-screen flex flex-col">
       <div className="flex-1 flex">
         <div className="w-1/2 bg-gradient-to-br from-green-600 to-green-700 flex flex-col justify-center items-center p-12 relative overflow-hidden">
@@ -59,5 +60,6 @@ export default async function LoginPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

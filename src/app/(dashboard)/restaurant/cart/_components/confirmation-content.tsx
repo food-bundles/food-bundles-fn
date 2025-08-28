@@ -109,13 +109,13 @@ export function ConfirmationContent({ orderData }: Props) {
               {/* Platform Logo Header */}
               <div className="flex justify-center mb-6 sm:mb-8">
                 <div className="flex items-center gap-3">
-                <Image
-                      src="/imgs/Food_bundle_logo.png"
-                      alt= ""
-                      width={40}
-                      height={40}
-                      className="rounded-full object-cover w-10 h-10"
-                   />
+                  <Image
+                    src="/imgs/Food_bundle_logo.png"
+                    alt=""
+                    width={40}
+                    height={40}
+                    className="rounded-full object-cover w-10 h-10"
+                  />
                   <div>
                     <h1 className="text-xl font-bold text-gray-900">
                       Food Bundle
@@ -233,7 +233,7 @@ export function ConfirmationContent({ orderData }: Props) {
               {/* Action Buttons */}
               <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-3">
                 <Link href="/restaurant/orders">
-                  <Button className="bg-green-600 hover:bg-green-700 cursor-pointer text-white flex items-center justify-center gap-2 text-sm">
+                  <Button className="bg-green-500 hover:bg-green-600 cursor-pointer text-white flex items-center justify-center gap-2 text-sm">
                     <Eye className="h-4 w-4" />
                     View Orders
                   </Button>

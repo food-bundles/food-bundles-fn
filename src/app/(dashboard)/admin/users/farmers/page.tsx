@@ -9,7 +9,7 @@ import { createCommonFilters, TableFilters } from "@/components/filters";
 // Mock data for farmers
 const mockFarmers: Farmer[] = [
   {
-    id: "f1a2b3c4-d5e6-7f8g-9h0i-j1k2l3m4n5o6",
+    id: "1",
     location: "Nakuru County",
     role: "FARMER",
     phone: "+254712345678",
@@ -19,7 +19,7 @@ const mockFarmers: Farmer[] = [
     status: "active",
   },
   {
-    id: "g2h3i4j5-k6l7-8m9n-0o1p-q2r3s4t5u6v7",
+    id: "2",
     location: "Kiambu County",
     role: "FARMER",
     phone: "+254723456789",
@@ -29,7 +29,7 @@ const mockFarmers: Farmer[] = [
     status: "active",
   },
   {
-    id: "h3i4j5k6-l7m8-9n0o-1p2q-r3s4t5u6v7w8",
+    id: "3",
     location: "Meru County",
     role: "FARMER",
     phone: "+254734567890",
@@ -38,7 +38,7 @@ const mockFarmers: Farmer[] = [
     status: "pending",
   },
   {
-    id: "i4j5k6l7-m8n9-0o1p-2q3r-s4t5u6v7w8x9",
+    id: "4",
     location: "Nyeri County",
     role: "FARMER",
     phone: "+254745678901",
@@ -48,7 +48,7 @@ const mockFarmers: Farmer[] = [
     status: "active",
   },
   {
-    id: "j5k6l7m8-n9o0-1p2q-3r4s-t5u6v7w8x9y0",
+    id: "5",
     location: "Machakos County",
     role: "FARMER",
     phone: "+254756789012",
