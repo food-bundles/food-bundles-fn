@@ -7,6 +7,7 @@ import {
   TableFilters,
 } from "../../../../components/filters";
 import { DataTable } from "@/components/data-table";
+import { toast } from "sonner";
 
 // Sample data
 const sampleOrders: Order[] = [
@@ -176,7 +177,7 @@ export default function OrdersPage() {
         },
         totalRecords: filteredData.length,
       });
-      alert("Export functionality will be handled by backend");
+      toast("Export functionality will be handled by backend");
     } catch (error) {
       console.error("Export failed:", error);
     }

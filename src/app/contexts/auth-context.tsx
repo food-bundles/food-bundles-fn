@@ -2,9 +2,10 @@
 // contexts/auth-context.tsx
 "use client";
 
-import React, { createContext, useContext, useState, useCallback } from "react";
+import type React from "react";
+import { createContext, useContext, useState, useCallback } from "react";
 import { authService } from "@/app/services/authService";
-import { IUser, UserRole, ILoginData } from "@/lib/types";
+import { type IUser, UserRole, type ILoginData } from "@/lib/types";
 
 interface AuthContextType {
   user: IUser | null;
@@ -13,7 +14,7 @@ interface AuthContextType {
   login: (loginData: ILoginData) => Promise<void>;
   checkAuth: () => Promise<void>;
   hasRole: (roles: UserRole[]) => boolean;
-  getUserProfileImage: () => string; 
+  getUserProfileImage: () => string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

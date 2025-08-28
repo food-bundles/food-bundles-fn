@@ -71,7 +71,7 @@ export function TopResNav() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Use the auth context to get user data
-  const { user, getUserProfileImage, checkAuth } = useAuth();
+  const { user, getUserProfileImage } = useAuth();
 
   const unreadCount = sampleNotifications.filter((n) => !n.isRead).length;
   const pathname = usePathname();
@@ -83,11 +83,6 @@ export function TopResNav() {
     { href: "/restaurant/settings", label: "Settings" },
     { href: "/restaurant/dashboard", label: "Dashboard" },
   ];
-
-  // Load user data when component mounts (without useEffect)
-  if (!user) {
-    checkAuth();
-  }
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -189,7 +184,7 @@ export function TopResNav() {
                   >
                     <div className="p-[2px] bg-green-600 rounded-full flex items-center justify-center">
                       <Image
-                        src={profileImage}
+                        src={profileImage || "/placeholder.svg"}
                         alt={`${userName}'s profile`}
                         width={40}
                         height={40}

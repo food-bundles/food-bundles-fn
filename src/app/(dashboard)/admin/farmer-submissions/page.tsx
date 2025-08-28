@@ -11,6 +11,7 @@ import {
   TableFilters,
 } from "../../../../components/filters";
 import { DataTable } from "@/components/data-table";
+import { toast } from "sonner";
 
 const farmerSubmissions: FarmerSubmission[] = [
   {
@@ -168,7 +169,7 @@ export default function FarmerSubmissionsPage() {
         totalRecords: filteredData.length,
       });
 
-      alert("Export functionality will be handled by backend");
+      toast("Export functionality will be handled by backend");
     } catch (error) {
       console.error("Export failed:", error);
     }

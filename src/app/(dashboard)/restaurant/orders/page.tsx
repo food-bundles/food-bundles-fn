@@ -7,6 +7,7 @@ import {
   createCommonFilters,
   TableFilters,
 } from "../../../../components/filters";
+import { toast } from "sonner";
 
 // Sample restaurant orders data
 const sampleOrders: Order[] = [
@@ -178,7 +179,7 @@ export default function RestaurantOrdersPage() {
         },
         totalRecords: filteredData.length,
       });
-      alert("Export functionality will be handled by backend");
+      toast("Export functionality will be handled by backend");
     } catch (error) {
       console.error("Export failed:", error);
     }
