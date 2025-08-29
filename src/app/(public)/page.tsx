@@ -146,7 +146,7 @@ export default function HomePage() {
 
   const categories = [
     {
-      name: "ALL PRODUCTS",
+      name: "ALL ",
       image: "/products/fresh-organic-roma-tomatoes.png",
       productCount: 450,
     },
@@ -327,14 +327,17 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <HeroWithRestaurants restaurants={restaurants} />
-      <ProductsSection
-        products={products}
-        categories={categories}
-        isGuest={isGuest}
-      />
-      <QuickTalkWrapper />
-      <Footer />
+      <div className="h-16 bg-green-700"></div>
+      <div>
+        <HeroWithRestaurants restaurants={restaurants} />
+        <ProductsSection
+          products={products}
+          categories={categories}
+          isGuest={isGuest}
+        />
+        <QuickTalkWrapper />
+        <Footer />
+      </div>
     </div>
   );
 }

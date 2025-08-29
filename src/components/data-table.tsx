@@ -45,14 +45,42 @@ export interface FilterOption {
   value: string;
 }
 
-export interface FilterConfig {
-  type: "select" | "date" | "search";
-  key: string;
-  label: string;
-  placeholder?: string;
-  options?: FilterOption[];
-  width?: string;
-}
+// Discriminated union for filters
+export type FilterConfig =
+  | {
+      type: "search";
+      key: string;
+      label: string;
+      placeholder?: string;
+      width?: string;
+      value?: string;
+      onChange?: (value: string) => void;
+    }
+  | {
+      type: "select";
+      key: string;
+      label: string;
+      options: FilterOption[];
+      width?: string;
+      value?: string;
+      onChange?: (value: string) => void;
+    }
+  | {
+      type: "date";
+      key: string;
+      label: string;
+      width?: string;
+      value?: Date;
+      onChange?: (value: Date | undefined) => void;
+    }
+  | {
+      type: "dateRange";
+      key: string;
+      label: string;
+      width?: string;
+      value?: { from?: Date; to?: Date };
+      onChange?: (value: { from?: Date; to?: Date }) => void;
+    };
 
 interface DataTableProps<TData, TValue> {
   // Core table props

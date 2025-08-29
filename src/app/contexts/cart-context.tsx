@@ -18,7 +18,8 @@ interface CartContextType {
   cartItems: CartItem[];
   isLoading: boolean;
   error: string | null;
-  totalItems: number;
+  totalItems: number; 
+  totalQuantity: number; 
   totalAmount: number;
   refreshCart: () => Promise<void>;
   addToCart: (productId: string, quantity: number) => Promise<boolean>;
@@ -153,9 +154,14 @@ export function CartProvider({ children }: CartProviderProps) {
     refreshCart();
   }, [refreshCart]);
 
-  // Calculate derived values
+  // Calculate derived values from API response
   const cartItems = cart?.cartItems || [];
-  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+
+  // Use API values if available, fallback to calculations
+  const totalItems = cart?.totalItems ?? cartItems.length;
+  const totalQuantity =
+    cart?.totalQuantity ??
+    cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const totalAmount = cart?.totalAmount || 0;
 
   const value: CartContextType = {
@@ -163,7 +169,8 @@ export function CartProvider({ children }: CartProviderProps) {
     cartItems,
     isLoading,
     error,
-    totalItems,
+    totalItems, // Number of different products (2 in your example)
+    totalQuantity, // Sum of all quantities (110 in your example)
     totalAmount,
     refreshCart,
     addToCart,
@@ -191,6 +198,6 @@ export function useCartItem(productId: string) {
 
 // Hook to get cart summary for header/navigation
 export function useCartSummary() {
-  const { totalItems, totalAmount, isLoading } = useCart();
-  return { totalItems, totalAmount, isLoading };
+  const { totalItems, totalQuantity, totalAmount, isLoading } = useCart();
+  return { totalItems, totalQuantity, totalAmount, isLoading };
 }

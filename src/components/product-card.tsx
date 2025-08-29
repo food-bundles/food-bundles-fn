@@ -172,10 +172,14 @@ export function ProductCard({
             <div className="flex-1 border border-gray-200 rounded-lg p-4 space-y-3 flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  <User className="w-5 h-5 text-gray-600" />
-                  <h3 className="font-semibold">Continue as Guest</h3>
+                  <User className="w-5 h-5 text-black" />
+                  <h3 className="font-semibold">Buy as Guest</h3>
                 </div>
-                <div className="space-y-2 text-sm text-gray-600">
+                <div className="space-y-2 text-sm text-black">
+                  <div className="flex items-center gap-2">
+                    <Dot className="w-4 h-4 text-red-500" />
+                    <span>buy without FoodBundle account</span>
+                  </div>
                   <div className="flex items-center gap-2">
                     <Dot className="w-4 h-4 text-red-500" />
                     <span>Delivery fees may apply</span>
@@ -186,7 +190,7 @@ export function ProductCard({
                   </div>
                   <div className="flex items-center gap-2">
                     <Dot className="w-4 h-4 text-red-500" />
-                    <span>Limited order tracking</span>
+                    <span>bulk quantity required</span>
                   </div>
                 </div>
               </div>
@@ -195,7 +199,7 @@ export function ProductCard({
                 variant="outline"
                 className="w-full mt-4"
               >
-                Continue as Guest
+                Buy as Guest
               </Button>
             </div>
 
@@ -204,7 +208,7 @@ export function ProductCard({
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <UserCheck className="w-5 h-5 text-green-600" />
-                  <h3 className="font-semibold">Login as Customer</h3>
+                  <h3 className="font-semibold">Login/Signup as Customer</h3>
                 </div>
                 <div className="space-y-2 text-sm text-green-700">
                   <div className="flex items-center gap-2">
@@ -217,11 +221,11 @@ export function ProductCard({
                   </div>
                   <div className="flex items-center gap-2">
                     <Dot className="w-4 h-4 text-green-600" />
-                    <span>Stay connected & secure ordering</span>
+                    <span>Stay connected</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Dot className="w-4 h-4 text-green-600" />
-                    <span>Order history & tracking</span>
+                    <span>Minimum quantity</span>
                   </div>
                 </div>
               </div>
@@ -229,7 +233,7 @@ export function ProductCard({
                 onClick={handleCustomerLogin}
                 className="w-full mt-4 bg-green-600 hover:bg-green-700"
               >
-                Continue as Customer
+                Buy as Restaurant
               </Button>
             </div>
           </div>

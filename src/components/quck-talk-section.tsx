@@ -63,53 +63,53 @@ function QuickTalkSection() {
   return (
     <>
       <div className="grid md:grid-cols-2 gap-8">
-        {/* Trust indicators */}
+        {/* Our Farmers */}
         <div className="pt-4 bg-white/90 backdrop-blur-sm p-4 rounded-lg shadow-lg">
           <p className="text-2xl font-semibold text-gray-700 mb-2">
-            Trusted by millions across the globe
+            Farmers Work With Us
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-4 items-center">
             <Image
-              src="/trusted-org/RDB.jpg"
-              alt="RDB Logo"
+              src="/farmers/farmer.jpg"
+              alt="farmer"
               width={160}
               height={40}
-              className="object-contain"
+              className="w-[10rem] h-[10rem] rounded-full"
             />
             <Image
-              src="/trusted-org/RURA.png"
-              alt="RURA Logo"
+              src="/farmers/farmer.jpg"
+              alt="farmer"
               width={160}
               height={40}
-              className="object-contain"
+              className="w-[10rem] h-[10rem] rounded-full"
             />
             <Image
-              src="/trusted-org/RRA.jpg"
-              alt="RURA Alternative Logo"
+              src="/farmers/profile.jpg"
+              alt="farmer"
               width={160}
-              height={40}
-              className="object-contain"
+              height={160}
+              className="w-[10rem] h-[10rem] rounded-full"
             />
             <Image
-              src="/trusted-org/NISR.jpg"
-              alt="NISR Logo"
+              src="/farmers/farmer1.jpg"
+              alt="farmer"
               width={160}
               height={40}
-              className="object-contain"
+              className="w-[10rem] h-[10rem] rounded-full"
             />
             <Image
-              src="/trusted-org/FDA.jpg"
-              alt="FDA Logo"
+              src="/farmers/profile.jpg"
+              alt="farmer"
               width={160}
               height={40}
-              className="object-contain"
+              className="w-[10rem] h-[10rem] rounded-full"
             />
             <Image
-              src="/trusted-org/BRD.png"
-              alt="BRD Logo"
+              src="/farmers/farmer1.jpg"
+              alt="farmer"
               width={160}
-              height={40}
-              className="object-contain"
+              height={60}
+              className="w-[10rem] h-[10rem] rounded-full"
             />
           </div>
         </div>
@@ -141,10 +141,10 @@ function QuickTalkSection() {
                   <div>
                     <p className="font-medium">Phone Support</p>
                     <a
-                      href="tel:+250788724867"
+                      href="tel:+250796897823"
                       className="text-sm text-muted-foreground hover:text-primary"
                     >
-                      +250 788 963 267
+                      +250 796 897 823
                     </a>
                   </div>
                 </div>
@@ -163,7 +163,7 @@ function QuickTalkSection() {
                 <div className="flex flex-col items-center gap-2 mb-4">
                   <button
                     onClick={() =>
-                      window.open("https://wa.me/250788724867", "_blank")
+                      window.open("https://wa.me/250796897823", "_blank")
                     }
                     className="cursor-pointer hover:scale-105 transition-transform"
                   >
@@ -247,7 +247,7 @@ function QuickTalkSection() {
                   <p className="text-sm">
                     Emmergence Call{" "}
                     <span className="text-red-500 text-2xl font-semibold">
-                      933
+                      ###
                     </span>
                   </p>{" "}
                 </div>
@@ -350,7 +350,7 @@ export function QuickTalkWrapper() {
     <AnimatedDotsBackground className="py-20 bg-muted/30">
       <section id="ai-assistant" className="container mx-auto px-4">
         <div className="text-center mb-12">
-          <h2 className="text-3xl lg:text-4xl font-bold mb-4">Quick Talk</h2>
+          <h2 className="text-3xl lg:text-4xl font-bold mb-4">Quick Chat</h2>
         </div>
 
         <QuickTalkSection />
