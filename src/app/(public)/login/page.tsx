@@ -42,8 +42,7 @@ export default async function LoginPage() {
             <div className="flex items-center justify-center gap-3 mb-6">
               <span className="text-2xl font-light">Welcome to</span>
               <div className="flex items-center gap-2">
-                <Utensils className="h-8 w-8 text-green-400" />
-                <h1 className="text-2xl font-bold">Food Bundle</h1>
+                <h1 className="text-2xl font-bold">Food Bundles</h1>
               </div>
             </div>
             <p className="text-white/80 text-lg max-w-md leading-relaxed">

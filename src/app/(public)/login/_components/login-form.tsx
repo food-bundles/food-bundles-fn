@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -22,7 +23,16 @@ export function LoginForm({ loginData }: Props) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [pendingProduct, setPendingProduct] = useState<any>(null);
   const router = useRouter();
+
+  // Check for pending product on component mount
+  useEffect(() => {
+    const storedProduct = localStorage.getItem("pendingCartProduct");
+    if (storedProduct) {
+      setPendingProduct(JSON.parse(storedProduct));
+    }
+  }, []);
 
   function isValidPhone(phone: string) {
     return /^\+?[0-9]{10,15}$/.test(phone);
@@ -32,7 +42,7 @@ export function LoginForm({ loginData }: Props) {
     switch (userRole) {
       case UserRole.FARMER:
         return "/farmer";
-      case UserRole.RESTAURANT: 
+      case UserRole.RESTAURANT:
         return "/restaurant";
       case UserRole.ADMIN:
       case UserRole.LOGISTIC:
@@ -45,6 +55,21 @@ export function LoginForm({ loginData }: Props) {
         return "/dashboard"; // fallback path
     }
   }
+
+  const handleProductToCart = () => {
+    if (pendingProduct) {
+      // Add product to cart logic here
+      console.log("Adding product to cart:", pendingProduct);
+
+      // Clear the pending product
+      localStorage.removeItem("pendingCartProduct");
+      setPendingProduct(null);
+
+      // You can show a success message or redirect to cart
+      // For now, let's go back to the home page
+      router.push("/");
+    }
+  };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -78,6 +103,12 @@ export function LoginForm({ loginData }: Props) {
         response
       );
 
+      // Check if there's a pending product to add to cart
+      if (pendingProduct) {
+        handleProductToCart();
+        return; // Exit early to handle product cart flow
+      }
+
       // Improved role-based redirection
       const userRole = response.data?.user?.role;
       if (userRole) {
@@ -86,7 +117,6 @@ export function LoginForm({ loginData }: Props) {
       } else {
         setError("User role not found. Please contact support.");
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Login error:", error);
       setError(
@@ -168,7 +198,11 @@ export function LoginForm({ loginData }: Props) {
             className="w-full h-12 bg-green-500 hover:bg-green-600"
             disabled={isLoading || !loginData.isBackendAvailable}
           >
-            {isLoading ? "Signing in..." : "Sign In"}
+            {isLoading
+              ? "Signing in..."
+              : pendingProduct
+              ? "Sign In & Add to Cart"
+              : "Sign In"}
           </Button>
         </form>
 

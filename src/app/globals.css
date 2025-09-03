@@ -136,6 +136,15 @@
     display: none;  
   }
   }
+
+  @keyframes slide-x {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(10px); } /* adjust distance */
+}
+
+.animate-slide-x {
+  animation: slide-x 1s ease-in-out infinite; /* fast and smooth */
+}
 }
   
 
