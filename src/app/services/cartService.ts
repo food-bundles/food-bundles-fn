@@ -25,6 +25,8 @@ export interface Cart {
   createdAt: string;
   updatedAt: string;
   cartItems: CartItem[];
+  totalItems: number;
+  totalQuantity: number;
 }
 
 export interface ApiResponse<T = any> {
@@ -70,7 +72,7 @@ class CartService {
       return {
         success: true,
         message: "Fetched cart successfully",
-        data: response.data,
+        data: response.data.data,
       };
     } catch (error: any) {
       return {

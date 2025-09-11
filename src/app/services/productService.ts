@@ -1,11 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { ProductFormData } from "../(dashboard)/admin/inventory/_components/add-product-modal";
+import type { ProductFormData } from "../(private)/dashboard/inventory/_components/create-product-modal";
 import createAxiosClient from "../hooks/axiosClient";
 
 export interface CreateProductData {
   productName: string;
   unitPrice: number;
-  category: string;
+  purchasePrice: number; // Added missing purchasePrice field
+  categoryId: string; // Changed from category to categoryId to match backend expectation
   bonus: number;
   sku: string;
   quantity: number;
@@ -23,7 +25,8 @@ export const productService = {
     // Add product data
     formData.append("productName", productData.productName);
     formData.append("unitPrice", productData.unitPrice.toString());
-    formData.append("category", productData.category);
+    formData.append("purchasePrice", productData.purchasePrice.toString());
+    formData.append("categoryId", productData.categoryId); // Changed from category to categoryId
     formData.append("bonus", productData.bonus.toString());
     formData.append("sku", productData.sku);
     formData.append("quantity", productData.quantity.toString());
@@ -38,6 +41,11 @@ export const productService = {
       formData.append("images", image);
     });
 
+    console.log("[v0] FormData contents:"); // Debug logging
+    for (const [key, value] of formData.entries()) {
+      console.log(`[v0] ${key}:`, value);
+    }
+
     const response = await axiosClient.post("/products", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
@@ -51,6 +59,21 @@ export const productService = {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.get("/products");
     return response.data;
+  },
+
+  getAllProductsRoleBased: async () => {
+    try {
+      const axiosClient = createAxiosClient();
+      const response = await axiosClient.get("/products/role-based");
+      return response.data;
+    } catch (error: any) {
+      console.error("Error fetching role-based products:", error);
+      return {
+        success: false,
+        data: [],
+        message: error.response?.data?.message || "Failed to fetch products",
+      };
+    }
   },
 
   getProductById: async (productId: string) => {
@@ -72,7 +95,10 @@ export const productService = {
       formData.append("productName", productData.productName);
     if (productData.unitPrice)
       formData.append("unitPrice", productData.unitPrice.toString());
-    if (productData.category) formData.append("category", productData.category);
+    if (productData.purchasePrice)
+      formData.append("purchasePrice", productData.purchasePrice.toString());
+    if (productData.categoryId)
+      formData.append("categoryId", productData.categoryId); // Changed from category to categoryId
     if (productData.bonus !== undefined)
       formData.append("bonus", productData.bonus.toString());
     if (productData.sku) formData.append("sku", productData.sku);

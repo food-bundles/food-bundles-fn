@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, ChevronDown, Search } from "lucide-react";
+import { CalendarIcon, ChevronDown, Search, X } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
@@ -25,16 +24,42 @@ export interface FilterOption {
   value: string;
 }
 
-export interface FilterConfig {
-  type: "search" | "select" | "date";
-  key: string;
-  label: string;
-  placeholder?: string;
-  options?: FilterOption[];
-  width?: string;
-  value?: string | Date;
-  onChange?: (value: any) => void;
-}
+// Discriminated union for filters
+export type FilterConfig =
+  | {
+      type: "search";
+      key: string;
+      label: string;
+      placeholder?: string;
+      width?: string;
+      value?: string;
+      onChange?: (value: string) => void;
+    }
+  | {
+      type: "select";
+      key: string;
+      label: string;
+      options: FilterOption[];
+      width?: string;
+      value?: string;
+      onChange?: (value: string) => void;
+    }
+  | {
+      type: "date";
+      key: string;
+      label: string;
+      width?: string;
+      value?: Date;
+      onChange?: (value: Date | undefined) => void;
+    }
+  | {
+      type: "dateRange";
+      key: string;
+      label: string;
+      width?: string;
+      value?: { from?: Date; to?: Date };
+      onChange?: (value: { from?: Date; to?: Date }) => void;
+    };
 
 interface TableFiltersProps {
   filters: FilterConfig[];
@@ -105,7 +130,7 @@ export function TableFilters({ filters, className }: TableFiltersProps) {
               >
                 {filter.value
                   ? format(filter.value as Date, "PPP")
-                  : filter.placeholder || filter.label}
+                  : filter.label}
                 <CalendarIcon className="ml-2 h-4 w-4" />
               </Button>
             </PopoverTrigger>
@@ -116,6 +141,88 @@ export function TableFilters({ filters, className }: TableFiltersProps) {
                 onSelect={(date) => filter.onChange?.(date)}
                 initialFocus
               />
+            </PopoverContent>
+          </Popover>
+        );
+
+      case "dateRange":
+        return (
+          <Popover key={filter.key}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  filter.width || "min-w-[200px]",
+                  "justify-between text-left font-normal",
+                  !filter.value?.from &&
+                    !filter.value?.to &&
+                    "text-muted-foreground"
+                )}
+              >
+                {filter.value?.from ? (
+                  filter.value.to ? (
+                    <>
+                      {format(filter.value.from, "MMM dd")} -{" "}
+                      {format(filter.value.to, "MMM dd, yyyy")}
+                    </>
+                  ) : (
+                    format(filter.value.from, "MMM dd, yyyy")
+                  )
+                ) : (
+                  <span>{filter.label}</span>
+                )}
+                <div className="flex items-center gap-1">
+                  {(filter.value?.from || filter.value?.to) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-4 w-4 p-0 hover:bg-gray-200"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        filter.onChange?.({});
+                      }}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
+                  <CalendarIcon className="h-4 w-4" />
+                </div>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <div className="p-4">
+                <div className="text-sm font-medium mb-3">
+                  Select Date Range
+                </div>
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={filter.value?.from}
+                  selected={{
+                    from: filter.value?.from,
+                    to: filter.value?.to,
+                  }}
+                  onSelect={(range) => {
+                    filter.onChange?.({
+                      from: range?.from,
+                      to: range?.to,
+                    });
+                  }}
+                  numberOfMonths={2}
+                />
+                <div className="flex justify-between items-center mt-4 pt-3 border-t">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => filter.onChange?.({})}
+                  >
+                    Clear
+                  </Button>
+                  <div className="text-xs text-gray-500">
+                    Select start and end dates
+                  </div>
+                </div>
+              </div>
             </PopoverContent>
           </Popover>
         );
@@ -187,5 +294,18 @@ export const createCommonFilters = {
     value,
     onChange,
     width: "min-w-[120px]",
+  }),
+
+  dateRange: (
+    value: { from?: Date; to?: Date } | undefined,
+    onChange: (range: { from?: Date; to?: Date }) => void,
+    label = "Date Range"
+  ): FilterConfig => ({
+    type: "dateRange",
+    key: "dateRange",
+    label,
+    value,
+    onChange,
+    width: "min-w-[200px]",
   }),
 };

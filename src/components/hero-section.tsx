@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { ShoppingCart, Truck, Star } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface Restaurant {
   name: string;
@@ -25,6 +26,12 @@ function RestaurantStoriesInfinite({
     seen: boolean;
   }>;
 }) {
+  const router = useRouter();
+
+  const handleRestaurantClick = (restaurantName: string) => {
+    router.push(`/stories?restaurant=${encodeURIComponent(restaurantName)}`);
+  };
+
   return (
     <div className="bg-black py-8">
       <div className="container mx-auto px-[10rem]">
@@ -34,14 +41,15 @@ function RestaurantStoriesInfinite({
             {restaurants.map((restaurant, index) => (
               <div
                 key={`${restaurant.name}-${index}`}
-                className="flex-shrink-0 text-center cursor-pointer  transition-transform duration-200"
+                className="flex-shrink-0 text-center cursor-pointer hover:scale-105 transition-transform duration-200"
+                onClick={() => handleRestaurantClick(restaurant.name)}
               >
                 <div className="relative mb-3">
                   <div
                     className={`w-[8rem] h-[8rem] rounded-full p-0.5 ${
                       restaurant.seen
-                        ? "bg-green-700"
-                        : "bg-gray-800"
+                        ? "bg-gray-500"
+                        : "bg-gradient-to-tr from-purple-500 via-pink-500 to-orange-500"
                     }`}
                   >
                     <div className="w-full h-full bg-black rounded-full p-0.5">
@@ -49,7 +57,9 @@ function RestaurantStoriesInfinite({
                         <Image
                           src={
                             restaurant.image ||
-                            "/placeholder.svg?height=76&width=76&query=restaurant"
+                            "/placeholder.svg?height=76&width=76&query=restaurant" ||
+                            "/placeholder.svg" ||
+                            "/placeholder.svg"
                           }
                           alt={restaurant.name}
                           width={76}

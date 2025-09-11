@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Anchor, Heart, HeartPulse as HeartPlus } from "lucide-react";
+import { Heart, HeartPulse as HeartPlus } from "lucide-react";
 import { ProductCard } from "./product-card";
 import { CategoryCard } from "./cotegory-card";
 
@@ -33,10 +33,10 @@ export function ProductsSection({
   products,
   categories,
 }: ProductsSectionProps) {
-  const [selectedCategory, setSelectedCategory] = useState("ALL PRODUCTS");
+  const [selectedCategory, setSelectedCategory] = useState("ALL CATEGORIES");
 
   const getFilteredProducts = () => {
-    if (selectedCategory === "ALL PRODUCTS") {
+    if (selectedCategory === "ALL CATEGORIES") {
       return products;
     }
     return products.filter(
@@ -72,11 +72,14 @@ export function ProductsSection({
         <div className="flex gap-8 h-[600px]">
           {/* Categories Sidebar */}
           <div className="w-[320px] min-w-[320px] max-w-[320px] min-h-[650px] py-4 flex flex-col border-r border-gray-200 overflow-hidden">
-            <div className="flex items-center justify-center mb-6 gap-2">
-              <h3 className="text-2xl font-semibold text-gray-800">
-                Categories
-              </h3>
-              <Anchor className="w-6 h-6 text-orange-500" />
+            <div className="items-start mb-6">
+              <h2
+                className={
+                  "text-sm md:text-xl lg:text-4xl font-semibold text-orange-400 leading-tight transition-all duration-800 "
+                }
+              >
+                Shop{" "}
+              </h2>
             </div>
 
             <div className="space-y-4 py-4 overflow-y-scroll overflow-x-hidden scrollbar-hide">
@@ -105,19 +108,6 @@ export function ProductsSection({
 
           {/* Products Panel */}
           <div className="flex-1 bg-white flex flex-col">
-            {/* Header - OUR PRODUCTS */}
-            <div className="text-start pb-6 ">
-           
-                <h2
-                  className={
-                    "text-sm md:text-xl lg:text-4xl font-semibold text-orange-400 leading-tight transition-all duration-800 "
-                  }
-                >
-                  Shop The Best{" "}
-                  <span className="text-orange-400/50">Delivered Fast</span>
-                </h2>
-            </div>
-
             {/* Products Content */}
             <div className="flex-1 p-6 overflow-y-scroll scrollbar-hide">
               {/* New Arrivals Section */}
@@ -170,8 +160,8 @@ export function ProductsSection({
                 <div className="mb-8">
                   <div className="flex items-center mb-6 gap-2">
                     <h3 className="text-2xl font-semibold">
-                      {selectedCategory === "ALL PRODUCTS"
-                        ? "All Products"
+                      {selectedCategory === "ALL CATEGORIES"
+                        ? "All Categories"
                         : selectedCategory}
                     </h3>
                     <Heart className="w-6 h-6 text-orange-400" />
