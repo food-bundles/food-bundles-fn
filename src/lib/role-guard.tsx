@@ -4,14 +4,14 @@ import { redirect } from "next/navigation";
 export async function roleGuard(allowedRoles: string[]) {
   const token = (await cookies()).get("auth_token")?.value;
 
-  if (!token) redirect("/login");
+  if (!token) redirect("/?showLogin=true");
 
   const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/me`, {
     headers: { Cookie: `auth_token=${token}` },
     cache: "no-store",
   });
 
-  if (!res.ok) redirect("/login");
+  if (!res.ok) redirect("/?showLogin=true");
 
   const data = await res.json();
   const role = data.user?.role;

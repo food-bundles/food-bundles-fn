@@ -19,7 +19,7 @@ export default function Unauthorized() {
   };
 
   const handleLogin = () => {
-    router.push("/login");
+    router.push("/?showLogin=true");
   };
 
   return (

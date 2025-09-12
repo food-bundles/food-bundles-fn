@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { LoginModal } from "./loginModel";
 
 export function Header() {
@@ -19,6 +20,49 @@ export function Header() {
     message: "",
   });
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+useEffect(() => {
+  const showLogin = searchParams.get("showLogin");
+  const redirect = searchParams.get("redirect");
+  const reason = searchParams.get("reason");
+
+  if (showLogin === "true") {
+    setIsLoginModalOpen(true);
+
+    // Store redirect path for after login
+    if (redirect) {
+      localStorage.setItem("pendingRedirect", redirect);
+    }
+
+    // Set appropriate message based on reason
+    let message = "";
+    if (reason === "expired") {
+      message = "Your session has expired. Please log in again.";
+    } else if (reason === "invalid") {
+      message = "Please log in to access this page.";
+    } else if (redirect) {
+      message = `Please log in to access ${redirect}.`;
+    } else {
+      message = "Please log in to continue.";
+    }
+
+    setLoginData((prev) => ({
+      ...prev,
+      message,
+    }));
+
+    // Clean up URL parameters without adding to history
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.delete("showLogin");
+    newUrl.searchParams.delete("redirect");
+    newUrl.searchParams.delete("reason");
+
+    // Use replaceState to avoid adding to browser history
+    window.history.replaceState({}, "", newUrl.toString());
+  }
+}, [searchParams, router]);
   // Check backend availability
   useEffect(() => {
     const checkBackend = async () => {
@@ -30,18 +74,23 @@ export function Header() {
           }
         );
         if (res.ok) {
-          setLoginData({ isBackendAvailable: true, message: "" });
+          setLoginData((prev) => ({
+            ...prev,
+            isBackendAvailable: true,
+          }));
         } else {
-          setLoginData({
+          setLoginData((prev) => ({
+            ...prev,
             isBackendAvailable: false,
             message: "Backend unavailable",
-          });
+          }));
         }
       } catch {
-        setLoginData({
+        setLoginData((prev) => ({
+          ...prev,
           isBackendAvailable: false,
           message: "Backend unavailable",
-        });
+        }));
       }
     };
 
@@ -91,6 +140,11 @@ export function Header() {
 
   const handleCloseLoginModal = () => {
     setIsLoginModalOpen(false);
+    // Clear any pending redirect message
+    setLoginData((prev) => ({
+      ...prev,
+      message: prev.isBackendAvailable ? "" : prev.message,
+    }));
   };
 
   return (

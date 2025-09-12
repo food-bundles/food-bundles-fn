@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Bell, ChevronDown, ShoppingCart } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -68,6 +68,7 @@ const sampleNotifications = [
 ];
 
 export function TopResNav() {
+  const router = useRouter()
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -91,10 +92,10 @@ export function TopResNav() {
     try {
       await authService.logout();
       await new Promise((resolve) => setTimeout(resolve, 500));
-      window.location.href = "/login";
+       router.push("/");
     } catch (error) {
       console.error("Logout error:", error);
-      window.location.href = "/login";
+       router.push("/?showLogin=true");
     }
   };
 

@@ -7,7 +7,7 @@ const createAxiosClient = (): AxiosInstance => {
     headers: {
       "Content-Type": "application/json",
     },
-    withCredentials: true, 
+    withCredentials: true,
   });
 
   axiosClient.interceptors.request.use(
@@ -25,7 +25,12 @@ const createAxiosClient = (): AxiosInstance => {
       try {
         const { response } = error;
         if (response?.status === 401) {
-          window.location.href = "/login";
+          // Check if window is available (client-side only)
+          if (typeof window !== "undefined") {
+            window.location.href = `/?showLogin=true&reason=invalid&redirect=${encodeURIComponent(
+              window.location.pathname
+            )}`;
+          }
         }
       } catch (e) {
         console.error("Axios Error", e);

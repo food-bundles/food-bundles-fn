@@ -9,21 +9,31 @@ export function middleware(req: NextRequest) {
   console.log("token from middleware", token);
 
   if (!token) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    const redirectUrl = new URL("/", req.url);
+    redirectUrl.searchParams.set("showLogin", "true");
+    redirectUrl.searchParams.set("redirect", req.nextUrl.pathname);
+    return NextResponse.redirect(redirectUrl);
   }
 
   try {
     const decoded: any = jwt.decode(token);
     console.log("decoded from middleware", decoded);
 
-    // ✅ Only check expiration, not role
     if (decoded.exp * 1000 < Date.now()) {
-      return NextResponse.redirect(new URL("/login", req.url));
+      const redirectUrl = new URL("/", req.url);
+      redirectUrl.searchParams.set("showLogin", "true");
+      redirectUrl.searchParams.set("redirect", req.nextUrl.pathname);
+      redirectUrl.searchParams.set("reason", "expired");
+      return NextResponse.redirect(redirectUrl);
     }
 
     return NextResponse.next();
   } catch {
-    return NextResponse.redirect(new URL("/login", req.url));
+    const redirectUrl = new URL("/", req.url);
+    redirectUrl.searchParams.set("showLogin", "true");
+    redirectUrl.searchParams.set("redirect", req.nextUrl.pathname);
+    redirectUrl.searchParams.set("reason", "invalid");
+    return NextResponse.redirect(redirectUrl);
   }
 }
 

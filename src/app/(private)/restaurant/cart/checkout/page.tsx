@@ -4,7 +4,9 @@ import { CheckoutProgress } from "../_components/checkout-progress";
 import { cartService } from "@/app/services/cartService";
 import { roleGuard } from "@/lib/role-guard";
 import { UserRole } from "@/lib/types";
-import { IntegratedCheckoutForm } from "../_components/delivery-form";
+import { CheckoutForm } from "../_components/delivery-form";
+
+export const dynamic = "force-dynamic";
 
 export interface OrderSummaryData {
   totalItems: number;
@@ -62,7 +64,7 @@ export default async function CheckoutPage() {
         <CheckoutProgress currentStep="checkout" />
 
         <div className="mt-8">
-          <IntegratedCheckoutForm staticData={checkoutData || undefined} />
+          <CheckoutForm staticData={checkoutData || undefined} />
         </div>
       </main>
     </div>

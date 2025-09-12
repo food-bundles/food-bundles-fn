@@ -6,7 +6,15 @@ import { Header } from "@/components/header";
 import { HeroWithRestaurants } from "@/components/hero-section";
 import { ProductsSection } from "@/components/products-section";
 import { QuickTalkWrapper } from "@/components/quck-talk-section";
-import { useState } from "react";
+import { Suspense, useState } from "react";
+
+function SearchLoading() {
+  return (
+    <div className="flex items-center justify-center p-4">
+      <div className="animate-pulse">Loading...</div>
+    </div>
+  );
+}
 
 export default function HomePage() {
   const [isGuest, setIsGuest] = useState(true);
@@ -325,19 +333,21 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="h-16 bg-green-700"></div>
-      <div>
-        <HeroWithRestaurants restaurants={restaurants} />
-        <ProductsSection
-          products={products}
-          categories={categories}
-          isGuest={isGuest}
-        />
-        <QuickTalkWrapper />
-        <Footer />
+    <Suspense fallback={<SearchLoading />}>
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="h-16 bg-green-700"></div>
+        <div>
+          <HeroWithRestaurants restaurants={restaurants} />
+          <ProductsSection
+            products={products}
+            categories={categories}
+            isGuest={isGuest}
+          />
+          <QuickTalkWrapper />
+          <Footer />
+        </div>
       </div>
-    </div>
+    </Suspense>
   );
 }
