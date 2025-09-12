@@ -129,7 +129,7 @@ export function SignupForm({ signupData }: Props) {
 
       setSuccess("Account created successfully! Redirecting to login...");
       setTimeout(() => {
-        router.push("/?showLogin=true");
+        router.push("/login");
       }, 2000);
     } catch (error: any) {
       console.error("Registration error:", error);

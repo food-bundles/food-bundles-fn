@@ -24,20 +24,14 @@ export function LoginModal({ isOpen, onClose, loginData }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [pendingProduct, setPendingProduct] = useState<any>(null);
-  const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const router = useRouter();
 
-  // Check for pending items on component mount
+  // Check for pending product on component mount
   useEffect(() => {
     const storedProduct = localStorage.getItem("pendingCartProduct");
     if (storedProduct) {
       setPendingProduct(JSON.parse(storedProduct));
-    }
-
-    const storedRedirect = localStorage.getItem("pendingRedirect");
-    if (storedRedirect) {
-      setPendingRedirect(storedRedirect);
     }
   }, []);
 
@@ -89,84 +83,58 @@ export function LoginModal({ isOpen, onClose, loginData }: Props) {
     }, 300);
   };
 
-async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-  e.preventDefault();
-  setIsLoading(true);
-  setError("");
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
 
-  const formData = new FormData(e.currentTarget);
-  const identifier = formData.get("identifier") as string;
-  const password = formData.get("password") as string;
+    const formData = new FormData(e.currentTarget);
+    const identifier = formData.get("identifier") as string;
+    const password = formData.get("password") as string;
 
-  if (!identifier.includes("@") && !isValidPhone(identifier)) {
-    setError(
-      "Invalid phone number. It must be 10–15 digits and can start with '+'."
-    );
-    setIsLoading(false);
-    return;
-  }
-
-  let loginPayload: ILoginData;
-  if (identifier.includes("@")) {
-    loginPayload = { email: identifier.toLowerCase(), password };
-  } else {
-    loginPayload = { phone: identifier, password };
-  }
-
-  try {
-    const response = await authService.login(loginPayload);
-
-    // Handle pending product first (shopping cart scenario)
-    if (pendingProduct) {
-      handleProductToCart();
-      handleClose();
+    if (!identifier.includes("@") && !isValidPhone(identifier)) {
+      setError(
+        "Invalid phone number. It must be 10–15 digits and can start with '+'."
+      );
+      setIsLoading(false);
       return;
     }
 
-    // Handle pending redirect (middleware redirect scenario)
-    if (pendingRedirect) {
-      try {
+    let loginPayload: ILoginData;
+    if (identifier.includes("@")) {
+      loginPayload = { email: identifier.toLowerCase(), password };
+    } else {
+      loginPayload = { phone: identifier, password };
+    }
+
+    try {
+      const response = await authService.login(loginPayload);
+
+      if (pendingProduct) {
+        handleProductToCart();
         handleClose();
-        await router.push(pendingRedirect);
-        // Only remove from localStorage after successful navigation
-        localStorage.removeItem("pendingRedirect");
-        setPendingRedirect(null);
-        return;
-      } catch (navigationError) {
-        console.error("Navigation failed:", navigationError);
-        // Keep the redirect in localStorage for retry
-        setError("Navigation failed. Please try again.");
-        setIsLoading(false);
         return;
       }
-    }
 
-    // Default redirect based on user role
-    const userRole = response.data?.user?.role;
-    if (userRole) {
-      const redirectPath = getRedirectPath(userRole as UserRole);
-      handleClose();
-      router.push(redirectPath);
-    } else {
-      setError("User role not found. Please contact support.");
+      const userRole = response.data?.user?.role;
+      if (userRole) {
+        const redirectPath = getRedirectPath(userRole as UserRole);
+        handleClose();
+        router.push(redirectPath);
+      } else {
+        setError("User role not found. Please contact support.");
+      }
+    } catch (error: any) {
+      console.error("Login error:", error);
+      setError(
+        error.response?.data?.message || error.message || "Login failed"
+      );
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error: any) {
-    console.error("Login error:", error);
-    setError(error.response?.data?.message || error.message || "Login failed");
-  } finally {
-    setIsLoading(false);
   }
-}
 
   if (!isOpen) return null;
-
-  // Determine button text based on pending actions
-  const getButtonText = () => {
-    if (isLoading) return "LOGGING IN...";
-    if (pendingProduct) return "LOG IN & ADD TO CART";
-    if (pendingRedirect) return "LOG IN";
-    return "LOG IN";
-  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -213,12 +181,6 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
             <div className="mt-8">
               {!loginData.isBackendAvailable && (
                 <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-md text-sm mb-4">
-                  {loginData.message}
-                </div>
-              )}
-
-              {loginData.message && loginData.isBackendAvailable && (
-                <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-md text-sm mb-4">
                   {loginData.message}
                 </div>
               )}
@@ -287,7 +249,11 @@ async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
                   className="w-full h-12 bg-green-700 hover:bg-green-700 text-white font-medium rounded-md"
                   disabled={isLoading || !loginData.isBackendAvailable}
                 >
-                  {getButtonText()}
+                  {isLoading
+                    ? "LOGGING IN..."
+                    : pendingProduct
+                    ? "LOG IN & ADD TO CART"
+                    : "LOG IN"}
                 </Button>
               </form>
 
