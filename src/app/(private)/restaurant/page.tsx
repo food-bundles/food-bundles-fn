@@ -3,6 +3,8 @@ import { Search } from "lucide-react";
 import { ProductGrid } from "./_components/product-grid";
 import { productService } from "@/app/services/productService";
 
+export const dynamic = "force-dynamic";
+
 type ProductCategory =
   | "VEGETABLES"
   | "FRUITS"

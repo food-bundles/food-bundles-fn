@@ -54,7 +54,7 @@ interface LocationData {
   address?: string;
 }
 
-export function IntegratedCheckoutForm({ staticData }: Props) {
+export function CheckoutForm({ staticData }: Props) {
   const router = useRouter();
   const { cart, totalItems, totalQuantity, totalAmount, isLoading } = useCart();
 

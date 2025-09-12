@@ -20,7 +20,7 @@ export function CartContent() {
     error,
   } = useCart();
 
-  console.log("cartItems ================ ", cartItems);
+  // console.log("cartItems ================ ", cartItems);
 
   const handleDelete = async (itemId: string) => {
     await removeCartItem(itemId);
