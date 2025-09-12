@@ -1,13 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-
+import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { HeroWithRestaurants } from "@/components/hero-section";
 import { ProductsSection } from "@/components/products-section";
 import { QuickTalkWrapper } from "@/components/quck-talk-section";
 import { useState } from "react";
-import { Footer } from "react-day-picker";
 
 export default function HomePage() {
   const [isGuest, setIsGuest] = useState(true);
