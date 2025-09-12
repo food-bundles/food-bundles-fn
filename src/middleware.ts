@@ -6,9 +6,11 @@ import jwt from "jsonwebtoken";
 
 export function middleware(req: NextRequest) {
   const token = req.cookies.get("auth_token")?.value;
-  console.log("token from middleware", token);
+  console.log("Middleware - token exists:", !!token);
+  console.log("Middleware - pathname:", req.nextUrl.pathname);
 
   if (!token) {
+    console.log("Middleware - No token found, redirecting to login");
     const redirectUrl = new URL("/", req.url);
     redirectUrl.searchParams.set("showLogin", "true");
     redirectUrl.searchParams.set("redirect", req.nextUrl.pathname);
@@ -16,10 +18,26 @@ export function middleware(req: NextRequest) {
   }
 
   try {
-    const decoded: any = jwt.decode(token);
-    console.log("decoded from middleware", decoded);
+    // Use jwt.verify instead of jwt.decode to properly validate the token
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      console.error("Middleware - JWT_SECRET not configured");
+      const redirectUrl = new URL("/", req.url);
+      redirectUrl.searchParams.set("showLogin", "true");
+      redirectUrl.searchParams.set("redirect", req.nextUrl.pathname);
+      redirectUrl.searchParams.set("reason", "config_error");
+      return NextResponse.redirect(redirectUrl);
+    }
 
-    if (decoded.exp * 1000 < Date.now()) {
+    const decoded: any = jwt.verify(token, jwtSecret);
+    console.log(
+      "Middleware - Token verified successfully, user ID:",
+      decoded.id
+    );
+
+    // Check if token is expired (jwt.verify should handle this, but double-check)
+    if (decoded.exp && decoded.exp * 1000 < Date.now()) {
+      console.log("Middleware - Token expired");
       const redirectUrl = new URL("/", req.url);
       redirectUrl.searchParams.set("showLogin", "true");
       redirectUrl.searchParams.set("redirect", req.nextUrl.pathname);
@@ -27,8 +45,10 @@ export function middleware(req: NextRequest) {
       return NextResponse.redirect(redirectUrl);
     }
 
+    console.log("Middleware - Access granted");
     return NextResponse.next();
-  } catch {
+  } catch (error) {
+    console.error("Middleware - Token verification failed:", error);
     const redirectUrl = new URL("/", req.url);
     redirectUrl.searchParams.set("showLogin", "true");
     redirectUrl.searchParams.set("redirect", req.nextUrl.pathname);
