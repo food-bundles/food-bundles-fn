@@ -6,6 +6,8 @@ import { roleGuard } from "@/lib/role-guard";
 import { UserRole } from "@/lib/types";
 import { CheckoutForm } from "../_components/delivery-form";
 
+export const dynamic = "force-dynamic";
+
 export interface OrderSummaryData {
   totalItems: number;
   totalQuantity: number;
