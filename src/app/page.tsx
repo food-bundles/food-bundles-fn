@@ -1,60 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
+import { Footer } from "@/components/footer";
+import { Header } from "@/components/header";
+import { HeroWithRestaurants } from "@/components/hero-section";
+import { ProductsSection } from "@/components/products-section";
+import { QuickTalkWrapper } from "@/components/quck-talk-section";
 import { useState } from "react";
-
-// Import components with error boundaries
-import dynamic from "next/dynamic";
-
-// Dynamic imports to prevent SSR issues
-const Header = dynamic(
-  () => import("@/components/header").then((mod) => ({ default: mod.Header })),
-  {
-    ssr: false,
-    loading: () => <div>Loading header...</div>,
-  }
-);
-
-const HeroWithRestaurants = dynamic(
-  () =>
-    import("@/components/hero-section").then((mod) => ({
-      default: mod.HeroWithRestaurants,
-    })),
-  {
-    ssr: false,
-    loading: () => <div>Loading hero section...</div>,
-  }
-);
-
-const ProductsSection = dynamic(
-  () =>
-    import("@/components/products-section").then((mod) => ({
-      default: mod.ProductsSection,
-    })),
-  {
-    ssr: false,
-    loading: () => <div>Loading products...</div>,
-  }
-);
-
-const QuickTalkWrapper = dynamic(
-  () =>
-    import("@/components/quck-talk-section").then((mod) => ({
-      default: mod.QuickTalkWrapper,
-    })),
-  {
-    ssr: false,
-    loading: () => <div>Loading quick talk...</div>,
-  }
-);
-
-const Footer = dynamic(
-  () => import("@/components/footer").then((mod) => ({ default: mod.Footer })),
-  {
-    ssr: false,
-    loading: () => <div>Loading footer...</div>,
-  }
-);
 
 export default function HomePage() {
   const [isGuest, setIsGuest] = useState(true);
