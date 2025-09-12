@@ -1,15 +1,12 @@
 {
-  "version": 2,
-  "builds": [
+  "buildCommand": "next build",
+  "devCommand": "next dev --turbopack",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "rewrites": [
     {
-      "src": "src/pages/**/*.{js,ts,tsx}",
-      "use": "@vercel/next"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/src/pages/$1"
+      "source": "/(.*)",
+      "destination": "/"
     }
   ]
 }
