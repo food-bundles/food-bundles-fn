@@ -1,11 +1,11 @@
-"use client"
+
 
 import DashboardHeader from "./_components/header"
 import StatsCards from "./_components/stats-cards"
 import ProductManagement from "./_components/product-management"
+import { ProductProvider } from "./_components/product-context"
 
 export default function FarmerDashboard() {
-  
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
@@ -13,21 +13,20 @@ export default function FarmerDashboard() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <DashboardHeader onNotificationClick={() =>(true)} />
+        <DashboardHeader />
 
         <div className="flex-1 flex">
           {/* Dashboard Content */}
-          <div className="flex-1 p-6 space-y-6">
-            {/* Stats Cards */}
-            <StatsCards />
+          <div className="container mx-auto px-6 py-6">
+         
+            {/* <StatsCards /> */}
 
-            {/* Product Management */}
+            <ProductProvider>
             <ProductManagement />
+            </ProductProvider>
           </div>
-
         </div>
       </div>
-
     </div>
   )
 }
