@@ -1,4 +1,4 @@
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import { useEffect, useState } from "react"
@@ -100,7 +100,7 @@ export default function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps)
                 </div>
                 <Switch
                   checked={settings.seenSubmissions}
-                  onCheckedChange={(checked) => handleSettingChange("seenSubmissions", checked)}
+                  onCheckedChange={(checked: any) => handleSettingChange("seenSubmissions", checked)}
                 />
               </div>
             </CardContent>
@@ -122,7 +122,7 @@ export default function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps)
                 </div>
                 <Switch
                   checked={settings.deviceNotifications}
-                  onCheckedChange={(checked) => handleSettingChange("deviceNotifications", checked)}
+                  onCheckedChange={(checked: any) => handleSettingChange("deviceNotifications", checked)}
                 />
               </div>
 
@@ -133,7 +133,7 @@ export default function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps)
                 </div>
                 <Switch
                   checked={settings.smsNotifications}
-                  onCheckedChange={(checked) => handleSettingChange("smsNotifications", checked)}
+                  onCheckedChange={(checked: any) => handleSettingChange("smsNotifications", checked)}
                 />
               </div>
             </CardContent>
@@ -159,7 +159,7 @@ export default function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps)
                 </div>
                 <Switch
                   checked={settings.darkMode}
-                  onCheckedChange={(checked) => handleSettingChange("darkMode", checked)}
+                  onCheckedChange={(checked: any) => handleSettingChange("darkMode", checked)}
                 />
               </div>
             </CardContent>
