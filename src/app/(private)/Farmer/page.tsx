@@ -1,6 +1,6 @@
 
 
-import DashboardHeader from "./_components/header"
+import DashboardHeader from "./_components/farmerheader"
 import StatsCards from "./_components/stats-cards"
 import ProductManagement from "./_components/product-management"
 import { ProductProvider } from "./_components/product-context"
