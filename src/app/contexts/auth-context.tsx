@@ -1,17 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// contexts/auth-context.tsx
+// Frontend Auth Context - Token-Based
 "use client";
 
 import type React from "react";
-import { createContext, useContext, useState, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from "react";
 import { authService } from "@/app/services/authService";
 import { type IUser, UserRole, type ILoginData } from "@/lib/types";
+import { getToken, removeToken } from "@/app/hooks/axiosClient";
 
 interface AuthContextType {
   user: IUser | null;
   loading: boolean;
   isAuthenticated: boolean;
   login: (loginData: ILoginData) => Promise<void>;
+  logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   hasRole: (roles: UserRole[]) => boolean;
   getUserProfileImage: () => string;
@@ -23,7 +31,7 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
-const mapuserRoleToRole = (userRole: string, user: any): UserRole => {
+const mapUserRoleToRole = (userRole: string, user: any): UserRole => {
   if (userRole === UserRole.FARMER) return UserRole.FARMER;
   if (userRole === UserRole.RESTAURANT) return UserRole.RESTAURANT;
   if (userRole === UserRole.ADMIN) {
@@ -50,17 +58,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const checkAuth = useCallback(async () => {
     try {
       setLoading(true);
+      const token = getToken();
+
+      if (!token) {
+        setUser(null);
+        return;
+      }
+
       const response = await authService.getCurrentUser();
 
       if (response.user && response.userRole) {
-        const userRole = mapuserRoleToRole(response.userRole, response.user);
+        const userRole = mapUserRoleToRole(response.userRole, response.user);
         setUser({ ...response.user, role: userRole });
       } else {
         setUser(null);
+        removeToken();
       }
     } catch (error) {
       console.error("Auth check failed:", error);
       setUser(null);
+      removeToken();
     } finally {
       setLoading(false);
     }
@@ -88,6 +105,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
     [checkAuth]
   );
 
+  const logout = useCallback(async () => {
+    try {
+      setLoading(true);
+      await authService.logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      setUser(null);
+      setLoading(false);
+    }
+  }, []);
+
   const hasRole = useCallback(
     (roles: UserRole[]): boolean => {
       if (!user) return false;
@@ -107,6 +136,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return "/imgs/profile.jpg";
   }, [user]);
 
+  // Check auth on mount
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
   const isAuthenticated = !!user;
 
   const value: AuthContextType = {
@@ -114,6 +148,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     loading,
     isAuthenticated,
     login,
+    logout,
     checkAuth,
     hasRole,
     getUserProfileImage,

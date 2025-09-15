@@ -1,4 +1,25 @@
+// Frontend Axios Client - Token-Based
 import axios, { AxiosInstance, AxiosError, AxiosResponse } from "axios";
+
+// Utility functions for token management
+const getToken = (): string | null => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("auth_token");
+  }
+  return null;
+};
+
+const setToken = (token: string): void => {
+  if (typeof window !== "undefined") {
+    localStorage.setItem("auth_token", token);
+  }
+};
+
+const removeToken = (): void => {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("auth_token");
+  }
+};
 
 const createAxiosClient = (): AxiosInstance => {
   const axiosClient = axios.create({
@@ -7,11 +28,17 @@ const createAxiosClient = (): AxiosInstance => {
     headers: {
       "Content-Type": "application/json",
     },
-    withCredentials: true,
+    // Remove withCredentials as we don't use cookies anymore
+    withCredentials: false,
   });
 
   axiosClient.interceptors.request.use(
     (config) => {
+      // Add Authorization header with token
+      const token = getToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
       return config;
     },
     (error) => {
@@ -25,6 +52,8 @@ const createAxiosClient = (): AxiosInstance => {
       try {
         const { response } = error;
         if (response?.status === 401) {
+          // Remove token on 401 error
+          removeToken();
           window.location.href = "/login";
         }
       } catch (e) {
@@ -37,4 +66,6 @@ const createAxiosClient = (): AxiosInstance => {
   return axiosClient;
 };
 
+// Export token management functions
+export { getToken, setToken, removeToken };
 export default createAxiosClient;

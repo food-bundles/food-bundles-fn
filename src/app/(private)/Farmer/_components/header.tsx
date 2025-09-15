@@ -64,7 +64,7 @@ export default function DashboardHeader() {
       localStorage.removeItem("user")
       sessionStorage.clear()
       toast.success("Logged out successfully")
-      router.push("/login")
+      router.push("/login6")
     } catch (error) {
       console.error("Logout error:", error)
       toast.error("Failed to logout. Please try again.")

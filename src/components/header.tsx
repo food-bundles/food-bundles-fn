@@ -1,15 +1,15 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { Menu, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import { LoginModal } from "./loginModel";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [loginData, setLoginData] = useState<{
     isBackendAvailable: boolean;
@@ -19,37 +19,58 @@ export function Header() {
     message: "",
   });
 
-  // Check backend availability
-  useEffect(() => {
-    const checkBackend = async () => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/health`,
-          {
-            cache: "no-store",
-          }
-        );
-        if (res.ok) {
-          setLoginData({ isBackendAvailable: true, message: "" });
-        } else {
-          setLoginData({
-            isBackendAvailable: false,
-            message: "Backend unavailable",
-          });
-        }
-      } catch {
+  const lastScrollY = useRef(0);
+  const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
+
+
+  // Check backend availability only when login modal is about to open
+  const checkBackendAvailability = useCallback(async () => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/health`, {
+        cache: "no-store",
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        setLoginData({ isBackendAvailable: true, message: "" });
+      } else {
         setLoginData({
           isBackendAvailable: false,
-          message: "Backend unavailable",
+          message: "Service temporarily unavailable. Please try again later.",
         });
       }
-    };
-
-    checkBackend();
+    } catch (error) {
+      setLoginData({
+        isBackendAvailable: false,
+        message: "Service temporarily unavailable. Please try again later.",
+      });
+    }
   }, []);
 
-  useEffect(() => {
-    const controlNavbar = () => {
+  const handleLoginClick = async () => {
+    // Check backend only when user clicks login
+    await checkBackendAvailability();
+    setIsLoginModalOpen(true);
+  };
+
+  const handleCloseLoginModal = () => {
+    setIsLoginModalOpen(false);
+    // Reset backend status for next time
+    setLoginData({ isBackendAvailable: true, message: "" });
+  };
+
+  // Scroll handling without useEffect - using event listener directly
+  const handleScroll = useCallback(() => {
+    if (scrollTimeout.current) {
+      clearTimeout(scrollTimeout.current);
+    }
+
+    scrollTimeout.current = setTimeout(() => {
       const currentScrollY = window.scrollY;
 
       // Show header when at top of page
@@ -57,41 +78,20 @@ export function Header() {
         setIsVisible(true);
       }
       // Hide header when scrolling down, show when scrolling up
-      else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+      else if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
         setIsVisible(false);
-      } else if (currentScrollY < lastScrollY) {
+      } else if (currentScrollY < lastScrollY.current) {
         setIsVisible(true);
       }
 
-      setLastScrollY(currentScrollY);
-    };
+      lastScrollY.current = currentScrollY;
+    }, 100); // Throttle to 100ms
+  }, []);
 
-    // Throttle scroll events for better performance
-    let ticking = false;
-    const handleScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          controlNavbar();
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
+  // Add scroll event listener properly
+  if (typeof window !== "undefined") {
     window.addEventListener("scroll", handleScroll);
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, [lastScrollY]);
-
-  const handleLoginClick = () => {
-    setIsLoginModalOpen(true);
-  };
-
-  const handleCloseLoginModal = () => {
-    setIsLoginModalOpen(false);
-  };
+  }
 
   return (
     <>
@@ -200,9 +200,9 @@ export function Header() {
                         variant="secondary"
                         size="sm"
                         className="w-fit bg-green-50 text-black hover:bg-green-100"
-                        onClick={() => {
+                        onClick={async () => {
                           setIsMenuOpen(false);
-                          handleLoginClick();
+                          await handleLoginClick();
                         }}
                       >
                         Login

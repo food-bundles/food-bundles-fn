@@ -1,14 +1,23 @@
+// Frontend Auth Service - Token-Based
 import {
   ICreateFarmerData,
   ICreateRestaurantData,
   ILoginData,
 } from "@/lib/types";
-import createAxiosClient from "../hooks/axiosClient";
+import createAxiosClient, { setToken, removeToken } from "../hooks/axiosClient";
 
 export const authService = {
   login: async (loginData: ILoginData) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.post("/login", loginData);
+
+    // Store token in localStorage AND cookies after successful login
+    if (response.data.success && response.data.token) {
+      setToken(response.data.token);
+      // Also set token in cookies for server-side access
+      document.cookie = `auth-token=${response.data.token}; path=/; max-age=86400; secure; samesite=strict`;
+    }
+
     return response.data;
   },
 
@@ -26,14 +35,18 @@ export const authService = {
 
   getCurrentUser: async () => {
     const axiosClient = createAxiosClient();
+    // Token is automatically added via interceptors
     const response = await axiosClient.get("/me");
-    
     return response.data;
   },
 
   logout: async () => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.post("/logout");
+
+    // Remove token from localStorage
+    removeToken();
+
     return response.data;
   },
 

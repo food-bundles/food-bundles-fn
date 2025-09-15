@@ -129,7 +129,7 @@ export function SignupForm({ signupData }: Props) {
 
       setSuccess("Account created successfully! Redirecting to login...");
       setTimeout(() => {
-        router.push("/login");
+        router.push("/login8");
       }, 2000);
     } catch (error: any) {
       console.error("Registration error:", error);
@@ -194,7 +194,7 @@ export function SignupForm({ signupData }: Props) {
             <p className="text-sm text-gray-600">
               Already have an account?{" "}
               <Link
-                href="/login"
+                href="/login9"
                 className="text-green-600 hover:text-green-700 font-medium"
               >
                 Sign in
@@ -390,7 +390,7 @@ export function SignupForm({ signupData }: Props) {
         <p className="text-center text-sm text-gray-600">
           Already have an account?{" "}
           <Link
-            href="/login"
+            href="/login10"
             className="text-green-600 hover:text-green-700 font-medium"
           >
             Sign in

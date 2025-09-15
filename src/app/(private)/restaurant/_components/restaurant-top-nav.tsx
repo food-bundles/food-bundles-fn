@@ -95,7 +95,7 @@ export function TopResNav() {
        router.push("/");
     } catch (error) {
       console.error("Logout error:", error);
-      window.location.href = "/login";
+      window.location.href = "/login7";
     }
   };
 
