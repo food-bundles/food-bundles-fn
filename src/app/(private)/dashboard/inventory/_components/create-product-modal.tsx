@@ -32,8 +32,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, X } from "lucide-react";
-import { useActiveCategories } from "@/app/contexts/category-context";
+import { CalendarIcon, X, Plus } from "lucide-react";
+import { useCategory } from "@/app/contexts/category-context";
 
 export interface ProductFormData {
   productName: string;
@@ -66,6 +66,86 @@ const units = [
   "bunches",
 ];
 
+// Create Category Modal Component
+interface CreateCategoryModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
+}
+
+function CreateCategoryModal({
+  open,
+  onOpenChange,
+  onSuccess,
+}: CreateCategoryModalProps) {
+  const [categoryName, setCategoryName] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { createCategory } = useCategory();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!categoryName.trim()) {
+      toast.error("Please enter a category name");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const success = await createCategory({ name: categoryName.trim() });
+
+      if (success) {
+        toast.success("Category created successfully!");
+        setCategoryName("");
+        onSuccess();
+        onOpenChange(false);
+      }
+    } catch (error: any) {
+      console.error("Error creating category:", error);
+      // toast.error("Failed to create category");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setCategoryName("");
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Create New Category</DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="categoryName">Category Name *</Label>
+            <Input
+              id="categoryName"
+              value={categoryName}
+              onChange={(e) => setCategoryName(e.target.value)}
+              placeholder="Enter category name"
+              required
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={handleCancel}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Creating..." : "Create Category"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function CreateProductModal({
   open,
   onOpenChange,
@@ -86,13 +166,15 @@ export function CreateProductModal({
 
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCreateCategoryOpen, setIsCreateCategoryOpen] = useState(false);
 
-  // Use the category context hook instead of local state
+  // Use the category context hook
   const {
     activeCategories,
     isLoading: isCategoriesLoading,
     error: categoryError,
-  } = useActiveCategories();
+    refreshActiveCategories,
+  } = useCategory();
 
   // Show error if categories failed to load and debug information
   useEffect(() => {
@@ -157,14 +239,14 @@ export function CreateProductModal({
       const response = await productService.createProduct(formData);
       if (response.success) {
         onSubmit?.(formData);
-        toast.success("Product Createed successfully!");
+        toast.success("Product created successfully!");
         handleCancel();
       } else {
-        toast.error(response.message || "Failed to Create product");
+        toast.error(response.message || "Failed to create product");
       }
     } catch (error: any) {
-      console.error("Error Creating product:", error);
-      toast.error(error.response?.data?.message || "Failed to Create product");
+      console.error("Error creating product:", error);
+      toast.error(error.response?.data?.message || "Failed to create product");
     } finally {
       setIsSubmitting(false);
     }
@@ -187,250 +269,314 @@ export function CreateProductModal({
     onOpenChange(false);
   };
 
+  const handleCreateCategorySuccess = async () => {
+    // Refresh categories to get the newly created category
+    await refreshActiveCategories();
+    toast.success("Categories refreshed! You can now select the new category.");
+  };
+
+  const handleCreateCategoryClick = () => {
+    setIsCreateCategoryOpen(true);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Create New Product</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Product</DialogTitle>
+          </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Product Images */}
-          <div className="space-y-2">
-            <Label>Product Images</Label>
-            <div className="space-y-3">
-              <Input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleImageChange}
-                className="cursor-pointer"
-              />
-              {imagePreviews.length > 0 && (
-                <div className="grid grid-cols-6 gap-2">
-                  {imagePreviews.map((preview, index) => (
-                    <div
-                      key={index}
-                      className="relative w-20 h-20 rounded-lg overflow-hidden border"
-                    >
-                      <Image
-                        src={preview || "/placeholder.svg"}
-                        alt={`Preview ${index + 1}`}
-                        width={80}
-                        height={80}
-                        className="w-full h-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Product Images */}
+            <div className="space-y-2">
+              <Label>Product Images</Label>
+              <div className="space-y-3">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageChange}
+                  className="cursor-pointer"
+                />
+                {imagePreviews.length > 0 && (
+                  <div className="grid grid-cols-6 gap-2">
+                    {imagePreviews.map((preview, index) => (
+                      <div
+                        key={index}
+                        className="relative w-20 h-20 rounded-lg overflow-hidden border"
                       >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
+                        <Image
+                          src={preview || "/placeholder.svg"}
+                          alt={`Preview ${index + 1}`}
+                          width={80}
+                          height={80}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              {/* Left side */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="productName">Product Name *</Label>
+                  <Input
+                    id="productName"
+                    value={formData.productName}
+                    onChange={(e) =>
+                      handleInputChange("productName", e.target.value)
+                    }
+                    placeholder="Enter product name"
+                    required
+                  />
                 </div>
-              )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="unitPrice">Unit Price (RWF) *</Label>
+                  <Input
+                    id="unitPrice"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={formData.unitPrice || ""}
+                    onChange={(e) =>
+                      handleInputChange(
+                        "unitPrice",
+                        Number.parseFloat(e.target.value) || 0
+                      )
+                    }
+                    placeholder="0"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="purchasePrice">Purchase Price (RWF) *</Label>
+                  <Input
+                    id="purchasePrice"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={formData.purchasePrice || ""}
+                    onChange={(e) =>
+                      handleInputChange(
+                        "purchasePrice",
+                        Number.parseFloat(e.target.value) || 0
+                      )
+                    }
+                    placeholder="0"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Category *</Label>
+                    {!isCategoriesLoading && activeCategories.length === 0 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCreateCategoryClick}
+                        className="flex items-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Create Category
+                      </Button>
+                    )}
+                  </div>
+
+                  {isCategoriesLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="text-sm text-gray-500">
+                        Loading categories...
+                      </div>
+                    </div>
+                  ) : activeCategories.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                      <div className="text-sm text-gray-500 mb-2">
+                        No categories available
+                      </div>
+                      <Button
+                        type="button"
+                        variant="default"
+                        size="sm"
+                        onClick={handleCreateCategoryClick}
+                        className="flex items-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Create First Category
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Select
+                        value={formData.categoryId}
+                        onValueChange={(value) =>
+                          handleInputChange("categoryId", value)
+                        }
+                        disabled={
+                          isCategoriesLoading || activeCategories.length === 0
+                        }
+                      >
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {activeCategories.map((category) => (
+                            <SelectItem key={category.id} value={category.id}>
+                              {category?.name.replace(/_/g, " ")}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCreateCategoryClick}
+                        className="flex items-center gap-2 whitespace-nowrap"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add New
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="quantity">Quantity *</Label>
+                  <Input
+                    id="quantity"
+                    type="number"
+                    min="1"
+                    value={formData.quantity || ""}
+                    onChange={(e) =>
+                      handleInputChange(
+                        "quantity",
+                        Number.parseInt(e.target.value) || 0
+                      )
+                    }
+                    placeholder="0"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Right side */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="sku">SKU *</Label>
+                  <Input
+                    id="sku"
+                    value={formData.sku}
+                    onChange={(e) => handleInputChange("sku", e.target.value)}
+                    placeholder="Enter product SKU"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Unit *</Label>
+                  <Select
+                    value={formData.unit}
+                    onValueChange={(value) => handleInputChange("unit", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select unit" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {units.map((unit) => (
+                        <SelectItem key={unit} value={unit}>
+                          {unit}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="bonus">Bonus</Label>
+                  <Input
+                    id="bonus"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={formData.bonus || ""}
+                    onChange={(e) =>
+                      handleInputChange(
+                        "bonus",
+                        Number.parseFloat(e.target.value) || 0
+                      )
+                    }
+                    placeholder="0"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Expiry Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !formData.expiryDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.expiryDate ? (
+                          format(formData.expiryDate, "PPP")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={formData.expiryDate}
+                        onSelect={(date) =>
+                          handleInputChange("expiryDate", date)
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-6">
-            {/* Left side */}
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="productName">Product Name *</Label>
-                <Input
-                  id="productName"
-                  value={formData.productName}
-                  onChange={(e) =>
-                    handleInputChange("productName", e.target.value)
-                  }
-                  placeholder="Enter product name"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="unitPrice">Unit Price (RWF) *</Label>
-                <Input
-                  id="unitPrice"
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={formData.unitPrice || ""}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "unitPrice",
-                      Number.parseFloat(e.target.value) || 0
-                    )
-                  }
-                  placeholder="0"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="purchasePrice">Purchase Price (RWF) *</Label>
-                <Input
-                  id="purchasePrice"
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={formData.purchasePrice || ""}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "purchasePrice",
-                      Number.parseFloat(e.target.value) || 0
-                    )
-                  }
-                  placeholder="0"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Category *</Label>
-                <Select
-                  value={formData.categoryId}
-                  onValueChange={(value) =>
-                    handleInputChange("categoryId", value)
-                  }
-                  disabled={
-                    isCategoriesLoading || activeCategories.length === 0
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={
-                        isCategoriesLoading
-                          ? "Loading categories..."
-                          : activeCategories.length === 0
-                          ? "No categories available"
-                          : "Select category"
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {activeCategories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category?.name.replace(/_/g, " ")}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="quantity">Quantity *</Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  min="1"
-                  value={formData.quantity || ""}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "quantity",
-                      Number.parseInt(e.target.value) || 0
-                    )
-                  }
-                  placeholder="0"
-                  required
-                />
-              </div>
+            <div className="flex justify-end gap-3 pt-4">
+              <Button type="button" variant="outline" onClick={handleCancel}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Creating..." : "Create Product"}
+              </Button>
             </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
-            {/* Right side */}
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="sku">SKU *</Label>
-                <Input
-                  id="sku"
-                  value={formData.sku}
-                  onChange={(e) => handleInputChange("sku", e.target.value)}
-                  placeholder="Enter product SKU"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Unit *</Label>
-                <Select
-                  value={formData.unit}
-                  onValueChange={(value) => handleInputChange("unit", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select unit" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {units.map((unit) => (
-                      <SelectItem key={unit} value={unit}>
-                        {unit}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="bonus">Bonus</Label>
-                <Input
-                  id="bonus"
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={formData.bonus || ""}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "bonus",
-                      Number.parseFloat(e.target.value) || 0
-                    )
-                  }
-                  placeholder="0"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Expiry Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !formData.expiryDate && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.expiryDate ? (
-                        format(formData.expiryDate, "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={formData.expiryDate}
-                      onSelect={(date) => handleInputChange("expiryDate", date)}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={handleCancel}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Creating..." : "Create Product"}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+      {/* Create Category Modal */}
+      <CreateCategoryModal
+        open={isCreateCategoryOpen}
+        onOpenChange={setIsCreateCategoryOpen}
+        onSuccess={handleCreateCategorySuccess}
+      />
+    </>
   );
 }
