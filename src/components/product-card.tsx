@@ -81,7 +81,7 @@ export function ProductCard({
       })
     );
     // Redirect to login page
-    router.push("/login14");
+    router.push("/?showLogin=true");
   };
 
   return (

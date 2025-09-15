@@ -16,7 +16,7 @@ export default function NotFound() {
   };
 
   const handleLogin = () => {
-      router.push("/login4");
+      router.push("/?showLogin=true");
   };
 
   const handleGoHome = () => {

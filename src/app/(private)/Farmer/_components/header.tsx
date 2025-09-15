@@ -57,14 +57,12 @@ export default function DashboardHeader() {
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true)
-      // optional: call backend to invalidate token
       await authService.logout().catch(() => {})
-      // clear storage
       localStorage.removeItem("token")
       localStorage.removeItem("user")
       sessionStorage.clear()
       toast.success("Logged out successfully")
-      router.push("/login6")
+      router.push("/")
     } catch (error) {
       console.error("Logout error:", error)
       toast.error("Failed to logout. Please try again.")

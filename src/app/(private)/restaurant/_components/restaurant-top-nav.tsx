@@ -18,6 +18,7 @@ import { authService } from "@/app/services/authService";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/app/contexts/auth-context";
 import { useCartSummary } from "@/app/contexts/cart-context";
+import { toast } from "sonner";
 
 const sampleNotifications = [
   {
@@ -95,7 +96,7 @@ export function TopResNav() {
        router.push("/");
     } catch (error) {
       console.error("Logout error:", error);
-      window.location.href = "/login7";
+      toast.error("Something went wrong!");
     }
   };
 

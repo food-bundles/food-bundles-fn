@@ -4,7 +4,8 @@
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { Menu, X } from "lucide-react";
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { LoginModal } from "./loginModel";
 
 export function Header() {
@@ -21,7 +22,67 @@ export function Header() {
 
   const lastScrollY = useRef(0);
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
+  const searchParams = useSearchParams();
 
+  // Check for URL parameters that should trigger login modal
+  const checkForLoginRedirect = useCallback(() => {
+    const showLogin = searchParams?.get("showLogin");
+    const redirect = searchParams?.get("redirect");
+    const reason = searchParams?.get("reason");
+
+    console.log("Checking for login redirect:", {
+      showLogin,
+      redirect,
+      reason,
+    });
+
+    if (showLogin === "true" && !isLoginModalOpen) {
+      // Store redirect path for after login
+      if (redirect) {
+        localStorage.setItem("pendingRedirect", redirect);
+        console.log("Stored pendingRedirect:", redirect);
+      }
+
+      // Set appropriate message based on reason
+      let message = "";
+      if (reason === "expired") {
+        message = "Your session has expired. Please log in again.";
+      } else if (reason === "invalid") {
+        message = "Invalid session. Please log in again.";
+      } else if (reason === "required") {
+        message = `Please log in to access ${redirect || "this page"}.`;
+      } else if (reason === "config_error") {
+        message = "System configuration error. Please log in again.";
+      } else {
+        message = "Please log in to continue.";
+      }
+
+      console.log("Setting login data message:", message);
+
+      setLoginData((prev) => ({
+        ...prev,
+        message,
+      }));
+
+      console.log("Opening login modal");
+      setIsLoginModalOpen(true);
+
+      // Clean up URL parameters without adding to history
+      if (typeof window !== "undefined") {
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete("showLogin");
+        newUrl.searchParams.delete("redirect");
+        newUrl.searchParams.delete("reason");
+        window.history.replaceState({}, "", newUrl.toString());
+        console.log("Cleaned up URL parameters");
+      }
+    }
+  }, [searchParams, isLoginModalOpen]);
+
+  // Use useEffect to properly check for login redirect on component mount and when searchParams change
+  useEffect(() => {
+    checkForLoginRedirect();
+  }, [checkForLoginRedirect]);
 
   // Check backend availability only when login modal is about to open
   const checkBackendAvailability = useCallback(async () => {
@@ -37,18 +98,20 @@ export function Header() {
       clearTimeout(timeoutId);
 
       if (res.ok) {
-        setLoginData({ isBackendAvailable: true, message: "" });
+        setLoginData((prev) => ({ ...prev, isBackendAvailable: true }));
       } else {
-        setLoginData({
+        setLoginData((prev) => ({
+          ...prev,
           isBackendAvailable: false,
           message: "Service temporarily unavailable. Please try again later.",
-        });
+        }));
       }
     } catch (error) {
-      setLoginData({
+      setLoginData((prev) => ({
+        ...prev,
         isBackendAvailable: false,
         message: "Service temporarily unavailable. Please try again later.",
-      });
+      }));
     }
   }, []);
 
@@ -60,11 +123,13 @@ export function Header() {
 
   const handleCloseLoginModal = () => {
     setIsLoginModalOpen(false);
-    // Reset backend status for next time
+    // Reset login data for next time
     setLoginData({ isBackendAvailable: true, message: "" });
+    // Clean up pending redirect if user closes modal without logging in
+    localStorage.removeItem("pendingRedirect");
   };
 
-  // Scroll handling without useEffect - using event listener directly
+  // Scroll handling with proper useEffect
   const handleScroll = useCallback(() => {
     if (scrollTimeout.current) {
       clearTimeout(scrollTimeout.current);
@@ -88,10 +153,19 @@ export function Header() {
     }, 100); // Throttle to 100ms
   }, []);
 
-  // Add scroll event listener properly
-  if (typeof window !== "undefined") {
-    window.addEventListener("scroll", handleScroll);
-  }
+  // Properly add scroll event listener with useEffect
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.addEventListener("scroll", handleScroll, { passive: true });
+
+      return () => {
+        window.removeEventListener("scroll", handleScroll);
+        if (scrollTimeout.current) {
+          clearTimeout(scrollTimeout.current);
+        }
+      };
+    }
+  }, [handleScroll]);
 
   return (
     <>

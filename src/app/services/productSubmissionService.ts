@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ProductSubmissionData } from "../(private)/Farmer/_components/product-submission-modal"
 import createAxiosClient from "../hooks/axiosClient"
 

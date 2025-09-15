@@ -1,23 +1,31 @@
-// Frontend Axios Client - Token-Based
+// Frontend Axios Client - Cookie-Based
 import axios, { AxiosInstance, AxiosError, AxiosResponse } from "axios";
 
-// Utility functions for token management
 const getToken = (): string | null => {
   if (typeof window !== "undefined") {
-    return localStorage.getItem("auth_token");
+    const cookies = document.cookie.split(";");
+    for (const cookie of cookies) {
+      const [name, value] = cookie.trim().split("=");
+      if (name === "auth-token") {
+        return decodeURIComponent(value);
+      }
+    }
   }
   return null;
 };
 
 const setToken = (token: string): void => {
   if (typeof window !== "undefined") {
-    localStorage.setItem("auth_token", token);
+    document.cookie = `auth-token=${encodeURIComponent(
+      token
+    )}; path=/; max-age=86400; secure; samesite=strict`;
   }
 };
 
 const removeToken = (): void => {
   if (typeof window !== "undefined") {
-    localStorage.removeItem("auth_token");
+    document.cookie =
+      "auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; secure; samesite=strict";
   }
 };
 
@@ -28,13 +36,11 @@ const createAxiosClient = (): AxiosInstance => {
     headers: {
       "Content-Type": "application/json",
     },
-    // Remove withCredentials as we don't use cookies anymore
     withCredentials: false,
   });
 
   axiosClient.interceptors.request.use(
     (config) => {
-      // Add Authorization header with token
       const token = getToken();
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -52,9 +58,8 @@ const createAxiosClient = (): AxiosInstance => {
       try {
         const { response } = error;
         if (response?.status === 401) {
-          // Remove token on 401 error
           removeToken();
-          window.location.href = "/login";
+          window.location.href = "/?showLogin=true";
         }
       } catch (e) {
         console.error("Axios Error", e);
@@ -66,6 +71,5 @@ const createAxiosClient = (): AxiosInstance => {
   return axiosClient;
 };
 
-// Export token management functions
 export { getToken, setToken, removeToken };
 export default createAxiosClient;

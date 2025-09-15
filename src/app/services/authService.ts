@@ -41,13 +41,8 @@ export const authService = {
   },
 
   logout: async () => {
-    const axiosClient = createAxiosClient();
-    const response = await axiosClient.post("/logout");
-
-    // Remove token from localStorage
     removeToken();
-
-    return response.data;
+    return { success: true, message: "Logged out successfully" };
   },
 
   healthCheck: async () => {
