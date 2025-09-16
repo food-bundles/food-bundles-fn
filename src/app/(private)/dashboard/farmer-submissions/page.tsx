@@ -392,16 +392,7 @@ export default function FarmerSubmissionsPage() {
 
   const handleExport = async () => {
     try {
-      console.log("Exporting data...", {
-        filters: {
-          search: searchValue,
-          status: selectedStatus,
-          feedbackStatus: selectedFeedbackStatus,
-          province: selectedProvince,
-          dateRange: selectedDateRange,
-        },
-        totalRecords: filteredData.length,
-      });
+      console.log("Exporting data...");
 
       // Here you would typically call an export API
       toast.success(`Exporting ${filteredData.length} records...`);

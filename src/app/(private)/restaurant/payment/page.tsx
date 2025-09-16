@@ -4,9 +4,13 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2, CreditCard, Smartphone, Banknote } from "lucide-react";
 import { checkoutService, type Checkout } from "@/app/services/checkoutService";
-import { JSX } from "react/jsx-dev-runtime";
 
 export default function PaymentPage() {
   const router = useRouter();
@@ -32,14 +36,17 @@ export default function PaymentPage() {
     {
       id: "CASH" as const,
       name: "Cash on Delivery",
+      icon: Banknote,
     },
     {
       id: "MOBILE_MONEY" as const,
       name: "Mobile Money",
+      icon: Smartphone,
     },
     {
       id: "CARD" as const,
       name: "Credit/Debit Card",
+      icon: CreditCard,
     },
   ];
 
@@ -127,7 +134,7 @@ export default function PaymentPage() {
 
       if (response.success) {
         // Redirect to confirmation page
-        router.push("/restaurant/cart/confirmation");
+        router.push("/restaurant/confirmation");
       } else {
         setError(response.message || "Payment processing failed");
       }
@@ -152,17 +159,17 @@ export default function PaymentPage() {
   if (checkouts.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-full max-w-md bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="text-center py-8 px-6">
+        <Card className="w-full max-w-md">
+          <CardContent className="text-center py-8">
             <p className="text-gray-600 mb-4">No pending orders found</p>
-            <button
+            <Button
               onClick={() => router.push("/restaurant")}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+              variant="outline"
             >
               Continue Shopping
-            </button>
-          </div>
-        </div>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -170,42 +177,35 @@ export default function PaymentPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4 max-w-4xl">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Complete Your Payment
+          </h1>
+          <p className="text-gray-600">
+            Select your order and choose a payment method
+          </p>
+        </div>
+
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Order Selection */}
-
           <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                  Complete Your Payment
-                </h1>
-                <p className="text-gray-600">
-                  Select your order and choose a payment method
-                </p>
-              </div>
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Select Order
-                </h3>
-              </div>
-              <div className="p-6">
-                <div className="space-y-3">
+            <Card>
+              <CardHeader>
+                <CardTitle>Select Order</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <RadioGroup
+                  value={selectedCheckout}
+                  onValueChange={setSelectedCheckout}
+                >
                   {checkouts.map((checkout) => (
                     <div
                       key={checkout.id}
                       className="flex items-center space-x-3 p-4 border rounded-lg"
                     >
-                      <input
-                        type="radio"
-                        id={checkout.id}
-                        name="checkout"
-                        value={checkout.id}
-                        checked={selectedCheckout === checkout.id}
-                        onChange={(e) => setSelectedCheckout(e.target.value)}
-                        className="w-4 h-4 text-green-600 border-gray-300 focus:ring-green-500"
-                      />
+                      <RadioGroupItem value={checkout.id} id={checkout.id} />
                       <div className="flex-1">
-                        <label htmlFor={checkout.id} className="cursor-pointer">
+                        <Label htmlFor={checkout.id} className="cursor-pointer">
                           <div className="font-medium">
                             {/* Order #{checkout.txOrderId} */}
                           </div>
@@ -216,65 +216,54 @@ export default function PaymentPage() {
                           <div className="text-xs text-gray-500">
                             Payment Method: {checkout.paymentMethod}
                           </div>
-                        </label>
+                        </Label>
                       </div>
                     </div>
                   ))}
-                </div>
-              </div>
-            </div>
+                </RadioGroup>
+              </CardContent>
+            </Card>
+
+            {/* Payment Method Selection */}
+            <Card>
+              <CardHeader>
+                <CardTitle>You May Change Payment Method</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <RadioGroup
+                  value={paymentMethod}
+                  onValueChange={(value: any) => setPaymentMethod(value)}
+                >
+                  {paymentMethods.map((method) => {
+                    const Icon = method.icon;
+                    return (
+                      <div
+                        key={method.id}
+                        className="flex items-center space-x-3 p-4 border rounded-lg"
+                      >
+                        <RadioGroupItem value={method.id} id={method.id} />
+                        <Icon className="h-6 w-6 text-gray-600" />
+                        <div className="flex-1">
+                          <Label htmlFor={method.id} className="cursor-pointer">
+                            <div className="font-medium">{method.name}</div>
+                          </Label>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </RadioGroup>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Payment Details */}
           <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Payment Method
-                </h3>
-                <p className="text-sm text-gray-500">
-                  Confirm the method of payment you will use
-                </p>
-              </div>
-
-              <div className="p-6">
-                <div className="grid grid-cols-3 gap-4">
-                  {paymentMethods.map((method) => {
-                    const icons: Record<string, JSX.Element> = {
-                      CASH: <Banknote className="h-8 w-8" />,
-                      MOBILE_MONEY: <Smartphone className="h-8 w-8" />,
-                      CARD: <CreditCard className="h-8 w-8" />,
-                    };
-
-                    const isActive = paymentMethod === method.id;
-
-                    return (
-                      <div
-                        key={method.id}
-                        className={`flex flex-col items-center justify-center p-4 rounded-xl border cursor-pointer transition-all ${
-                          isActive
-                            ? "border-green-600 bg-green-50 text-green-700 shadow-md"
-                            : "border-gray-200 hover:border-green-400 hover:bg-gray-50"
-                        }`}
-                        onClick={() => setPaymentMethod(method.id)}
-                      >
-                        <div className="mb-2">{icons[method.id]}</div>
-                        <span className="text-sm font-medium text-center">
-                          {method.name}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Payment Details Form */}
-              <div className="px-6 py-4 border-t border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Payment Details
-                </h3>
-              </div>
-              <div className="p-6 space-y-4">
+            {/* Payment Form */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Payment Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 {paymentMethod === "CASH" && (
                   <div className="text-center py-8">
                     <Banknote className="h-12 w-12 text-green-600 mx-auto mb-4" />
@@ -287,19 +276,13 @@ export default function PaymentPage() {
                 {paymentMethod === "MOBILE_MONEY" && (
                   <div className="space-y-4">
                     <div>
-                      <label
-                        htmlFor="phone"
-                        className="block text-sm font-medium text-gray-700 mb-1"
-                      >
-                        Phone Number
-                      </label>
-                      <input
+                      <Label htmlFor="phone">Phone Number</Label>
+                      <Input
                         id="phone"
                         type="tel"
                         placeholder="078XXXXXXX"
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
                       />
                     </div>
                     <div className="text-sm text-gray-600">
@@ -312,13 +295,8 @@ export default function PaymentPage() {
                 {paymentMethod === "CARD" && (
                   <div className="space-y-4">
                     <div>
-                      <label
-                        htmlFor="cardNumber"
-                        className="block text-sm font-medium text-gray-700 mb-1"
-                      >
-                        Card Number
-                      </label>
-                      <input
+                      <Label htmlFor="cardNumber">Card Number</Label>
+                      <Input
                         id="cardNumber"
                         placeholder="1234 5678 9012 3456"
                         value={cardData.cardNumber}
@@ -328,18 +306,12 @@ export default function PaymentPage() {
                             cardNumber: e.target.value,
                           }))
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label
-                          htmlFor="expiry"
-                          className="block text-sm font-medium text-gray-700 mb-1"
-                        >
-                          Expiry Date
-                        </label>
-                        <input
+                        <Label htmlFor="expiry">Expiry Date</Label>
+                        <Input
                           id="expiry"
                           placeholder="MM/YY"
                           value={cardData.expiryDate}
@@ -349,17 +321,11 @@ export default function PaymentPage() {
                               expiryDate: e.target.value,
                             }))
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
                         />
                       </div>
                       <div>
-                        <label
-                          htmlFor="cvv"
-                          className="block text-sm font-medium text-gray-700 mb-1"
-                        >
-                          CVV
-                        </label>
-                        <input
+                        <Label htmlFor="cvv">CVV</Label>
+                        <Input
                           id="cvv"
                           placeholder="123"
                           value={cardData.cvv}
@@ -369,18 +335,12 @@ export default function PaymentPage() {
                               cvv: e.target.value,
                             }))
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
                         />
                       </div>
                     </div>
                     <div>
-                      <label
-                        htmlFor="cardholderName"
-                        className="block text-sm font-medium text-gray-700 mb-1"
-                      >
-                        Cardholder Name
-                      </label>
-                      <input
+                      <Label htmlFor="cardholderName">Cardholder Name</Label>
+                      <Input
                         id="cardholderName"
                         placeholder="John Doe"
                         value={cardData.cardholderName}
@@ -390,13 +350,36 @@ export default function PaymentPage() {
                             cardholderName: e.target.value,
                           }))
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
                       />
                     </div>
                   </div>
                 )}
-              </div>
-            </div>
+
+                {error && (
+                  <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                    <p className="text-red-600 text-sm">{error}</p>
+                  </div>
+                )}
+
+                <Button
+                  onClick={handlePayment}
+                  disabled={isProcessing || !selectedCheckout}
+                  className="w-full"
+                  size="lg"
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Processing Payment...
+                    </>
+                  ) : (
+                    `Pay ${
+                      selectedCheckoutData?.totalAmount.toLocaleString() || 0
+                    } RWF`
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>

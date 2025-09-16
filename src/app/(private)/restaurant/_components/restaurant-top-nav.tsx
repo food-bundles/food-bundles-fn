@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/app/contexts/auth-context";
 import { useCartSummary } from "@/app/contexts/cart-context";
 import { toast } from "sonner";
+import CartDrawer from "@/components/cartDrawer";
 
 const sampleNotifications = [
   {
@@ -72,7 +73,7 @@ export function TopResNav() {
   const router = useRouter()
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const { user, getUserProfileImage } = useAuth();
 
   const { totalItems, totalQuantity, isLoading } = useCartSummary();
@@ -154,20 +155,23 @@ export function TopResNav() {
 
             {/* Cart + Notifications + Profile */}
             <div className="flex items-center gap-4">
-              <Link href="/restaurant/cart">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="relative hover:bg-green-600 cursor-pointer text-primary-foreground hover:text-primary-foreground"
-                >
-                  <ShoppingCart className="h-5 w-5" />
-                  {!isLoading && totalQuantity > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center bg-secondary text-black text-xs">
-                      {totalItems > 99 ? "99+" : totalItems}
-                    </Badge>
-                  )}
-                </Button>
-              </Link>
+              <CartDrawer
+                isOpen={isCartOpen}
+                onClose={() => setIsCartOpen(false)}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsCartOpen(true)}
+                className="relative hover:bg-green-600 cursor-pointer text-primary-foreground hover:text-primary-foreground"
+              >
+                <ShoppingCart className="h-5 w-5" />
+                {!isLoading && totalQuantity > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center bg-secondary text-black text-xs">
+                    {totalItems > 99 ? "99+" : totalItems}
+                  </Badge>
+                )}
+              </Button>
 
               {/* Notifications */}
               <Button

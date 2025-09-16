@@ -294,7 +294,7 @@ export function CheckoutForm({ staticData }: Props) {
 
       if (response.success) {
         console.log("Checkout successful:", response.data);
-        router.push("/restaurant/cart/payment");
+        router.push("/restaurant/payment");
       } else {
         console.error("Checkout failed:", response.message);
         setErrors({
@@ -484,7 +484,7 @@ export function CheckoutForm({ staticData }: Props) {
               <div className="md:col-span-2">
                 <Button
                   onClick={handleSaveAndContinue}
-                  className="w-full bg-gray-900 hover:bg-gray-800 text-white py-3"
+                  className="w-full bg-green-700 hover:bg-green-800 text-white py-3"
                 >
                   Save and Continue
                 </Button>

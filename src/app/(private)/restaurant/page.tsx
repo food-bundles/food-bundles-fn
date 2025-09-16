@@ -1,91 +1,95 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Search } from "lucide-react";
-import { ProductGrid } from "./_components/product-grid";
+import { ProductsSection } from "@/components/products-section";
+import { Suspense } from "react";
+import { categoryService } from "@/app/services/categoryService";
 import { productService } from "@/app/services/productService";
 
-export const dynamic = "force-dynamic";
+function SearchLoading() {
+  return (
+    <div className="flex items-center justify-center p-4">
+      <div className="animate-pulse">Loading...</div>
+    </div>
+  );
+}
 
-type ProductCategory =
-  | "VEGETABLES"
-  | "FRUITS"
-  | "GRAINS"
-  | "TUBERS"
-  | "LEGUMES"
-  | "HERBS_SPICES"
-  | "ANIMAL_PRODUCTS"
-  | "OTHER";
-
-type Product = {
-  id: string;
-  productName: string;
-  unitPrice: number;
-  unit: string;
-  bonus: number;
-  createdBy: string;
-  expiryDate: Date | null;
-  images: string[];
-  quantity: number;
-  sku: string;
-  category: ProductCategory;
-  rating?: number;
-  soldCount?: number;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-};
-
-async function getProducts(): Promise<Product[]> {
+// Fetch data on the server
+async function getActiveCategories() {
   try {
-    const response = await productService.getAllProducts();
-
-    // Transform API response to match component expectations
-    return response.data.map((product: any) => ({
-      ...product,
-      expiryDate: product.expiryDate ? new Date(product.expiryDate) : null,
-      // Add default values for missing fields
-      rating: product.rating || undefined,
-      soldCount: product.soldCount || undefined,
-    }));
+    const response = await categoryService.getActiveCategories();
+    return response.data || [];
   } catch (error) {
-    console.error("Failed to fetch products:", error);
-    // Return empty array on error
+    console.error("Error fetching active categories:", error);
     return [];
   }
 }
 
-export default async function RestaurantShop() {
-  const products = await getProducts();
+// Fetch products with pagination
+async function getProducts(page = 1, limit = 10) {
+  try {
+    const response = await productService.getAllProducts();
+    return {
+      products: response.data || [],
+      pagination: response.pagination || {
+        page,
+        limit,
+        total: 0,
+        totalPages: 0,
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    return {
+      products: [],
+      pagination: { page, limit, total: 0, totalPages: 0 },
+    };
+  }
+}
+
+export default async function RestaurnatPage() {
+  // Fetch data on the server
+  const [activeCategories, productsData] = await Promise.all([
+    getActiveCategories(),
+    getProducts(1, 20), // Increase limit to get more products
+  ]);
+
+  // Transform categories for the UI
+ const categories = activeCategories.map((category: any) => ({
+   name: category.name,
+   image: "/products/fresh-organic-roma-tomatoes.png",
+   productCount: productsData.products.filter(
+     (product: any) => product.category?.id === category.id
+   ).length,
+ }));
+
+  // Transform products for the UI
+  const products = productsData.products.map((product: any) => ({
+    id: product.id,
+    name: product.productName,
+    price: product.unitPrice,
+    originalPrice: product.discountedPrice || undefined,
+    image: product.images?.[0] || "/placeholder.svg",
+    category: product.category?.name || "OTHER",
+    inStock: product.quantity > 0,
+    rating: Math.random() * 2 + 3, // Random rating between 3-5
+    isNew: Math.random() > 0.5, // Randomly mark as new
+    isFeatured: Math.random() > 0.7, // Randomly mark as featured
+    discountPercent:
+      product.discountedPrice && product.unitPrice
+        ? Math.round(
+            ((product.unitPrice - product.discountedPrice) /
+              product.unitPrice) *
+              100
+          )
+        : undefined,
+  }));
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="container mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-xl font-bold text-gray-900">
-            Available Products
-          </h1>
-
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <input
-                type="text"
-                placeholder="Search products..."
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent w-80"
-              />
-            </div>
-          </div>
+    <Suspense fallback={<SearchLoading />}>
+      <div className="min-h-screen bg-background">
+          <div id="products">
+            <ProductsSection products={products} categories={categories} />
         </div>
-
-        {products.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">
-              No products available at the moment.
-            </p>
-          </div>
-        ) : (
-          <ProductGrid products={products} />
-        )}
-      </main>
-    </div>
+      </div>
+    </Suspense>
   );
 }

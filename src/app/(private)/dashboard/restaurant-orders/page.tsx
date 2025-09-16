@@ -169,14 +169,7 @@ export default function OrdersPage() {
 
   const handleExport = async () => {
     try {
-      console.log("Exporting orders data...", {
-        filters: {
-          search: searchValue,
-          status: selectedStatus,
-          date: selectedDate,
-        },
-        totalRecords: filteredData.length,
-      });
+      console.log("Exporting orders data...");
       toast("Export functionality will be handled by backend");
     } catch (error) {
       console.error("Export failed:", error);

@@ -1,10 +1,10 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { CheckoutProgress } from "../_components/checkout-progress";
+import { CheckoutProgress } from "./_components/checkout-progress";
 import { cartService } from "@/app/services/cartService";
 import { roleGuard } from "@/lib/role-guard";
 import { UserRole } from "@/lib/types";
-import { CheckoutForm } from "../_components/delivery-form";
+import { CheckoutForm } from "./_components/delivery-form";
 
 export const dynamic = "force-dynamic";
 

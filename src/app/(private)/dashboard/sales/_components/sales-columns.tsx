@@ -192,14 +192,14 @@ export const salesColumns: ColumnDef<Sale>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuItem
               onClick={() =>
-                console.log("[v0] View sale details:", sale.saleId)
+                console.log("View sale details:", sale.saleId)
               }
             >
               <Eye className="mr-2 h-4 w-4" />
               View Details
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => console.log("[v0] View invoice:", sale.saleId)}
+              onClick={() => console.log("View invoice:", sale.saleId)}
             >
               <FileText className="mr-2 h-4 w-4" />
               View Invoice

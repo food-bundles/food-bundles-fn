@@ -139,7 +139,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   {totalAmount.toFixed(2)} Rwf
                 </span>
               </div>
-              <Link href="/restaurant/cart/checkout">
+              <Link href="/restaurant/checkout">
                 <Button className="w-full bg-green-600 hover:bg-green-700 text-white py-3">
                   Proceed to Checkout
                 </Button>

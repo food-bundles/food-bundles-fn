@@ -109,7 +109,6 @@ export const productSubmissionService = {
     try {
       // Validate ID before making request
       if (!Id || Id === "null" || Id === "undefined" || Id === "current") {
-        console.error("Invalid farmer ID provided:", Id)
         return null
       }
 
@@ -117,10 +116,8 @@ export const productSubmissionService = {
       const response = await axiosClient.get<FarmerProfile>(`/farmers/${Id}`)
       return response.data
     } catch (error: any) {
-      console.error("Failed to fetch farmer location:", error)
 
       if (error?.response?.status === 404) {
-        console.error("Farmer not found with ID:", Id)
       }
 
       return null
@@ -140,30 +137,14 @@ export const productSubmissionService = {
           localStorage.getItem("farmerId") || localStorage.getItem("userId") || sessionStorage.getItem("farmerId")
 
         if (!farmerId || farmerId === "null" || farmerId === "undefined") {
-          console.error("No valid farmer ID found in storage")
           return null
         }
       }
 
-      console.log("Fetching farmer profile for ID:", farmerId)
 
       const response = await axiosClient.get<FarmerProfile>(`/farmers/${farmerId}`)
       return response.data
     } catch (error: any) {
-      console.error("Failed to fetch current farmer profile:", error)
-
-      // Log more details for debugging
-      if (error.response) {
-        console.error("Response status:", error.response.status)
-        console.error("Response data:", error.response.data)
-        console.error("Request URL:", error.config?.url)
-
-        if (error.response.status === 404) {
-          console.error("Farmer profile not found - check if farmer ID is correct")
-        } else if (error.response.status === 401) {
-          console.error("Authentication failed - user may need to log in again")
-        }
-      }
 
       return null
     }
@@ -175,7 +156,6 @@ export const productSubmissionService = {
       const response = await axiosClient.get<LocationResponse>("/locations")
       return response.data.data.provinces
     } catch (error) {
-      console.error("Failed to fetch locations from database:", error)
       throw new Error("Failed to load locations. Please try again later.")
     }
   },
@@ -186,12 +166,9 @@ export const productSubmissionService = {
       const response = await axiosClient.get<Category[]>("/category")
       return response.data
     } catch (error: any) {
-      console.error("Failed to fetch categories from database:", error)
 
       // Log specific error details for debugging
       if (error.response) {
-        console.error("Response status:", error.response.status)
-        console.error("Response data:", error.response.data)
       }
 
       throw new Error("Failed to load categories. Please check your connection and try again.")
@@ -214,12 +191,10 @@ export const productSubmissionService = {
       const axiosClient = createAxiosClient()
       const response = await axiosClient.get<Category>(`/category/${categoryId}`)
 
-      console.log("Fetched category:", response.data);
       
 
       return response.data
     } catch (error) {
-      console.error("Failed to fetch category from database:", error)
       return null
     }
   },
@@ -235,7 +210,6 @@ export const productSubmissionService = {
       const productNames = products.map((product) => product.productName)
       return [...new Set(productNames)] // Remove duplicates
     } catch (error) {
-      console.error(`Failed to fetch products for category ${categoryId}:`, error)
       return []
     }
   },
@@ -260,14 +234,9 @@ export const productSubmissionService = {
       const productNames = response.data.map((product) => product.productName)
       return [...new Set(productNames)] // Remove duplicates
     } catch (error: any) {
-      console.error(`Failed to fetch products for category ${categoryName}:`, error)
 
       if (error.response) {
-        console.error("Response status:", error.response.status)
-        console.error("Response data:", error.response.data)
-        console.error("Response headers:", error.response.headers)
       } else if (error.request) {
-        console.error("No response received:", error.request)
       } else {
         console.error("Error setting up request:", error.message)
       }
@@ -444,28 +413,20 @@ export const productSubmissionService = {
   debugApiEndpoints: async () => {
     const axiosClient = createAxiosClient()
 
-    console.log("=== API Debug Information ===")
-    console.log("Base URL:", axiosClient.defaults.baseURL)
-    console.log("Headers:", axiosClient.defaults.headers)
-
     // Test authentication endpoints
     const endpointsToTest = ["/auth/verify", "/locations", "/category"]
 
     for (const endpoint of endpointsToTest) {
       try {
         const response = await axiosClient.get(endpoint)
-        console.log(`${endpoint} - Status: ${response.status}`)
       } catch (error: any) {
-        console.log(` ${endpoint} - Status: ${error?.response?.status || "Network Error"}`)
       }
     }
 
     // Check localStorage contents
-    console.log("=== Local Storage Contents ===")
     const keys = ["farmerId", "userId", "token", "authToken", "user", "farmer"]
     keys.forEach((key) => {
       const value = localStorage.getItem(key)
-      console.log(`${key}:`, value ? (key.includes("token") ? "Present" : value) : "Missing")
     })
 
     // Test farmer profile endpoint if we have an ID
@@ -474,17 +435,11 @@ export const productSubmissionService = {
     if (farmerId && farmerId !== "null" && farmerId !== "undefined") {
       try {
         const response = await axiosClient.get(`/farmers/${farmerId}`)
-        console.log(`/farmers/${farmerId} - Status: ${response.status}`)
-        console.log("Farmer profile data:", response.data)
       } catch (error: any) {
-        console.log(` /farmers/${farmerId} - Status: ${error?.response?.status || "Network Error"}`)
         if (error?.response?.data) {
-          console.log("Error details:", error.response.data)
         }
       }
-    } else {
-      console.log("⚠️ No valid farmer ID found in localStorage")
-    }
+    } 
   },
 
   fetchLocationHierarchy: async (): Promise<LocationHierarchy> => {

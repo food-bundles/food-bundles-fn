@@ -159,7 +159,6 @@ export default function SalesPage() {
   }, [searchTerm, statusFilter, dateRange, mockSalesData]);
 
   const handleExport = () => {
-    console.log("[v0] Exporting sales data:", filteredData);
     // Export functionality would be implemented here
   };
 

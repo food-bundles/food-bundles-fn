@@ -8,10 +8,8 @@ import jwt from "jsonwebtoken";
 export function middleware(req: NextRequest) {
   const token = req.cookies.get("auth-token")?.value;
   console.log("Middleware - token exists:", !!token);
-  console.log("Middleware - pathname:", req.nextUrl.pathname);
 
   if (!token) {
-    console.log("Middleware - No token found, redirecting to login");
     const redirectUrl = new URL("/", req.url);
     redirectUrl.searchParams.set("showLogin", "true");
     redirectUrl.searchParams.set("redirect", req.nextUrl.pathname);
@@ -20,12 +18,7 @@ export function middleware(req: NextRequest) {
 
   try {
 
-
     const decoded: any = jwt.decode(token);
-    console.log(
-      "Middleware - Token verified successfully, user ID:",
-      decoded.id
-    );
 
     if (decoded.exp && decoded.exp * 1000 < Date.now()) {
       console.log("Middleware - Token expired");
@@ -36,7 +29,6 @@ export function middleware(req: NextRequest) {
       return NextResponse.redirect(redirectUrl);
     }
 
-    console.log("Middleware - Access granted");
     return NextResponse.next();
   } catch (error) {
     console.error("Middleware - Token verification failed:", error);

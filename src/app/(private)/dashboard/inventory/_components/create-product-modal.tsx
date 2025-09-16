@@ -178,11 +178,6 @@ export function CreateProductModal({
 
   // Show error if categories failed to load and debug information
   useEffect(() => {
-    console.log("Categories state:", {
-      activeCategories,
-      isCategoriesLoading,
-      categoryError,
-    });
 
     if (categoryError) {
       console.error("Category error:", categoryError);
@@ -231,8 +226,6 @@ export function CreateProductModal({
       toast.error("Please fill in all required fields with valid values");
       return;
     }
-
-    console.log("[v0] Form data before submit:", formData);
 
     try {
       setIsSubmitting(true);

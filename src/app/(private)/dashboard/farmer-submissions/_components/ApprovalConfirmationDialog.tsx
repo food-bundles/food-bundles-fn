@@ -100,7 +100,6 @@ const ExampleUsage = () => {
     try {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 2000));
-      console.log("Approved submission:", currentSubmissionId);
       setShowDialog(false);
     } catch (error) {
       console.error("Approval failed:", error);
