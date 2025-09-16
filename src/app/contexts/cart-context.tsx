@@ -12,14 +12,15 @@ import {
   type Cart,
   type CartItem,
 } from "@/app/services/cartService";
+import { useAuth } from "./auth-context"; // Import auth context
 
 interface CartContextType {
   cart: Cart | null;
   cartItems: CartItem[];
   isLoading: boolean;
   error: string | null;
-  totalItems: number; 
-  totalQuantity: number; 
+  totalItems: number;
+  totalQuantity: number;
   totalAmount: number;
   refreshCart: () => Promise<void>;
   addToCart: (productId: string, quantity: number) => Promise<boolean>;
@@ -38,8 +39,16 @@ export function CartProvider({ children }: CartProviderProps) {
   const [cart, setCart] = useState<Cart | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { isAuthenticated } = useAuth(); // Get auth status
 
   const refreshCart = useCallback(async () => {
+    // Only fetch cart if user is authenticated
+    if (!isAuthenticated) {
+      setCart(null);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
@@ -49,7 +58,6 @@ export function CartProvider({ children }: CartProviderProps) {
       if (response.success && response.data) {
         setCart(response.data);
       } else {
-        // If no cart exists, create an empty cart state
         setCart(null);
         if (response.message && !response.message.includes("not found")) {
           setError(response.message);
@@ -62,7 +70,7 @@ export function CartProvider({ children }: CartProviderProps) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isAuthenticated]); // Add isAuthenticated as dependency
 
   const addToCart = useCallback(
     async (productId: string, quantity: number): Promise<boolean> => {
@@ -71,7 +79,7 @@ export function CartProvider({ children }: CartProviderProps) {
         const response = await cartService.addToCart(productId, quantity);
 
         if (response.success) {
-          await refreshCart(); // Refresh cart data after adding
+          await refreshCart();
           return true;
         } else {
           setError(response.message || "Failed to add item to cart");
@@ -149,10 +157,9 @@ export function CartProvider({ children }: CartProviderProps) {
     }
   }, [refreshCart]);
 
-  // Load cart data on mount
   useEffect(() => {
     refreshCart();
-  }, [refreshCart]);
+  }, [refreshCart, isAuthenticated]); // Add isAuthenticated as dependency
 
   // Calculate derived values from API response
   const cartItems = cart?.cartItems || [];
@@ -169,8 +176,8 @@ export function CartProvider({ children }: CartProviderProps) {
     cartItems,
     isLoading,
     error,
-    totalItems, // Number of different products (2 in your example)
-    totalQuantity, // Sum of all quantities (110 in your example)
+    totalItems,
+    totalQuantity,
     totalAmount,
     refreshCart,
     addToCart,

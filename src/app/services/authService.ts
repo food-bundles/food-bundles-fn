@@ -35,7 +35,6 @@ export const authService = {
 
   getCurrentUser: async () => {
     const axiosClient = createAxiosClient();
-    // Token is automatically added via interceptors
     const response = await axiosClient.get("/me");
     return response.data;
   },

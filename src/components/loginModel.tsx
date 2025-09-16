@@ -4,11 +4,12 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Eye, EyeOff, X } from "lucide-react";
+import { Eye, EyeOff, X, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ILoginData, UserRole } from "@/lib/types";
 import { authService } from "@/app/services/authService";
+import { useCart } from "@/app/contexts/cart-context";
 
 type Props = {
   isOpen: boolean;
@@ -22,13 +23,14 @@ type Props = {
 export function LoginModal({ isOpen, onClose, loginData }: Props) {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
   const [error, setError] = useState("");
   const [pendingProduct, setPendingProduct] = useState<any>(null);
   const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const router = useRouter();
+  const { refreshCart } = useCart();
 
-  // Check for pending items on component mount
   useEffect(() => {
     const storedProduct = localStorage.getItem("pendingCartProduct");
     if (storedProduct) {
@@ -41,10 +43,10 @@ export function LoginModal({ isOpen, onClose, loginData }: Props) {
     }
   }, []);
 
-  // Handle modal animation
   useEffect(() => {
     if (isOpen) {
       setIsAnimating(true);
+      setIsNavigating(false);
     }
   }, [isOpen]);
 
@@ -71,22 +73,52 @@ export function LoginModal({ isOpen, onClose, loginData }: Props) {
     }
   }
 
-  const handleProductToCart = () => {
-    if (pendingProduct) {
-      console.log("Adding product to cart:", pendingProduct);
-      localStorage.removeItem("pendingCartProduct");
-      setPendingProduct(null);
-      router.push("/");
-    }
-  };
-
   const handleClose = () => {
+    if (isNavigating) return;
+
     setIsAnimating(false);
     setTimeout(() => {
       onClose();
       setError("");
       setShowPassword(false);
     }, 300);
+  };
+
+  const addProductToCart = async (product: any, token: string) => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/cart/add`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            productId: product.id,
+            quantity: 1,
+            price: product.price,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to add product to cart");
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      throw error;
+    }
+  };
+
+  const handleNavigation = async (path: string) => {
+    setIsNavigating(true);
+
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    router.push(path);
   };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -116,56 +148,56 @@ export function LoginModal({ isOpen, onClose, loginData }: Props) {
     try {
       const response = await authService.login(loginPayload);
 
-      // Handle pending product first (shopping cart scenario)
       if (pendingProduct) {
-        handleProductToCart();
-        handleClose();
-        return;
-      }
-
-      // Handle pending redirect (middleware redirect scenario)
-      if (pendingRedirect) {
         try {
-          handleClose();
-          await router.push(pendingRedirect);
-          // Only remove from localStorage after successful navigation
-          localStorage.removeItem("pendingRedirect");
-          setPendingRedirect(null);
-          return;
-        } catch (navigationError) {
-          console.error("Navigation failed:", navigationError);
-          // Keep the redirect in localStorage for retry
-          setError("Navigation failed. Please try again.");
-          setIsLoading(false);
-          return;
+          await addProductToCart(pendingProduct, response.data.token);
+          console.log("Adding product to cart:", pendingProduct);
+          localStorage.removeItem("pendingCartProduct");
+          setPendingProduct(null);
+
+          await refreshCart();
+
+          const returnUrl = localStorage.getItem("returnUrl");
+          if (returnUrl) {
+            localStorage.removeItem("returnUrl");
+            await handleNavigation(returnUrl);
+            return;
+          }
+        } catch (cartError) {
+          console.error("Cart error:", cartError);
         }
       }
 
-      // Default redirect based on user role
+      if (pendingRedirect) {
+        localStorage.removeItem("pendingRedirect");
+        setPendingRedirect(null);
+        await handleNavigation(pendingRedirect);
+        return;
+      }
+
       const userRole = response.data?.user?.role;
       if (userRole) {
         const redirectPath = getRedirectPath(userRole as UserRole);
-        handleClose();
-        router.push(redirectPath);
+        await handleNavigation(redirectPath);
       } else {
         setError("User role not found. Please contact support.");
+        setIsLoading(false);
       }
     } catch (error: any) {
       console.error("Login error:", error);
       setError(
         error.response?.data?.message || error.message || "Login failed"
       );
-    } finally {
       setIsLoading(false);
     }
   }
 
   if (!isOpen) return null;
 
-  // Determine button text based on pending actions
   const getButtonText = () => {
-    if (isLoading) return "LOGGING IN...";
-    if (pendingProduct) return "LOG IN & ADD TO CART";
+    if (isNavigating) return "Please wait...";
+    if (isLoading) return "logging in...";
+    if (pendingProduct) return "LOG IN";
     if (pendingRedirect) return "LOG IN";
     return "LOG IN";
   };
@@ -177,7 +209,7 @@ export function LoginModal({ isOpen, onClose, loginData }: Props) {
         className={`absolute inset-0 bg-black transition-opacity duration-300 ${
           isAnimating ? "opacity-50" : "opacity-0"
         }`}
-        onClick={handleClose}
+        onClick={isNavigating ? undefined : handleClose}
       />
 
       {/* Modal */}
@@ -190,7 +222,6 @@ export function LoginModal({ isOpen, onClose, loginData }: Props) {
         style={{ maxHeight: "90vh" }}
       >
         <div className="flex">
-          {/* Left Side - green Section */}
           <div className="w-1/2 bg-green-700 text-white p-8 flex flex-col justify-center relative">
             <div className="text-center">
               <h2 className="text-3xl font-bold mb-4">Login</h2>
@@ -206,8 +237,9 @@ export function LoginModal({ isOpen, onClose, loginData }: Props) {
           <div className="w-1/2 p-8 relative">
             {/* Close Button */}
             <button
-              onClick={handleClose}
+              onClick={isNavigating ? undefined : handleClose}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+              disabled={isNavigating}
             >
               <X className="h-6 w-6" />
             </button>
@@ -239,7 +271,7 @@ export function LoginModal({ isOpen, onClose, loginData }: Props) {
                     placeholder="Enter Email, phone, TIN number"
                     className="w-full h-12 pl-4 pr-4 border border-gray-300 rounded-md focus:border-green-700 focus:ring-1 focus:ring-green-700"
                     required
-                    disabled={!loginData.isBackendAvailable}
+                    disabled={!loginData.isBackendAvailable || isNavigating}
                   />
                 </div>
 
@@ -250,13 +282,13 @@ export function LoginModal({ isOpen, onClose, loginData }: Props) {
                     placeholder="Enter Password"
                     className="w-full h-12 pl-4 pr-12 border border-gray-300 rounded-md focus:border-green-700 focus:ring-1 focus:ring-green-700"
                     required
-                    disabled={!loginData.isBackendAvailable}
+                    disabled={!loginData.isBackendAvailable || isNavigating}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    disabled={!loginData.isBackendAvailable}
+                    disabled={!loginData.isBackendAvailable || isNavigating}
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4" />
@@ -271,6 +303,7 @@ export function LoginModal({ isOpen, onClose, loginData }: Props) {
                     <input
                       type="checkbox"
                       className="w-4 h-4 text-green-700 border-gray-300 rounded focus:ring-green-700"
+                      disabled={isNavigating}
                     />
                     <span className="ml-2 text-sm text-gray-600">
                       Remember me
@@ -279,6 +312,9 @@ export function LoginModal({ isOpen, onClose, loginData }: Props) {
                   <Link
                     href="/forgot-password"
                     className="text-sm text-green-700 hover:text-green-800"
+                    onClick={
+                      isNavigating ? (e) => e.preventDefault() : undefined
+                    }
                   >
                     Forgot password?
                   </Link>
@@ -286,9 +322,12 @@ export function LoginModal({ isOpen, onClose, loginData }: Props) {
 
                 <Button
                   type="submit"
-                  className="w-full h-12 bg-green-700 hover:bg-green-700 text-white font-medium rounded-md"
-                  disabled={isLoading || !loginData.isBackendAvailable}
+                  className="w-full h-12 bg-green-700 hover:bg-green-700 text-white font-medium rounded-md flex items-center justify-center gap-2"
+                  disabled={
+                    isLoading || !loginData.isBackendAvailable || isNavigating
+                  }
                 >
+                  {isNavigating && <Loader2 className="h-4 w-4 animate-spin" />}
                   {getButtonText()}
                 </Button>
               </form>
@@ -299,7 +338,9 @@ export function LoginModal({ isOpen, onClose, loginData }: Props) {
                   <Link
                     href="/signup"
                     className="text-green-700 hover:text-green-800 font-medium"
-                    onClick={handleClose}
+                    onClick={
+                      isNavigating ? (e) => e.preventDefault() : handleClose
+                    }
                   >
                     Create account
                   </Link>

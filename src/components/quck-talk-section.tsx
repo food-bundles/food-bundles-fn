@@ -66,7 +66,7 @@ function QuickTalkSection() {
         {/* Our Farmers */}
         <div className="pt-4 bg-white/90 backdrop-blur-sm p-4 rounded-lg shadow-lg">
           <p className="text-2xl font-semibold text-gray-700 mb-2">
-            Farmers Work With Us
+            Our Partner Farmers
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-4 items-center">
             <Image

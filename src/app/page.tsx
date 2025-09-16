@@ -1,12 +1,12 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-"use client";
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { HeroWithRestaurants } from "@/components/hero-section";
 import { ProductsSection } from "@/components/products-section";
 import { QuickTalkWrapper } from "@/components/quck-talk-section";
-import { Suspense, useState } from "react";
+import { Suspense } from "react";
+import { categoryService } from "@/app/services/categoryService";
+import { productService } from "@/app/services/productService";
 
 function SearchLoading() {
   return (
@@ -16,8 +16,45 @@ function SearchLoading() {
   );
 }
 
-export default function HomePage() {
-  const [isGuest, setIsGuest] = useState(true);
+// Fetch data on the server
+async function getActiveCategories() {
+  try {
+    const response = await categoryService.getActiveCategories();
+    return response.data || [];
+  } catch (error) {
+    console.error("Error fetching active categories:", error);
+    return [];
+  }
+}
+
+// Fetch products with pagination
+async function getProducts(page = 1, limit = 10) {
+  try {
+    const response = await productService.getAllProducts();
+    return {
+      products: response.data || [],
+      pagination: response.pagination || {
+        page,
+        limit,
+        total: 0,
+        totalPages: 0,
+      },
+    };
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    return {
+      products: [],
+      pagination: { page, limit, total: 0, totalPages: 0 },
+    };
+  }
+}
+
+export default async function HomePage() {
+  // Fetch data on the server
+  const [activeCategories, productsData] = await Promise.all([
+    getActiveCategories(),
+    getProducts(1, 20), // Increase limit to get more products
+  ]);
 
   const restaurants = [
     {
@@ -152,185 +189,38 @@ export default function HomePage() {
     },
   ];
 
-  const categories = [
-    {
-      name: "ALL ",
-      image: "/products/fresh-organic-roma-tomatoes.png",
-      productCount: 450,
-    },
-    {
-      name: "VEGETABLES",
-      image: "/products/fresh-organic-roma-tomatoes.png",
-      productCount: 15,
-    },
-    {
-      name: "FRUITS",
-      image: "/products/fresh-organic-roma-tomatoes.png",
-      productCount: 10,
-    },
-    {
-      name: "ANIMAL PRODUCTS",
-      image: "/products/fresh-organic-roma-tomatoes.png",
-      productCount: 8,
-    },
-  ];
 
-  const products = [
-    {
-      name: "Organic Roma Tomatoes",
-      price: 4.99,
-      originalPrice: 6.99,
-      image: "/products/fresh-organic-roma-tomatoes.png",
-      category: "Vegetables",
-      inStock: true,
-      rating: 4.5,
-      isNew: true,
-      isFeatured: true,
-    },
-    {
-      name: "Fresh Atlantic Salmon",
-      price: 24.99,
-      image: "/products/fresh-atlantic-salmon-fillet.png",
-      category: "Seafood",
-      inStock: true,
-      rating: 4.8,
-      isNew: false,
-      isFeatured: true,
-    },
-    {
-      name: "Free-Range Chicken Breast",
-      price: 12.99,
-      originalPrice: 15.99,
-      image: "/products/free-range-chicken-breast.png",
-      category: "Meat",
-      inStock: true,
-      rating: 4.6,
-      isNew: true,
-      isFeatured: false,
-    },
-    {
-      name: "Organic Mixed Greens",
-      price: 3.49,
-      image: "/products/organic-mixed-salad-greens.png",
-      category: "Vegetables",
-      inStock: false,
-      rating: 4.2,
-      isNew: false,
-      isFeatured: true,
-    },
-    {
-      name: "Artisan Cheese Selection",
-      price: 18.99,
-      image: "/products/artisan-cheese-selection-platter.png",
-      category: "Dairy",
-      inStock: true,
-      rating: 4.9,
-      isNew: true,
-      isFeatured: true,
-    },
-    {
-      name: "Fresh Herbs Bundle",
-      price: 7.99,
-      image: "/products/fresh-herbs-basil-parsley-cilantro.png",
-      category: "Herbs",
-      inStock: true,
-      rating: 4.3,
-      isNew: false,
-      isFeatured: false,
-    },
-    {
-      name: "Premium Basil Leaves",
-      price: 5.99,
-      image: "/products/fresh-herbs-basil-parsley-cilantro.png",
-      category: "Herbs",
-      inStock: true,
-      rating: 4.7,
-      isNew: true,
-      isFeatured: false,
-    },
-    {
-      name: "Organic Cilantro",
-      price: 4.99,
-      image: "/products/fresh-herbs-basil-parsley-cilantro.png",
-      category: "Herbs",
-      inStock: true,
-      rating: 4.4,
-      isNew: false,
-      isFeatured: true,
-    },
-    {
-      name: "Fresh Parsley Bundle",
-      price: 6.99,
-      image: "/products/fresh-herbs-basil-parsley-cilantro.png",
-      category: "Herbs",
-      inStock: true,
-      rating: 4.1,
-      isNew: true,
-      isFeatured: false,
-    },
-    {
-      name: "Wild Caught Tuna",
-      price: 28.99,
-      originalPrice: 32.99,
-      image: "/products/fresh-atlantic-salmon-fillet.png",
-      category: "Seafood",
-      inStock: true,
-      rating: 4.8,
-      isNew: true,
-      isFeatured: true,
-    },
-    {
-      name: "Grass-Fed Beef Steaks",
-      price: 35.99,
-      image: "/products/free-range-chicken-breast.png",
-      category: "Meat",
-      inStock: true,
-      rating: 4.9,
-      isNew: false,
-      isFeatured: true,
-    },
-    {
-      name: "Organic Baby Spinach",
-      price: 4.49,
-      image: "/products/organic-mixed-salad-greens.png",
-      category: "Vegetables",
-      inStock: true,
-      rating: 4.3,
-      isNew: true,
-      isFeatured: false,
-    },
-    {
-      name: "Aged Cheddar Cheese",
-      price: 12.99,
-      originalPrice: 15.99,
-      image: "/products/artisan-cheese-selection-platter.png",
-      category: "Dairy",
-      inStock: true,
-      rating: 4.6,
-      isNew: false,
-      isFeatured: true,
-    },
-    {
-      name: "Fresh Thyme Sprigs",
-      price: 8.99,
-      image: "/products/fresh-herbs-basil-parsley-cilantro.png",
-      category: "Herbs",
-      inStock: true,
-      rating: 4.2,
-      isNew: true,
-      isFeatured: false,
-    },
-    {
-      name: "Organic Cherry Tomatoes",
-      price: 6.99,
-      image: "/products/fresh-organic-roma-tomatoes.png",
-      category: "Vegetables",
-      inStock: true,
-      rating: 4.7,
-      isNew: false,
-      isFeatured: true,
-    },
-  ];
+
+  // Transform categories for the UI
+ const categories = activeCategories.map((category: any) => ({
+   name: category.name,
+   image: "/products/fresh-organic-roma-tomatoes.png",
+   productCount: productsData.products.filter(
+     (product: any) => product.category?.id === category.id
+   ).length,
+ }));
+
+  // Transform products for the UI
+  const products = productsData.products.map((product: any) => ({
+    id: product.id,
+    name: product.productName,
+    price: product.unitPrice,
+    originalPrice: product.discountedPrice || undefined,
+    image: product.images?.[0] || "/placeholder.svg",
+    category: product.category?.name || "OTHER",
+    inStock: product.quantity > 0,
+    rating: Math.random() * 2 + 3, // Random rating between 3-5
+    isNew: Math.random() > 0.5, // Randomly mark as new
+    isFeatured: Math.random() > 0.7, // Randomly mark as featured
+    discountPercent:
+      product.discountedPrice && product.unitPrice
+        ? Math.round(
+            ((product.unitPrice - product.discountedPrice) /
+              product.unitPrice) *
+              100
+          )
+        : undefined,
+  }));
 
   return (
     <Suspense fallback={<SearchLoading />}>
@@ -338,13 +228,15 @@ export default function HomePage() {
         <Header />
         <div className="h-16 bg-green-700"></div>
         <div>
-          <HeroWithRestaurants restaurants={restaurants} />
-          <ProductsSection
-            products={products}
-            categories={categories}
-            isGuest={isGuest}
-          />
-          <QuickTalkWrapper />
+          <div id="home">
+            <HeroWithRestaurants restaurants={restaurants} />
+          </div>
+          <div id="products">
+            <ProductsSection products={products} categories={categories} />
+          </div>
+          <div id="quick-talk">
+            <QuickTalkWrapper />
+          </div>
           <Footer />
         </div>
       </div>

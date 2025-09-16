@@ -27,7 +27,6 @@ export function middleware(req: NextRequest) {
       decoded.id
     );
 
-    // Check if token is expired (jwt.verify should handle this, but double-check)
     if (decoded.exp && decoded.exp * 1000 < Date.now()) {
       console.log("Middleware - Token expired");
       const redirectUrl = new URL("/", req.url);

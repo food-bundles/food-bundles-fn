@@ -9,36 +9,44 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import Image from "next/image";
-import {
-  Star,
-  Heart,
-  ShoppingCart,
-  Eye,
-  User,
-  UserCheck,
-  Dot,
-} from "lucide-react";
+import { Star, Heart, ShoppingCart, Eye, Check } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/contexts/auth-context";
+import { useCart } from "@/app/contexts/cart-context"; // Import cart context
+import CartDrawer from "./cartDrawer";
 
 interface ProductCardProps {
+  id: string;
   name: string;
   price: number;
   originalPrice?: number;
   image: string;
   rating: number;
+  category?: string;
+  discountPercent?: number;
 }
 
 export function ProductCard({
+  id,
   name,
   price,
   originalPrice,
   image,
   rating,
+  category,
+  discountPercent,
 }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   const router = useRouter();
+  const { isAuthenticated } = useAuth();
+  const { addToCart, cartItems } = useCart();
+  const [isCartOpen, setIsCartOpen] = useState(false);
+
+  // Check if product is already in cart
+  const isInCart = cartItems.some((item) => item.productId === id);
 
   const renderStars = (rating: number) => {
     const stars = [];
@@ -47,109 +55,163 @@ export function ProductCard({
     for (let i = 0; i < 5; i++) {
       if (i < fullStars) {
         stars.push(
-          <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+          <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
         );
       } else {
-        stars.push(<Star key={i} className="w-4 h-4 text-gray-300" />);
+        stars.push(<Star key={i} className="w-3 h-3 text-gray-300" />);
       }
     }
     return stars;
   };
 
-  const handleCartClick = () => {
-    setIsModalOpen(true);
-  };
+  const handleCartClick = async () => {
+    if (!isAuthenticated) {
+      setIsModalOpen(true);
+      return;
+    }
 
-  const handleGuestCheckout = () => {
-    setIsModalOpen(false);
-    // Add product to cart and proceed as guest
-    console.log("Proceeding as guest with product:", name);
-    // You can add your guest checkout logic here
+    if (isInCart) {
+      // Product is already in cart, maybe show a message or navigate to cart
+      router.push("/cart");
+      return;
+    }
+
+    setIsAddingToCart(true);
+    try {
+      const success = await addToCart(id, 1);
+      if (success) {
+        // Show success feedback (you could use a toast notification)
+        console.log("Product added to cart successfully");
+      }
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
 
   const handleCustomerLogin = () => {
     setIsModalOpen(false);
-    // Store the product info in localStorage or context for later retrieval
     localStorage.setItem(
       "pendingCartProduct",
       JSON.stringify({
+        id, // Make sure to include the product ID
         name,
         price,
         originalPrice,
         image,
         rating,
+        category,
       })
     );
-    // Redirect to login page
-    router.push("/?showLogin=true");
+    localStorage.setItem("returnUrl", window.location.href);
+
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set("showLogin", "true");
+    currentUrl.searchParams.set("reason", "add_to_cart");
+    router.push(currentUrl.toString());
   };
 
   return (
     <>
       <div
-        className="w-full max-w-[220px] transition-transform duration-300 hover:scale-105"
+        className="w-full max-w-[280px] bg-white"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        {/* Outer Card with Product Image */}
-        <Card className="rounded-xl overflow-hidden py-0 px-5 bg-gray-100 relative group">
-          <div className="relative w-full h-40 flex items-center justify-center bg-white">
+        <Card
+          className={`border-0 shadow-none hover:rounded-lg overflow-hidden transition-all duration-300 hover:shadow-lg`}
+        >
+          {/* Product Image Container */}
+          <div className="relative w-full h-[180px] bg-gray-50 flex items-center justify-center group overflow-hidden">
             <Image
               src={image || "/placeholder.svg"}
               alt={name}
-              width={180}
-              height={180}
-              className="object-contain transition-transform duration-300 group-hover:scale-110"
+              width={200}
+              height={200}
+              className="object-contain w-full max-h-[180px] transition-transform duration-300 group-hover:scale-105"
             />
 
-            {/* Hover Icons Overlay */}
+            {/* Discount Badge */}
+            {discountPercent && (
+              <div className="absolute top-3 left-3 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">
+                {discountPercent}% OFF
+              </div>
+            )}
+
+            {/* In Cart Badge */}
+          <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
+           {isInCart && (
+             <div
+               className="absolute top-3 right-0 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded flex items-center cursor-pointer"
+               onClick={() => setIsCartOpen(true)}
+             >
+               <Check className="w-3 h-3 mr-1" /> View Cart
+             </div>
+           )}
+     
             <div
-              className={`absolute top-3 right-3 flex flex-col gap-2 transition-all duration-300 ${
-                isHovered
-                  ? "opacity-100 translate-x-0"
-                  : "opacity-0 translate-x-2"
+              className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${
+                isHovered ? "opacity-100 scale-100" : "opacity-0 scale-95"
               }`}
             >
-              {/* Wish Icon */}
-              <button className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-orange-50 transition-colors">
-                <Heart className="w-4 h-4 text-gray-600 hover:text-orange-500 cursor-pointer" />
-              </button>
+              <div className="bg-orange-400 rounded-full p-3 flex items-center justify-center space-x-10 shadow-lg">
+                {/* Quick View */}
+                <button className="text-white hover:text-gray-200 transition-colors">
+                  <Eye className="w-5 h-5" />
+                </button>
 
-              {/* Cart Icon */}
-              <button
-                onClick={handleCartClick}
-                className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-orange-50 transition-colors"
-              >
-                <ShoppingCart className="w-4 h-4 text-gray-600 hover:text-orange-500 cursor-pointer" />
-              </button>
+                {/* Add to Cart */}
+                <button
+                  onClick={handleCartClick}
+                  disabled={isAddingToCart || isInCart}
+                  className={`text-white hover:text-gray-200 transition-colors ${
+                    isAddingToCart ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                >
+                  {isAddingToCart ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <ShoppingCart className="w-5 h-5" />
+                  )}
+                </button>
 
-              {/* View Icon */}
-              <button className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-orange-50 transition-colors">
-                <Eye className="w-4 h-4 text-gray-600 hover:text-orange-500 cursor-pointer" />
-              </button>
+                {/* Add to Wishlist */}
+                <button className="text-white hover:text-gray-200 transition-colors">
+                  <Heart className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
-        </Card>
 
-        {/* Inner Card with Info (caption style) */}
-        <Card className="rounded-xl bg-transparent p-0 border-0 shadow-none">
-          <div className="p-3 space-y-2 text-center">
-            <h3 className="font-semibold text-base line-clamp-1">{name}</h3>
+          {/* Product Info */}
+          <div className="px-4 space-y-1">
+            {/* Category */}
+            <div className="text-2xs text-gray-500 font-medium uppercase tracking-wide">
+              {category || "PRODUCTS"}
+            </div>
+
+            {/* Product Name */}
+            <h3 className="font-semibold text-gray-800 text-sm leading-tight line-clamp-2 min-h-[2.5rem]">
+              {name}
+            </h3>
 
             {/* Rating */}
-            <div className="flex items-center justify-center gap-1">
+            <div className="flex items-center gap-2">
               <div className="flex">{renderStars(rating)}</div>
-              <span className="text-xs text-gray-500">{rating}</span>
+              <span className="text-xs text-gray-500">
+                ({rating.toFixed(2)})
+              </span>
             </div>
 
             {/* Price */}
-            <div className="flex items-center justify-center gap-2">
-              <span className="font-bold text-sm text-black">
-                Rwf {price.toLocaleString()}
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-lg text-gray-900">
+                {price.toFixed(2)} Rwf
               </span>
               {originalPrice && (
-                <span className="text-xs text-gray-400 line-through">
-                  {originalPrice.toLocaleString()}
+                <span className="text-sm text-gray-400 line-through">
+                  {originalPrice.toFixed(2)}Rwf
                 </span>
               )}
             </div>
@@ -157,83 +219,23 @@ export function ProductCard({
         </Card>
       </div>
 
-      {/* Cart Modal */}
+      {/* Login Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-2xl w-full">
+        <DialogContent className="sm:max-w-md w-full">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ShoppingCart className="w-5 h-5 text-orange-500" />
-              Choose Your Shopping Option
+              Login to Add to Cart
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex gap-4 py-4">
-            {/* Guest Option */}
-            <div className="flex-1 border border-gray-200 rounded-lg p-4 space-y-3 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <User className="w-5 h-5 text-black" />
-                  <h3 className="font-semibold">Buy as Guest</h3>
-                </div>
-                <div className="space-y-2 text-sm text-black">
-                  <div className="flex items-center gap-2">
-                    <Dot className="w-4 h-4 text-red-500" />
-                    <span>buy without FoodBundle account</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Dot className="w-4 h-4 text-red-500" />
-                    <span>Delivery fees may apply</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Dot className="w-4 h-4 text-red-500" />
-                    <span>Miss out on exclusive promotions</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Dot className="w-4 h-4 text-red-500" />
-                    <span>bulk quantity required</span>
-                  </div>
-                </div>
-              </div>
-              <Button
-                onClick={handleGuestCheckout}
-                variant="outline"
-                className="w-full mt-4"
-              >
-                Buy as Guest
-              </Button>
-            </div>
-
-            {/* Customer Option */}
-            <div className="flex-1 border border-green-200 rounded-lg p-4 space-y-3 bg-green-50 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <UserCheck className="w-5 h-5 text-green-600" />
-                  <h3 className="font-semibold">Login/Signup as Customer</h3>
-                </div>
-                <div className="space-y-2 text-sm text-green-700">
-                  <div className="flex items-center gap-2">
-                    <Dot className="w-4 h-4 text-green-600" />
-                    <span>Free delivery on orders</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Dot className="w-4 h-4 text-green-600" />
-                    <span>Access to exclusive promotions</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Dot className="w-4 h-4 text-green-600" />
-                    <span>Stay connected</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Dot className="w-4 h-4 text-green-600" />
-                    <span>Minimum quantity</span>
-                  </div>
-                </div>
-              </div>
+          <div className="py-4">
+            <div className="border border-green-200 rounded-lg p-4 space-y-3 bg-green-50">
               <Button
                 onClick={handleCustomerLogin}
                 className="w-full mt-4 bg-green-600 hover:bg-green-700"
               >
-                Buy as Restaurant
+                Login & Add to Cart
               </Button>
             </div>
           </div>
