@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import createAxiosClient from "../hooks/axiosClient";
 
-
 export interface AddToCartRequest {
   productId: string;
   quantity: number;
@@ -36,18 +35,18 @@ export interface ApiResponse<T = any> {
 }
 
 // --------------------
-// Cart Service Class
+// Cart Service Functions (consistent with product service)
 // --------------------
-class CartService {
-  private axiosClient = createAxiosClient();
+const axiosClient = createAxiosClient();
 
+export const cartService = {
   // Add item to cart
-  async addToCart(
+  addToCart: async (
     productId: string,
     quantity: number
-  ): Promise<ApiResponse<Cart>> {
+  ): Promise<ApiResponse<Cart>> => {
     try {
-      const response = await this.axiosClient.post("/carts/add", {
+      const response = await axiosClient.post("/carts/add", {
         productId,
         quantity,
       });
@@ -63,12 +62,12 @@ class CartService {
           error.response?.data?.message || "Failed to add product to cart",
       };
     }
-  }
+  },
 
   // Get current restaurant's cart
-  async getMyCart(): Promise<ApiResponse<Cart>> {
+  getMyCart: async (): Promise<ApiResponse<Cart>> => {
     try {
-      const response = await this.axiosClient.get("/carts/my-cart");
+      const response = await axiosClient.get("/carts/my-cart");
       return {
         success: true,
         message: "Fetched cart successfully",
@@ -80,14 +79,14 @@ class CartService {
         message: error.response?.data?.message || "Failed to fetch cart",
       };
     }
-  }
+  },
 
   // Get cart summary (total items, total amount)
-  async getCartSummary(): Promise<
+  getCartSummary: async (): Promise<
     ApiResponse<{ totalItems: number; totalAmount: number }>
-  > {
+  > => {
     try {
-      const response = await this.axiosClient.get("/carts/summary");
+      const response = await axiosClient.get("/carts/summary");
       return {
         success: true,
         message: "Fetched cart summary",
@@ -99,37 +98,36 @@ class CartService {
         message: error.response?.data?.message || "Failed to fetch summary",
       };
     }
-  }
+  },
 
   // Update quantity of a cart item
-  async updateCartItem(
+  updateCartItem: async (
     cartItemId: string,
     quantity: number
-  ): Promise<ApiResponse<Cart>> {
+  ): Promise<ApiResponse<Cart>> => {
     try {
-      const response = await this.axiosClient.patch(
-        `/carts/items/${cartItemId}`,
-        { quantity }
-      );
-      return {
-        success: true,
-        message: "Cart item updated successfully",
-        data: response.data,
-      };
+
+       const response = await axiosClient.put(`/carts/items/${cartItemId}`, {
+         quantity,
+       });
+        return {
+          success: true,
+          message: "Cart item updated successfully",
+          data: response.data,
+        }; 
     } catch (error: any) {
+      console.error("Error updating cart item:", error);
       return {
         success: false,
         message: error.response?.data?.message || "Failed to update cart item",
       };
     }
-  }
+  },
 
   // Remove a cart item
-  async removeCartItem(cartItemId: string): Promise<ApiResponse<Cart>> {
+  removeCartItem: async (cartItemId: string): Promise<ApiResponse<Cart>> => {
     try {
-      const response = await this.axiosClient.delete(
-        `/carts/items/${cartItemId}`
-      );
+      const response = await axiosClient.delete(`/carts/items/${cartItemId}`);
       return {
         success: true,
         message: "Cart item removed successfully",
@@ -141,12 +139,12 @@ class CartService {
         message: error.response?.data?.message || "Failed to remove cart item",
       };
     }
-  }
+  },
 
   // Clear entire cart
-  async clearCart(): Promise<ApiResponse<Cart>> {
+  clearCart: async (): Promise<ApiResponse<Cart>> => {
     try {
-      const response = await this.axiosClient.delete("/carts/clear");
+      const response = await axiosClient.delete("/carts/clear");
       return {
         success: true,
         message: "Cart cleared successfully",
@@ -158,19 +156,19 @@ class CartService {
         message: error.response?.data?.message || "Failed to clear cart",
       };
     }
-  }
+  },
 
   // ===========================
   // Admin APIs
   // ===========================
 
   // Get all carts (with pagination/filtering)
-  async getAllCarts(query?: {
+  getAllCarts: async (query?: {
     page?: number;
     limit?: number;
-  }): Promise<ApiResponse<Cart[]>> {
+  }): Promise<ApiResponse<Cart[]>> => {
     try {
-      const response = await this.axiosClient.get("/carts", { params: query });
+      const response = await axiosClient.get("/carts", { params: query });
       return {
         success: true,
         message: "Fetched all carts",
@@ -182,12 +180,12 @@ class CartService {
         message: error.response?.data?.message || "Failed to fetch carts",
       };
     }
-  }
+  },
 
   // Get cart by ID
-  async getCartById(cartId: string): Promise<ApiResponse<Cart>> {
+  getCartById: async (cartId: string): Promise<ApiResponse<Cart>> => {
     try {
-      const response = await this.axiosClient.get(`/carts/${cartId}`);
+      const response = await axiosClient.get(`/carts/${cartId}`);
       return {
         success: true,
         message: "Fetched cart successfully",
@@ -199,7 +197,5 @@ class CartService {
         message: error.response?.data?.message || "Failed to fetch cart by ID",
       };
     }
-  }
-}
-
-export const cartService = new CartService();
+  },
+};

@@ -94,27 +94,28 @@ export function CartProvider({ children }: CartProviderProps) {
     [refreshCart]
   );
 
-  const updateCartItem = useCallback(
-    async (cartItemId: string, quantity: number): Promise<boolean> => {
-      try {
-        setError(null);
-        const response = await cartService.updateCartItem(cartItemId, quantity);
+const updateCartItem = useCallback(
+  async (cartItemId: string, quantity: number): Promise<boolean> => {
+    try {
+      setError(null);
+      // Fixed: Call the service function from cartService
+      const response = await cartService.updateCartItem(cartItemId, quantity);
 
-        if (response.success) {
-          await refreshCart(); // Refresh cart data after updating
-          return true;
-        } else {
-          setError(response.message || "Failed to update cart item");
-          return false;
-        }
-      } catch (error) {
-        console.error("Error updating cart item:", error);
-        setError("Failed to update cart item");
+      if (response.success) {
+        await refreshCart();
+        return true;
+      } else {
+        setError(response.message || "Failed to update cart item");
         return false;
       }
-    },
-    [refreshCart]
-  );
+    } catch (error) {
+      console.error("Error updating cart item:", error);
+      setError("Failed to update cart item");
+      return false;
+    }
+  },
+  [refreshCart]
+);
 
   const removeCartItem = useCallback(
     async (cartItemId: string): Promise<boolean> => {
@@ -208,3 +209,4 @@ export function useCartSummary() {
   const { totalItems, totalQuantity, totalAmount, isLoading } = useCart();
   return { totalItems, totalQuantity, totalAmount, isLoading };
 }
+

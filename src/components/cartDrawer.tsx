@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import { useCart } from "@/app/contexts/cart-context";
+import Link from "next/link";
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -46,10 +47,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     <>
       {/* Backdrop */}
       {isOpen && (
-        <div
-          className="fixed inset-0 bg-opacity-50 z-40"
-          onClick={onClose}
-        />
+        <div className="fixed inset-0 bg-opacity-50 z-40" onClick={onClose} />
       )}
 
       <div
@@ -141,9 +139,11 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   {totalAmount.toFixed(2)} Rwf
                 </span>
               </div>
-              <Button className="w-full bg-green-600 hover:bg-green-700 text-white py-3">
-                Proceed to Checkout
-              </Button>
+              <Link href="/restaurant/cart/checkout">
+                <Button className="w-full bg-green-600 hover:bg-green-700 text-white py-3">
+                  Proceed to Checkout
+                </Button>
+              </Link>
             </div>
           )}
 
@@ -186,22 +186,16 @@ function CartItem({
     }
   };
 
-  const handleQuantityUpdate = async () => {
-    const finalQuantity = Number.parseInt(inputValue) || 1;
+const handleQuantityUpdate = async () => {
+  console.log("Updating quantity for item:", item.id, "to:", inputValue);
+  const finalQuantity = Number.parseInt(inputValue) || 1;
+  console.log("Final quantity:", finalQuantity);
 
-    if (finalQuantity <= 0) {
-      alert("Please enter a valid quantity greater than 0");
-      return;
-    }
-
-    if (finalQuantity === item.quantity) {
-      return; // No change needed
-    }
-
-    setIsUpdating(true);
-    await onQuantityUpdate(item.id, finalQuantity);
-    setIsUpdating(false);
-  };
+  setIsUpdating(true);
+  const success = await onQuantityUpdate(item.id, finalQuantity);
+  console.log("Update result:", success);
+  setIsUpdating(false);
+};
 
   const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
