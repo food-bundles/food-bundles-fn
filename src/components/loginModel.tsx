@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -10,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { ILoginData, UserRole } from "@/lib/types";
 import { authService } from "@/app/services/authService";
 import { useCart } from "@/app/contexts/cart-context";
+import { SignupModal } from "./signupModel";
 
 type Props = {
   isOpen: boolean;
@@ -28,6 +30,11 @@ export function LoginModal({ isOpen, onClose, loginData }: Props) {
   const [pendingProduct, setPendingProduct] = useState<any>(null);
   const [pendingRedirect, setPendingRedirect] = useState<string | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
+  const [signupData, setSignupData] = useState({
+    isBackendAvailable: true,
+    message: "",
+  });
   const router = useRouter();
   const { refreshCart } = useCart();
 
@@ -44,11 +51,11 @@ export function LoginModal({ isOpen, onClose, loginData }: Props) {
   }, []);
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !showSignup) {
       setIsAnimating(true);
       setIsNavigating(false);
     }
-  }, [isOpen]);
+  }, [isOpen, showSignup]);
 
   function isValidPhone(phone: string) {
     return /^\+?[0-9]{10,15}$/.test(phone);
@@ -74,14 +81,56 @@ export function LoginModal({ isOpen, onClose, loginData }: Props) {
   }
 
   const handleClose = () => {
-    if (isNavigating) return;
+    if (isNavigating || showSignup) return;
 
     setIsAnimating(false);
     setTimeout(() => {
       onClose();
       setError("");
       setShowPassword(false);
+      setShowSignup(false);
     }, 300);
+  };
+
+  const handleShowSignup = async () => {
+    // Check backend availability before showing signup
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/health`, {
+        cache: "no-store",
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        setSignupData({ isBackendAvailable: true, message: "" });
+      } else {
+        setSignupData({
+          isBackendAvailable: false,
+          message: "Service temporarily unavailable. Please try again later.",
+        });
+      }
+    } catch (error) {
+      setSignupData({
+        isBackendAvailable: false,
+        message: "Service temporarily unavailable. Please try again later.",
+      });
+    }
+
+    setShowSignup(true);
+  };
+
+  const handleBackToLogin = () => {
+    setShowSignup(false);
+    setIsAnimating(true);
+  };
+
+  const handleSignupClose = () => {
+    setShowSignup(false);
+    onClose();
   };
 
   const addProductToCart = async (product: any, token: string) => {
@@ -192,8 +241,6 @@ export function LoginModal({ isOpen, onClose, loginData }: Props) {
     }
   }
 
-  if (!isOpen) return null;
-
   const getButtonText = () => {
     if (isNavigating) return "Please wait...";
     if (isLoading) return "logging in...";
@@ -201,6 +248,20 @@ export function LoginModal({ isOpen, onClose, loginData }: Props) {
     if (pendingRedirect) return "LOG IN";
     return "LOG IN";
   };
+
+  // Render signup modal if it's open
+  if (showSignup) {
+    return (
+      <SignupModal
+        isOpen={showSignup}
+        onClose={handleSignupClose}
+        onBackToLogin={handleBackToLogin}
+        signupData={signupData}
+      />
+    );
+  }
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -268,7 +329,7 @@ export function LoginModal({ isOpen, onClose, loginData }: Props) {
                   <Input
                     type="text"
                     name="identifier"
-                    placeholder="Enter Email, phone, TIN number"
+                    placeholder="Enter Email or Phone"
                     className="w-full h-12 pl-4 pr-4 border border-gray-300 rounded-md focus:border-green-700 focus:ring-1 focus:ring-green-700"
                     required
                     disabled={!loginData.isBackendAvailable || isNavigating}
@@ -335,15 +396,13 @@ export function LoginModal({ isOpen, onClose, loginData }: Props) {
               <div className="mt-6 text-center">
                 <p className="text-sm text-gray-600">
                   {"Don't have an account? "}
-                  <Link
-                    href="/signup"
+                  <button
+                    onClick={isNavigating ? undefined : handleShowSignup}
                     className="text-green-700 hover:text-green-800 font-medium"
-                    onClick={
-                      isNavigating ? (e) => e.preventDefault() : handleClose
-                    }
+                    disabled={isNavigating}
                   >
                     Create account
-                  </Link>
+                  </button>
                 </p>
               </div>
             </div>

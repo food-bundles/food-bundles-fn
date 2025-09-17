@@ -239,7 +239,7 @@ function QuickTalkSection() {
                   <p className="text-sm ">
                     USSD Code:{" "}
                     <span className="text-green-500 text-2xl font-semibold">
-                      *833#
+                      *#
                     </span>
                   </p>
                 </div>
@@ -247,7 +247,7 @@ function QuickTalkSection() {
                   <p className="text-sm">
                     Emmergence Call{" "}
                     <span className="text-red-500 text-2xl font-semibold">
-                      ###
+                      *#
                     </span>
                   </p>{" "}
                 </div>
