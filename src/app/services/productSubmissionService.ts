@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { ProductSubmissionData } from "../(private)/Farmer/_components/product-submission-modal"
+import { ProductSubmissionData } from "../(private)/farmer/_components/product-submission-modal"
 import createAxiosClient from "../hooks/axiosClient"
 
 export interface CreatProductSubmissionData {
@@ -47,18 +46,6 @@ export interface Submission {
   submittedAt: string
 }
 
-export interface LocationHierarchy {
-  provinces: string[]
-  districts: { [province: string]: string[] }
-  sectors: { [district: string]: string[] }
-  cells: { [sector: string]: string[] }
-  villages: { [cell: string]: string[] }
-}
-
-export interface LocationResponse {
-  success: boolean
-  data: LocationHierarchy
-}
 
 export interface CategoryResponse {
   categories: string[]
@@ -115,11 +102,10 @@ export const productSubmissionService = {
       const axiosClient = createAxiosClient()
       const response = await axiosClient.get<FarmerProfile>(`/farmers/${Id}`)
       return response.data
-    } catch (error: any) {
-
-      if (error?.response?.status === 404) {
+      } catch (error) {
+      if (error instanceof Error) {
+        console.error("Error message:", error.message)
       }
-
       return null
     }
   },
@@ -144,31 +130,24 @@ export const productSubmissionService = {
 
       const response = await axiosClient.get<FarmerProfile>(`/farmers/${farmerId}`)
       return response.data
-    } catch (error: any) {
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error("Error message:", error.message)
+      }
 
       return null
     }
   },
 
-  fetchUserLocations: async (): Promise<string[]> => {
-    try {
-      const axiosClient = createAxiosClient()
-      const response = await axiosClient.get<LocationResponse>("/locations")
-      return response.data.data.provinces
-    } catch (error) {
-      throw new Error("Failed to load locations. Please try again later.")
-    }
-  },
 
   fetchCategories: async (): Promise<Category[]> => {
     try {
       const axiosClient = createAxiosClient()
       const response = await axiosClient.get<Category[]>("/category")
       return response.data
-    } catch (error: any) {
-
-      // Log specific error details for debugging
-      if (error.response) {
+        } catch (error) {
+      if (error instanceof Error) {
+        console.error("Error message:", error.message)
       }
 
       throw new Error("Failed to load categories. Please check your connection and try again.")
@@ -180,8 +159,10 @@ export const productSubmissionService = {
       const axiosClient = createAxiosClient()
       const response = await axiosClient.get<{ success: boolean; data: Category[] }>("/category/active")
       return response.data.data || response.data
-    } catch (error: any) {
-      console.error("Failed to fetch active categories from database:", error)
+     } catch (error) {
+      if (error instanceof Error) {
+        console.error("Error message:", error.message)
+      }
       throw new Error("Failed to load active categories. Please try again later.")
     }
   },
@@ -201,50 +182,25 @@ export const productSubmissionService = {
 
   // Get products by specific category
   getProductsByCategory: async (categoryId: string): Promise<string[]> => {
-    try {
-      const axiosClient = createAxiosClient()
-      const response = await axiosClient.get<{ success: boolean; data: Product[] }>(`/category/${categoryId}`)
-
-      const products = response.data.data || response.data
-      // Return unique product names for the category
-      const productNames = products.map((product) => product.productName)
-      return [...new Set(productNames)] // Remove duplicates
-    } catch (error) {
-      return []
-    }
-  },
-
-  // Get all products from a category name (not ID)
-  getProductsByCategoryName: async (categoryName: string): Promise<string[]> => {
-    try {
-      const axiosClient = createAxiosClient()
-
-      // First, try to get the category ID from the category name
-      const categories = await productSubmissionService.fetchCategories()
-      const category = categories.find((cat) => cat.name === categoryName)
-
-      if (!category) {
-        throw new Error(`Category not found: ${categoryName}`)
+  try {
+    const axiosClient = createAxiosClient()
+    const response = await axiosClient.get<{
+      message: string
+      data: {
+        id: string
+        name: string
+        products: Product[]
       }
+    }>(`/category/${categoryId}`)
 
-      // Use the category ID endpoint instead of query parameter
-      const response = await axiosClient.get<Product[]>(`/category/${category.id}`)
-
-      // Return unique product names for the category
-      const productNames = response.data.map((product) => product.productName)
-      return [...new Set(productNames)] // Remove duplicates
-    } catch (error: any) {
-
-      if (error.response) {
-      } else if (error.request) {
-      } else {
-        console.error("Error setting up request:", error.message)
-      }
-
-      throw new Error(`Failed to load products for category ${categoryName}. Please try again later.`)
-    }
-  },
-
+    const products = response.data.data.products || []
+    const productNames = products.map((product: Product) => product.productName)
+    return [...new Set(productNames)] // Remove duplicates
+  } catch (error) {
+    console.error(`Failed to fetch products for category ${categoryId}:`, error)
+    return []
+  }
+},
   getAllProducts: async (category?: string): Promise<Product[]> => {
     try {
       const axiosClient = createAxiosClient()
@@ -261,16 +217,6 @@ export const productSubmissionService = {
     }
   },
 
-  // Check if a product exists in the database
-  checkProductExists: async (productName: string, categoryName: string): Promise<boolean> => {
-    try {
-      const categoryProducts = await productSubmissionService.getProductsByCategoryName(categoryName)
-      return categoryProducts.some((name) => name.toLowerCase() === productName.toLowerCase())
-    } catch (error) {
-      console.error("Failed to check if product exists:", error)
-      return false
-    }
-  },
 
   // Get product details if it exists
   getProductDetails: async (productName: string, category: string): Promise<Product | null> => {
@@ -287,53 +233,44 @@ export const productSubmissionService = {
     }
   },
 
-  submitProduct: async (data: ProductSubmissionData): Promise<any> => {
-    try {
-      const axiosClient = createAxiosClient()
+  submitProduct: async (data: ProductSubmissionData): Promise<ProductSubmissionData> => {
+  try {
+    const axiosClient = createAxiosClient()
 
-      // First, try to get or create the product
-      let productId: string
+    // now category is ID
+    const existingProduct = await productSubmissionService.getProductDetails(
+      data.productName,
+      data.category
+    )
 
-      try {
-        // Check if product exists
-        const existingProduct = await productSubmissionService.getProductDetails(data.productName, data.category)
-
-        if (existingProduct) {
-          productId = existingProduct.id
-        } else {
-          // If product doesn't exist, you might need to create it first
-          throw new Error(
-            "Product not found. Please select from existing products or contact support to add new products.",
-          )
-        }
-      } catch (productError) {
-        console.error("Error getting product ID:", productError)
-        throw new Error("Unable to submit product. Please try again or contact support.")
-      }
-
-      const submissionPayload = {
-        quantity: data.quantity,
-        wishedPrice: data.wishedPrice,
-        province: data.province,
-        district: data.district,
-        sector: data.sector,
-        cell: data.cell,
-        village: data.village,
-      }
-
-      // Use the correct endpoint with productId
-      const response = await axiosClient.post(`/farmers/submit-product/${productId}`, submissionPayload, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-
-      return response.data
-    } catch (error: any) {
-      console.error("Failed to submit product:", error)
-      throw error
+    if (!existingProduct) {
+      throw new Error("Product not found. Please select from existing products.")
     }
-  },
+
+    const submissionPayload = {
+      quantity: data.quantity,
+      wishedPrice: data.wishedPrice,
+      province: data.province,
+      district: data.district,
+      sector: data.sector,
+      cell: data.cell,
+      village: data.village,
+    }
+
+    const response = await axiosClient.post(
+      `/farmers/submit-product/${existingProduct.id}`,
+      submissionPayload,
+      { headers: { "Content-Type": "application/json" } }
+    )
+
+    return response.data
+     } catch (error) {
+      if (error instanceof Error) {
+        console.error("Error message:", error.message)
+      }
+    throw error
+  }
+},
 
   // Get farmer's submission history
   getSubmissionHistory: async (): Promise<Submission[]> => {
@@ -419,7 +356,11 @@ export const productSubmissionService = {
     for (const endpoint of endpointsToTest) {
       try {
         const response = await axiosClient.get(endpoint)
-      } catch (error: any) {
+        console.log(`${endpoint} - Status: ${response.status}`)
+          } catch (error) {
+      if (error instanceof Error) {
+        console.error("Error message:", error.message)
+      }
       }
     }
 
@@ -435,82 +376,15 @@ export const productSubmissionService = {
     if (farmerId && farmerId !== "null" && farmerId !== "undefined") {
       try {
         const response = await axiosClient.get(`/farmers/${farmerId}`)
-      } catch (error: any) {
-        if (error?.response?.data) {
-        }
+        console.log(`/farmers/${farmerId} - Status: ${response.status}`)
+        console.log("Farmer profile data:", response.data)
+          } catch (error) {
+      if (error instanceof Error) {
+        console.error("Error message:", error.message)
+      }
       }
     } 
   },
 
-  fetchLocationHierarchy: async (): Promise<LocationHierarchy> => {
-    try {
-      const axiosClient = createAxiosClient()
-      const response = await axiosClient.get<LocationResponse>("/locations/hierarchy")
-      return response.data.data
-    } catch (error) {
-      console.error("Failed to fetch location hierarchy:", error)
-      // Return Rwanda's basic administrative structure as fallback
-      return {
-        provinces: ["Kigali City", "Eastern Province", "Northern Province", "Southern Province", "Western Province"],
-        districts: {},
-        sectors: {},
-        cells: {},
-        villages: {},
-      }
-    }
-  },
-
-  getDistrictsByProvince: async (province: string): Promise<string[]> => {
-    try {
-      const axiosClient = createAxiosClient()
-      const response = await axiosClient.get<{ success: boolean; data: string[] }>(
-        `/locations/districts?province=${encodeURIComponent(province)}`,
-      )
-      return response.data.data || []
-    } catch (error) {
-      console.error("Failed to fetch districts:", error)
-      return []
-    }
-  },
-
-  getSectorsByDistrict: async (district: string): Promise<string[]> => {
-    try {
-      const axiosClient = createAxiosClient()
-      const response = await axiosClient.get<{ success: boolean; data: string[] }>(
-        `/locations/sectors?district=${encodeURIComponent(district)}`,
-      )
-      return response.data.data || []
-    } catch (error) {
-      console.error("Failed to fetch sectors:", error)
-      return []
-    }
-  },
-
-  getCellsBySector: async (sector: string): Promise<string[]> => {
-    try {
-      const axiosClient = createAxiosClient()
-      const response = await axiosClient.get<{ success: boolean; data: string[] }>(
-        `/locations/cells?sector=${encodeURIComponent(sector)}`,
-      )
-      return response.data.data || []
-    } catch (error) {
-      console.error("Failed to fetch cells:", error)
-      return []
-    }
-  },
-
-  getVillagesByCell: async (cell: string): Promise<string[]> => {
-    try {
-      const axiosClient = createAxiosClient()
-      const response = await axiosClient.get<{ success: boolean; data: string[] }>(
-        `/locations/villages?cell=${encodeURIComponent(cell)}`,
-      )
-      return response.data.data || []
-    } catch (error) {
-      console.error("Failed to fetch villages:", error)
-      return []
-    }
-  },
+ 
 }
-
-// Export singleton

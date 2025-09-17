@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useMemo, useId, createContext } from "react"
+import { useState, useMemo, useId} from "react"
 import { Bell, User, ChevronDown, Settings, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { usePathname, useRouter } from "next/navigation"
+import { useRouter } from "next/navigation"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,7 +38,6 @@ export default function DashboardHeader() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const unreadCount = testNotifications.filter((n) => !n.isRead).length
-  const pathname = usePathname()
   const router = useRouter()
 
   const { user, getUserProfileImage } = useAuth();
@@ -78,8 +77,8 @@ export default function DashboardHeader() {
           <div className="flex items-center justify-between h-16">
             {/* Left: Brand */}
             <div className="flex items-center h-14 gap-3 bg-white/70 px-2 py-1 rounded-sm ">
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-md rounded-sm overflow-hidden">
-                <img src="/imgs/Food_bundle_logo.png" alt="FoodBundle Logo" />
+              <div className="w-10 h-10  flex items-center justify-center shadow-md rounded-sm overflow-hidden">
+                <Image width={40} height={40} src="/imgs/Food_bundle_logo.png" alt="FoodBundle Logo" />
               </div>
               <div className="flex flex-col ">
                 <span className="text-xl font-bold text-black">Food bundles</span>
