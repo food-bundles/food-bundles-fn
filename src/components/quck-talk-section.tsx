@@ -160,7 +160,7 @@ function QuickTalkSection() {
                 </div>
               </div>
               <div>
-                <div className="flex flex-col items-center gap-2 mb-4">
+                <div className="flex   border  flex-col items-center gap-2 mb-4">
                   <button
                     onClick={() =>
                       window.open("https://wa.me/250796897823", "_blank")
