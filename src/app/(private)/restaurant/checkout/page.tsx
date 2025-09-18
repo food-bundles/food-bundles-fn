@@ -1,5 +1,3 @@
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import { CheckoutProgress } from "./_components/checkout-progress";
 import { cartService } from "@/app/services/cartService";
 import { roleGuard } from "@/lib/role-guard";
@@ -51,15 +49,7 @@ export default async function CheckoutPage() {
     <div className="min-h-screen bg-gray-50">
       <main className="container mx-auto px-6 py-8">
         <div className="flex justify-between">
-          <div className="flex items-center gap-4 mb-8">
-            <Link
-              href="/restaurant/cart"
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to cart
-            </Link>
-          </div>
+      
         </div>
         <CheckoutProgress currentStep="checkout" />
 

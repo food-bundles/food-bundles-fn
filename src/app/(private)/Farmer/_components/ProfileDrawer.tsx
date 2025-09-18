@@ -16,6 +16,7 @@ interface ProfileDrawerProps {
     name?: string
     email?: string
     phone?: string
+    location?: string
     profilePhoto?: string
   }
 }

@@ -90,6 +90,7 @@ export interface IUser {
   name: string;
   email: string;
   phone?: string;
+  location: string;
   role: UserRole;
   profileImage: string;
 }
@@ -97,6 +98,7 @@ export interface IUser {
 export interface AuthContextType {
   user: IUser | null;
   loading: boolean;
+  location?: Location;
   login: (loginData: ILoginData) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;

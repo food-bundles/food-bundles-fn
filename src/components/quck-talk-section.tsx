@@ -128,10 +128,10 @@ function QuickTalkSection() {
                   <div>
                     <p className="font-medium">Email Support</p>
                     <a
-                      href="mailto:support@foodbundle.com"
+                      href="mailto:sales@food.rw"
                       className="text-sm text-muted-foreground hover:text-primary"
                     >
-                      support@sostene.com
+                      sales@food.rw
                     </a>
                   </div>
                 </div>

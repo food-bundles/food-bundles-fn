@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
@@ -5,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowUpDown, Eye } from "lucide-react";
-import { CiEdit } from "react-icons/ci";
 
 export type OrderStatus =
   | "pending"
@@ -25,6 +25,7 @@ export type Order = {
   totalAmount: number;
   deliveryAddress: string;
   status: OrderStatus;
+  originalData?: any; // For accessing backend data
 };
 
 const getStatusColor = (status: OrderStatus) => {
@@ -55,7 +56,9 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-export const ordersColumns: ColumnDef<Order>[] = [
+export const ordersColumns = (
+  onView: (order: Order) => void
+): ColumnDef<Order>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -136,7 +139,12 @@ export const ordersColumns: ColumnDef<Order>[] = [
     accessorKey: "items",
     header: "Items",
     cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("items")}</div>
+      <div
+        className="font-medium max-w-[200px] truncate"
+        title={row.getValue("items")}
+      >
+        {row.getValue("items")}
+      </div>
     ),
   },
   {
@@ -186,22 +194,19 @@ export const ordersColumns: ColumnDef<Order>[] = [
   {
     id: "actions",
     header: "Actions",
-    cell: () => {
+    cell: ({ row }) => {
+      const order = row.original;
+
       return (
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="sm"
             className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50 cursor-pointer"
+            onClick={() => onView(order)}
+            title="View Order Details"
           >
             <Eye className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 text-green-600 hover:text-green-800 hover:bg-green-50 cursor-pointer"
-          >
-            <CiEdit className="h-4 w-4" />
           </Button>
         </div>
       );

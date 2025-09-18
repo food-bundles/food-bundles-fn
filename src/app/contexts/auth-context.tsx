@@ -125,16 +125,45 @@ export function AuthProvider({ children }: AuthProviderProps) {
     [user]
   );
 
-  const getUserProfileImage = useCallback((): string => {
-    if (user?.profileImage) {
-      if (user.profileImage.startsWith("http")) {
-        return user.profileImage;
-      }
-      return `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads/profiles/${user.profileImage}`;
+const getUserProfileImage = useCallback((): string => {
+  if (user?.profileImage) {
+    if (user.profileImage.startsWith("http")) {
+      return user.profileImage;
     }
+    return `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads/profiles/${user.profileImage}`;
+  }
 
-    return "/imgs/profile.jpg";
-  }, [user]);
+  // 👇 generate initials if no profile image
+  if (user?.name) {
+    const initials = user.name
+      .trim()
+      .split(" ")
+      .map((part) => part[0])
+      .join("")
+      .substring(0, 2)
+      .toUpperCase();
+
+    // Use a simple SVG with initials encoded as data URI
+    return `data:image/svg+xml;utf8,
+      <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+        <rect width="100%" height="100%" fill="#4CAF50"/>
+        <text x="50%" y="50%" dy=".35em"
+          font-family="Arial, sans-serif"
+          font-size="40"
+          fill="white"
+          text-anchor="middle">
+          ${initials}
+        </text>
+      </svg>`;
+  }
+
+  // If no name either
+  return `data:image/svg+xml;utf8,
+    <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+      <rect width="100%" height="100%" fill="#4CAF50"/>
+    </svg>`;
+}, [user]);
+
 
   // Check auth on mount
   useEffect(() => {

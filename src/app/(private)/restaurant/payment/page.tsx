@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
@@ -9,8 +10,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Loader2, CreditCard, Smartphone, Banknote } from "lucide-react";
+import {
+  Loader2,
+  CreditCard,
+  Smartphone,
+  Banknote,
+  ExternalLink,
+  Info,
+} from "lucide-react";
 import { checkoutService, type Checkout } from "@/app/services/checkoutService";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function PaymentPage() {
   const router = useRouter();
@@ -22,6 +37,8 @@ export default function PaymentPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string>("");
+  const [showFlutterwaveInfo, setShowFlutterwaveInfo] = useState(false);
+  const [redirectUrl, setRedirectUrl] = useState<string>("");
 
   // Payment form data
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -133,8 +150,44 @@ export default function PaymentPage() {
       );
 
       if (response.success) {
-        // Redirect to confirmation page
-        router.push("/restaurant/confirmation");
+        // Check the payment provider to determine the flow
+        const paymentProvider = response.data?.checkout?.paymentProvider;
+        const requiresRedirect = response.data?.requiresRedirect;
+        const redirectUrl = response.data?.redirectUrl;
+
+        console.log("Payment provider:", paymentProvider);
+        console.log("Requires redirect:", requiresRedirect);
+        console.log("Redirect URL:", redirectUrl);
+
+        if (paymentMethod === "MOBILE_MONEY") {
+          // Handle mobile money based on provider
+          if (paymentProvider === "PAYPACK") {
+            // PayPack - direct USSD trigger, go to confirmation
+            console.log(
+              "PayPack payment initiated - redirecting to confirmation"
+            );
+            router.push("/restaurant/confirmation");
+          } else if (
+            paymentProvider === "FLUTTERWAVE" &&
+            requiresRedirect &&
+            redirectUrl
+          ) {
+            // Flutterwave - requires redirect to their portal
+            console.log("Flutterwave payment - showing redirect dialog");
+            setRedirectUrl(redirectUrl);
+            setShowFlutterwaveInfo(true);
+          } else {
+            // Default case for mobile money - go to confirmation
+            console.log(
+              "Default mobile money flow - redirecting to confirmation"
+            );
+            router.push("/restaurant/confirmation");
+          }
+        } else {
+          // For cash and card payments - go directly to confirmation
+          console.log("Cash/Card payment - redirecting to confirmation");
+          router.push("/restaurant/confirmation");
+        }
       } else {
         setError(response.message || "Payment processing failed");
       }
@@ -142,6 +195,15 @@ export default function PaymentPage() {
       setError("An error occurred while processing your payment");
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleFlutterwaveRedirect = () => {
+    if (redirectUrl) {
+      console.log("Redirecting to Flutterwave:", redirectUrl);
+      // Redirect to Flutterwave for OTP verification
+      window.location.href = redirectUrl;
+      // Flutterwave will redirect back to /restaurant/confirmation after payment
     }
   };
 
@@ -207,7 +269,7 @@ export default function PaymentPage() {
                       <div className="flex-1">
                         <Label htmlFor={checkout.id} className="cursor-pointer">
                           <div className="font-medium">
-                            {/* Order #{checkout.txOrderId} */}
+                            Order #{checkout.id.slice(-8)}
                           </div>
                           <div className="text-sm text-gray-600">
                             {checkout.billingName} •{" "}
@@ -286,8 +348,8 @@ export default function PaymentPage() {
                       />
                     </div>
                     <div className="text-sm text-gray-600">
-                      You will receive a payment prompt on your phone to
-                      complete the transaction.
+                      {`You will receive a USSD prompt on your phone (PayPack) 
+                      or be redirected to Flutterwave for OTP verification.`}
                     </div>
                   </div>
                 )}
@@ -382,6 +444,47 @@ export default function PaymentPage() {
             </Card>
           </div>
         </div>
+
+        {/* Flutterwave Redirect Dialog */}
+        <Dialog
+          open={showFlutterwaveInfo}
+          onOpenChange={setShowFlutterwaveInfo}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Info className="h-5 w-5 text-blue-500" />
+                Complete Payment
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <ul className="text-sm text-green-700 space-y-1">
+                  <li>
+                    Click Continue
+                  </li>
+                  <li>Enter the OTP sent to your mobile phone</li>
+                  <li>Complete the payment verification process</li>
+                  <li>
+                    After successful payment, you'll be redirected back to
+                    confirmation page
+                  </li>
+                </ul>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleFlutterwaveRedirect}
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Continue to Payment
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

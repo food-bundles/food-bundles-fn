@@ -11,11 +11,11 @@ export const authService = {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.post("/login", loginData);
 
-    // Store token in localStorage AND cookies after successful login
     if (response.data.success && response.data.token) {
-      setToken(response.data.token);
-      // Also set token in cookies for server-side access
-      document.cookie = `auth-token=${response.data.token}; path=/; max-age=86400; secure; samesite=strict`;
+      if (typeof window !== "undefined") {
+        setToken(response.data.token);
+        document.cookie = `auth-token=${response.data.token}; path=/; max-age=86400; secure; samesite=strict`;
+      }
     }
 
     return response.data;

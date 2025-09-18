@@ -1,159 +1,102 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useState } from "react";
+import { useOrders } from "@/app/contexts/orderContext";
 import { DataTable } from "@/components/data-table";
-import { Order, ordersColumns } from "./_components/orders-columns";
+import { ordersColumns } from "./_components/orders-columns";
 import {
   createCommonFilters,
   TableFilters,
 } from "../../../../components/filters";
 import { toast } from "sonner";
-
-// Sample restaurant orders data
-const sampleOrders: Order[] = [
-  {
-    id: "1",
-    orderId: "ORD-001",
-    customerName: "John Smith",
-    orderedDate: "2024-01-15",
-    items: "2x Margherita Pizza, 1x Caesar Salad",
-    totalAmount: 28.5,
-    deliveryAddress: "123 Main St, Downtown",
-    status: "pending",
-  },
-  {
-    id: "2",
-    orderId: "ORD-002",
-    customerName: "Sarah Johnson",
-    orderedDate: "2024-01-14",
-    items: "1x Chicken Burger, 1x Fries, 1x Coke",
-    totalAmount: 15.75,
-    deliveryAddress: "456 Oak Ave, Midtown",
-    status: "confirmed",
-  },
-  {
-    id: "3",
-    orderId: "ORD-003",
-    customerName: "Mike Chen",
-    orderedDate: "2024-01-14",
-    items: "3x Sushi Rolls, 1x Miso Soup",
-    totalAmount: 42.0,
-    deliveryAddress: "789 Pine St, Uptown",
-    status: "processing",
-  },
-  {
-    id: "4",
-    orderId: "ORD-004",
-    customerName: "Lisa Rodriguez",
-    orderedDate: "2024-01-13",
-    items: "1x Pasta Carbonara, 1x Garlic Bread",
-    totalAmount: 18.25,
-    deliveryAddress: "321 Elm St, Westside",
-    status: "ready",
-  },
-  {
-    id: "5",
-    orderId: "ORD-005",
-    customerName: "David Wilson",
-    orderedDate: "2024-01-13",
-    items: "2x Fish Tacos, 1x Guacamole",
-    totalAmount: 22.5,
-    deliveryAddress: "654 Maple Dr, Eastside",
-    status: "delivered",
-  },
-  {
-    id: "6",
-    orderId: "ORD-006",
-    customerName: "Emma Davis",
-    orderedDate: "2024-01-12",
-    items: "1x Veggie Wrap, 1x Smoothie",
-    totalAmount: 12.75,
-    deliveryAddress: "987 Cedar Ln, Southside",
-    status: "cancelled",
-  },
-  {
-    id: "7",
-    orderId: "ORD-007",
-    customerName: "Robert Brown",
-    orderedDate: "2024-01-12",
-    items: "1x Steak Dinner, 1x Wine",
-    totalAmount: 65.0,
-    deliveryAddress: "147 Birch St, Northside",
-    status: "refunded",
-  },
-  {
-    id: "8",
-    orderId: "ORD-008",
-    customerName: "Anna Taylor",
-    orderedDate: "2024-01-11",
-    items: "2x Chicken Wings, 1x Beer",
-    totalAmount: 19.5,
-    deliveryAddress: "258 Spruce Ave, Central",
-    status: "delivered",
-  },
-  {
-    id: "9",
-    orderId: "ORD-009",
-    customerName: "Chris Martinez",
-    orderedDate: "2024-01-11",
-    items: "1x BBQ Ribs, 1x Coleslaw, 1x Cornbread",
-    totalAmount: 32.75,
-    deliveryAddress: "369 Willow St, Harbor",
-    status: "processing",
-  },
-  {
-    id: "10",
-    orderId: "ORD-010",
-    customerName: "Jessica Lee",
-    orderedDate: "2024-01-10",
-    items: "1x Poke Bowl, 1x Green Tea",
-    totalAmount: 16.25,
-    deliveryAddress: "741 Ash Rd, Riverside",
-    status: "confirmed",
-  },
-];
-
-const statusOptions = [
-  { label: "All Status", value: "all" },
-  { label: "Pending", value: "pending" },
-  { label: "Confirmed", value: "confirmed" },
-  { label: "Processing", value: "processing" },
-  { label: "Ready", value: "ready" },
-  { label: "Delivered", value: "delivered" },
-  { label: "Cancelled", value: "cancelled" },
-  { label: "Refunded", value: "refunded" },
-];
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { RefreshCw, AlertCircle } from "lucide-react";
 
 export default function RestaurantOrdersPage() {
   const [searchValue, setSearchValue] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
 
-  const filteredData = useMemo(() => {
-    return sampleOrders.filter((order) => {
-      if (
-        searchValue &&
-        !order.orderId.toLowerCase().includes(searchValue.toLowerCase()) &&
-        !order.customerName.toLowerCase().includes(searchValue.toLowerCase()) &&
-        !order.items.toLowerCase().includes(searchValue.toLowerCase())
-      ) {
-        return false;
-      }
+  const { orders: backendOrders, loading, error, refreshOrders } = useOrders();
+  const [formattedOrders, setFormattedOrders] = useState<any[]>([]);
 
-      if (selectedStatus !== "all" && order.status !== selectedStatus) {
-        return false;
-      }
+  console.log("Backend orders:", backendOrders); // Debug log
+  console.log("Loading:", loading); // Debug log
+  console.log("Error:", error); // Debug log
 
-      if (
-        selectedDate &&
-        order.orderedDate !== selectedDate.toISOString().split("T")[0]
-      ) {
-        return false;
-      }
+  // Format backend orders to frontend format
+  useEffect(() => {
+    if (backendOrders && backendOrders.length > 0) {
 
-      return true;
-    });
-  }, [searchValue, selectedStatus, selectedDate]);
+      const formatted = backendOrders.map((order: any) => ({
+        id: order.id,
+        orderId: order.orderNumber,
+        customerName: order.restaurant?.name || "Unknown Restaurant",
+        orderedDate: new Date(order.createdAt).toLocaleDateString(),
+        items:
+          order.orderItems
+            ?.map(
+              (item: any) => `${item.quantity}x ${item.product?.productName}`
+            )
+            .join(", ") || "No items",
+        totalAmount: order.totalAmount || 0,
+        deliveryAddress: order.deliveryLocation || "No address provided",
+        status: mapBackendStatus(order.status),
+        originalData: order,
+      }));
+
+
+      setFormattedOrders(formatted);
+      console.log("Formatted orders:", formatted); // Debug log
+    } else {
+      setFormattedOrders([]);
+    }
+  }, [backendOrders]);
+
+  const mapBackendStatus = (status: string) => {
+    const statusMap: Record<string, string> = {
+      PENDING: "pending",
+      CONFIRMED: "confirmed",
+      PROCESSING: "processing",
+      READY: "ready",
+      SHIPPED: "ready",
+      DELIVERED: "delivered",
+      CANCELLED: "cancelled",
+      REFUNDED: "refunded",
+    };
+    return statusMap[status] || "pending";
+  };
+
+  const filteredData = formattedOrders.filter((order) => {
+    if (
+      searchValue &&
+      !order.orderId.toLowerCase().includes(searchValue.toLowerCase()) &&
+      !order.customerName.toLowerCase().includes(searchValue.toLowerCase()) &&
+      !order.items.toLowerCase().includes(searchValue.toLowerCase())
+    ) {
+      return false;
+    }
+
+    if (selectedStatus !== "all" && order.status !== selectedStatus) {
+      return false;
+    }
+
+    return true;
+  });
+
+  const statusOptions = [
+    { label: "All Status", value: "all" },
+    { label: "Pending", value: "pending" },
+    { label: "Confirmed", value: "confirmed" },
+    { label: "Processing", value: "processing" },
+    { label: "Ready", value: "ready" },
+    { label: "Delivered", value: "delivered" },
+    { label: "Cancelled", value: "cancelled" },
+    { label: "Refunded", value: "refunded" },
+  ];
 
   const filters = [
     createCommonFilters.search(
@@ -169,39 +112,133 @@ export default function RestaurantOrdersPage() {
     createCommonFilters.date(selectedDate, setSelectedDate, "Order Date"),
   ];
 
-  const handleExport = async () => {
+  const handleExport = () => {
+    toast("Export functionality will be handled by backend");
+  };
+
+  const handleRefresh = async () => {
     try {
-      console.log("Exporting restaurant orders data...", {
-        filters: {
-          search: searchValue,
-          status: selectedStatus,
-          date: selectedDate,
-        },
-        totalRecords: filteredData.length,
-      });
-      toast("Export functionality will be handled by backend");
-    } catch (error) {
-      console.error("Export failed:", error);
+      await refreshOrders();
+      toast.success("Orders refreshed successfully");
+    } catch (err) {
+      toast.error("Failed to refresh orders");
     }
   };
+
+  const handleViewOrder = (order: any) => {
+    console.log("View order:", order);
+    toast.info(`Viewing order: ${order.orderId}`);
+    // You can implement navigation to order details page here
+  };
+
+  if (loading && formattedOrders.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <main className="container mx-auto px-6 py-8">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <Skeleton className="h-8 w-48 mb-2" />
+                <Skeleton className="h-4 w-64" />
+              </div>
+              <Skeleton className="h-10 w-32" />
+            </div>
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <main className="container mx-auto px-6 py-8">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="text-center py-12">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Failed to load orders
+              </h3>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <Button onClick={handleRefresh} variant="outline">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Try Again
+              </Button>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="container mx-auto px-6 py-8">
         <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Orders Management
+              </h1>
+              <p className="text-gray-600">
+                Manage and track all your restaurant orders (
+                {filteredData.length} orders found)
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={handleRefresh}
+                variant="outline"
+                size="sm"
+                disabled={loading}
+              >
+                <RefreshCw
+                  className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+                />
+                Refresh
+              </Button>
+              <Button onClick={handleExport} variant="outline" size="sm">
+                Export
+              </Button>
+            </div>
+          </div>
+
           <DataTable
-            columns={ordersColumns}
+            columns={ordersColumns(handleViewOrder)}
             data={filteredData}
-            title="Orders Management"
-            descrption="Manage and track all your restaurant orders"
-            showExport={true}
+            title=""
+            descrption=""
+            showExport={false}
             onExport={handleExport}
             customFilters={<TableFilters filters={filters} />}
             showSearch={false}
             showColumnVisibility={true}
             showPagination={true}
             showRowSelection={true}
+            // isLoading={loading}
           />
+
+          {filteredData.length === 0 && !loading && (
+            <div className="text-center py-12">
+              <p className="text-gray-500">No orders found</p>
+              <Button
+                onClick={() => {
+                  setSearchValue("");
+                  setSelectedStatus("all");
+                  setSelectedDate(undefined);
+                }}
+                variant="outline"
+                className="mt-4"
+              >
+                Clear Filters
+              </Button>
+            </div>
+          )}
         </div>
       </main>
     </div>

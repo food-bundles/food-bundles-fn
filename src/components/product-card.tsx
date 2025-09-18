@@ -115,7 +115,7 @@ export function ProductCard({
   return (
     <>
       <div
-        className="w-full max-w-[280px] bg-white"
+        className="w-full max-w-[280px] bg-whit"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
