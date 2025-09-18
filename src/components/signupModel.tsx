@@ -2,13 +2,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Eye,
   EyeOff,
-  X,
   Loader2,
   Mail,
   Lock,
@@ -16,14 +15,41 @@ import {
   Phone,
   Building2,
   Tractor,
+  X,
   ArrowLeft,
+  Navigation,
 } from "lucide-react";
 import {
-  UserRole,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   ICreateFarmerData,
   ICreateRestaurantData,
+  UserRole,
 } from "@/lib/types";
 import { authService } from "@/app/services/authService";
+
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
+
+interface LocationData {
+  lat: number;
+  lng: number;
+  address?: string;
+}
 
 type Props = {
   isOpen: boolean;
@@ -49,9 +75,31 @@ export function SignupModal({
   const [success, setSuccess] = useState("");
   const [isAnimating, setIsAnimating] = useState(false);
 
-  useEffect(() => {
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [tempLocation, setTempLocation] = useState<LocationData>({
+    lat: -1.9577,
+    lng: 30.0619,
+  });
+
+  const [locationData, setLocationData] = useState({
+    textAddress: "",
+    location: { lat: -1.9577, lng: 30.0619 },
+    hasSelectedLocationOnMap: false,
+  });
+
+  React.useEffect(() => {
     if (isOpen) {
       setIsAnimating(true);
+      setSelectedRole(null);
+      setError("");
+      setSuccess("");
+      setShowPassword(false);
+      // Reset location data
+      setLocationData({
+        textAddress: "",
+        location: { lat: -1.9577, lng: 30.0619 },
+        hasSelectedLocationOnMap: false,
+      });
     }
   }, [isOpen]);
 
@@ -59,7 +107,61 @@ export function SignupModal({
     return /^\+?[0-9]{10,15}$/.test(phone);
   }
 
+  const getCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const newLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+          setTempLocation(newLocation);
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          // Fallback to Kigali coordinates
+        }
+      );
+    }
+  };
+
+  const LocationMarker = () => {
+    useMapEvents({
+      click(e) {
+        setTempLocation({ lat: e.latlng.lat, lng: e.latlng.lng });
+      },
+    });
+
+    return <Marker position={[tempLocation.lat, tempLocation.lng]}></Marker>;
+  };
+
+  // Handle location selection from map (only for restaurants)
+  const handleSelectLocation = () => {
+    setLocationData((prev) => ({
+      ...prev,
+      location: tempLocation,
+      hasSelectedLocationOnMap: true,
+    }));
+    setIsLocationModalOpen(false);
+  };
+
+  // Handle opening location modal (only for restaurants)
+  const handleOpenLocationModal = () => {
+    setTempLocation(locationData.location);
+    getCurrentLocation();
+    setIsLocationModalOpen(true);
+  };
+
+  const handleLocationChange = (value: string) => {
+    setLocationData((prev) => ({
+      ...prev,
+      textAddress: value,
+    }));
+  };
+
   const handleClose = () => {
+    if (isLoading) return;
+
     setIsAnimating(false);
     setTimeout(() => {
       onClose();
@@ -67,13 +169,32 @@ export function SignupModal({
       setError("");
       setSuccess("");
       setShowPassword(false);
+      // Reset location data
+      setLocationData({
+        textAddress: "",
+        location: { lat: -1.9577, lng: 30.0619 },
+        hasSelectedLocationOnMap: false,
+      });
+      setIsLocationModalOpen(false);
     }, 300);
   };
 
-  const handleBackToRoleSelection = () => {
-    setSelectedRole(null);
-    setError("");
-    setSuccess("");
+  const handleBackToLogin = () => {
+    if (isLoading) return;
+
+    setIsAnimating(false);
+    setTimeout(() => {
+      onBackToLogin();
+      setSelectedRole(null);
+      setError("");
+      setSuccess("");
+      // Reset location data
+      setLocationData({
+        textAddress: "",
+        location: { lat: -1.9577, lng: 30.0619 },
+        hasSelectedLocationOnMap: false,
+      });
+    }, 300);
   };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -87,7 +208,6 @@ export function SignupModal({
     const email = formData.get("email") as string;
     const phone = formData.get("phone") as string;
     const name = formData.get("name") as string;
-    const location = formData.get("location") as string;
 
     if (!phone) {
       setError("Phone number is required");
@@ -100,10 +220,37 @@ export function SignupModal({
       return;
     }
 
-    if (!location) {
-      setError("Location is required");
-      setIsLoading(false);
-      return;
+    // Location validation - handle both text address and map selection
+    let locationToSave = "";
+
+    if (selectedRole === UserRole.RESTAURANT) {
+      // For restaurants, allow both text address and map selection
+      if (locationData.hasSelectedLocationOnMap) {
+        // If user selected location on map, save coordinates
+        locationToSave = `${locationData.location.lat},${locationData.location.lng}`;
+
+        // If user also typed additional text, append it
+        if (locationData.textAddress.trim()) {
+          locationToSave += ` - ${locationData.textAddress.trim()}`;
+        }
+      } else if (locationData.textAddress.trim()) {
+        // If user only typed address, save the text
+        locationToSave = locationData.textAddress.trim();
+      } else {
+        setError(
+          "Location is required. Either enter an address or select location on map."
+        );
+        setIsLoading(false);
+        return;
+      }
+    } else {
+      // For farmers, only text address
+      if (!locationData.textAddress.trim()) {
+        setError("Location is required");
+        setIsLoading(false);
+        return;
+      }
+      locationToSave = locationData.textAddress.trim();
     }
 
     if (!password) {
@@ -130,7 +277,7 @@ export function SignupModal({
         const farmerData: ICreateFarmerData = {
           email,
           password,
-          location,
+          location: locationToSave,
           phone,
         };
         await authService.registerFarmer(farmerData);
@@ -139,7 +286,7 @@ export function SignupModal({
           name,
           email,
           password,
-          location,
+          location: locationToSave,
           phone,
         };
         await authService.registerRestaurant(restaurantData);
@@ -147,8 +294,7 @@ export function SignupModal({
 
       setSuccess("Account created successfully! Redirecting to login...");
       setTimeout(() => {
-        handleClose();
-        onBackToLogin();
+        handleBackToLogin();
       }, 2000);
     } catch (error: any) {
       console.error("Registration error:", error);
@@ -162,11 +308,9 @@ export function SignupModal({
 
   if (!isOpen) return null;
 
-  // Role Selection Screen
   if (!selectedRole) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center">
-        {/* Backdrop */}
         <div
           className={`absolute inset-0 bg-black transition-opacity duration-300 ${
             isAnimating ? "opacity-50" : "opacity-0"
@@ -174,7 +318,6 @@ export function SignupModal({
           onClick={handleClose}
         />
 
-        {/* Modal */}
         <div
           className={`relative bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4 overflow-hidden transition-all duration-300 ease-out ${
             isAnimating
@@ -184,28 +327,14 @@ export function SignupModal({
           style={{ maxHeight: "90vh" }}
         >
           <div className="flex">
-            {/* Left Side - Branding */}
             <div className="w-1/2 bg-green-700 text-white p-8 flex flex-col justify-center relative">
               <div className="text-center">
-                <h2 className="text-3xl font-bold mb-4">Join Food Bundles</h2>
+                <h2 className="text-3xl font-bold mb-4">Join Us</h2>
                 <p className="text-green-100 text-lg mb-6">
-                  Start your journey with sustainable
+                  Connect with local producers
                   <br />
-                  food trading and connect with
-                  <br />
-                  local producers.
+                  and grow your business.
                 </p>
-                {signupData.userCount && signupData.userCount > 0 && (
-                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-                    <p className="text-white/90 text-sm">
-                      Join{" "}
-                      <span className="font-bold text-white">
-                        {signupData.userCount}+
-                      </span>{" "}
-                      users already growing their business with us
-                    </p>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -275,8 +404,8 @@ export function SignupModal({
                   <p className="text-sm text-gray-600">
                     Already have an account?{" "}
                     <button
-                      onClick={onBackToLogin}
-                      className="text-green-600 hover:text-green-700 font-medium"
+                      onClick={handleBackToLogin}
+                      className="text-green-700 hover:text-green-800 font-medium"
                     >
                       Sign in
                     </button>
@@ -290,7 +419,7 @@ export function SignupModal({
     );
   }
 
-  // Signup Form Screen
+  // Registration Form View
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
@@ -298,7 +427,7 @@ export function SignupModal({
         className={`absolute inset-0 bg-black transition-opacity duration-300 ${
           isAnimating ? "opacity-50" : "opacity-0"
         }`}
-        onClick={handleClose}
+        onClick={isLoading ? undefined : handleClose}
       />
 
       {/* Modal */}
@@ -322,29 +451,28 @@ export function SignupModal({
               <p className="text-green-100 text-lg">
                 Join our community and start
                 <br />
-                building your sustainable
-                <br />
-                food business today.
+                growing your business today.
               </p>
             </div>
           </div>
 
-          {/* Right Side - Form Section */}
+          {/* Right Side - Form */}
           <div
             className="w-1/2 p-8 relative overflow-y-auto"
             style={{ maxHeight: "90vh" }}
           >
             {/* Close Button */}
             <button
-              onClick={handleClose}
+              onClick={isLoading ? undefined : handleClose}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors z-10"
+              disabled={isLoading}
             >
               <X className="h-6 w-6" />
             </button>
 
             {/* Back Button */}
             <button
-              onClick={handleBackToRoleSelection}
+              onClick={isLoading ? undefined : () => setSelectedRole(null)}
               className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4 mt-2"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -413,17 +541,141 @@ export function SignupModal({
                   />
                 </div>
 
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    type="text"
-                    name="location"
-                    placeholder="Location (e.g. Street, House number)"
-                    className="pl-10 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500"
-                    disabled={!signupData.isBackendAvailable || isLoading}
-                    required
-                  />
-                </div>
+                {/* Location Field - Different for Restaurant vs Farmer */}
+                {selectedRole === UserRole.RESTAURANT ? (
+                  // Restaurant: Text input + Map selection option
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Input
+                          type="text"
+                          value={locationData.textAddress}
+                          onChange={(e) => handleLocationChange(e.target.value)}
+                          placeholder={
+                            locationData.hasSelectedLocationOnMap
+                              ? "Location selected on map (optional: add more details)"
+                              : "Enter restaurant address"
+                          }
+                          className={`pl-10 h-12 border-gray-300 focus:border-green-700 focus:ring-1 focus:ring-green-700 ${
+                            locationData.hasSelectedLocationOnMap
+                              ? "bg-green-50"
+                              : ""
+                          }`}
+                          disabled={!signupData.isBackendAvailable || isLoading}
+                        />
+                      </div>
+                      <Dialog
+                        open={isLocationModalOpen}
+                        onOpenChange={setIsLocationModalOpen}
+                      >
+                        <DialogTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleOpenLocationModal}
+                            className="flex items-center gap-2 px-4 h-12"
+                            disabled={
+                              !signupData.isBackendAvailable || isLoading
+                            }
+                          >
+                            <MapPin className="h-4 w-4" />
+                            {locationData.hasSelectedLocationOnMap
+                              ? "Update"
+                              : "Pin Location"}
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] p-0">
+                          <div className="flex flex-col h-full">
+                            <DialogHeader className="px-6 py-4 border-b">
+                              <DialogTitle className="flex items-center gap-2">
+                                <MapPin className="h-5 w-5" />
+                                Select Your Restaurant Location
+                              </DialogTitle>
+                            </DialogHeader>
+                            <div className="flex flex-col flex-1 gap-4 p-6">
+                              <div className="flex gap-2">
+                                <Button
+                                  onClick={getCurrentLocation}
+                                  variant="outline"
+                                  className="flex items-center gap-2"
+                                  disabled={isLoading}
+                                >
+                                  <Navigation className="h-4 w-4" />
+                                  Use Current Location
+                                </Button>
+                                <div className="flex-1 text-sm text-gray-600 flex items-center">
+                                  Click on the map to set your restaurant's
+                                  exact location
+                                </div>
+                              </div>
+                              <div className="flex-1 rounded-lg overflow-hidden border min-h-0">
+                                <MapContainer
+                                  center={[tempLocation.lat, tempLocation.lng]}
+                                  zoom={15}
+                                  style={{
+                                    height: "100%",
+                                    width: "100%",
+                                    minHeight: "400px",
+                                  }}
+                                >
+                                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                                  <LocationMarker />
+                                </MapContainer>
+                              </div>
+                              <div className="flex justify-between items-center pt-4 border-t">
+                                <div className="text-sm text-gray-600">
+                                  Selected: {tempLocation.lat.toFixed(6)},{" "}
+                                  {tempLocation.lng.toFixed(6)}
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    onClick={() =>
+                                      setIsLocationModalOpen(false)
+                                    }
+                                    disabled={isLoading}
+                                  >
+                                    Cancel
+                                  </Button>
+                                  <Button
+                                    onClick={handleSelectLocation}
+                                    className="bg-green-700 hover:bg-green-800 text-white"
+                                    disabled={isLoading}
+                                  >
+                                    Confirm Location
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                    {locationData.hasSelectedLocationOnMap && (
+                      <p className="text-green-600 text-sm flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        Location pinned on map:{" "}
+                        {locationData.location.lat.toFixed(4)},{" "}
+                        {locationData.location.lng.toFixed(4)}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  // Farmer: Simple text input only
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      type="text"
+                      value={locationData.textAddress}
+                      onChange={(e) => handleLocationChange(e.target.value)}
+                      placeholder="Location (e.g. Street, House number)"
+                      className="pl-10 h-12 border-gray-300 focus:border-green-700 focus:ring-1 focus:ring-green-700"
+                      disabled={!signupData.isBackendAvailable || isLoading}
+                      required
+                    />
+                  </div>
+                )}
 
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -431,14 +683,14 @@ export function SignupModal({
                     type={showPassword ? "text" : "password"}
                     name="password"
                     placeholder="Password"
-                    className="pl-10 pr-10 h-12 border-gray-300 focus:border-green-500 focus:ring-green-500"
+                    className="pl-10 pr-12 h-12 border-gray-300 focus:border-green-700 focus:ring-1 focus:ring-green-700"
                     disabled={!signupData.isBackendAvailable || isLoading}
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-3 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     disabled={!signupData.isBackendAvailable || isLoading}
                   >
                     {showPassword ? (
@@ -451,7 +703,7 @@ export function SignupModal({
 
                 <Button
                   type="submit"
-                  className="w-full h-12 bg-green-700 hover:bg-green-800 text-white font-medium rounded-md flex items-center justify-center gap-2"
+                  className="w-full h-12 bg-green-700 hover:bg-green-800 text-white font-medium rounded-md"
                   disabled={isLoading || !signupData.isBackendAvailable}
                 >
                   {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -463,8 +715,9 @@ export function SignupModal({
                 <p className="text-sm text-gray-600">
                   Already have an account?{" "}
                   <button
-                    onClick={onBackToLogin}
-                    className="text-green-600 hover:text-green-700 font-medium"
+                    onClick={isLoading ? undefined : handleBackToLogin}
+                    className="text-green-700 hover:text-green-800 font-medium"
+                    disabled={isLoading}
                   >
                     Sign in
                   </button>
