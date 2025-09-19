@@ -14,12 +14,12 @@ interface ProfileDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   user?: {
-    name?: string;
-    email?: string;
-    phone?: string;
-    location?: string;
-    profilePhoto?: string;
-  };
+    name?: string
+    email?: string
+    phone?: string
+    location?: string
+    profilePhoto?: string
+  }
 }
 
 export default function ProfileDrawer({

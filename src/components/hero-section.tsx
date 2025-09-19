@@ -117,7 +117,7 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
               <div className="lg:col-span-5 xl:col-span-4 space-y-4 z-10 text-center lg:text-left">
                 <div className="space-y-4 bg-transparent max-w-lg mx-auto lg:mx-0">
                   <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold text-balance leading-tight text-gray-100">
-                    Connect Your,
+                  Connect Your,
                     <span className="text-green-500 block sm:inline">
                       {" "}
                       To Our Farm

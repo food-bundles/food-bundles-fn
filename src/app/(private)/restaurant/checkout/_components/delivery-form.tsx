@@ -97,10 +97,10 @@ export function CheckoutForm({ staticData }: Props) {
   // Step management
   const [currentStep, setCurrentStep] = useState(1);
 
-  // Payment method state
+  // Payment method state - Changed default from "CASH" to "MOBILE_MONEY"
   const [selectedMethod, setSelectedMethod] = useState<
     "CASH" | "MOBILE_MONEY" | "BANK_TRANSFER" | "CARD"
-  >("CASH");
+  >("MOBILE_MONEY");
 
   // Location modal state
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
@@ -390,6 +390,8 @@ export function CheckoutForm({ staticData }: Props) {
 
       if (response.success) {
         console.log("Checkout successful:", response.data);
+        // Store the selected payment method for the payment page
+        localStorage.setItem("selectedPaymentMethod", selectedMethod);
         router.push("/restaurant/payment");
       } else {
         console.error("Checkout failed:", response.message);

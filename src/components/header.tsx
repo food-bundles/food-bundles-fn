@@ -167,6 +167,7 @@ export function Header() {
     setIsLoginModalOpen(true);
   };
 
+
   const handleCloseLoginModal = () => {
     setIsLoginModalOpen(false);
     setLoginData({ isBackendAvailable: true, message: "" });

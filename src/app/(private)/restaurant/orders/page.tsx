@@ -30,6 +30,7 @@ export default function RestaurantOrdersPage() {
   // Format backend orders to frontend format
   useEffect(() => {
     if (backendOrders && backendOrders.length > 0) {
+
       const formatted = backendOrders.map((order: any) => ({
         id: order.id,
         orderId: order.orderNumber,
@@ -46,6 +47,7 @@ export default function RestaurantOrdersPage() {
         status: mapBackendStatus(order.status),
         originalData: order,
       }));
+
 
       setFormattedOrders(formatted);
       console.log("Formatted orders:", formatted); // Debug log

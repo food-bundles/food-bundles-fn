@@ -33,7 +33,7 @@ export default function PaymentPage() {
   const [selectedCheckout, setSelectedCheckout] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<
     "CASH" | "MOBILE_MONEY" | "CARD"
-  >("CASH");
+  >("MOBILE_MONEY"); // Changed default to MOBILE_MONEY
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string>("");
@@ -82,6 +82,14 @@ export default function PaymentPage() {
           // Auto-select first checkout if available
           if (pendingCheckouts.length > 0) {
             setSelectedCheckout(pendingCheckouts[0].id);
+
+            // Auto-select payment method from the checkout data
+            const firstCheckout = pendingCheckouts[0];
+            if (firstCheckout.paymentMethod) {
+              setPaymentMethod(
+                firstCheckout.paymentMethod as "CASH" | "MOBILE_MONEY" | "CARD"
+              );
+            }
           }
         } else {
           setError(response.message || "Failed to load checkouts");
@@ -94,6 +102,19 @@ export default function PaymentPage() {
     };
 
     fetchCheckouts();
+  }, []);
+
+  // Also check for stored payment method from previous page
+  useEffect(() => {
+    const storedPaymentMethod = localStorage.getItem("selectedPaymentMethod");
+    if (
+      storedPaymentMethod &&
+      ["CASH", "MOBILE_MONEY", "CARD"].includes(storedPaymentMethod)
+    ) {
+      setPaymentMethod(storedPaymentMethod as "CASH" | "MOBILE_MONEY" | "CARD");
+      // Clear it after use
+      localStorage.removeItem("selectedPaymentMethod");
+    }
   }, []);
 
   const selectedCheckoutData = checkouts.find((c) => c.id === selectedCheckout);
@@ -289,7 +310,7 @@ export default function PaymentPage() {
             {/* Payment Method Selection */}
             <Card>
               <CardHeader>
-                <CardTitle>You May Change Payment Method</CardTitle>
+                <CardTitle>You may change Payment Method</CardTitle>
               </CardHeader>
               <CardContent>
                 <RadioGroup
@@ -346,10 +367,6 @@ export default function PaymentPage() {
                         value={phoneNumber}
                         onChange={(e) => setPhoneNumber(e.target.value)}
                       />
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {`You will receive a USSD prompt on your phone (PayPack) 
-                      or be redirected to Flutterwave for OTP verification.`}
                     </div>
                   </div>
                 )}
