@@ -189,28 +189,37 @@ export function SignupModal({
           onClick={handleClose}
         />
         <div
-          className={`relative bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4 overflow-hidden transition-all duration-300 ease-out ${
+          className={`relative bg-white rounded-lg shadow-xl w-full max-w-md sm:max-w-lg md:max-w-2xl lg:max-w-4xl mx-4 overflow-hidden transition-all duration-300 ease-out ${
             isAnimating
               ? "opacity-100 scale-100 translate-x-0"
               : "opacity-0 scale-95 -translate-x-full"
           }`}
           style={{ maxHeight: "90vh" }}
         >
-          <div className="flex">
-            <div className="w-1/2 bg-green-700 text-white p-8 flex flex-col justify-center relative">
+          {/* Content */}
+          <div className="flex flex-col md:flex-row">
+            {/* Left green side */}
+            <div className="hidden md:flex md:w-1/2 bg-green-700 text-white p-6 md:p-8 flex-col justify-center relative">
               <div className="text-center">
-                <h2 className="text-3xl font-bold mb-4">Join Us</h2>
-                <p className="text-green-100 text-lg mb-6">
+                <h2 className="text-2xl md:text-3xl font-bold mb-4">Join Us</h2>
+                <p className="text-green-100 text-sm md:text-lg">
                   Connect with local producers
                   <br />
                   and grow your business.
                 </p>
               </div>
             </div>
-            <div className="w-1/2 p-8 relative">
+
+            {/* Right side */}
+            <div
+              className="w-full md:w-1/2 p-6 md:p-8 relative overflow-y-auto"
+              style={{ maxHeight: "90vh" }}
+            >
+              {/* Close button */}
               <button
-                onClick={handleClose}
+                onClick={isLoading ? undefined : handleClose}
                 className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+                disabled={isLoading}
               >
                 <X className="h-6 w-6" />
               </button>
@@ -299,23 +308,26 @@ export function SignupModal({
         }`}
         style={{ maxHeight: "90vh" }}
       >
-        <div className="flex">
-          <div className="w-1/2 bg-green-700 text-white p-8 flex flex-col justify-center relative">
+        <div className="flex flex-col md:flex-row">
+          {/* Left green side (hidden on small screens) */}
+          <div className="hidden md:flex md:w-1/2 bg-green-700 text-white p-6 md:p-8 flex-col justify-center relative">
             <div className="text-center">
-              <h2 className="text-3xl font-bold mb-4">
+              <h2 className="text-2xl md:text-3xl font-bold mb-4">
                 Create{" "}
                 {selectedRole === UserRole.FARMER ? "Farmer" : "Restaurant"}{" "}
                 Account
               </h2>
-              <p className="text-green-100 text-lg">
+              <p className="text-green-100 text-sm md:text-lg">
                 Join our community and start
                 <br />
                 growing your business today.
               </p>
             </div>
           </div>
+
+          {/* Right side */}
           <div
-            className="w-1/2 p-8 relative overflow-y-auto"
+            className="w-full md:w-1/2 p-6 md:p-8 relative overflow-y-auto"
             style={{ maxHeight: "90vh" }}
           >
             <button

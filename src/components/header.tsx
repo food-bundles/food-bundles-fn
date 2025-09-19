@@ -4,18 +4,20 @@
 
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ChevronDown } from "lucide-react";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { LoginModal } from "./loginModel";
 import { SignupModal } from "./signupModel";
+import { useCategory } from "@/app/contexts/category-context";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false); // Add state for signup modal
+  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("home");
+  const [isShopDropdownOpen, setIsShopDropdownOpen] = useState(false);
   const [loginData, setLoginData] = useState<{
     isBackendAvailable: boolean;
     message: string;
@@ -30,17 +32,19 @@ export function Header() {
   }>({
     isBackendAvailable: true,
     message: "",
-    userCount: 1250, // Default value
+    userCount: 1250,
   });
 
   const lastScrollY = useRef(0);
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
+  const dropdownTimeout = useRef<NodeJS.Timeout | null>(null);
   const searchParams = useSearchParams();
+  const { activeCategories, isLoading } = useCategory();
 
   const navigationItems = [
     { label: "Home", href: "#home", id: "home" },
-    { label: "Shop", href: "#products", id: "products" },
-    { label: "Quick Talk", href: "#quick-talk", id: "quick-talk" },
+    { label: "Shop", href: "#products", id: "products", hasDropdown: true },
+    { label: "Ask help", href: "#ask-help", id: "ask-help" },
   ];
 
   const scrollToSection = useCallback((sectionId: string) => {
@@ -65,6 +69,45 @@ export function Header() {
     },
     [scrollToSection]
   );
+
+  const handleCategoryClick = useCallback(
+    (categoryName: string) => {
+      // Close dropdown
+      setIsShopDropdownOpen(false);
+
+      // Scroll to products section
+      scrollToSection("products");
+
+      // Set the selected category in the products section
+      const event = new CustomEvent("categorySelected", {
+        detail: categoryName,
+      });
+      window.dispatchEvent(event);
+
+      // Update URL with category parameter
+      const url = new URL(window.location.href);
+      if (categoryName === "ALL CATEGORIES") {
+        url.searchParams.delete("category");
+      } else {
+        url.searchParams.set("category", categoryName);
+      }
+      window.history.replaceState({}, "", url.toString());
+    },
+    [scrollToSection]
+  );
+
+  const handleShopMouseEnter = () => {
+    if (dropdownTimeout.current) {
+      clearTimeout(dropdownTimeout.current);
+    }
+    setIsShopDropdownOpen(true);
+  };
+
+  const handleShopMouseLeave = () => {
+    dropdownTimeout.current = setTimeout(() => {
+      setIsShopDropdownOpen(false);
+    }, 150); // Small delay to prevent flickering
+  };
 
   const detectActiveSection = useCallback(() => {
     const sections = navigationItems
@@ -104,7 +147,6 @@ export function Header() {
 
       setIsLoginModalOpen(true);
 
-      // Clean up URL without reloading
       if (typeof window !== "undefined") {
         const newUrl = new URL(window.location.href);
         newUrl.searchParams.delete("showLogin");
@@ -113,6 +155,7 @@ export function Header() {
       }
     }
   }, [searchParams, isLoginModalOpen]);
+
   useEffect(() => {
     checkForLoginRedirect();
   }, [checkForLoginRedirect]);
@@ -216,19 +259,20 @@ export function Header() {
         if (scrollTimeout.current) {
           clearTimeout(scrollTimeout.current);
         }
+        if (dropdownTimeout.current) {
+          clearTimeout(dropdownTimeout.current);
+        }
       };
     }
   }, [handleScroll, detectActiveSection]);
 
   return (
     <>
-      <header
-       className="fixed top-0 left-0 right-0 z-50">
-
+      <header className="fixed top-0 left-0 right-0 z-50">
         <div className="bg-green-700 border-b border-green-600 shadow-lg">
           <div className="container mx-auto px-4 sm:px-6">
             <div className="flex items-center justify-between h-12">
-              <div className="flex items-center gap-2 bg-green-50 px-2 sm:px-3 py-1 rounded border-2 border-primary flex-shrink-0">
+              <div className="flex items-center gap-2 bg-green-50 px-2 sm:px-3 py-1 rounded-full border-2 border-primary flex-shrink-0">
                 <Image
                   src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WhatsApp%20Image%202025-08-26%20at%2017.19.27_37ef906c.jpg-5w6VIINuFETMhj8U6ktDEnUViMPQod.jpeg"
                   alt="FoodBundle Logo"
@@ -236,7 +280,7 @@ export function Header() {
                   height={32}
                   className="rounded-full object-cover w-5 h-5"
                 />
-                <span className="text-2sm  font-bold text-black whitespace-nowrap">
+                <span className="text-2sm font-bold text-black whitespace-nowrap">
                   FoodBundles
                 </span>
               </div>
@@ -244,18 +288,85 @@ export function Header() {
               {/* Desktop Navigation */}
               <nav className="hidden md:flex items-center gap-4 lg:gap-6">
                 {navigationItems.map((item) => (
-                  <a
+                  <div
                     key={item.id}
-                    href={item.href}
-                    onClick={(e) => handleNavClick(e, item.id)}
-                    className={`hover:text-secondary transition-colors text-sm font-medium cursor-pointer ${
-                      activeSection === item.id
-                        ? "text-white border-b-2 border-orange-400 "
-                        : "text-primary-foreground"
-                    }`}
+                    className="relative"
+                    onMouseEnter={
+                      item.hasDropdown ? handleShopMouseEnter : undefined
+                    }
+                    onMouseLeave={
+                      item.hasDropdown ? handleShopMouseLeave : undefined
+                    }
                   >
-                    {item.label}
-                  </a>
+                    <a
+                      href={item.href}
+                      onClick={(e) => handleNavClick(e, item.id)}
+                      className={`hover:text-secondary transition-colors text-sm font-medium cursor-pointer flex items-center gap-1 ${
+                        activeSection === item.id
+                          ? "text-white border-b-2 border-orange-400"
+                          : "text-primary-foreground"
+                      }`}
+                    >
+                      {item.label}
+                      {item.hasDropdown && (
+                        <ChevronDown
+                          className={`w-4 h-4 transition-transform duration-200 ${
+                            isShopDropdownOpen ? "rotate-180" : ""
+                          }`}
+                        />
+                      )}
+                    </a>
+
+                    {/* Shop Dropdown */}
+                    {item.hasDropdown && (
+                      <div
+                        className={`absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 transition-all duration-200 ${
+                          isShopDropdownOpen
+                            ? "opacity-100 visible transform translate-y-0"
+                            : "opacity-0 invisible transform -translate-y-2"
+                        }`}
+                        onMouseEnter={handleShopMouseEnter}
+                        onMouseLeave={handleShopMouseLeave}
+                      >
+                        <div className="py-2">
+                          <div className="px-4 py-2 text-sm font-semibold text-gray-700 border-b border-gray-100">
+                            Shop by Category
+                          </div>
+                          {isLoading ? (
+                            <div className="px-4 py-3 text-sm text-gray-500">
+                              Loading categories...
+                            </div>
+                          ) : activeCategories.length > 0 ? (
+                            <>
+                              <button
+                                onClick={() =>
+                                  handleCategoryClick("ALL CATEGORIES")
+                                }
+                                className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors"
+                              >
+                                All Products
+                              </button>
+                              {activeCategories.map((category) => (
+                                <button
+                                  key={category.id}
+                                  onClick={() =>
+                                    handleCategoryClick(category.name)
+                                  }
+                                  className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors"
+                                >
+                                  {category.name.replace(/_/g, " ")}
+                                </button>
+                              ))}
+                            </>
+                          ) : (
+                            <div className="px-4 py-3 text-sm text-gray-500">
+                              No categories available
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 ))}
               </nav>
 
@@ -265,7 +376,7 @@ export function Header() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="bg-green-50 text-sm text-black hover:bg-green-100 px-3 sm:px-4 rounded py-0"
+                    className="bg-green-50 text-sm text-black hover:bg-green-100 px-3 sm:px-4 rounded-full py-0"
                     onClick={handleLoginClick}
                   >
                     Login
@@ -293,18 +404,60 @@ export function Header() {
               <div className="md:hidden pb-4 border-t border-green-600 mt-2">
                 <nav className="flex flex-col gap-3 pt-4">
                   {navigationItems.map((item) => (
-                    <a
-                      key={item.id}
-                      href={item.href}
-                      onClick={(e) => handleNavClick(e, item.id)}
-                      className={`hover:text-secondary transition-colors cursor-pointer px-2 py-1 rounded ${
-                        activeSection === item.id
-                          ? "text-yellow-300 bg-green-800/50"
-                          : "text-primary-foreground"
-                      }`}
-                    >
-                      {item.label}
-                    </a>
+                    <div key={item.id}>
+                      <a
+                        href={item.href}
+                        onClick={(e) => {
+                          if (item.hasDropdown) {
+                            e.preventDefault();
+                            setIsShopDropdownOpen(!isShopDropdownOpen);
+                          } else {
+                            handleNavClick(e, item.id);
+                          }
+                        }}
+                        className={`hover:text-secondary transition-colors cursor-pointer px-2 py-1 rounded flex items-center justify-between ${
+                          activeSection === item.id
+                            ? "text-yellow-300 bg-green-800/50"
+                            : "text-primary-foreground"
+                        }`}
+                      >
+                        <span>{item.label}</span>
+                        {item.hasDropdown && (
+                          <ChevronDown
+                            className={`w-4 h-4 transition-transform ${
+                              isShopDropdownOpen ? "rotate-180" : ""
+                            }`}
+                          />
+                        )}
+                      </a>
+
+                      {/* Mobile Shop Categories */}
+                      {item.hasDropdown && isShopDropdownOpen && (
+                        <div className="ml-4 mt-2 space-y-1">
+                          <button
+                            onClick={() => {
+                              handleCategoryClick("ALL CATEGORIES");
+                              setIsMenuOpen(false);
+                            }}
+                            className="block w-full text-left px-2 py-1 text-sm text-green-200 hover:text-white transition-colors"
+                          >
+                            All Products
+                          </button>
+                          {activeCategories.map((category) => (
+                            <button
+                              key={category.id}
+                              onClick={() => {
+                                handleCategoryClick(category.name);
+                                setIsMenuOpen(false);
+                              }}
+                              className="block w-full text-left px-2 py-1 text-sm text-green-200 hover:text-white transition-colors"
+                            >
+                              {category.name.replace(/_/g, " ")}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   ))}
                   <Button
                     variant="secondary"

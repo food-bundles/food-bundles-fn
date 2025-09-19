@@ -189,16 +189,14 @@ export default async function HomePage() {
     },
   ];
 
-
-
   // Transform categories for the UI
- const categories = activeCategories.map((category: any) => ({
-   name: category.name,
-   image: "/products/fresh-organic-roma-tomatoes.png",
-   productCount: productsData.products.filter(
-     (product: any) => product.category?.id === category.id
-   ).length,
- }));
+  const categories = activeCategories.map((category: any) => ({
+    name: category.name,
+    image: "/products/fresh-organic-roma-tomatoes.png",
+    productCount: productsData.products.filter(
+      (product: any) => product.category?.id === category.id
+    ).length,
+  }));
 
   // Transform products for the UI
   const products = productsData.products.map((product: any) => ({
@@ -234,7 +232,7 @@ export default async function HomePage() {
           <div id="products">
             <ProductsSection products={products} categories={categories} />
           </div>
-          <div id="quick-talk">
+          <div id="ask-help">
             <QuickTalkWrapper />
           </div>
           <Footer />

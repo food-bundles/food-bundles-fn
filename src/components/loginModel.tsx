@@ -275,15 +275,16 @@ export function LoginModal({ isOpen, onClose, loginData }: Props) {
 
       {/* Modal */}
       <div
-        className={`relative bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4 overflow-hidden transition-all duration-300 ease-out ${
+        className={`relative bg-white rounded-lg shadow-xl w-full max-w-md sm:max-w-lg md:max-w-2xl lg:max-w-3xl mx-4 overflow-hidden transition-all duration-300 ease-out ${
           isAnimating
             ? "opacity-100 scale-100 translate-x-0"
             : "opacity-0 scale-95 -translate-x-full"
         }`}
         style={{ maxHeight: "90vh" }}
       >
-        <div className="flex">
-          <div className="w-1/2 bg-green-700 text-white p-8 flex flex-col justify-center relative">
+        <div className="flex flex-col md:flex-row">
+          {/* Left Side - Green Section (hidden on small screens) */}
+          <div className="hidden md:flex w-1/2 bg-green-700 text-white p-8 flex-col justify-center relative">
             <div className="text-center">
               <h2 className="text-3xl font-bold mb-4">Login</h2>
               <p className="text-green-100 text-lg">
@@ -295,7 +296,7 @@ export function LoginModal({ isOpen, onClose, loginData }: Props) {
           </div>
 
           {/* Right Side - Form Section */}
-          <div className="w-1/2 p-8 relative">
+          <div className="w-full md:w-1/2 p-6 sm:p-8 relative">
             {/* Close Button */}
             <button
               onClick={isNavigating ? undefined : handleClose}

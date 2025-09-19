@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -62,16 +62,10 @@ function CategoryList({
           isOpen ? "translate-x-0" : "-translate-x-full"
         } lg:hidden`}
       >
-        {/* Backdrop */}
-        {/* <div
-          className="absolute inset-0 bg-black bg-opacity-50"
-          onClick={onClose}
-        /> */}
-
         {/* Sidebar */}
-        <div className="relative w-[280px] h-full bg-white border-r  border-gray-200">
+        <div className="relative w-[280px] h-full bg-white border-r border-gray-200">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b  border-gray-100">
+          <div className="flex items-center justify-between p-6 border-b border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900">Categories</h2>
             <button
               onClick={onClose}
@@ -122,13 +116,13 @@ function CategoryList({
   // Desktop version
   return (
     <div
-      className={`hidden lg:block bg-white border-r  border-gray-200 h-full transition-all duration-300 ${
+      className={`hidden lg:block bg-white border-r border-gray-200 h-full transition-all duration-300 ${
         isOpen ? "w-[200px] min-w-[200px]" : "w-0 min-w-0 overflow-hidden"
       }`}
     >
       {/* Header */}
-      <div className="p-6 border-b  border-gray-100">
-        <h2 className="text-xl font-bold text-gray-900 whitespace-nowrap">
+      <div className="p-6 border-b border-gray-100">
+        <h2 className="text-2sm font-bold text-gray-900 whitespace-nowrap">
           Categories
         </h2>
       </div>
@@ -140,7 +134,7 @@ function CategoryList({
             <li key={index}>
               <button
                 onClick={() => onCategorySelect(category.name)}
-                className={`w-full ms:text-xs md:text-sm text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center justify-between group ${
+                className={`w-full text-xs text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center justify-between group ${
                   selectedCategory === category.name
                     ? "bg-green-50 text-green-700 border-l-4 border-green-500"
                     : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
@@ -256,11 +250,11 @@ function ProductCard({
   return (
     <>
       <div
-        className="w-full bg-white"
+        className="w-full max-w-[180px] sm:max-w-[200px] bg-white max-auto"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <Card className="border-0 shadow-none hover:rounded-lg overflow-hidden transition-all duration-300 hover:shadow-lg">
+        <Card className="border border-green-700 shadow-md hover:rounded-lg overflow-hidden transition-all duration-300 hover:shadow-lg p-0 pb-2">
           {/* Product Image Container */}
           <div className="relative w-full h-[160px] sm:h-[180px] bg-gray-50 flex items-center justify-center group overflow-hidden">
             <Image
@@ -285,7 +279,7 @@ function ProductCard({
             />
             {isInCart && (
               <div
-                className="absolute top-2 right-0 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded flex items-center cursor-pointer"
+                className="absolute top-0 right-0 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-lg flex items-center cursor-pointer"
                 onClick={() => setIsCartOpen(true)}
               >
                 <Check className="w-3 h-3 mr-1" /> View Cart
@@ -328,14 +322,9 @@ function ProductCard({
           </div>
 
           {/* Product Info */}
-          <div className="px-3 sm:px-4 py-3 space-y-1">
-            {/* Category */}
-            <div className="text-xs text-gray-500 font-medium uppercase tracking-wide">
-              {category || "PRODUCTS"}
-            </div>
-
+          <div className="px-3 sm:px-4">
             {/* Product Name */}
-            <h3 className="font-semibold text-gray-800 text-sm leading-tight line-clamp-2 min-h-[2.5rem]">
+            <h3 className="font-semibold text-gray-800 text-sm leading-tight line-clamp-2 min-h-[1.5rem]">
               {name}
             </h3>
 
@@ -422,6 +411,38 @@ export function ProductsSection({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDesktopCategoriesOpen, setIsDesktopCategoriesOpen] = useState(true);
 
+  // Listen for category selection events from header
+  useEffect(() => {
+    const handleCategorySelection = (event: CustomEvent) => {
+      const categoryName = event.detail;
+      setSelectedCategory(categoryName);
+
+      // Close mobile menu if open
+      setIsMobileMenuOpen(false);
+    };
+
+    window.addEventListener(
+      "categorySelected",
+      handleCategorySelection as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        "categorySelected",
+        handleCategorySelection as EventListener
+      );
+    };
+  }, []);
+
+  // Check URL on component mount for initial category
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const categoryFromUrl = urlParams.get("category");
+    if (categoryFromUrl) {
+      setSelectedCategory(categoryFromUrl);
+    }
+  }, []);
+
   const getFilteredProducts = () => {
     if (selectedCategory === "ALL CATEGORIES") {
       return products;
@@ -444,10 +465,10 @@ export function ProductsSection({
   return (
     <section
       id="products"
-      className="flex justify-center items-center py-4 sm:py-8 bg-gray-50 min-h-screen  border "
+      className="flex justify-center items-start bg-gray-50 border py-0"
     >
       <div className="container">
-        <div className="flex gap-0 min-h-[700px] relative">
+        <div className="flex gap-0 relative">
           {/* Desktop Category List */}
           <CategoryList
             categories={categoriesWithAll}
@@ -469,7 +490,7 @@ export function ProductsSection({
           {/* Desktop Toggle Button */}
           <button
             onClick={() => setIsDesktopCategoriesOpen(!isDesktopCategoriesOpen)}
-            className="hidden lg:flex absolute left-1 top-1/50 transform -translate-y-1/2 z-30 bg-white border  border-gray-200 rounded-r-lg p-2 hover:bg-gray-50 transition-colors shadow-sm"
+            className="hidden lg:flex absolute left-1 top-1/25 transform -translate-y-1/2 z-30 bg-white border border-gray-200 rounded-r-lg p-2 hover:bg-gray-50 transition-colors shadow-sm"
             style={{
               left: isDesktopCategoriesOpen ? "200px" : "0px",
               transition: "left 0.3s ease-in-out",
@@ -483,9 +504,9 @@ export function ProductsSection({
           </button>
 
           {/* Products Area */}
-          <div className="flex-1 bg-gray-50 ">
+          <div className="flex-1 bg-gray-50">
             {/* Header with Mobile Menu Toggle */}
-            <div className="bg-transparent px-4 sm:px-8 py-4 sm:py-6 ">
+            <div className="bg-transparent px-4 sm:px-8">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {/* Mobile Menu Toggle */}
@@ -496,7 +517,7 @@ export function ProductsSection({
                     <Menu className="w-5 h-5" />
                   </button>
 
-                  <h1 className="text-xl px-4 sm:text-xl font-semibold text-gray-900">
+                  <h1 className="text-2sm px-4 py-4 font-semibold text-gray-900">
                     {selectedCategory === "ALL CATEGORIES"
                       ? "All Products"
                       : selectedCategory.replace(/_/g, " ")}
@@ -506,7 +527,7 @@ export function ProductsSection({
             </div>
 
             {/* Products Grid */}
-            <div className="p-4 sm:p-8 overflow-y-auto">
+            <div className="px-4 sm:px-8 overflow-y-auto">
               {filteredProducts.length > 0 && (
                 <div className="mb-12">
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-6">
@@ -530,7 +551,7 @@ export function ProductsSection({
               {/* No Products Found */}
               {filteredProducts.length === 0 && (
                 <div className="text-center py-8 sm:py-16">
-                  <div className="bg-white rounded-lg p-8 sm:p-12 shadow-sm border  border-gray-200 mx-4">
+                  <div className="bg-white rounded-lg p-8 sm:p-12 shadow-sm border border-gray-200 mx-4">
                     <p className="text-gray-500 text-lg sm:text-xl font-medium mb-2">
                       No products found in this category
                     </p>
