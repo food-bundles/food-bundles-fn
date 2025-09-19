@@ -1,17 +1,10 @@
 "use client";
 
 import type React from "react";
-import {  CardContent, CardHeader } from "@/components/ui/card";
+import { CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  MessageCircle,
-  Mail,
-  Phone,
-  MapPin,
-  Send,
-  X,
-} from "lucide-react";
+import { MessageCircle, Mail, Phone, MapPin, Send, X } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
 import { AnimatedDotsBackground } from "./animated-dots-background";
@@ -58,7 +51,6 @@ function QuickTalkSection() {
       }, 1000);
     }
   };
-
 
   return (
     <>
@@ -128,10 +120,10 @@ function QuickTalkSection() {
                   <div>
                     <p className="font-medium">Email Support</p>
                     <a
-                      href="mailto:support@foodbundle.com"
+                      href="mailto:sales@food.rw"
                       className="text-sm text-muted-foreground hover:text-primary"
                     >
-                      support@sostene.com
+                      sales@food.rw
                     </a>
                   </div>
                 </div>
@@ -239,7 +231,7 @@ function QuickTalkSection() {
                   <p className="text-sm ">
                     USSD Code:{" "}
                     <span className="text-green-500 text-2xl font-semibold">
-                      *833#
+                      *#
                     </span>
                   </p>
                 </div>
@@ -247,7 +239,7 @@ function QuickTalkSection() {
                   <p className="text-sm">
                     Emmergence Call{" "}
                     <span className="text-red-500 text-2xl font-semibold">
-                      ###
+                      *#
                     </span>
                   </p>{" "}
                 </div>

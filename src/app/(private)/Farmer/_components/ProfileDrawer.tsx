@@ -1,115 +1,125 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useEffect, useState } from "react"
-import { X, User, Camera, Edit3 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { toast } from "sonner"
+import type React from "react";
+import { useEffect, useState } from "react";
+import { X, User, Camera, Edit3 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
+import Image from "next/image";
 
 interface ProfileDrawerProps {
-  isOpen: boolean
-  onClose: () => void
+  isOpen: boolean;
+  onClose: () => void;
   user?: {
     name?: string
     email?: string
     phone?: string
+    location?: string
     profilePhoto?: string
   }
 }
 
-export default function ProfileDrawer({ isOpen, onClose, user }: ProfileDrawerProps) {
-  const [isEditing, setIsEditing] = useState(false)
+export default function ProfileDrawer({
+  isOpen,
+  onClose,
+  user,
+}: ProfileDrawerProps) {
+  const [isEditing, setIsEditing] = useState(false);
 
-  const [name, setName] = useState(user?.name || "")
-  const [email, setEmail] = useState(user?.email || "")
-  const [phone, setPhone] = useState(user?.phone || "")
-  const [location, setLocation] = useState("Rwanda")
-  const [profilePhoto, setProfilePhoto] = useState<string | null>(user?.profilePhoto || null)
+  const [name, setName] = useState(user?.name || "");
+  const [email, setEmail] = useState(user?.email || "");
+  const [phone, setPhone] = useState(user?.phone || "");
+  const [location, setLocation] = useState("Rwanda");
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(
+    user?.profilePhoto || null
+  );
 
-  const [originalName, setOriginalName] = useState(user?.name || "")
-  const [originalEmail, setOriginalEmail] = useState(user?.email || "")
-  const [originalPhone, setOriginalPhone] = useState(user?.phone || "")
-  const [originalLocation, setOriginalLocation] = useState("Rwanda")
+  const [originalName, setOriginalName] = useState(user?.name || "");
+  const [originalEmail, setOriginalEmail] = useState(user?.email || "");
+  const [originalPhone, setOriginalPhone] = useState(user?.phone || "");
+  const [originalLocation, setOriginalLocation] = useState("Rwanda");
 
   useEffect(() => {
-    setName(user?.name || "")
-    setEmail(user?.email || "")
-    setPhone(user?.phone || "")
-    setProfilePhoto(user?.profilePhoto || null)
-    setOriginalName(user?.name || "")
-    setOriginalEmail(user?.email || "")
-    setOriginalPhone(user?.phone || "")
-  }, [user])
+    setName(user?.name || "");
+    setEmail(user?.email || "");
+    setPhone(user?.phone || "");
+    setProfilePhoto(user?.profilePhoto || null);
+    setOriginalName(user?.name || "");
+    setOriginalEmail(user?.email || "");
+    setOriginalPhone(user?.phone || "");
+  }, [user]);
 
   // Handle escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen) {
-        onClose()
+        onClose();
       }
-    }
+    };
 
-    document.addEventListener("keydown", handleEscape)
-    return () => document.removeEventListener("keydown", handleEscape)
-  }, [isOpen, onClose])
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isOpen, onClose]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement
+      const target = e.target as HTMLElement;
       if (isOpen && !target.closest("[data-drawer-content]")) {
-        onClose()
+        onClose();
       }
-    }
+    };
 
     if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside)
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [isOpen, onClose])
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isOpen, onClose]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader()
-      reader.onload = () => setProfilePhoto(reader.result as string)
-      reader.readAsDataURL(file)
+      const reader = new FileReader();
+      reader.onload = () => setProfilePhoto(reader.result as string);
+      reader.readAsDataURL(file);
     }
-  }
+  };
 
   const handleSaveAll = async () => {
     try {
       // TODO: Integrate with actual API
-      toast.success("Profile updated successfully!")
-      setIsEditing(false)
+      toast.success("Profile updated successfully!");
+      setIsEditing(false);
       // Update original values
-      setOriginalName(name)
-      setOriginalEmail(email)
-      setOriginalPhone(phone)
-      setOriginalLocation(location)
+      setOriginalName(name);
+      setOriginalEmail(email);
+      setOriginalPhone(phone);
+      setOriginalLocation(location);
     } catch (error) {
-      console.error(error)
-      toast.error("Failed to update profile")
+      console.error(error);
+      toast.error("Failed to update profile");
     }
-  }
+  };
 
   const handleCancel = () => {
-    setName(originalName)
-    setEmail(originalEmail)
-    setPhone(originalPhone)
-    setLocation(originalLocation)
-    setIsEditing(false)
-  }
+    setName(originalName);
+    setEmail(originalEmail);
+    setPhone(originalPhone);
+    setLocation(originalLocation);
+    setIsEditing(false);
+  };
 
-  const avatarLetter = (user?.name || "F").charAt(0).toUpperCase()
+  const avatarLetter = (user?.name || "F").charAt(0).toUpperCase();
 
   return (
     <>
       {/* Backdrop */}
-      {isOpen && <div className="fixed inset-0 bg-black/20 z-40" onClick={onClose} />}
+      {isOpen && (
+        <div className="fixed inset-0 bg-black/20 z-40" onClick={onClose} />
+      )}
 
       <div
         data-drawer-content
@@ -120,7 +130,9 @@ export default function ProfileDrawer({ isOpen, onClose, user }: ProfileDrawerPr
         <div className="sticky top-0 z-10 bg-background border-b border-border flex justify-between items-center p-6">
           <div className="flex items-center gap-2">
             <User className="w-5 h-5 text-muted-foreground" />
-            <span className="text-xl font-bold text-foreground">User Profile</span>
+            <span className="text-xl font-bold text-foreground">
+              User Profile
+            </span>
           </div>
           <button
             onClick={onClose}
@@ -144,7 +156,9 @@ export default function ProfileDrawer({ isOpen, onClose, user }: ProfileDrawerPr
                 <div className="relative">
                   <div className="w-16 h-16 rounded-full overflow-hidden bg-muted border-2 border-border">
                     {profilePhoto ? (
-                      <img
+                      <Image
+                        width={100}
+                        height={100}
                         src={profilePhoto || "/placeholder.svg"}
                         alt="Profile"
                         className="w-full h-full object-cover"
@@ -157,12 +171,21 @@ export default function ProfileDrawer({ isOpen, onClose, user }: ProfileDrawerPr
                   </div>
                   <label className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/90 transition-colors">
                     <Camera className="w-3 h-3 text-primary-foreground" />
-                    <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handlePhotoChange}
+                    />
                   </label>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground">{name || "Your name"}</h3>
-                  <p className="text-sm text-muted-foreground">{email || "yourname@gmail.com"}</p>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    {name || "Your name"}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {email || "yourname@gmail.com"}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -191,19 +214,34 @@ export default function ProfileDrawer({ isOpen, onClose, user }: ProfileDrawerPr
             <CardContent className="space-y-4">
               {/* Name Field */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-foreground">Name</Label>
+                <Label className="text-sm font-medium text-foreground">
+                  Name
+                </Label>
                 {isEditing ? (
-                  <Input value={name} onChange={(e) => setName(e.target.value)} className="w-full" />
+                  <Input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full"
+                  />
                 ) : (
-                  <p className="text-sm text-muted-foreground bg-muted p-2 rounded-md">{name || "Your name"}</p>
+                  <p className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
+                    {name || "Your name"}
+                  </p>
                 )}
               </div>
 
               {/* Email Field */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-foreground">Email account</Label>
+                <Label className="text-sm font-medium text-foreground">
+                  Email account
+                </Label>
                 {isEditing ? (
-                  <Input value={email} onChange={(e) => setEmail(e.target.value)} className="w-full" type="email" />
+                  <Input
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full"
+                    type="email"
+                  />
                 ) : (
                   <p className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
                     {email || "yourname@gmail.com"}
@@ -213,21 +251,38 @@ export default function ProfileDrawer({ isOpen, onClose, user }: ProfileDrawerPr
 
               {/* Phone Field */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-foreground">Mobile number</Label>
+                <Label className="text-sm font-medium text-foreground">
+                  Mobile number
+                </Label>
                 {isEditing ? (
-                  <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full" type="tel" />
+                  <Input
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full"
+                    type="tel"
+                  />
                 ) : (
-                  <p className="text-sm text-muted-foreground bg-muted p-2 rounded-md">{phone || "Add number"}</p>
+                  <p className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
+                    {phone || "Add number"}
+                  </p>
                 )}
               </div>
 
               {/* Location Field */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-foreground">Location</Label>
+                <Label className="text-sm font-medium text-foreground">
+                  Location
+                </Label>
                 {isEditing ? (
-                  <Input value={location} onChange={(e) => setLocation(e.target.value)} className="w-full" />
+                  <Input
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="w-full"
+                  />
                 ) : (
-                  <p className="text-sm text-muted-foreground bg-muted p-2 rounded-md">{location}</p>
+                  <p className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
+                    {location}
+                  </p>
                 )}
               </div>
 
@@ -239,7 +294,11 @@ export default function ProfileDrawer({ isOpen, onClose, user }: ProfileDrawerPr
                   >
                     Save Changes
                   </Button>
-                  <Button onClick={handleCancel} variant="outline" className="flex-1 bg-transparent">
+                  <Button
+                    onClick={handleCancel}
+                    variant="outline"
+                    className="flex-1 bg-transparent"
+                  >
                     Cancel
                   </Button>
                 </div>
@@ -251,5 +310,5 @@ export default function ProfileDrawer({ isOpen, onClose, user }: ProfileDrawerPr
         </div>
       </div>
     </>
-  )
+  );
 }

@@ -1,5 +1,5 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -8,11 +8,13 @@ import { Menu, X } from "lucide-react";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { LoginModal } from "./loginModel";
+import { SignupModal } from "./signupModel";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false); // Add state for signup modal
   const [activeSection, setActiveSection] = useState("home");
   const [loginData, setLoginData] = useState<{
     isBackendAvailable: boolean;
@@ -20,6 +22,15 @@ export function Header() {
   }>({
     isBackendAvailable: true,
     message: "",
+  });
+  const [signupData, setSignupData] = useState<{
+    isBackendAvailable: boolean;
+    message: string;
+    userCount?: number;
+  }>({
+    isBackendAvailable: true,
+    message: "",
+    userCount: 1250, // Default value
   });
 
   const lastScrollY = useRef(0);
@@ -35,7 +46,7 @@ export function Header() {
   const scrollToSection = useCallback((sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
-      const headerHeight = 80; 
+      const headerHeight = 80;
       const elementPosition = element.offsetTop - headerHeight;
 
       window.scrollTo({
@@ -59,7 +70,7 @@ export function Header() {
     const sections = navigationItems
       .map((item) => document.getElementById(item.id))
       .filter(Boolean);
-    const scrollPosition = window.scrollY + 100; 
+    const scrollPosition = window.scrollY + 100;
 
     for (let i = sections.length - 1; i >= 0; i--) {
       const section = sections[i];
@@ -70,38 +81,38 @@ export function Header() {
     }
   }, []);
 
-const checkForLoginRedirect = useCallback(() => {
-  const showLogin = searchParams?.get("showLogin");
-  const reason = searchParams?.get("reason");
+  const checkForLoginRedirect = useCallback(() => {
+    const showLogin = searchParams?.get("showLogin");
+    const reason = searchParams?.get("reason");
 
-  if (showLogin === "true" && !isLoginModalOpen) {
-    let message = "";
-    if (reason === "add_to_cart") {
-      message = "Please log in to add this item to your cart.";
-    } else if (reason === "expired") {
-      message = "Your session has expired. Please log in again.";
-    } else if (reason === "required") {
-      message = "Please log in to access this page.";
-    } else {
-      message = "Please log in to continue.";
+    if (showLogin === "true" && !isLoginModalOpen) {
+      let message = "";
+      if (reason === "add_to_cart") {
+        message = "Please log in to add this item to your cart.";
+      } else if (reason === "expired") {
+        message = "Your session has expired. Please log in again.";
+      } else if (reason === "required") {
+        message = "Please log in to access this page.";
+      } else {
+        message = "Please log in to continue.";
+      }
+
+      setLoginData((prev) => ({
+        ...prev,
+        message,
+      }));
+
+      setIsLoginModalOpen(true);
+
+      // Clean up URL without reloading
+      if (typeof window !== "undefined") {
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete("showLogin");
+        newUrl.searchParams.delete("reason");
+        window.history.replaceState({}, "", newUrl.toString());
+      }
     }
-
-    setLoginData((prev) => ({
-      ...prev,
-      message,
-    }));
-
-    setIsLoginModalOpen(true);
-
-    // Clean up URL without reloading
-    if (typeof window !== "undefined") {
-      const newUrl = new URL(window.location.href);
-      newUrl.searchParams.delete("showLogin");
-      newUrl.searchParams.delete("reason");
-      window.history.replaceState({}, "", newUrl.toString());
-    }
-  }
-}, [searchParams, isLoginModalOpen]);
+  }, [searchParams, isLoginModalOpen]);
   useEffect(() => {
     checkForLoginRedirect();
   }, [checkForLoginRedirect]);
@@ -109,7 +120,7 @@ const checkForLoginRedirect = useCallback(() => {
   const checkBackendAvailability = useCallback(async () => {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); 
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/health`, {
         cache: "no-store",
@@ -120,18 +131,33 @@ const checkForLoginRedirect = useCallback(() => {
 
       if (res.ok) {
         setLoginData((prev) => ({ ...prev, isBackendAvailable: true }));
+        setSignupData((prev) => ({ ...prev, isBackendAvailable: true }));
       } else {
+        const message =
+          "Service temporarily unavailable. Please try again later.";
         setLoginData((prev) => ({
           ...prev,
           isBackendAvailable: false,
-          message: "Service temporarily unavailable. Please try again later.",
+          message,
+        }));
+        setSignupData((prev) => ({
+          ...prev,
+          isBackendAvailable: false,
+          message,
         }));
       }
     } catch (error) {
+      const message =
+        "Service temporarily unavailable. Please try again later.";
       setLoginData((prev) => ({
         ...prev,
         isBackendAvailable: false,
-        message: "Service temporarily unavailable. Please try again later.",
+        message,
+      }));
+      setSignupData((prev) => ({
+        ...prev,
+        isBackendAvailable: false,
+        message,
       }));
     }
   }, []);
@@ -141,10 +167,21 @@ const checkForLoginRedirect = useCallback(() => {
     setIsLoginModalOpen(true);
   };
 
+
   const handleCloseLoginModal = () => {
     setIsLoginModalOpen(false);
     setLoginData({ isBackendAvailable: true, message: "" });
     localStorage.removeItem("pendingRedirect");
+  };
+
+  const handleCloseSignupModal = () => {
+    setIsSignupModalOpen(false);
+    setSignupData({ isBackendAvailable: true, message: "", userCount: 1250 });
+  };
+
+  const handleBackToLogin = () => {
+    setIsLoginModalOpen(true);
+    setIsSignupModalOpen(false);
   };
 
   const handleScroll = useCallback(() => {
@@ -157,8 +194,7 @@ const checkForLoginRedirect = useCallback(() => {
 
       if (currentScrollY < 10) {
         setIsVisible(true);
-      }
-      else if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
+      } else if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
         setIsVisible(false);
       } else if (currentScrollY < lastScrollY.current) {
         setIsVisible(true);
@@ -167,7 +203,7 @@ const checkForLoginRedirect = useCallback(() => {
       lastScrollY.current = currentScrollY;
 
       detectActiveSection();
-    }, 100); 
+    }, 100);
   }, [detectActiveSection]);
 
   useEffect(() => {
@@ -296,6 +332,14 @@ const checkForLoginRedirect = useCallback(() => {
         isOpen={isLoginModalOpen}
         onClose={handleCloseLoginModal}
         loginData={loginData}
+      />
+
+      {/* Signup Modal */}
+      <SignupModal
+        isOpen={isSignupModalOpen}
+        onClose={handleCloseSignupModal}
+        signupData={signupData}
+        onBackToLogin={handleBackToLogin}
       />
     </>
   );

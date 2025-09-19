@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import type React from "react";
@@ -110,7 +111,7 @@ export function HelpContent({ contactInfo, faqs }: Props) {
                 size="lg"
                 className="relative bg-red-600 hover:bg-red-700 text-white font-bold shadow-xl rounded-full px-6 py-3 hover:scale-105 transition-transform duration-300"
               >
-                <PhoneOutgoing className="font-bold" /> Call 911
+                <PhoneOutgoing className="font-bold" /> 0796 897 823
               </Button>
               {/* Animated Hand */}
             </div>
@@ -124,14 +125,14 @@ export function HelpContent({ contactInfo, faqs }: Props) {
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Phone Support */}
-          <div className="flex flex-col items-center justify-center space-y-4 ">
+          {/* <div className="flex flex-col items-center justify-center space-y-4 ">
             <div className=" flex items-center justify-center bg-blue-100 p-2 rounded-full">
               <Phone className="h-5 w-5 text-blue-600" />
             </div>
             <h4 className="font-semibold text-gray-900 mb-1">Phone Support</h4>
             <p className="text-sm text-gray-600 mb-1">{contactInfo.phone}</p>
             <p className="text-xs text-gray-500">{contactInfo.hours}</p>
-          </div>
+          </div> */}
 
           {/* Email Support */}
           <div className="flex flex-col items-center justify-center space-y-4 ">
@@ -166,7 +167,7 @@ export function HelpContent({ contactInfo, faqs }: Props) {
           </div>
 
           {/* Live Chat */}
-          <div className="flex flex-col items-center justify-center space-y-4">
+          {/* <div className="flex flex-col items-center justify-center space-y-4">
             <div className="flex flex-col itmes-center justify-center bg-purple-100 p-2 rounded-full">
               <Users className="h-5 w-5 text-purple-600" />
             </div>
@@ -177,12 +178,12 @@ export function HelpContent({ contactInfo, faqs }: Props) {
               </p>
               <p className="text-xs text-gray-500">Available now</p>
             </div>
-          </div>
+          </div> */}
         </div>
       </CardContent>
 
       {/* Send us a message */}
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle className="text-xl font-bold">Send us a message</CardTitle>
           <p className="text-gray-600">
@@ -307,7 +308,7 @@ export function HelpContent({ contactInfo, faqs }: Props) {
             </Button>
           </form>
         </CardContent>
-      </Card>
+      </Card> */}
 
       {/* FAQ Section */}
       {/* <Card> */}
