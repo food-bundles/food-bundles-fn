@@ -167,7 +167,6 @@ export function Header() {
     setIsLoginModalOpen(true);
   };
 
-
   const handleCloseLoginModal = () => {
     setIsLoginModalOpen(false);
     setLoginData({ isBackendAvailable: true, message: "" });
@@ -224,22 +223,20 @@ export function Header() {
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out ${
-          isVisible ? "translate-y-0" : "-translate-y-full"
-        }`}
-      >
+       className="fixed top-0 left-0 right-0 z-50">
+
         <div className="bg-green-700 border-b border-green-600 shadow-lg">
           <div className="container mx-auto px-4 sm:px-6">
-            <div className="flex items-center justify-between h-16">
-              <div className="flex items-center gap-2 bg-green-50 px-2 sm:px-3 py-2 rounded border-2 border-primary flex-shrink-0">
+            <div className="flex items-center justify-between h-12">
+              <div className="flex items-center gap-2 bg-green-50 px-2 sm:px-3 py-1 rounded border-2 border-primary flex-shrink-0">
                 <Image
                   src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WhatsApp%20Image%202025-08-26%20at%2017.19.27_37ef906c.jpg-5w6VIINuFETMhj8U6ktDEnUViMPQod.jpeg"
                   alt="FoodBundle Logo"
                   width={32}
                   height={32}
-                  className="rounded object-cover w-6 h-6 sm:w-8 sm:h-8"
+                  className="rounded-full object-cover w-5 h-5"
                 />
-                <span className="text-sm sm:text-lg lg:text-xl font-bold text-black whitespace-nowrap">
+                <span className="text-2sm  font-bold text-black whitespace-nowrap">
                   FoodBundles
                 </span>
               </div>
@@ -251,9 +248,9 @@ export function Header() {
                     key={item.id}
                     href={item.href}
                     onClick={(e) => handleNavClick(e, item.id)}
-                    className={`hover:text-secondary transition-colors text-sm lg:text-base font-medium cursor-pointer ${
+                    className={`hover:text-secondary transition-colors text-sm font-medium cursor-pointer ${
                       activeSection === item.id
-                        ? "text-white border-b-2 border-orange-400 pb-1"
+                        ? "text-white border-b-2 border-orange-400 "
                         : "text-primary-foreground"
                     }`}
                   >
@@ -268,7 +265,7 @@ export function Header() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="bg-green-50 text-xs sm:text-sm text-black hover:bg-green-100 px-3 sm:px-4"
+                    className="bg-green-50 text-sm text-black hover:bg-green-100 px-3 sm:px-4 rounded py-0"
                     onClick={handleLoginClick}
                   >
                     Login

@@ -97,7 +97,7 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
   return (
     <section className="relative flex flex-col">
       {/* Full Width Background Image */}
-      <div className="relative h-[50vh] sm:h-[55vh] md:h-[60vh] max-h-[600px] min-h-[400px] sm:min-h-[450px] overflow-hidden">
+      <div className="relative h-[40vh] sm:h-[50vh] md:h-[60vh] lg:h-[50vh] max-h-[600px] min-h-[400px] sm:min-h-[450px] overflow-hidden">
         <Image
           src="imgs/hero.jpg"
           alt="Professional chef preparing fresh ingredients"
@@ -116,21 +116,19 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
               {/* Left Content - Overlay */}
               <div className="lg:col-span-5 xl:col-span-4 space-y-4 z-10 text-center lg:text-left">
                 <div className="space-y-4 bg-transparent max-w-lg mx-auto lg:mx-0">
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold text-balance leading-tight text-gray-100">
-                  Connect Your,
-                    <span className="text-green-500 block sm:inline">
-                      {" "}
-                      To Our Farm
-                    </span>
+                  <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold leading-tight text-gray-100">
+                    <span className="block">Connect Your Restaurant</span>
+                    <span className="block text-green-500">To Our Farm</span>
                   </h1>
-                  <p className="text-xs sm:text-sm md:text-base text-gray-300 text-pretty leading-relaxed">
-                    Get fresh, quality, and reliable ingredients for your
+
+                  <p className="text-xs  text-gray-300 leading-relaxed max-w-md">
+                    Get fresh, quality, and reliable ingredients for your <br />
                     restaurant directly from farm to shop.
                   </p>
                 </div>
 
-                <div className="font-bold flex items-center justify-center lg:justify-start gap-2 text-orange-400 animate-slide-x">
-                  <p className="text-xs sm:text-sm">Fast Delivery</p>
+                <div className="font-semibold flex items-center justify-center lg:justify-start gap-2 text-orange-400 animate-slide-x">
+                  <p className="text-xs">Fast Delivery</p>
                   <Truck className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
               </div>
@@ -142,7 +140,7 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
                   <div className="p-2 flex flex-col items-center space-y-4">
                     <ShoppingCart className="w-10 h-10 text-orange-400 animate-bounce z-20" />
                     <Button
-                      className="p-0 bg-transparent hover:bg-transparent font-semibold text-2xs text-orange-400 cursor-pointer"
+                      className="p-0 bg-transparent hover:bg-transparent font-semibold text-xs text-orange-400 cursor-pointer"
                       onClick={handleShopNowClick}
                     >
                       Shop Now
@@ -152,92 +150,74 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
               </div>
 
               {/* Right Stats - Overlay */}
-              <div className="lg:col-span-5 xl:col-span-4 space-y-2 z-10">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4 bg-black/40 p-3 md:p-4 rounded-lg max-w-xl mx-auto">
+              <div className="hidden lg:block lg:col-span-5 xl:col-span-4 space-y-2 z-10">
+                {/* Right Stats - Overlay */}
+                <div className="flex  md:flex-col lg:items-end gap-4 bg-transparent p-2 rounded-lg">
                   {/* Restaurants Stat */}
-                  <div className="text-center p-2 border-b md:border-b-0 md:border-r border-gray-500">
-                    <div className="flex items-center justify-center gap-1 mb-1">
-                      <div className="flex -space-x-3 md:-space-x-4">
-                        <Image
-                          src="/restaurants/farm-to-table-restaurant-chef.png"
-                          alt="Restaurant Logo"
-                          width={40}
-                          height={40}
-                          className="w-8 h-8 md:w-10 md:h-10 object-contain rounded-full border-2 border-green-500"
-                        />
-                        <Image
-                          src="/restaurants/indian-restaurant-chef.png"
-                          alt="Restaurant Logo"
-                          width={40}
-                          height={40}
-                          className="w-8 h-8 md:w-10 md:h-10 object-contain rounded-full border-2 border-green-500"
-                        />
-                      </div>
+                  <div className="flex flex-col items-center text-center ">
+                    <div className="flex -space-x-3 mb-1">
+                      <Image
+                        src="/restaurants/farm-to-table-restaurant-chef.png"
+                        alt="Restaurant Logo"
+                        width={40}
+                        height={40}
+                        className="w-8 h-8 md:w-10 md:h-10 object-contain rounded-full border-2 border-green-500"
+                      />
+                      <Image
+                        src="/restaurants/indian-restaurant-chef.png"
+                        alt="Restaurant Logo"
+                        width={40}
+                        height={40}
+                        className="w-8 h-8 md:w-10 md:h-10 object-contain rounded-full border-2 border-green-500"
+                      />
                     </div>
-                    <div className="flex items-center justify-center gap-1">
-                      <div className="text-lg md:text-xl font-bold text-green-500">
-                        99+
-                      </div>
-                      <div className="text-xs text-gray-400">Restaurants</div>
+                    <div className="text-green-500 font-bold text-lg md:text-xl">
+                      99+
+                    </div>
+                    <div className="text-xs text-gray-400 mb-4">
+                      Restaurants
                     </div>
                   </div>
-
                   {/* Products Stat */}
-                  <div className="text-center p-2 border-b border-gray-500 md:border-b-0 md:border-r">
-                    <div className="flex items-center justify-center gap-1 mb-1">
-                      <div className="flex -space-x-3 md:-space-x-4">
-                        <Image
-                          src="/products/fresh-organic-roma-tomatoes.png"
-                          alt="Product"
-                          width={40}
-                          height={40}
-                          className="w-8 h-8 md:w-10 md:h-10 object-contain rounded-full border-2 border-green-500"
-                        />
-                        <Image
-                          src="/products/fresh-atlantic-salmon-fillet.png"
-                          alt="Product"
-                          width={40}
-                          height={40}
-                          className="w-8 h-8 md:w-10 md:h-10 object-contain rounded-full border-2 border-green-500"
-                        />
-                      </div>
+                  <div className="flex flex-col items-center text-center pb-4">
+                    <div className="flex -space-x-3 mb-1">
+                      <Image
+                        src="/products/fresh-organic-roma-tomatoes.png"
+                        alt="Product"
+                        width={40}
+                        height={40}
+                        className="w-8 h-8 md:w-10 md:h-10 object-contain rounded-full border-2 border-green-500"
+                      />
+                      <Image
+                        src="/products/fresh-atlantic-salmon-fillet.png"
+                        alt="Product"
+                        width={40}
+                        height={40}
+                        className="w-8 h-8 md:w-10 md:h-10 object-contain rounded-full border-2 border-green-500"
+                      />
                     </div>
-                    <div className="flex items-center justify-center gap-1">
-                      <div className="text-lg md:text-xl font-bold text-green-500">
-                        99+
-                      </div>
-                      <div className="text-xs text-gray-400">Products</div>
+                    <div className="text-green-500 font-bold text-lg md:text-xl">
+                      99+
                     </div>
+                    <div className="text-xs text-gray-400">Products</div>
                   </div>
 
                   {/* Support Stat */}
-                  <div className="text-center p-2 col-span-2 md:col-span-1">
-                    <div className="flex items-center justify-center gap-1 mb-1">
-                      <div className="text-lg md:text-xl font-bold text-green-500">
-                        24/7
-                      </div>
-                      <div className="text-xs text-gray-400">Support</div>
+                  <div className="flex flex-col items-center text-center">
+                    <div className="text-green-500 font-bold text-lg md:text-xl mb-1">
+                      24/7
                     </div>
+                    <div className="text-xs text-gray-400 mb-1">Support</div>
                     <div className="flex items-center justify-center gap-1">
-                      <div className="flex">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className="w-3 h-3 fill-yellow-400 text-yellow-400"
-                          />
-                        ))}
-                      </div>
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className="w-3 h-3 fill-yellow-400 text-yellow-400"
+                        />
+                      ))}
                       <span className="text-xs text-gray-400 ml-1">(4.7)</span>
                     </div>
                   </div>
-                </div>
-
-                {/* Mobile Shop Now Button */}
-                <div className="md:hidden flex justify-center mt-4">
-                  <Button className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-6 rounded-full flex items-center gap-2">
-                    <ShoppingCart className="w-4 h-4" />
-                    Shop Now
-                  </Button>
                 </div>
               </div>
             </div>

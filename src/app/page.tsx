@@ -226,7 +226,7 @@ export default async function HomePage() {
     <Suspense fallback={<SearchLoading />}>
       <div className="min-h-screen bg-background">
         <Header />
-        <div className="h-16 bg-green-700"></div>
+        <div className="h-12 bg-green-700"></div>
         <div>
           <div id="home">
             <HeroWithRestaurants restaurants={restaurants} />
