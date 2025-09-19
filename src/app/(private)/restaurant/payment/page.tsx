@@ -33,14 +33,13 @@ export default function PaymentPage() {
   const [selectedCheckout, setSelectedCheckout] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<
     "CASH" | "MOBILE_MONEY" | "CARD"
-  >("MOBILE_MONEY"); // Changed default to MOBILE_MONEY
+  >("MOBILE_MONEY"); 
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string>("");
   const [showFlutterwaveInfo, setShowFlutterwaveInfo] = useState(false);
   const [redirectUrl, setRedirectUrl] = useState<string>("");
 
-  // Payment form data
   const [phoneNumber, setPhoneNumber] = useState("");
   const [cardData, setCardData] = useState({
     cardNumber: "",
@@ -67,23 +66,19 @@ export default function PaymentPage() {
     },
   ];
 
-  // Fetch user's checkouts on component mount
   useEffect(() => {
     const fetchCheckouts = async () => {
       try {
         const response = await checkoutService.getMyCheckouts();
         if (response.success && response.data) {
-          // Filter for pending checkouts only
           const pendingCheckouts = response.data.filter(
             (checkout) => checkout.paymentStatus === "PENDING"
           );
           setCheckouts(pendingCheckouts);
 
-          // Auto-select first checkout if available
           if (pendingCheckouts.length > 0) {
             setSelectedCheckout(pendingCheckouts[0].id);
 
-            // Auto-select payment method from the checkout data
             const firstCheckout = pendingCheckouts[0];
             if (firstCheckout.paymentMethod) {
               setPaymentMethod(
@@ -103,8 +98,6 @@ export default function PaymentPage() {
 
     fetchCheckouts();
   }, []);
-
-  // Also check for stored payment method from previous page
   useEffect(() => {
     const storedPaymentMethod = localStorage.getItem("selectedPaymentMethod");
     if (
@@ -112,7 +105,6 @@ export default function PaymentPage() {
       ["CASH", "MOBILE_MONEY", "CARD"].includes(storedPaymentMethod)
     ) {
       setPaymentMethod(storedPaymentMethod as "CASH" | "MOBILE_MONEY" | "CARD");
-      // Clear it after use
       localStorage.removeItem("selectedPaymentMethod");
     }
   }, []);
@@ -157,21 +149,18 @@ export default function PaymentPage() {
         checkoutId: selectedCheckout,
       };
 
-      // Add method-specific data
       if (paymentMethod === "MOBILE_MONEY") {
         paymentData.phoneNumber = phoneNumber;
       } else if (paymentMethod === "CARD") {
         paymentData = { ...paymentData, ...cardData };
       }
 
-      // Process the payment
       const response = await checkoutService.processPayment(
         selectedCheckout,
         paymentData
       );
 
       if (response.success) {
-        // Check the payment provider to determine the flow
         const paymentProvider = response.data?.checkout?.paymentProvider;
         const requiresRedirect = response.data?.requiresRedirect;
         const redirectUrl = response.data?.redirectUrl;
@@ -181,33 +170,28 @@ export default function PaymentPage() {
         console.log("Redirect URL:", redirectUrl);
 
         if (paymentMethod === "MOBILE_MONEY") {
-          // Handle mobile money based on provider
           if (paymentProvider === "PAYPACK") {
-            // PayPack - direct USSD trigger, go to confirmation
             console.log(
               "PayPack payment initiated - redirecting to confirmation"
             );
-            router.push("/restaurant/confirmation");
+            router.push("/restaurant/orders");
           } else if (
             paymentProvider === "FLUTTERWAVE" &&
             requiresRedirect &&
             redirectUrl
           ) {
-            // Flutterwave - requires redirect to their portal
             console.log("Flutterwave payment - showing redirect dialog");
             setRedirectUrl(redirectUrl);
             setShowFlutterwaveInfo(true);
           } else {
-            // Default case for mobile money - go to confirmation
             console.log(
               "Default mobile money flow - redirecting to confirmation"
             );
-            router.push("/restaurant/confirmation");
+            router.push("/restaurant/orders");
           }
         } else {
-          // For cash and card payments - go directly to confirmation
           console.log("Cash/Card payment - redirecting to confirmation");
-          router.push("/restaurant/confirmation");
+          router.push("/restaurant/orders");
         }
       } else {
         setError(response.message || "Payment processing failed");
@@ -222,9 +206,7 @@ export default function PaymentPage() {
   const handleFlutterwaveRedirect = () => {
     if (redirectUrl) {
       console.log("Redirecting to Flutterwave:", redirectUrl);
-      // Redirect to Flutterwave for OTP verification
       window.location.href = redirectUrl;
-      // Flutterwave will redirect back to /restaurant/confirmation after payment
     }
   };
 
