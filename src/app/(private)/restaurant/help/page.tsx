@@ -20,9 +20,9 @@ async function getHelpData() {
   await new Promise((resolve) => setTimeout(resolve, 100));
 
   const contactInfo: ContactInfo = {
-    phone: "+250788724867",
-    email: "support@foodbundle.com",
-    whatsapp: "+250788724867",
+    phone: "+250 796 897 823",
+    email: "sales@food.rw",
+    whatsapp: "+250 796 897 823",
     hours: "Mon-Fri 9am-6pm EST",
     responseTime: "We'll respond within 24hrs",
   };

@@ -1,7 +1,8 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,10 +17,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
-import { MapPin, Navigation } from "lucide-react";
+import { MapPin, Navigation, User } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useCart } from "@/app/contexts/cart-context";
+import { useAuth } from "@/app/contexts/auth-context"; // Import useAuth
 import {
   checkoutService,
   CheckoutRequest,
@@ -54,9 +56,43 @@ interface LocationData {
   address?: string;
 }
 
+// Helper function to parse location string
+const parseLocationString = (locationString: string | null): LocationData => {
+  if (!locationString) {
+    return { lat: -1.9577, lng: 30.0619 }; // Default Kigali coordinates
+  }
+
+  const coords = locationString.split(",");
+  if (coords.length === 2) {
+    const lat = parseFloat(coords[0].trim());
+    const lng = parseFloat(coords[1].trim());
+    if (!isNaN(lat) && !isNaN(lng)) {
+      return { lat, lng };
+    }
+  }
+
+  return { lat: -1.9577, lng: 30.0619 }; // Fallback to Kigali
+};
+
+// Helper function to get full address from user
+const getUserFullAddress = (user: any): string => {
+  if (!user) return "";
+
+  const addressParts = [
+    user.village,
+    user.cell,
+    user.sector,
+    user.district,
+    user.province,
+  ].filter(Boolean);
+
+  return addressParts.join(", ");
+};
+
 export function CheckoutForm({ staticData }: Props) {
   const router = useRouter();
   const { cart, totalItems, totalQuantity, totalAmount, isLoading } = useCart();
+  const { user, isAuthenticated } = useAuth(); // Get user from auth context
 
   // Step management
   const [currentStep, setCurrentStep] = useState(1);
@@ -73,6 +109,9 @@ export function CheckoutForm({ staticData }: Props) {
     lng: 30.0619, // Kigali coordinates
   });
 
+  // Auto-fill button state
+  const [isAutoFilled, setIsAutoFilled] = useState(false);
+
   // Delivery form state
   const [deliveryData, setDeliveryData] = useState({
     fullName: "",
@@ -87,6 +126,48 @@ export function CheckoutForm({ staticData }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Auto-fill function
+  const handleAutoFillUserData = () => {
+    if (!user) return;
+
+    // Parse user location if available
+    const userLocation = parseLocationString(user.location);
+
+    // Get full address from user profile
+    const fullAddress = getUserFullAddress(user);
+
+    setDeliveryData((prev) => ({
+      ...prev,
+      fullName: user.name || user.name || "",
+      phoneNumber: user.phone || "",
+      deliveryAddress: fullAddress,
+      location: userLocation,
+      hasSelectedLocationOnMap: !!user.location, // Set true if user has saved location
+    }));
+
+    // Update temp location for map
+    setTempLocation(userLocation);
+    setIsAutoFilled(true);
+
+    // Clear any existing errors
+    setErrors({});
+  };
+
+  // Clear form function
+  const handleClearForm = () => {
+    setDeliveryData({
+      fullName: "",
+      phoneNumber: "",
+      deliveryAddress: "",
+      deliveryInstructions: "",
+      location: { lat: -1.9577, lng: 30.0619 },
+      hasSelectedLocationOnMap: false,
+    });
+    setTempLocation({ lat: -1.9577, lng: 30.0619 });
+    setIsAutoFilled(false);
+    setErrors({});
+  };
+
   // Get user's current location
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
@@ -100,13 +181,28 @@ export function CheckoutForm({ staticData }: Props) {
         },
         (error) => {
           console.error("Error getting location:", error);
-          // Fallback to Kigali coordinates
+          // Fallback to user's saved location or Kigali coordinates
+          if (user?.location) {
+            setTempLocation(parseLocationString(user.location));
+          }
         }
       );
     }
   };
 
-  // Determine data source
+  // Initialize form with user data if available (on component mount)
+  useEffect(() => {
+    if (isAuthenticated && user && !isAutoFilled) {
+      const isEmpty =
+        !deliveryData.fullName &&
+        !deliveryData.phoneNumber &&
+        !deliveryData.deliveryAddress;
+      if (isEmpty) {
+        handleAutoFillUserData();
+      }
+    }
+  }, [isAuthenticated, user]);
+
   const summaryData = (() => {
     if (staticData) {
       return {
@@ -277,7 +373,7 @@ export function CheckoutForm({ staticData }: Props) {
         cartId: cart!.id,
         paymentMethod: selectedMethod,
         billingName: deliveryData.fullName,
-        billingEmail: "",
+        billingEmail: user?.email || "",
         billingPhone: deliveryData.phoneNumber,
         billingAddress: billingAddressToSave,
         notes: deliveryData.deliveryInstructions,
@@ -323,7 +419,41 @@ export function CheckoutForm({ staticData }: Props) {
       <div className="max-w-4xl mx-auto">
         <Card className="border-0 shadow-none py-0">
           <CardHeader>
-            <CardTitle>Delivery Information</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Delivery Information</CardTitle>
+              {isAuthenticated && user && (
+                <div className="flex gap-2">
+                  {!isAutoFilled ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAutoFillUserData}
+                      className="flex items-center gap-2"
+                    >
+                      <User className="h-4 w-4" />
+                      Use My Info
+                    </Button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <span className="text-sm text-green-600 flex items-center gap-1">
+                        <User className="h-3 w-3" />
+                        Auto-filled
+                      </span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleClearForm}
+                        className="text-xs"
+                      >
+                        Clear
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

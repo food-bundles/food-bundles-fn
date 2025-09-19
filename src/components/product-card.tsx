@@ -115,7 +115,7 @@ export function ProductCard({
   return (
     <>
       <div
-        className="w-full max-w-[280px] bg-white"
+        className="w-full max-w-[280px] bg-whit"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -140,16 +140,19 @@ export function ProductCard({
             )}
 
             {/* In Cart Badge */}
-          <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-           {isInCart && (
-             <div
-               className="absolute top-3 right-0 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded flex items-center cursor-pointer"
-               onClick={() => setIsCartOpen(true)}
-             >
-               <Check className="w-3 h-3 mr-1" /> View Cart
-             </div>
-           )}
-     
+            <CartDrawer
+              isOpen={isCartOpen}
+              onClose={() => setIsCartOpen(false)}
+            />
+            {isInCart && (
+              <div
+                className="absolute top-3 right-0 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded flex items-center cursor-pointer"
+                onClick={() => setIsCartOpen(true)}
+              >
+                <Check className="w-3 h-3 mr-1" /> View Cart
+              </div>
+            )}
+
             <div
               className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${
                 isHovered ? "opacity-100 scale-100" : "opacity-0 scale-95"

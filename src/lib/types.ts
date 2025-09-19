@@ -90,6 +90,7 @@ export interface IUser {
   name: string;
   email: string;
   phone?: string;
+  location: string;
   role: UserRole;
   profileImage: string;
 }
