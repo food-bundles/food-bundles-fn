@@ -1,15 +1,24 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { Menu, X, ChevronDown, LogOut } from "lucide-react";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { LoginModal } from "./loginModel";
 import { SignupModal } from "./signupModel";
 import { useCategory } from "@/app/contexts/category-context";
+import { useAuth } from "@/app/contexts/auth-context";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import Link from "next/link";
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -40,6 +49,8 @@ export function Header() {
   const dropdownTimeout = useRef<NodeJS.Timeout | null>(null);
   const searchParams = useSearchParams();
   const { activeCategories, isLoading } = useCategory();
+  const { user, isAuthenticated, logout, getUserProfileImage, login } =
+    useAuth();
 
   const navigationItems = [
     { label: "Home", href: "#home", id: "home" },
@@ -86,7 +97,7 @@ export function Header() {
 
       // Update URL with category parameter
       const url = new URL(window.location.href);
-      if (categoryName === "ALL CATEGORIES") {
+      if (categoryName === "All Categories") {
         url.searchParams.delete("category");
       } else {
         url.searchParams.set("category", categoryName);
@@ -128,7 +139,8 @@ export function Header() {
     const showLogin = searchParams?.get("showLogin");
     const reason = searchParams?.get("reason");
 
-    if (showLogin === "true" && !isLoginModalOpen) {
+    // Only trigger login modal if explicitly requested via URL params and modal is not already open
+    if (showLogin === "true" && !isLoginModalOpen && !isAuthenticated) {
       let message = "";
       if (reason === "add_to_cart") {
         message = "Please log in to add this item to your cart.";
@@ -147,6 +159,7 @@ export function Header() {
 
       setIsLoginModalOpen(true);
 
+      // Clean up URL immediately to prevent repeat triggers
       if (typeof window !== "undefined") {
         const newUrl = new URL(window.location.href);
         newUrl.searchParams.delete("showLogin");
@@ -154,11 +167,12 @@ export function Header() {
         window.history.replaceState({}, "", newUrl.toString());
       }
     }
-  }, [searchParams, isLoginModalOpen]);
+  }, [searchParams, isLoginModalOpen, isAuthenticated]);
 
+  // Only run redirect check once on mount and when search params change
   useEffect(() => {
     checkForLoginRedirect();
-  }, [checkForLoginRedirect]);
+  }, [searchParams]); // Removed checkForLoginRedirect from dependencies to prevent loops
 
   const checkBackendAvailability = useCallback(async () => {
     try {
@@ -226,6 +240,16 @@ export function Header() {
     setIsSignupModalOpen(false);
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // Force a page refresh to clear all state
+      window.location.reload();
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
   const handleScroll = useCallback(() => {
     if (scrollTimeout.current) {
       clearTimeout(scrollTimeout.current);
@@ -265,6 +289,10 @@ export function Header() {
       };
     }
   }, [handleScroll, detectActiveSection]);
+
+  // Get user profile data
+  const profileImage = isAuthenticated ? getUserProfileImage() : null;
+  const userName = user?.name || user?.username || "User";
 
   return (
     <>
@@ -320,7 +348,7 @@ export function Header() {
                     {/* Shop Dropdown */}
                     {item.hasDropdown && (
                       <div
-                        className={`absolute top-full left-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 transition-all duration-200 ${
+                        className={`absolute top-full -left-16 mt-2 w-44 bg-white shadow-lg border border-gray-200 transition-all duration-200 ${
                           isShopDropdownOpen
                             ? "opacity-100 visible transform translate-y-0"
                             : "opacity-0 invisible transform -translate-y-2"
@@ -340,7 +368,7 @@ export function Header() {
                             <>
                               <button
                                 onClick={() =>
-                                  handleCategoryClick("ALL CATEGORIES")
+                                  handleCategoryClick("All Categories")
                                 }
                                 className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors"
                               >
@@ -373,14 +401,60 @@ export function Header() {
               {/* Right actions */}
               <div className="flex items-center gap-2">
                 <div className="hidden md:block">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="bg-green-50 text-sm text-black hover:bg-green-100 px-3 sm:px-4 rounded-full py-0"
-                    onClick={handleLoginClick}
-                  >
-                    Login
-                  </Button>
+                  {isAuthenticated ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className="flex items-center gap-2 hover:bg-green-600 cursor-pointer text-primary-foreground hover:text-primary-foreground py-2 px-3"
+                        >
+                          <span className="font-medium text-sm max-w-32 truncate">
+                            {userName}
+                          </span>
+                          <div className="p-[1px] bg-green-50 rounded-full flex items-center justify-center">
+                            {profileImage ? (
+                              <Image
+                                src={profileImage}
+                                alt={`${userName}'s profile`}
+                                width={24}
+                                height={24}
+                                className="rounded-full object-cover"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.src = "/placeholder.svg";
+                                }}
+                              />
+                            ) : (
+                              <div className="rounded-full bg-green-600 text-white flex items-center justify-center w-6 h-6 text-xs font-bold">
+                                {userName.substring(0, 2).toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <Link href="/restaurant/settings">
+                          <DropdownMenuItem>Profile</DropdownMenuItem>
+                        </Link>
+                        <DropdownMenuItem
+                          className="text-red-600 cursor-pointer"
+                          onClick={handleLogout}
+                        >
+                          <LogOut className="w-4 h-4 mr-2" />
+                          Logout
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="bg-green-50 text-sm text-black hover:bg-green-100 px-3 sm:px-4 rounded-full py-0"
+                      onClick={handleLoginClick}
+                    >
+                      Login
+                    </Button>
+                  )}
                 </div>
 
                 {/* Mobile Menu Button */}
@@ -436,7 +510,7 @@ export function Header() {
                         <div className="ml-4 mt-2 space-y-1">
                           <button
                             onClick={() => {
-                              handleCategoryClick("ALL CATEGORIES");
+                              handleCategoryClick("All Categories");
                               setIsMenuOpen(false);
                             }}
                             className="block w-full text-left px-2 py-1 text-sm text-green-200 hover:text-white transition-colors"
@@ -459,17 +533,64 @@ export function Header() {
                       )}
                     </div>
                   ))}
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    className="w-fit bg-green-50 text-black hover:bg-green-100 mt-2"
-                    onClick={async () => {
-                      setIsMenuOpen(false);
-                      await handleLoginClick();
-                    }}
-                  >
-                    Login
-                  </Button>
+
+                  {/* Mobile Login/Profile */}
+                  {isAuthenticated ? (
+                    <div className="mt-2 pt-2 border-t border-green-600">
+                      <div className="flex items-center gap-2 px-2 py-1 text-primary-foreground">
+                        <div className="p-[1px] bg-green-50 rounded-full flex items-center justify-center">
+                          {profileImage ? (
+                            <Image
+                              src={profileImage}
+                              alt={`${userName}'s profile`}
+                              width={20}
+                              height={20}
+                              className="rounded-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.src = "/placeholder.svg";
+                              }}
+                            />
+                          ) : (
+                            <div className="rounded-full bg-green-600 text-white flex items-center justify-center w-5 h-5 text-xs font-bold">
+                              {userName.substring(0, 2).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                        <span className="font-medium text-sm">{userName}</span>
+                      </div>
+                      <Link href="/restaurant/settings">
+                        <button
+                          className="block w-full text-left px-2 py-1 text-sm text-green-200 hover:text-white transition-colors"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          Profile
+                        </button>
+                      </Link>
+                      <button
+                        onClick={() => {
+                          handleLogout();
+                          setIsMenuOpen(false);
+                        }}
+                        className="flex items-center gap-2 w-full text-left px-2 py-1 text-sm text-red-300 hover:text-red-200 transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Logout
+                      </button>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="w-fit bg-green-50 text-black hover:bg-green-100 mt-2"
+                      onClick={async () => {
+                        setIsMenuOpen(false);
+                        await handleLoginClick();
+                      }}
+                    >
+                      Login
+                    </Button>
+                  )}
                 </nav>
               </div>
             )}
@@ -482,6 +603,10 @@ export function Header() {
         isOpen={isLoginModalOpen}
         onClose={handleCloseLoginModal}
         loginData={loginData}
+        onLoginSuccess={(response: any) => {
+          // Handle successful login with the new context method
+          login(response);
+        }}
       />
 
       {/* Signup Modal */}

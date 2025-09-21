@@ -1,28 +1,33 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// Frontend Auth Context - Token-Based
 "use client";
 
-import type React from "react";
-import {
+import React, {
   createContext,
   useContext,
+  useEffect,
   useState,
   useCallback,
-  useEffect,
+  useRef,
 } from "react";
 import { authService } from "@/app/services/authService";
-import { type IUser, UserRole, type ILoginData } from "@/lib/types";
-import { getToken, removeToken } from "@/app/hooks/axiosClient";
+
+interface User {
+  id: string;
+  name?: string;
+  username?: string;
+  email: string;
+  role: string;
+  profileImage?: string;
+}
 
 interface AuthContextType {
-  user: IUser | null;
-  loading: boolean;
+  user: User | null;
   isAuthenticated: boolean;
-  login: (loginData: ILoginData) => Promise<void>;
+  isLoading: boolean;
+  login: (loginData: any) => Promise<any>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
-  hasRole: (roles: UserRole[]) => boolean;
-  getUserProfileImage: () => string;
+  getUserProfileImage: () => string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,75 +36,65 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
-const mapUserRoleToRole = (userRole: string, user: any): UserRole => {
-  if (userRole === UserRole.FARMER) return UserRole.FARMER;
-  if (userRole === UserRole.RESTAURANT) return UserRole.RESTAURANT;
-  if (userRole === UserRole.ADMIN) {
-    switch (user?.role) {
-      case "ADMIN":
-        return UserRole.ADMIN;
-      case "LOGISTIC":
-        return UserRole.LOGISTIC;
-      case "AGGREGATOR":
-        return UserRole.AGGREGATOR;
-      case "FOOD_BUNDLE":
-        return UserRole.FOOD_BUNDLE;
-      default:
-        return UserRole.ADMIN;
-    }
-  }
-  return UserRole.FARMER;
-};
-
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<IUser | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialCheckDone, setIsInitialCheckDone] = useState(false);
+  const checkingRef = useRef(false);
 
   const checkAuth = useCallback(async () => {
+    // Prevent multiple simultaneous auth checks
+    if (checkingRef.current) {
+      return;
+    }
+
+    checkingRef.current = true;
+
     try {
-      setLoading(true);
-      const token = getToken();
-
-      if (!token) {
-        setUser(null);
-        return;
-      }
-
+      setIsLoading(true);
       const response = await authService.getCurrentUser();
 
-      if (response.user && response.userRole) {
-        const userRole = mapUserRoleToRole(response.userRole, response.user);
-        setUser({ ...response.user, role: userRole });
+      if (response.success && response.user) {
+        setUser(response.user);
+        setIsAuthenticated(true);
       } else {
         setUser(null);
-        removeToken();
+        setIsAuthenticated(false);
       }
     } catch (error) {
       console.error("Auth check failed:", error);
       setUser(null);
-      removeToken();
+      setIsAuthenticated(false);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
+      setIsInitialCheckDone(true);
+      checkingRef.current = false;
     }
   }, []);
 
   const login = useCallback(
-    async (loginData: ILoginData) => {
+    async (loginData: any) => {
       try {
-        setLoading(true);
         const response = await authService.login(loginData);
 
         if (response.success) {
+          // Immediately check auth after successful login
           await checkAuth();
-          return;
+
+          // Dispatch a custom event to notify other components
+          window.dispatchEvent(new CustomEvent("loginSuccess"));
+
+          // Small delay to ensure all state updates are processed
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent("userDataLoaded"));
+          }, 100);
         }
 
-        throw new Error(response.message || "Login failed");
-      } catch (error: any) {
-        console.error("Login error:", error);
+        return response;
+      } catch (error) {
+        console.error("Login failed:", error);
         throw error;
-      } finally {
-        setLoading(false);
       }
     },
     [checkAuth]
@@ -107,79 +102,112 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const logout = useCallback(async () => {
     try {
-      setLoading(true);
       await authService.logout();
-    } catch (error) {
-      console.error("Logout error:", error);
-    } finally {
       setUser(null);
-      setLoading(false);
+      setIsAuthenticated(false);
+
+      // Clear any cached data
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("pendingCartProduct");
+        localStorage.removeItem("returnUrl");
+      }
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // Even if logout fails, clear local state
+      setUser(null);
+      setIsAuthenticated(false);
     }
   }, []);
 
-  const hasRole = useCallback(
-    (roles: UserRole[]): boolean => {
-      if (!user) return false;
-      return roles.includes(user.role);
-    },
-    [user]
-  );
+  const getUserProfileImage = useCallback((): string | null => {
+    if (!user?.profileImage) return null;
 
-const getUserProfileImage = useCallback((): string => {
-  if (user?.profileImage) {
+    // Handle different image URL formats
     if (user.profileImage.startsWith("http")) {
       return user.profileImage;
     }
-    return `${process.env.NEXT_PUBLIC_BACKEND_URL}/uploads/profiles/${user.profileImage}`;
-  }
 
-  // 👇 generate initials if no profile image
-  if (user?.name) {
-    const initials = user.name
-      .trim()
-      .split(" ")
-      .map((part) => part[0])
-      .join("")
-      .substring(0, 2)
-      .toUpperCase();
+    // If it's a relative path, construct the full URL
+    return `${process.env.NEXT_PUBLIC_BACKEND_URL}${user.profileImage}`;
+  }, [user]);
 
-    // Use a simple SVG with initials encoded as data URI
-    return `data:image/svg+xml;utf8,
-      <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
-        <rect width="100%" height="100%" fill="#4CAF50"/>
-        <text x="50%" y="50%" dy=".35em"
-          font-family="Arial, sans-serif"
-          font-size="40"
-          fill="white"
-          text-anchor="middle">
-          ${initials}
-        </text>
-      </svg>`;
-  }
+  // Check if there's a token in storage without making API call
+  const hasTokenInStorage = useCallback(() => {
+    if (typeof window === "undefined") return false;
 
-  // If no name either
-  return `data:image/svg+xml;utf8,
-    <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
-      <rect width="100%" height="100%" fill="#4CAF50"/>
-    </svg>`;
-}, [user]);
+    // Check localStorage
+    const token = localStorage.getItem("auth-token");
+    if (token) return true;
 
+    // Check cookies
+    const cookies = document.cookie.split(";");
+    const authCookie = cookies.find((cookie) =>
+      cookie.trim().startsWith("auth-token=")
+    );
+    return !!authCookie;
+  }, []);
 
-  // Check auth on mount
+  // Initial auth check on mount - only if token exists
   useEffect(() => {
-    checkAuth();
+    if (!isInitialCheckDone && hasTokenInStorage()) {
+      checkAuth();
+    } else if (!hasTokenInStorage()) {
+      // No token found, set initial state without API call
+      setUser(null);
+      setIsAuthenticated(false);
+      setIsLoading(false);
+      setIsInitialCheckDone(true);
+    }
+  }, [checkAuth, isInitialCheckDone, hasTokenInStorage]);
+
+  // Listen for storage events (for multi-tab support)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "auth-token") {
+        if (e.newValue) {
+          // Token added, check auth
+          checkAuth();
+        } else {
+          // Token removed, logout
+          setUser(null);
+          setIsAuthenticated(false);
+        }
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, [checkAuth]);
 
-  const isAuthenticated = !!user;
+  // Listen for focus events to refresh auth state - but only occasionally
+  useEffect(() => {
+    let lastFocusCheck = 0;
+    const FOCUS_CHECK_INTERVAL = 30000; // Only check every 30 seconds
+
+    const handleFocus = () => {
+      const now = Date.now();
+      // Only check if we think we're authenticated, have a token, and enough time has passed
+      if (
+        isAuthenticated &&
+        hasTokenInStorage() &&
+        now - lastFocusCheck > FOCUS_CHECK_INTERVAL
+      ) {
+        lastFocusCheck = now;
+        checkAuth();
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [checkAuth, isAuthenticated, hasTokenInStorage]);
 
   const value: AuthContextType = {
     user,
-    loading,
     isAuthenticated,
+    isLoading,
     login,
     logout,
     checkAuth,
-    hasRole,
     getUserProfileImage,
   };
 

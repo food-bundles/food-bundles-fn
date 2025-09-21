@@ -20,6 +20,7 @@ type Props = {
     isBackendAvailable: boolean;
     message?: string;
   };
+  onLoginSuccess?: (response: any) => void;
 };
 
 export function LoginModal({ isOpen, onClose, loginData }: Props) {
