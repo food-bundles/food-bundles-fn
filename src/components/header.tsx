@@ -5,7 +5,7 @@
 
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { Menu, X, ChevronDown, LogOut } from "lucide-react";
+import { Menu, X, ChevronDown, LogOut, UserPlus, User } from "lucide-react";
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { LoginModal } from "./loginModel";
@@ -54,9 +54,15 @@ export function Header() {
 
   const navigationItems = [
     { label: "Home", href: "#home", id: "home" },
-    { label: "Shop", href: "#products", id: "products", hasDropdown: true },
+    {
+      label: "Subscribe to our farm",
+      href: "#subscribe",
+      id: "subscribe",
+      hasDropdown: true,
+    },
     { label: "Ask help", href: "#ask-help", id: "ask-help" },
   ];
+
 
   const scrollToSection = useCallback((sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -345,10 +351,10 @@ export function Header() {
                       )}
                     </a>
 
-                    {/* Shop Dropdown */}
+                    {/* Subscribe Dropdown */}
                     {item.hasDropdown && (
                       <div
-                        className={`absolute top-full -left-16 mt-2 w-44 bg-white shadow-lg border border-gray-200 transition-all duration-200 ${
+                        className={`absolute top-full -left-10 mt-2 w-50 bg-white shadow-lg border border-gray-200 transition-all duration-200 ${
                           isShopDropdownOpen
                             ? "opacity-100 visible transform translate-y-0"
                             : "opacity-0 invisible transform -translate-y-2"
@@ -357,40 +363,30 @@ export function Header() {
                         onMouseLeave={handleShopMouseLeave}
                       >
                         <div className="py-2">
-                          <div className="px-4 py-2 text-sm font-semibold text-gray-700 border-b border-gray-100">
-                            Shop by Category
-                          </div>
-                          {isLoading ? (
-                            <div className="px-4 py-3 text-sm text-gray-500">
-                              Loading categories...
-                            </div>
-                          ) : activeCategories.length > 0 ? (
-                            <>
-                              <button
-                                onClick={() =>
-                                  handleCategoryClick("All Categories")
-                                }
-                                className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors"
-                              >
-                                All Products
-                              </button>
-                              {activeCategories.map((category) => (
-                                <button
-                                  key={category.id}
-                                  onClick={() =>
-                                    handleCategoryClick(category.name)
-                                  }
-                                  className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors"
-                                >
-                                  {category.name.replace(/_/g, " ")}
-                                </button>
-                              ))}
-                            </>
-                          ) : (
-                            <div className="px-4 py-3 text-sm text-gray-500">
-                              No categories available
-                            </div>
-                          )}
+                          <button
+                            onClick={() => {
+                              setIsSignupModalOpen(true);
+                              // Preselect Restaurant role inside SignupModal
+                              window.dispatchEvent(
+                                new CustomEvent("openSignupRestaurant")
+                              );
+                              setIsShopDropdownOpen(false);
+                            }}
+                            className="flex items-center  w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors"
+                          >
+                            <UserPlus className="w-4 h-4 mr-1" />
+                            Subscribe as Restaurant
+                          </button>
+                          <button
+                            onClick={() => {
+                              setIsShopDropdownOpen(false);
+                              window.location.href = "/guest";
+                            }}
+                            className="flex items-center w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors"
+                          >
+                            <UserPlus className="w-4 h-4 mr-1" />
+                            Subscribe as Guest
+                          </button>
                         </div>
                       </div>
                     )}
@@ -432,7 +428,10 @@ export function Header() {
                           </div>
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuContent
+                        align="end"
+                        className="w-35 rounded-none"
+                      >
                         <Link href="/restaurant/settings">
                           <DropdownMenuItem>Profile</DropdownMenuItem>
                         </Link>
@@ -440,7 +439,6 @@ export function Header() {
                           className="text-red-600 cursor-pointer"
                           onClick={handleLogout}
                         >
-                          <LogOut className="w-4 h-4 mr-2" />
                           Logout
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -449,9 +447,10 @@ export function Header() {
                     <Button
                       variant="secondary"
                       size="sm"
-                      className="bg-green-50 text-sm text-black hover:bg-green-100 px-3 sm:px-4 rounded-full py-0"
+                      className="bg-green-50 text-sm text-black hover:bg-green-100 px-3 sm:px-4 rounded-full py-0 gap-1"
                       onClick={handleLoginClick}
                     >
+                      <User className="w-4 h-4" />
                       Login
                     </Button>
                   )}
