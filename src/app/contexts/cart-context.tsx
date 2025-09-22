@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import React, {
@@ -6,13 +7,14 @@ import React, {
   useEffect,
   useState,
   useCallback,
+  useRef,
 } from "react";
 import {
   cartService,
   type Cart,
   type CartItem,
 } from "@/app/services/cartService";
-import { useAuth } from "./auth-context"; // Import auth context
+import { useAuth } from "./auth-context";
 
 interface CartContextType {
   cart: Cart | null;
@@ -39,15 +41,27 @@ export function CartProvider({ children }: CartProviderProps) {
   const [cart, setCart] = useState<Cart | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { isAuthenticated } = useAuth(); // Get auth status
+  const { isAuthenticated, user, isLoading: authLoading } = useAuth();
+  // const lastAuthState = useRef<boolean>(false);
+  const refreshingRef = useRef(false);
+  const lastAuthState: { current: boolean | null } = { current: false };
+  
 
   const refreshCart = useCallback(async () => {
-    // Only fetch cart if user is authenticated
-    if (!isAuthenticated) {
+    // Don't fetch if auth is still loading or user is not authenticated
+    if (authLoading || !isAuthenticated || !user) {
       setCart(null);
       setIsLoading(false);
+      setError(null);
       return;
     }
+
+    // Prevent multiple simultaneous refreshes
+    if (refreshingRef.current) {
+      return;
+    }
+
+    refreshingRef.current = true;
 
     try {
       setIsLoading(true);
@@ -69,11 +83,17 @@ export function CartProvider({ children }: CartProviderProps) {
       setCart(null);
     } finally {
       setIsLoading(false);
+      refreshingRef.current = false;
     }
-  }, [isAuthenticated]); // Add isAuthenticated as dependency
+  }, [isAuthenticated, user, authLoading]);
 
   const addToCart = useCallback(
     async (productId: string, quantity: number): Promise<boolean> => {
+      if (!isAuthenticated || !user) {
+        setError("Please log in to add items to cart");
+        return false;
+      }
+
       try {
         setError(null);
         const response = await cartService.addToCart(productId, quantity);
@@ -91,40 +111,49 @@ export function CartProvider({ children }: CartProviderProps) {
         return false;
       }
     },
-    [refreshCart]
+    [isAuthenticated, user, refreshCart]
   );
 
-const updateCartItem = useCallback(
-  async (cartItemId: string, quantity: number): Promise<boolean> => {
-    try {
-      setError(null);
-      // Fixed: Call the service function from cartService
-      const response = await cartService.updateCartItem(cartItemId, quantity);
-
-      if (response.success) {
-        await refreshCart();
-        return true;
-      } else {
-        setError(response.message || "Failed to update cart item");
+  const updateCartItem = useCallback(
+    async (cartItemId: string, quantity: number): Promise<boolean> => {
+      if (!isAuthenticated || !user) {
+        setError("Please log in to update cart items");
         return false;
       }
-    } catch (error) {
-      console.error("Error updating cart item:", error);
-      setError("Failed to update cart item");
-      return false;
-    }
-  },
-  [refreshCart]
-);
+
+      try {
+        setError(null);
+        const response = await cartService.updateCartItem(cartItemId, quantity);
+
+        if (response.success) {
+          await refreshCart();
+          return true;
+        } else {
+          setError(response.message || "Failed to update cart item");
+          return false;
+        }
+      } catch (error) {
+        console.error("Error updating cart item:", error);
+        setError("Failed to update cart item");
+        return false;
+      }
+    },
+    [isAuthenticated, user, refreshCart]
+  );
 
   const removeCartItem = useCallback(
     async (cartItemId: string): Promise<boolean> => {
+      if (!isAuthenticated || !user) {
+        setError("Please log in to remove cart items");
+        return false;
+      }
+
       try {
         setError(null);
         const response = await cartService.removeCartItem(cartItemId);
 
         if (response.success) {
-          await refreshCart(); // Refresh cart data after removing
+          await refreshCart();
           return true;
         } else {
           setError(response.message || "Failed to remove cart item");
@@ -136,16 +165,21 @@ const updateCartItem = useCallback(
         return false;
       }
     },
-    [refreshCart]
+    [isAuthenticated, user, refreshCart]
   );
 
   const clearCart = useCallback(async (): Promise<boolean> => {
+    if (!isAuthenticated || !user) {
+      setError("Please log in to clear cart");
+      return false;
+    }
+
     try {
       setError(null);
       const response = await cartService.clearCart();
 
       if (response.success) {
-        await refreshCart(); // Refresh cart data after clearing
+        await refreshCart();
         return true;
       } else {
         setError(response.message || "Failed to clear cart");
@@ -156,16 +190,74 @@ const updateCartItem = useCallback(
       setError("Failed to clear cart");
       return false;
     }
-  }, [refreshCart]);
+  }, [isAuthenticated, user, refreshCart]);
 
+  // Effect to handle auth state changes - but only when it actually changes
   useEffect(() => {
-    refreshCart();
-  }, [refreshCart, isAuthenticated]); // Add isAuthenticated as dependency
+    const wasAuthenticated = lastAuthState.current;
+    const isNowAuthenticated = isAuthenticated && user && !authLoading;
 
-  // Calculate derived values from API response
+    // Only act on actual state changes
+    if (wasAuthenticated !== isNowAuthenticated) {
+      if (!wasAuthenticated && isNowAuthenticated) {
+        // User just logged in
+        console.log("User authenticated, refreshing cart...");
+        refreshCart();
+      } else if (wasAuthenticated && !isNowAuthenticated) {
+        // User logged out
+        console.log("User logged out, clearing cart...");
+        setCart(null);
+        setError(null);
+        setIsLoading(false);
+      }
+
+      lastAuthState.current = isNowAuthenticated;
+    }
+    // Only refresh cart if user is authenticated but we don't have cart data yet
+    else if (
+      isNowAuthenticated &&
+      !cart &&
+      !isLoading &&
+      !refreshingRef.current &&
+      !authLoading
+    ) {
+      console.log("User authenticated but cart not loaded, refreshing...");
+      refreshCart();
+    }
+  }, [isAuthenticated, user, authLoading]); // Removed cart and isLoading from dependencies to prevent loops
+
+  // Listen for login success events - but only trigger once
+  useEffect(() => {
+    let hasHandledLogin = false;
+
+    const handleLoginSuccess = () => {
+      if (hasHandledLogin) return;
+      console.log(
+        "Login success event received, will refresh cart when auth updates..."
+      );
+      hasHandledLogin = true;
+    };
+
+    const handleUserDataLoaded = () => {
+      if (hasHandledLogin) return;
+      console.log("User data loaded event received, refreshing cart...");
+      if (isAuthenticated && user) {
+        refreshCart();
+        hasHandledLogin = true;
+      }
+    };
+
+    window.addEventListener("loginSuccess", handleLoginSuccess);
+    window.addEventListener("userDataLoaded", handleUserDataLoaded);
+
+    return () => {
+      window.removeEventListener("loginSuccess", handleLoginSuccess);
+      window.removeEventListener("userDataLoaded", handleUserDataLoaded);
+    };
+  }, [isAuthenticated, user, refreshCart]);
+
+  // Calculate derived values from cart data
   const cartItems = cart?.cartItems || [];
-
-  // Use API values if available, fallback to calculations
   const totalItems = cart?.totalItems ?? cartItems.length;
   const totalQuantity =
     cart?.totalQuantity ??
@@ -175,7 +267,7 @@ const updateCartItem = useCallback(
   const value: CartContextType = {
     cart,
     cartItems,
-    isLoading,
+    isLoading: isLoading || authLoading,
     error,
     totalItems,
     totalQuantity,
@@ -209,4 +301,3 @@ export function useCartSummary() {
   const { totalItems, totalQuantity, totalAmount, isLoading } = useCart();
   return { totalItems, totalQuantity, totalAmount, isLoading };
 }
-

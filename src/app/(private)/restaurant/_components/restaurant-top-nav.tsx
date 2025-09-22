@@ -96,7 +96,7 @@ export function TopResNav() {
     try {
       await authService.logout();
       await new Promise((resolve) => setTimeout(resolve, 500));
-      router.push("/");
+      window.location.href = "/";
     } catch (error) {
       console.error("Logout error:", error);
       toast.error("Something went wrong!");
@@ -210,7 +210,7 @@ export function TopResNav() {
                       <div className="p-[1px] sm:p-[2px] bg-green-50 rounded-full flex items-center justify-center">
                         {user?.profileImage ? (
                           <Image
-                            src={profileImage}
+                            src={profileImage|| "/placeholder.svg"}
                             alt={`${userName}'s profile`}
                             width={32}
                             height={32}

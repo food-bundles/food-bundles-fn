@@ -20,6 +20,7 @@ type Props = {
     isBackendAvailable: boolean;
     message?: string;
   };
+  onLoginSuccess?: (response: any) => void;
 };
 
 export function LoginModal({ isOpen, onClose, loginData }: Props) {
@@ -167,7 +168,9 @@ export function LoginModal({ isOpen, onClose, loginData }: Props) {
 
     await new Promise((resolve) => setTimeout(resolve, 500));
 
-    router.push(path);
+
+     window.location.href = path;
+    // router.push(path);
   };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
