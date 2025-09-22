@@ -64,6 +64,12 @@ export function SignupModal({
     }
   }, [isOpen]);
 
+   React.useEffect(() => {
+     const handler = () => setSelectedRole(UserRole.RESTAURANT);
+     window.addEventListener("openSignupRestaurant", handler);
+     return () => window.removeEventListener("openSignupRestaurant", handler);
+   }, []);
+
   function isValidPhone(phone: string) {
     return /^\+?[0-9]{10,15}$/.test(phone);
   }

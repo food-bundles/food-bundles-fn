@@ -1,15 +1,9 @@
 /* eslint-disable react-hooks/rules-of-hooks */
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+
 import Image from "next/image";
 import {
   Star,
@@ -119,7 +113,7 @@ function CategoryList({
       {/* Header */}
       <div className="p-6 border-b border-gray-100">
         <h2 className="text-2sm font-bold text-gray-900 whitespace-nowrap">
-          Categories
+          Categories 
         </h2>
       </div>
 
@@ -130,7 +124,7 @@ function CategoryList({
             <li key={index}>
               <button
                 onClick={() => onCategorySelect(category.name)}
-                className={`w-full text-xs text-left px-4 py-3  transition-all duration-200 flex items-center justify-between group ${
+                className={`w-full text-sm text-left px-4 py-3  transition-all duration-200 flex items-center justify-between group ${
                   selectedCategory === category.name
                     ? " text-green-700 "
                     : "text-gray-700 hover:bg-gray-50 hover:text-gray-900 "
@@ -161,7 +155,6 @@ interface ProductCardProps {
   isExpanded?: boolean;
 }
 
-// ProductCard component with original sizing maintained
 function ProductCard({
   id,
   name,
@@ -169,15 +162,12 @@ function ProductCard({
   originalPrice,
   image,
   rating,
-  category,
   discountPercent,
   isExpanded = false,
 }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const router = useRouter();
-  const { isAuthenticated, user } = useAuth();
   const { addToCart, cartItems } = useCart();
   const [isCartOpen, setIsCartOpen] = useState(false);
 
@@ -185,11 +175,6 @@ function ProductCard({
   const isInCart = cartItems.some((item) => item.productId === id);
 
   const handleCartClick = useCallback(async () => {
-    if (!isAuthenticated || !user) {
-      setIsModalOpen(true);
-      return;
-    }
-
     if (isInCart) {
       router.push("/cart");
       return;
@@ -206,67 +191,7 @@ function ProductCard({
     } finally {
       setIsAddingToCart(false);
     }
-  }, [isAuthenticated, user, isInCart, addToCart, id, router]);
-
-  // Handle pending cart products after login - but only once per session
-  useEffect(() => {
-    let hasHandledPending = false;
-
-    const handleLoginSuccess = () => {
-      if (hasHandledPending) return;
-
-      // Wait a bit for auth state to update, then check for pending products
-      setTimeout(() => {
-        if (isAuthenticated && user) {
-          const pendingProduct = localStorage.getItem("pendingCartProduct");
-          if (pendingProduct) {
-            try {
-              const productData = JSON.parse(pendingProduct);
-              if (productData.id === id) {
-                localStorage.removeItem("pendingCartProduct");
-                hasHandledPending = true;
-                // Add a small delay to ensure all state is updated
-                setTimeout(() => {
-                  handleCartClick();
-                }, 200);
-              }
-            } catch (error) {
-              console.error("Error parsing pending product:", error);
-              localStorage.removeItem("pendingCartProduct");
-            }
-          }
-        }
-      }, 300);
-    };
-
-    // Only add listener if we haven't handled pending product yet
-    if (!hasHandledPending) {
-      window.addEventListener("loginSuccess", handleLoginSuccess);
-    }
-
-    return () => {
-      window.removeEventListener("loginSuccess", handleLoginSuccess);
-    };
-  }, [isAuthenticated, user, id, handleCartClick]);
-
-  // Clean up URL params after login redirect - but only once
-  useEffect(() => {
-    let hasCleanedUrl = false;
-
-    if (isAuthenticated && user && !hasCleanedUrl) {
-      const urlParams = new URLSearchParams(window.location.search);
-      if (
-        urlParams.get("showLogin") === "true" &&
-        urlParams.get("reason") === "add_to_cart"
-      ) {
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.delete("showLogin");
-        newUrl.searchParams.delete("reason");
-        window.history.replaceState({}, "", newUrl.toString());
-        hasCleanedUrl = true;
-      }
-    }
-  }, [isAuthenticated, user]);
+  }, [isInCart, addToCart, id, router]);
 
   const renderStars = (rating: number) => {
     const stars = [];
@@ -282,28 +207,6 @@ function ProductCard({
       }
     }
     return stars;
-  };
-
-  const handleCustomerLogin = () => {
-    setIsModalOpen(false);
-    localStorage.setItem(
-      "pendingCartProduct",
-      JSON.stringify({
-        id,
-        name,
-        price,
-        originalPrice,
-        image,
-        rating,
-        category,
-      })
-    );
-    localStorage.setItem("returnUrl", window.location.href);
-
-    const currentUrl = new URL(window.location.href);
-    currentUrl.searchParams.set("showLogin", "true");
-    currentUrl.searchParams.set("reason", "add_to_cart");
-    router.push(currentUrl.toString());
   };
 
   return (
@@ -359,9 +262,7 @@ function ProductCard({
                 isHovered ? "opacity-100 scale-100" : "opacity-0 scale-95"
               }`}
             >
-              <div
-                className={"bg-green-500 rounded-full flex items-center justify-center shadow-lg p-1 sm:p-2 space-x-6 sm:space-x-8 "}
-              >
+              <div className="bg-green-500 rounded-full flex items-center justify-center shadow-lg p-1 sm:p-2 space-x-6 sm:space-x-8">
                 {/* Quick View */}
                 <button className="text-white hover:text-gray-200 transition-colors font-bold">
                   <Eye
@@ -461,32 +362,10 @@ function ProductCard({
           </div>
         </Card>
       </div>
-
-      {/* Login Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-md w-[95vw] max-w-[95vw] mx-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ShoppingCart className="w-5 h-5 text-orange-500" />
-              Login to Add to Cart
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="py-4">
-            <div className="border border-green-200 rounded-lg p-4 space-y-3 bg-green-50">
-              <Button
-                onClick={handleCustomerLogin}
-                className="w-full mt-4 bg-green-600 hover:bg-green-700"
-              >
-                Login & Add to Cart
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }
+
 
 // Main Products Section Component
 interface Product {
@@ -605,7 +484,19 @@ export function ProductsSection({
           />
 
           {/* Products Area */}
-          <div className="flex-1 bg-gray-50">
+          <div className=" flex-1 bg-gray-50">
+            <div
+              className={`${
+                isAuthenticated && user ? "flex" : "hidden"
+              } items-center w-full p-4`}
+            >
+              <h2 className="text-md animate-bounce">
+                Hello{" "}
+                <span className="font-bold text-green-500">{userName}</span>,
+                Welcome to Our Farm!
+              </h2>
+            </div>
+
             {/* Header with Mobile Menu Toggle */}
             <div className="bg-transparent px-4 sm:px-8">
               <div className="flex items-center justify-between">
@@ -639,15 +530,6 @@ export function ProductsSection({
                         ? "All Products"
                         : selectedCategory.replace(/_/g, " ")}
                     </h1>
-                    {isAuthenticated && user && (
-                      <h2 className="text-xs text-center">
-                        Hello{" "}
-                        <span className="font-bold text-green-500">
-                          {userName}
-                        </span>
-                        , Welcome to Our Farm!
-                      </h2>
-                    )}
                   </div>
                 </div>
               </div>

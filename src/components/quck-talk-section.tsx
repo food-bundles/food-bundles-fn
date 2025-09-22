@@ -26,21 +26,21 @@ function QuickTalkSection() {
     {
       name: "Kinyinya Farmers",
       favoriteProduct: "Vegetables",
-      image: "/farmers/kinyinya.jpg",
+      image: "/farmers/kinyinya-vegetables.jpg",
     },
     {
       name: "Musanze Farmers",
       phone: "+1 (555) 987-6543",
       favoriteProduct: "Fresh Fruits",
-      image: "/farmers/Fruits-farmer.jpg",
+      image: "/farmers/musanze-fruits.jpg",
     },
     {
       name: "Ntasho Farmers",
       phone: "+1 (555) 456-7890",
       favoriteProduct: "Vegetables",
-      image: "/farmers/Farmer-Gakuba_NAIZO-scaled.jpg",
+      image: "/farmers/ntashyo-vegetables.jpg",
     },
-  ]
+  ];
   
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,7 +80,7 @@ function QuickTalkSection() {
         
         {/* Our Farmers Section - Responsive */}
         <div className="pt-4 bg-white/90 backdrop-blur-sm p-3 sm:p-4 md:p-6 rounded-lg shadow-lg">
-          <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">Our Farmers</h3>
+          <h3 className="text-lg sm:text-xl md:text-2xl text-black mb-4 md:mb-6">Our Farmers</h3>
           
           {/* Farmers Grid - Responsive breakpoints */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 md:gap-6 mb-4 md:mb-6">
@@ -105,7 +105,7 @@ function QuickTalkSection() {
         {/* Contact Section - Responsive */}
         <div className="pt-4 bg-white/90 backdrop-blur-sm p-3 sm:p-4 md:p-6 rounded-lg shadow-lg">
           <CardHeader className="px-0 pb-2 sm:pb-4">
-            <p className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-700">
+            <p className="text-lg sm:text-xl md:text-2xl font-semibold text-black">
               Let&apos;s Keep in Talk
             </p>
           </CardHeader>
@@ -357,11 +357,11 @@ function QuickTalkSection() {
 export function QuickTalkWrapper() {
   return (
 
-    <div className="min-h-screen flex flex-col">
+    <div className=" flex flex-col">
       <AnimatedDotsBackground className="flex-1 bg-muted/30">
         <section id="ai-assistant" className="container mx-auto px-4 sm:px-6 lg:px-8 pb-0">
           <div className="text-center mb-8 sm:mb-12">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-4">Ask Help</h2>
+            <h2 className="text-xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-4 pt-4">Ask Help</h2>
           </div>
 
           <QuickTalkSection />

@@ -1,12 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { HeroWithRestaurants } from "@/components/hero-section";
-import { ProductsSection } from "@/components/products-section";
 import { QuickTalkWrapper } from "@/components/quck-talk-section";
 import { Suspense } from "react";
-import { categoryService } from "@/app/services/categoryService";
-import { productService } from "@/app/services/productService";
 
 function SearchLoading() {
   return (
@@ -16,45 +12,8 @@ function SearchLoading() {
   );
 }
 
-// Fetch data on the server
-async function getActiveCategories() {
-  try {
-    const response = await categoryService.getActiveCategories();
-    return response.data || [];
-  } catch (error) {
-    console.error("Error fetching active categories:", error);
-    return [];
-  }
-}
-
-// Fetch products with pagination
-async function getProducts(page = 1, limit = 10) {
-  try {
-    const response = await productService.getAllProducts();
-    return {
-      products: response.data || [],
-      pagination: response.pagination || {
-        page,
-        limit,
-        total: 0,
-        totalPages: 0,
-      },
-    };
-  } catch (error) {
-    console.error("Error fetching products:", error);
-    return {
-      products: [],
-      pagination: { page, limit, total: 0, totalPages: 0 },
-    };
-  }
-}
 
 export default async function HomePage() {
-  // Fetch data on the server
-  const [activeCategories, productsData] = await Promise.all([
-    getActiveCategories(),
-    getProducts(1, 20), // Increase limit to get more products
-  ]);
 
   const restaurants = [
     {
@@ -189,36 +148,7 @@ export default async function HomePage() {
     },
   ];
 
-  // Transform categories for the UI
-  const categories = activeCategories.map((category: any) => ({
-    name: category.name,
-    image: "/products/fresh-organic-roma-tomatoes.png",
-    productCount: productsData.products.filter(
-      (product: any) => product.category?.id === category.id
-    ).length,
-  }));
 
-  // Transform products for the UI
-  const products = productsData.products.map((product: any) => ({
-    id: product.id,
-    name: product.productName,
-    price: product.unitPrice,
-    originalPrice: product.discountedPrice || undefined,
-    image: product.images?.[0] || "/placeholder.svg",
-    category: product.category?.name || "OTHER",
-    inStock: product.quantity > 0,
-    rating: Math.random() * 2 + 3, // Random rating between 3-5
-    isNew: Math.random() > 0.5, // Randomly mark as new
-    isFeatured: Math.random() > 0.7, // Randomly mark as featured
-    discountPercent:
-      product.discountedPrice && product.unitPrice
-        ? Math.round(
-            ((product.unitPrice - product.discountedPrice) /
-              product.unitPrice) *
-              100
-          )
-        : undefined,
-  }));
 
   return (
     <Suspense fallback={<SearchLoading />}>
@@ -228,9 +158,6 @@ export default async function HomePage() {
         <div>
           <div id="home">
             <HeroWithRestaurants restaurants={restaurants} />
-          </div>
-          <div id="products">
-            <ProductsSection products={products} categories={categories} />
           </div>
           <div id="ask-help">
             <QuickTalkWrapper />

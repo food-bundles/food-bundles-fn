@@ -116,7 +116,7 @@ function CircularRestaurantAnimation({
               onMouseLeave={handleMouseLeave}
             >
               <div className="relative">
-                <div className="w-24 h-24 rounded-full p-0.5 bg-gradient-to-br from-green-400 to-green-600 shadow-lg flex items-center justify-center">
+                <div className="w-24 h-24 rounded-full p-0.5 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center  shadow-md shadow-green-400/50">
                   <div className="relative w-full h-full bg-gray-900 rounded-full overflow-hidden flex items-center justify-center">
                     <Image
                       src={restaurant.image || "/placeholder.svg"}
@@ -137,6 +137,44 @@ function CircularRestaurantAnimation({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+// Hero Image Carousel Component
+function HeroImageCarousel() {
+  const images = ["imgs/hero.jpg", "imgs/hero2.jpg", "imgs/hero3.jpg"];
+
+  const [currentImageIndex, setCurrentImageIndex] = useState(() =>
+    Math.floor(Math.random() * images.length)
+  );
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+    }, 5000); // 3 minutes = 180000ms
+
+    return () => clearInterval(interval);
+  }, [images.length]);
+
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      {images.map((image, index) => (
+        <div
+          key={image}
+          className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+            index === currentImageIndex ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <Image
+            src={image}
+            alt="Professional chef preparing fresh ingredients"
+            fill
+            className="object-cover"
+            priority={index === 0}
+          />
+        </div>
+      ))}
     </div>
   );
 }
@@ -168,14 +206,8 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
       overflow-hidden
     "
       >
-        <Image
-          src="imgs/hero.jpg"
-          alt="Professional chef preparing fresh ingredients"
-          fill
-          className="object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/70"></div>
+        <HeroImageCarousel />
+        <div className="absolute inset-0 bg-gradient-to-br from-black/50 via-black/30 to-black/50"></div>
         <div className="absolute inset-0">
           <div className="container mx-auto px-4 h-full flex items-center">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full h-full">
