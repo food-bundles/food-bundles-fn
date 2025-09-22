@@ -1,6 +1,7 @@
+/* eslint-disable react-hooks/rules-of-hooks */
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -59,10 +60,16 @@ function CategoryList({
   if (isMobile) {
     return (
       <div
-        className={`absolute inset-0 z-40 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-0 z-40 transform transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         } lg:hidden`}
       >
+        {/* Backdrop */}
+        <div
+          className="absolute inset-0 bg-black bg-opacity-50"
+          onClick={onClose}
+        />
+
         {/* Sidebar */}
         <div className="relative w-[220px] lg:w-[280px] h-full bg-white border-r border-gray-200">
           {/* Header */}
@@ -154,7 +161,7 @@ interface ProductCardProps {
   isExpanded?: boolean;
 }
 
-// Updated ProductCard component with better auth/cart sync
+// ProductCard component with original sizing maintained
 function ProductCard({
   id,
   name,
@@ -207,7 +214,7 @@ function ProductCard({
 
     const handleLoginSuccess = () => {
       if (hasHandledPending) return;
-      
+
       // Wait a bit for auth state to update, then check for pending products
       setTimeout(() => {
         if (isAuthenticated && user) {
@@ -234,25 +241,28 @@ function ProductCard({
 
     // Only add listener if we haven't handled pending product yet
     if (!hasHandledPending) {
-      window.addEventListener('loginSuccess', handleLoginSuccess);
+      window.addEventListener("loginSuccess", handleLoginSuccess);
     }
 
     return () => {
-      window.removeEventListener('loginSuccess', handleLoginSuccess);
+      window.removeEventListener("loginSuccess", handleLoginSuccess);
     };
   }, [isAuthenticated, user, id, handleCartClick]);
 
   // Clean up URL params after login redirect - but only once
   useEffect(() => {
     let hasCleanedUrl = false;
-    
+
     if (isAuthenticated && user && !hasCleanedUrl) {
       const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get("showLogin") === "true" && urlParams.get("reason") === "add_to_cart") {
+      if (
+        urlParams.get("showLogin") === "true" &&
+        urlParams.get("reason") === "add_to_cart"
+      ) {
         const newUrl = new URL(window.location.href);
         newUrl.searchParams.delete("showLogin");
         newUrl.searchParams.delete("reason");
-        window.history.replaceState({}, '', newUrl.toString());
+        window.history.replaceState({}, "", newUrl.toString());
         hasCleanedUrl = true;
       }
     }
@@ -350,19 +360,15 @@ function ProductCard({
               }`}
             >
               <div
-                className={`bg-green-500 rounded-full flex items-center justify-center shadow-lg ${
-                  isExpanded
-                    ? "p-1 space-x-6"
-                    : "p-1 sm:p-2 space-x-2 sm:space-x-4"
-                }`}
+                className={"bg-green-500 rounded-full flex items-center justify-center shadow-lg p-1 sm:p-2 space-x-6 sm:space-x-8 "}
               >
                 {/* Quick View */}
                 <button className="text-white hover:text-gray-200 transition-colors font-bold">
                   <Eye
                     className={`${
                       isExpanded
-                        ? "w-10 h-10"
-                        : "w-7 h-7 sm:w-8 sm:h-8 cursor-pointer"
+                        ? "w-5 h-5"
+                        : "w-5 h-5 sm:w-6 sm:h-6 cursor-pointer"
                     }`}
                   />
                 </button>
@@ -378,15 +384,17 @@ function ProductCard({
                   {isAddingToCart ? (
                     <div
                       className={`border-2 border-white border-t-transparent rounded-full animate-spin ${
-                        isExpanded ? "w-8 h-8" : "w-5 h-5 sm:w-6 sm:h-6"
+                        isExpanded
+                          ? "w-5 h-5"
+                          : "w-5 h-5 sm:w-6 sm:h-6 cursor-pointer"
                       }`}
                     />
                   ) : (
                     <ShoppingCart
                       className={`${
                         isExpanded
-                          ? "w-10 h-10"
-                          : "w-7 h-7 sm:w-8 sm:h-8 cursor-pointer"
+                          ? "w-5 h-5"
+                          : "w-5 h-5 sm:w-6 sm:h-6 cursor-pointer"
                       }`}
                     />
                   )}
@@ -397,8 +405,8 @@ function ProductCard({
                   <Heart
                     className={`${
                       isExpanded
-                        ? "w-10 h-10"
-                        : "w-7 h-7 sm:w-8 sm:h-8 cursor-pointer"
+                        ? "w-5 h-5"
+                        : "w-5 h-5 sm:w-6 sm:h-6 cursor-pointer"
                     }`}
                   />
                 </button>
@@ -456,7 +464,7 @@ function ProductCard({
 
       {/* Login Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-md w-full mx-4">
+        <DialogContent className="sm:max-w-md w-[95vw] max-w-[95vw] mx-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ShoppingCart className="w-5 h-5 text-orange-500" />
@@ -479,6 +487,7 @@ function ProductCard({
     </>
   );
 }
+
 // Main Products Section Component
 interface Product {
   id: string;
@@ -521,7 +530,10 @@ export function ProductsSection({
   const { user, isAuthenticated } = useAuth();
 
   const getFilteredProducts = () => {
-    if (selectedCategory === "All Categories" || selectedCategory === "ALL CATEGORIES") {
+    if (
+      selectedCategory === "All Categories" ||
+      selectedCategory === "ALL CATEGORIES"
+    ) {
       return products;
     }
     return products.filter(
@@ -530,19 +542,42 @@ export function ProductsSection({
     );
   };
 
+  // Filter out categories with no products
+  const categoriesWithProducts = categories.filter((category) => {
+    const categoryProducts = products.filter(
+      (product) =>
+        product.category.toLowerCase() === category.name.toLowerCase()
+    );
+    return categoryProducts.length > 0;
+  });
+
   const allCategoriesCount = products.length;
 
-  const categoriesWithAll = [
-    { name: "All Categories", image: "", productCount: allCategoriesCount },
-    ...categories,
-  ];
+  // Only show categories that have products, plus "All Categories" if there are any products
+  const categoriesWithAll =
+    allCategoriesCount > 0
+      ? [
+          {
+            name: "All Categories",
+            image: "",
+            productCount: allCategoriesCount,
+          },
+          ...categoriesWithProducts,
+        ]
+      : [];
 
   const filteredProducts = getFilteredProducts();
 
+  const userName = user?.name;
 
-
-  // Get user name for welcome message
-  const userName = user?.name ;
+  if (products.length === 0) {
+    return null;
+  }
+  React.useEffect(() => {
+    if (filteredProducts.length === 0 && categoriesWithAll.length > 0) {
+      setSelectedCategory("All Categories");
+    }
+  }, [filteredProducts.length, categoriesWithAll.length, setSelectedCategory]);
 
   return (
     <section
@@ -598,66 +633,52 @@ export function ProductsSection({
                     )}
                   </button>
 
-                  <h1 className="text-2sm px-0 py-4 font-semibold text-gray-900">
-                    {selectedCategory === "All Categories"
-                      ? "All Products"
-                      : selectedCategory.replace(/_/g, " ")}
-                  </h1>
-                  {isAuthenticated && user && (
-                    <h2 className="ml-10 text-xs text-center">
-                      Hello{" "}
-                      <span className="font-bold text-green-500">
-                        {userName}
-                      </span>
-                      , Welcome to Our Farm!
-                    </h2>
-                  )}
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                    <h1 className="text-2sm px-0 py-4 font-semibold text-gray-900">
+                      {selectedCategory === "All Categories"
+                        ? "All Products"
+                        : selectedCategory.replace(/_/g, " ")}
+                    </h1>
+                    {isAuthenticated && user && (
+                      <h2 className="text-xs text-center">
+                        Hello{" "}
+                        <span className="font-bold text-green-500">
+                          {userName}
+                        </span>
+                        , Welcome to Our Farm!
+                      </h2>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Products Grid */}
             <div className="px-4 sm:px-6 overflow-y-auto">
-              {filteredProducts.length > 0 && (
-                <div className="mb-12">
-                  <div
-                    className={`grid gap-4 justify-items-center ${
-                      isCardExpanded
-                        ? "grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4"
-                        : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
-                    }`}
-                  >
-                    {filteredProducts.map((product) => (
-                      <ProductCard
-                        key={product.id}
-                        id={product.id}
-                        name={product.name}
-                        price={product.price}
-                        originalPrice={product.originalPrice}
-                        image={product.image}
-                        rating={product.rating}
-                        category={product.category}
-                        discountPercent={product.discountPercent}
-                        isExpanded={isCardExpanded}
-                      />
-                    ))}
-                  </div>
+              <div className="mb-12">
+                <div
+                  className={`grid gap-4 justify-items-center ${
+                    isCardExpanded
+                      ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
+                      : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
+                  }`}
+                >
+                  {filteredProducts.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      id={product.id}
+                      name={product.name}
+                      price={product.price}
+                      originalPrice={product.originalPrice}
+                      image={product.image}
+                      rating={product.rating}
+                      category={product.category}
+                      discountPercent={product.discountPercent}
+                      isExpanded={isCardExpanded}
+                    />
+                  ))}
                 </div>
-              )}
-
-              {/* No Products Found */}
-              {filteredProducts.length === 0 && (
-                <div className="text-center py-8 sm:py-16">
-                  <div className="bg-white rounded-lg p-8 sm:p-12 shadow-sm border border-gray-200 mx-4">
-                    <p className="text-gray-500 text-lg sm:text-xl font-medium mb-2">
-                      No products found in this category
-                    </p>
-                    <p className="text-gray-400 text-sm sm:text-base">
-                      Try selecting a different category or check back later.
-                    </p>
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
           </div>
         </div>

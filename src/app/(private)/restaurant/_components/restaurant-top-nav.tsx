@@ -96,7 +96,7 @@ export function TopResNav() {
     try {
       await authService.logout();
       await new Promise((resolve) => setTimeout(resolve, 500));
-      router.push("/");
+      window.location.href = "/";
     } catch (error) {
       console.error("Logout error:", error);
       toast.error("Something went wrong!");

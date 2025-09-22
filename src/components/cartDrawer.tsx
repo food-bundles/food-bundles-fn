@@ -78,12 +78,12 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
           {/* Clear cart button */}
           {cartItems.length > 0 && (
             <div className="flex justify-between items-center">
-              <p className="text-gray-600 text-sm sm:text-xs">
+              <p className="text-gray-600 text-sm sm:text-xs lg:text-sm">
                 You have {totalItems} items in your cart
               </p>
               <button
                 onClick={handleClearCart}
-                className="text-red-600 text-sm sm:text-xs hover:text-red-500 border-0 shadow-none hover:bg-transparent bg-transparent px-1"
+                className="text-red-600 text-sm sm:text-xs lg:text-sm hover:text-red-500 border-0 shadow-none hover:bg-transparent bg-transparent px-1"
               >
                 Clear Cart
               </button>
@@ -145,7 +145,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 </span>
               </div>
               <Link href="/restaurant/checkout">
-                <Button className="w-full py-3 sm:py-2 text-sm sm:text-xs bg-green-600 hover:bg-green-700 rounded-full">
+                <Button className="w-full py-3 sm:py-2 text-sm sm:text-xs bg-green-600 hover:bg-green-700 rounded-none">
                   Proceed to CheckOut
                 </Button>
               </Link>
@@ -221,20 +221,20 @@ function CartItem({
 
           {/* Product Info */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 text-sm sm:text-xs mb-1 truncate">
+            <h3 className="font-semibold text-gray-900 lg:text-sm text-xs mb-1 truncate">
               {item.product?.productName ||
                 item.productName ||
                 "Unknown Product"}
             </h3>
-            <p className="text-sm sm:text-xs text-gray-600">
+            <p className="lg:text-sm text-xs text-gray-600">
               {item.unitPrice}
-              <span className="ml-1 text-xs sm:text-[10px]">
+              <span className="ml-1 text-xs">
                 Rwf/{item.product?.unit || item.unit || "unit"}
               </span>
             </p>
-            <p className="text-green-700 font-medium text-sm sm:text-xs">
+            <p className="text-green-700 font-medium lg:text-sm text-xs">
               {totalAmount}
-              <span className="ml-1 text-xs sm:text-[10px]">
+              <span className="ml-1 text-xs">
                 Rwf/{item.quantity}
                 {item.product?.unit || item.unit}
               </span>
