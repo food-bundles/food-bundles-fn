@@ -15,12 +15,33 @@ function QuickTalkSection() {
   const [messages, setMessages] = useState([
     {
       id: 1,
-      text: "Hi! I'm AI Assistant. How can I help you with your restaurant supply needs today?",
+      text: "Hi! I'm Food bundle Assistant. How can I help you with your restaurant supply needs today?",
+
       sender: "bot",
       time: "10:30 AM",
     },
   ]);
 
+  const farmers = [
+    {
+      name: "Kinyinya Farmers",
+      favoriteProduct: "Vegetables",
+      image: "/farmers/kinyinya.jpg",
+    },
+    {
+      name: "Musanze Farmers",
+      phone: "+1 (555) 987-6543",
+      favoriteProduct: "Fresh Fruits",
+      image: "/farmers/Fruits-farmer.jpg",
+    },
+    {
+      name: "Ntasho Farmers",
+      phone: "+1 (555) 456-7890",
+      favoriteProduct: "Vegetables",
+      image: "/farmers/Farmer-Gakuba_NAIZO-scaled.jpg",
+    },
+  ]
+  
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim()) {
@@ -54,135 +75,114 @@ function QuickTalkSection() {
 
   return (
     <>
-      <div className="grid md:grid-cols-2 gap-8">
-        {/* Our Farmers */}
-        <div className="pt-4 bg-white/90 backdrop-blur-sm p-4 rounded-lg shadow-lg">
-          <p className="text-2xl font-semibold text-gray-700 mb-2">
-            Our Partner Farmers
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-4 items-center">
-            <Image
-              src="/farmers/farmer.jpg"
-              alt="farmer"
-              width={160}
-              height={40}
-              className="w-[10rem] h-[10rem] rounded-full"
-            />
-            <Image
-              src="/farmers/farmer.jpg"
-              alt="farmer"
-              width={160}
-              height={40}
-              className="w-[10rem] h-[10rem] rounded-full"
-            />
-            <Image
-              src="/farmers/profile.jpg"
-              alt="farmer"
-              width={160}
-              height={160}
-              className="w-[10rem] h-[10rem] rounded-full"
-            />
-            <Image
-              src="/farmers/farmer1.jpg"
-              alt="farmer"
-              width={160}
-              height={40}
-              className="w-[10rem] h-[10rem] rounded-full"
-            />
-            <Image
-              src="/farmers/profile.jpg"
-              alt="farmer"
-              width={160}
-              height={40}
-              className="w-[10rem] h-[10rem] rounded-full"
-            />
-            <Image
-              src="/farmers/farmer1.jpg"
-              alt="farmer"
-              width={160}
-              height={60}
-              className="w-[10rem] h-[10rem] rounded-full"
-            />
+      {/* Main Grid - Responsive for all screen sizes */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        
+        {/* Our Farmers Section - Responsive */}
+        <div className="pt-4 bg-white/90 backdrop-blur-sm p-3 sm:p-4 md:p-6 rounded-lg shadow-lg">
+          <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">Our Farmers</h3>
+          
+          {/* Farmers Grid - Responsive breakpoints */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 md:gap-6 mb-4 md:mb-6">
+            {farmers.map((farmer, index) => (
+              <div key={index} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow">
+                <Image
+                  src={farmer.image || "/placeholder.svg"}
+                  alt={farmer.name}
+                  width={300}
+                  height={200}
+                  className="w-full h-32 sm:h-36 md:h-38 object-cover"
+                />
+                <div className="p-3 sm:p-4 text-center">
+                  <h4 className="font-medium text-sm sm:text-base text-black-800 mb-2">{farmer.name}</h4>
+                  <p className="text-xs sm:text-sm text-green-600">{farmer.favoriteProduct}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="pt-4 bg-white/90 backdrop-blur-sm p-4 rounded-lg shadow-lg">
-          <CardHeader>
-            <p className="text-2xl font-semibold text-gray-700">
+        {/* Contact Section - Responsive */}
+        <div className="pt-4 bg-white/90 backdrop-blur-sm p-3 sm:p-4 md:p-6 rounded-lg shadow-lg">
+          <CardHeader className="px-0 pb-2 sm:pb-4">
+            <p className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-700">
               Let&apos;s Keep in Talk
             </p>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Mail className="h-4 w-4 text-primary" />
-                  <div>
-                    <p className="font-medium">Email Support</p>
+          
+          <CardContent className="px-0 space-y-3 sm:space-y-4">
+            {/* Contact Info and Chat Button Layout - Responsive */}
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+              
+              {/* Contact Information - Responsive spacing */}
+              <div className="w-full lg:w-auto space-y-2 sm:space-y-3">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <Mail className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm sm:text-base">Email Support</p>
                     <a
                       href="mailto:sales@food.rw"
-                      className="text-sm text-muted-foreground hover:text-primary"
+                      className="text-xs sm:text-sm text-muted-foreground hover:text-primary break-all"
                     >
                       sales@food.rw
                     </a>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <Phone className="h-4 w-4 text-primary" />
-                  <div>
-                    <p className="font-medium">Phone Support</p>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <Phone className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm sm:text-base">Phone Support</p>
                     <a
                       href="tel:+250796897823"
-                      className="text-sm text-muted-foreground hover:text-primary"
+                      className="text-xs sm:text-sm text-muted-foreground hover:text-primary"
                     >
                       +250 796 897 823
                     </a>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <MapPin className="h-4 w-4 text-primary" />
-                  <div>
-                    <p className="font-medium">Company Location</p>
-                    <p className="text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm sm:text-base">Company Location</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       KG 5 Ave, Kigali
                     </p>
                   </div>
                 </div>
               </div>
-              <div>
-                <div className="flex flex-col items-center gap-2 mb-4">
-                  {/* AI Button moved here (static, no bounce) */}
-                  {!isChatOpen && (
-                    <Button
-                      onClick={() => setIsChatOpen(true)}
-                      className="cursor-pointer hover:scale-105 transition-transform bg-transparent hover:bg-transparent border border-green-500 p-0 w-20 rounded-full h-20 text-green-500"
-                    >
-                      Ask Help
-                    </Button>
-                  )}
-                </div>
+
+              
+              {/* Chat Button - Responsive positioning */}
+              <div className="w-full lg:w-auto flex  flex-col items-center gap-2 mb-2 mr-2">
+                <Button
+                  onClick={() => setIsChatOpen(true)}
+                  className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-green-500 hover:bg-primary/90 text-primary-foreground shadow-lg z-50"
+                >
+                  <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
+                </Button>
+                 <p>What&apos;s Up</p>
               </div>
             </div>
-
-            <div className="pt-4 border-t">
-              <p className="text-sm font-medium mb-3">Connect with us</p>
-              <div className="flex justify-between gap-2">
-                <div className="flex gap-3">
-                  {/* socials unchanged */}
+              
+            {/* Social Media and Quick Info - Responsive layout */}
+            <div className="pt-3 sm:pt-4 border-t">
+              <p className="text-xs sm:text-sm font-medium mb-2 sm:mb-3">Connect with us</p>
+              
+              {/* Responsive flex layout */}
+              <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-2">
+                
+                {/* Social Media Icons - Responsive sizing */}
+                <div className="flex gap-2 sm:gap-3 justify-center sm:justify-start">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() =>
-                      window.open(
-                        "https://linkedin.com/company/sostene",
-                        "_blank"
-                      )
-                    }
+                    className="h-8 w-8 sm:h-10 sm:w-10 p-0"
+                    onClick={() => window.open("", "_blank")}
                   >
                     <svg
-                      className="h-4 w-4"
+                      className="h-3 w-3 sm:h-4 sm:w-4"
                       viewBox="0 0 24 24"
                       fill="currentColor"
                     >
@@ -193,12 +193,11 @@ function QuickTalkSection() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() =>
-                      window.open("https://twitter.com/sostene", "_blank")
-                    }
+                    className="h-8 w-8 sm:h-10 sm:w-10 p-0"
+                    onClick={() => window.open("", "_blank")}
                   >
                     <svg
-                      className="h-4 w-4"
+                      className="h-3 w-3 sm:h-4 sm:w-4"
                       viewBox="0 0 24 24"
                       fill="currentColor"
                     >
@@ -209,12 +208,11 @@ function QuickTalkSection() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() =>
-                      window.open("https://instagram.com/sostene", "_blank")
-                    }
+                    className="h-8 w-8 sm:h-10 sm:w-10 p-0"
+                    onClick={() => window.open("", "_blank")}
                   >
                     <svg
-                      className="h-4 w-4"
+                      className="h-3 w-3 sm:h-4 sm:w-4"
                       viewBox="0 0 24 24"
                       fill="currentColor"
                     >
@@ -222,21 +220,31 @@ function QuickTalkSection() {
                     </svg>
                   </Button>
                 </div>
-                <div>
-                  <p className="text-sm ">
-                    USSD Code:{" "}
-                    <span className="text-green-500 text-2xl font-semibold">
-                      *#
-                    </span>
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <p className="text-sm">
-                    Emmergence Call{" "}
-                    <span className="text-red-500 text-2xl font-semibold">
-                      *#
-                    </span>
-                  </p>{" "}
+                
+                {/* USSD and Emergency - Responsive layout */}
+                <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
+                  <div className="text-center sm:text-left">
+                    <p className="text-xs sm:text-sm">
+                      USSD Code:{" "}
+                      <span className="text-green-500 text-sm sm:text-base font-semibold">
+                        883
+                      </span>
+                    </p>
+                  </div>
+                  
+                  <div className="text-center sm:text-left">
+                    <p className="text-xs sm:text-sm">
+                      Emergency Call{" "}
+                      <span className="text-red-500 text-sm sm:text-base font-semibold">
+                        <a
+                          href="tel:+250796897823"
+                          className="hover:text-primary"
+                        >
+                          +250 796 897 823
+                        </a>
+                      </span>
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -244,14 +252,16 @@ function QuickTalkSection() {
         </div>
       </div>
 
-      {/* WhatsApp Floating Button (was AI, now bounce) */}
+
+      {/* Floating WhatsApp Button - Responsive sizing */}
       {!isChatOpen && (
         <button
           onClick={() => window.open("https://wa.me/250796897823", "_blank")}
-          className="fixed bottom-18 right-18 w-2 h-2 rounded-full bg-green-500 text-primary-foreground shadow-lg z-50 animate-bounce"
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center cursor-pointer rounded-full bg-green-500 hover:bg-primary/90 text-primary-foreground shadow-lg animate-bounce z-50 hover:scale-105 transition-transform"
         >
           <svg
-            className="h-15 w-15 text-green-500"
+            className="h-6 w-6 sm:h-8 sm:w-8 text-white-500"
+
             viewBox="0 0 24 24"
             fill="currentColor"
           >
@@ -260,22 +270,25 @@ function QuickTalkSection() {
         </button>
       )}
 
-      {/* Chat Window */}
+      {/* Chat Window - Responsive sizing and positioning */}
       {isChatOpen && (
-        <div className="fixed bottom-6 right-6 w-80 h-96 bg-background border border-border rounded-lg shadow-xl z-50 flex flex-col">
-          {/* Chat Header */}
-          <div className="flex items-center justify-between p-4 border-b border-border">
-            <div className="flex items-center gap-3">
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-[calc(100vw-2rem)] max-w-sm sm:w-80 h-[70vh] sm:h-96 bg-background border border-border rounded-lg shadow-xl z-50 flex flex-col">
+          
+          {/* Chat Header - Responsive padding */}
+          <div className="flex items-center justify-between p-3 sm:p-4 border-b border-border">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="relative">
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                  <span className="text-primary-foreground font-semibold text-sm">
+
+                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary rounded-full flex items-center justify-center">
+                  <span className="text-primary-foreground font-semibold text-xs sm:text-sm">
+
                     S
                   </span>
                 </div>
-                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border border-background" />
+                <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-500 rounded-full border border-background" />
               </div>
               <div>
-                <h4 className="font-semibold text-sm">Quick Talk</h4>
+                <h4 className="font-semibold text-xs sm:text-sm">Quick Talk</h4>
                 <p className="text-green-500 text-xs">Online</p>
               </div>
             </div>
@@ -283,13 +296,14 @@ function QuickTalkSection() {
               variant="ghost"
               size="sm"
               onClick={() => setIsChatOpen(false)}
+              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
           </div>
 
-          {/* Chat Messages */}
-          <div className="flex-1 p-4 overflow-y-auto space-y-3">
+          {/* Chat Messages - Responsive padding and sizing */}
+          <div className="flex-1 p-3 sm:p-4 overflow-y-auto space-y-2 sm:space-y-3">
             {messages.map((msg) => (
               <div
                 key={msg.id}
@@ -298,7 +312,7 @@ function QuickTalkSection() {
                 }`}
               >
                 <div
-                  className={`max-w-xs px-3 py-2 rounded-lg text-sm ${
+                  className={`max-w-xs px-3 py-2 rounded-lg text-xs sm:text-sm ${
                     msg.sender === "user"
                       ? "bg-green-500 text-primary-foreground"
                       : "bg-muted text-muted-foreground"
@@ -311,24 +325,26 @@ function QuickTalkSection() {
             ))}
           </div>
 
-          {/* Chat Input */}
+          {/* Chat Input - Responsive padding and sizing */}
           <form
             onSubmit={handleSendMessage}
-            className="p-4 border-t border-border"
+            className="p-3 sm:p-4 border-t border-border"
           >
             <div className="flex gap-2">
               <Input
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Type a message..."
-                className="flex-1"
+                className="flex-1 text-sm h-8 sm:h-10"
               />
               <Button
                 type="submit"
                 size="sm"
-                className="bg-green-500 hover:bg-green-500/90 text-primary-foreground"
+
+                className="bg-primary hover:bg-primary/90 text-primary-foreground h-8 w-8 sm:h-10 sm:w-10 p-0"
+
               >
-                <Send className="h-4 w-4" />
+                <Send className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </div>
           </form>
@@ -340,14 +356,17 @@ function QuickTalkSection() {
 
 export function QuickTalkWrapper() {
   return (
-    <AnimatedDotsBackground className="py-20 bg-muted/30">
-      <section id="ai-assistant" className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl lg:text-4xl font-bold mb-4">Ask Help</h2>
-        </div>
 
-        <QuickTalkSection />
-      </section>
-    </AnimatedDotsBackground>
+    <div className="min-h-screen flex flex-col">
+      <AnimatedDotsBackground className="flex-1 bg-muted/30">
+        <section id="ai-assistant" className="container mx-auto px-4 sm:px-6 lg:px-8 pb-0">
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-4">Ask Help</h2>
+          </div>
+
+          <QuickTalkSection />
+        </section>
+      </AnimatedDotsBackground>
+    </div>
   );
 }
