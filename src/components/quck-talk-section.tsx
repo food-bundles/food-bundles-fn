@@ -4,7 +4,7 @@ import type React from "react";
 import { CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, Phone, MapPin, Send, X } from "lucide-react";
+import { Mail, Phone, MapPin, Send, X, MessageCircle } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
 import { AnimatedDotsBackground } from "./animated-dots-background";
