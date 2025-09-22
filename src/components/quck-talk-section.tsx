@@ -4,7 +4,7 @@ import type React from "react";
 import { CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MessageCircle, Mail, Phone, MapPin, Send, X } from "lucide-react";
+import { Mail, Phone, MapPin, Send, X } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
 import { AnimatedDotsBackground } from "./animated-dots-background";
@@ -16,6 +16,7 @@ function QuickTalkSection() {
     {
       id: 1,
       text: "Hi! I'm Food bundle Assistant. How can I help you with your restaurant supply needs today?",
+
       sender: "bot",
       time: "10:30 AM",
     },
@@ -151,6 +152,7 @@ function QuickTalkSection() {
                   </div>
                 </div>
               </div>
+
               
               {/* Chat Button - Responsive positioning */}
               <div className="w-full lg:w-auto flex  flex-col items-center gap-2 mb-2 mr-2">
@@ -250,6 +252,7 @@ function QuickTalkSection() {
         </div>
       </div>
 
+
       {/* Floating WhatsApp Button - Responsive sizing */}
       {!isChatOpen && (
         <button
@@ -258,6 +261,7 @@ function QuickTalkSection() {
         >
           <svg
             className="h-6 w-6 sm:h-8 sm:w-8 text-white-500"
+
             viewBox="0 0 24 24"
             fill="currentColor"
           >
@@ -274,8 +278,10 @@ function QuickTalkSection() {
           <div className="flex items-center justify-between p-3 sm:p-4 border-b border-border">
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="relative">
+
                 <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary rounded-full flex items-center justify-center">
                   <span className="text-primary-foreground font-semibold text-xs sm:text-sm">
+
                     S
                   </span>
                 </div>
@@ -308,7 +314,7 @@ function QuickTalkSection() {
                 <div
                   className={`max-w-xs px-3 py-2 rounded-lg text-xs sm:text-sm ${
                     msg.sender === "user"
-                      ? "bg-primary text-primary-foreground"
+                      ? "bg-green-500 text-primary-foreground"
                       : "bg-muted text-muted-foreground"
                   }`}
                 >
@@ -334,7 +340,9 @@ function QuickTalkSection() {
               <Button
                 type="submit"
                 size="sm"
+
                 className="bg-primary hover:bg-primary/90 text-primary-foreground h-8 w-8 sm:h-10 sm:w-10 p-0"
+
               >
                 <Send className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
@@ -348,6 +356,7 @@ function QuickTalkSection() {
 
 export function QuickTalkWrapper() {
   return (
+
     <div className="min-h-screen flex flex-col">
       <AnimatedDotsBackground className="flex-1 bg-muted/30">
         <section id="ai-assistant" className="container mx-auto px-4 sm:px-6 lg:px-8 pb-0">

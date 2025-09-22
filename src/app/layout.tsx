@@ -5,6 +5,7 @@ import { AuthProvider } from "./contexts/auth-context";
 import { Toaster } from "@/components/ui/sonner";
 import { CartProvider } from "./contexts/cart-context";
 import { CategoryProvider } from "./contexts/category-context";
+import { ProductProvider } from "./contexts/product-context";
 
 // const geistSans = Geist({
 //   variable: "--font-geist-sans",
@@ -34,9 +35,11 @@ export default function RootLayout({
     <html lang="en">
       <body suppressHydrationWarning>
         <AuthProvider>
-          <CartProvider>
-            <CategoryProvider>{children}</CategoryProvider>
-          </CartProvider>
+          <ProductProvider>
+            <CartProvider>
+              <CategoryProvider>{children}</CategoryProvider>
+            </CartProvider>
+          </ProductProvider>
         </AuthProvider>
         <Toaster />
       </body>

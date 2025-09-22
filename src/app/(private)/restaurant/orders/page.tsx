@@ -119,7 +119,7 @@ export default function RestaurantOrdersPage() {
   const handleRefresh = async () => {
     try {
       await refreshOrders();
-      toast.success("Orders refreshed successfully");
+      // toast.success("Orders refreshed successfully");
     } catch (err) {
       toast.error("Failed to refresh orders");
     }
@@ -185,23 +185,9 @@ export default function RestaurantOrdersPage() {
               <h1 className="text-2xl font-bold text-gray-900">
                 Orders Management
               </h1>
-              <p className="text-gray-600">
-                Manage and track all your restaurant orders (
-                {filteredData.length} orders found)
-              </p>
+   
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                onClick={handleRefresh}
-                variant="outline"
-                size="sm"
-                disabled={loading}
-              >
-                <RefreshCw
-                  className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
-                />
-                Refresh
-              </Button>
               <Button onClick={handleExport} variant="outline" size="sm">
                 Export
               </Button>
