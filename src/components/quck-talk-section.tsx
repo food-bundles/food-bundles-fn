@@ -77,15 +77,19 @@ function QuickTalkSection() {
     <>
       {/* Main Grid - Responsive for all screen sizes */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        
         {/* Our Farmers Section - Responsive */}
         <div className="pt-4 bg-white/90 backdrop-blur-sm p-3 sm:p-4 md:p-6 rounded-lg shadow-lg">
-          <h3 className="text-lg sm:text-xl md:text-2xl text-black mb-4 md:mb-6">Our Farmers</h3>
-          
+          <h3 className="font-semibold  text-lg sm:text-xl md:text-2xl text-black mb-4 md:mb-6">
+            Our Farmers
+          </h3>
+
           {/* Farmers Grid - Responsive breakpoints */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 md:gap-6 mb-4 md:mb-6">
             {farmers.map((farmer, index) => (
-              <div key={index} className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow">
+              <div
+                key={index}
+                className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow"
+              >
                 <Image
                   src={farmer.image || "/placeholder.svg"}
                   alt={farmer.name}
@@ -94,8 +98,12 @@ function QuickTalkSection() {
                   className="w-full h-32 sm:h-36 md:h-38 object-cover"
                 />
                 <div className="p-3 sm:p-4 text-center">
-                  <h4 className="font-medium text-sm sm:text-base text-black-800 mb-2">{farmer.name}</h4>
-                  <p className="text-xs sm:text-sm text-green-600">{farmer.favoriteProduct}</p>
+                  <h4 className="font-medium text-sm sm:text-base text-black-800 mb-2">
+                    {farmer.name}
+                  </h4>
+                  <p className="text-xs sm:text-sm text-green-600">
+                    {farmer.favoriteProduct}
+                  </p>
                 </div>
               </div>
             ))}
@@ -109,17 +117,18 @@ function QuickTalkSection() {
               Let&apos;s Keep in Talk
             </p>
           </CardHeader>
-          
+
           <CardContent className="px-0 space-y-3 sm:space-y-4">
             {/* Contact Info and Chat Button Layout - Responsive */}
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-              
               {/* Contact Information - Responsive spacing */}
               <div className="w-full lg:w-auto space-y-2 sm:space-y-3">
                 <div className="flex items-center gap-2 sm:gap-3">
                   <Mail className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="font-medium text-sm sm:text-base">Email Support</p>
+                    <p className="font-medium text-sm sm:text-base">
+                      Email Support
+                    </p>
                     <a
                       href="mailto:sales@food.rw"
                       className="text-xs sm:text-sm text-muted-foreground hover:text-primary break-all"
@@ -132,7 +141,9 @@ function QuickTalkSection() {
                 <div className="flex items-center gap-2 sm:gap-3">
                   <Phone className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="font-medium text-sm sm:text-base">Phone Support</p>
+                    <p className="font-medium text-sm sm:text-base">
+                      Phone Support
+                    </p>
                     <a
                       href="tel:+250796897823"
                       className="text-xs sm:text-sm text-muted-foreground hover:text-primary"
@@ -145,7 +156,9 @@ function QuickTalkSection() {
                 <div className="flex items-center gap-2 sm:gap-3">
                   <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="font-medium text-sm sm:text-base">Company Location</p>
+                    <p className="font-medium text-sm sm:text-base">
+                      Company Location
+                    </p>
                     <p className="text-xs sm:text-sm text-muted-foreground">
                       KG 5 Ave, Kigali
                     </p>
@@ -153,7 +166,6 @@ function QuickTalkSection() {
                 </div>
               </div>
 
-              
               {/* Chat Button - Responsive positioning */}
               <div className="w-full lg:w-auto flex  flex-col items-center gap-2 mb-2 mr-2">
                 <Button
@@ -162,17 +174,18 @@ function QuickTalkSection() {
                 >
                   <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
                 </Button>
-                 <p>What&apos;s Up</p>
+                <p>What&apos;s Up</p>
               </div>
             </div>
-              
+
             {/* Social Media and Quick Info - Responsive layout */}
             <div className="pt-3 sm:pt-4 border-t">
-              <p className="text-xs sm:text-sm font-medium mb-2 sm:mb-3">Connect with us</p>
-              
+              <p className="text-xs sm:text-sm font-medium mb-2 sm:mb-3">
+                Connect with us
+              </p>
+
               {/* Responsive flex layout */}
               <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-2">
-                
                 {/* Social Media Icons - Responsive sizing */}
                 <div className="flex gap-2 sm:gap-3 justify-center sm:justify-start">
                   <Button
@@ -220,7 +233,7 @@ function QuickTalkSection() {
                     </svg>
                   </Button>
                 </div>
-                
+
                 {/* USSD and Emergency - Responsive layout */}
                 <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
                   <div className="text-center sm:text-left">
@@ -231,7 +244,7 @@ function QuickTalkSection() {
                       </span>
                     </p>
                   </div>
-                  
+
                   <div className="text-center sm:text-left">
                     <p className="text-xs sm:text-sm">
                       Emergency Call{" "}
@@ -252,7 +265,6 @@ function QuickTalkSection() {
         </div>
       </div>
 
-
       {/* Floating WhatsApp Button - Responsive sizing */}
       {!isChatOpen && (
         <button
@@ -261,7 +273,6 @@ function QuickTalkSection() {
         >
           <svg
             className="h-6 w-6 sm:h-8 sm:w-8 text-white-500"
-
             viewBox="0 0 24 24"
             fill="currentColor"
           >
@@ -273,15 +284,12 @@ function QuickTalkSection() {
       {/* Chat Window - Responsive sizing and positioning */}
       {isChatOpen && (
         <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-[calc(100vw-2rem)] max-w-sm sm:w-80 h-[70vh] sm:h-96 bg-background border border-border rounded-lg shadow-xl z-50 flex flex-col">
-          
           {/* Chat Header - Responsive padding */}
           <div className="flex items-center justify-between p-3 sm:p-4 border-b border-border">
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="relative">
-
                 <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary rounded-full flex items-center justify-center">
                   <span className="text-primary-foreground font-semibold text-xs sm:text-sm">
-
                     S
                   </span>
                 </div>
@@ -340,9 +348,7 @@ function QuickTalkSection() {
               <Button
                 type="submit"
                 size="sm"
-
                 className="bg-primary hover:bg-primary/90 text-primary-foreground h-8 w-8 sm:h-10 sm:w-10 p-0"
-
               >
                 <Send className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>

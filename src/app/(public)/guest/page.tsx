@@ -27,10 +27,11 @@ function GuestRequirementsNotice() {
           <p className="text-xs -medium text-gray-900">
             <span className="">
               Minimum order should be{" "}
-              <span className="font-semibold text-red-500">100,000 </span> Rwf
+              <span className="font-bold text-red-500">100,000 </span> Rwf
             </span>
             <br />
-            Orders below this amount will have additional delivery fees applied.
+            Orders below this amount will have additional{" "}
+            <span className="text-red-500 font-bold">delivery fees</span> applied.
           </p>
         </div>
         <div className="flex items-end gap-2">
