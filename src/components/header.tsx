@@ -63,7 +63,6 @@ export function Header() {
     { label: "Ask help", href: "#ask-help", id: "ask-help" },
   ];
 
-
   const scrollToSection = useCallback((sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
@@ -504,30 +503,32 @@ export function Header() {
                         )}
                       </a>
 
-                      {/* Mobile Shop Categories */}
+                      {/* Mobile Subscribe Options */}
                       {item.hasDropdown && isShopDropdownOpen && (
-                        <div className="ml-4 mt-2 space-y-1">
+                        <div className="ml-4 mt-2 space-y-2">
                           <button
                             onClick={() => {
-                              handleCategoryClick("All Categories");
+                              setIsSignupModalOpen(true);
+                              window.dispatchEvent(
+                                new CustomEvent("openSignupRestaurant")
+                              );
                               setIsMenuOpen(false);
+                              setIsShopDropdownOpen(false);
                             }}
-                            className="block w-full text-left px-2 py-1 text-sm text-green-200 hover:text-white transition-colors"
+                            className="block w-full text-left px-2 py-2 text-sm text-green-200 hover:text-white transition-colors"
                           >
-                            All Products
+                            Subscribe as Restaurant
                           </button>
-                          {activeCategories.map((category) => (
-                            <button
-                              key={category.id}
-                              onClick={() => {
-                                handleCategoryClick(category.name);
-                                setIsMenuOpen(false);
-                              }}
-                              className="block w-full text-left px-2 py-1 text-sm text-green-200 hover:text-white transition-colors"
-                            >
-                              {category.name.replace(/_/g, " ")}
-                            </button>
-                          ))}
+                          <button
+                            onClick={() => {
+                              setIsMenuOpen(false);
+                              setIsShopDropdownOpen(false);
+                              window.location.href = "/guest";
+                            }}
+                            className="block w-full text-left px-2 py-2 text-sm text-green-200 hover:text-white transition-colors"
+                          >
+                            Subscribe as Guest
+                          </button>
                         </div>
                       )}
                     </div>
