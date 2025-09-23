@@ -16,8 +16,10 @@ interface User {
   name?: string;
   username?: string;
   email: string;
+  phone?: string;
   role: string;
   profileImage?: string;
+  location?: string;
 }
 
 interface AuthContextType {
@@ -58,6 +60,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (response.success && response.user) {
         setUser(response.user);
         setIsAuthenticated(true);
+      setIsLoading(false);
       } else {
         setUser(null);
         setIsAuthenticated(false);
@@ -66,6 +69,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       console.error("Auth check failed:", error);
       setUser(null);
       setIsAuthenticated(false);
+      
     } finally {
       setIsLoading(false);
       setIsInitialCheckDone(true);

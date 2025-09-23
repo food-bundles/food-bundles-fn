@@ -5,7 +5,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowUpDown, Eye } from "lucide-react";
+import {  Eye } from "lucide-react";
 
 export type OrderStatus =
   | "pending"
@@ -49,12 +49,6 @@ const getStatusColor = (status: OrderStatus) => {
   }
 };
 
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount);
-};
 
 export const ordersColumns = (
   onView: (order: Order) => void
@@ -91,7 +85,6 @@ export const ordersColumns = (
           className="h-auto p-0 font-medium"
         >
           Order ID
-          <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
@@ -110,8 +103,7 @@ export const ordersColumns = (
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium"
         >
-          Customer Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          Name
         </Button>
       );
     },
@@ -129,7 +121,6 @@ export const ordersColumns = (
           className="h-auto p-0 font-medium"
         >
           Order Date
-          <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
@@ -157,13 +148,12 @@ export const ordersColumns = (
           className="h-auto p-0 font-medium"
         >
           Total Amount
-          <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
     cell: ({ row }) => (
       <div className="font-medium text-green-600">
-        {formatCurrency(row.getValue("totalAmount"))}
+        {row.getValue("totalAmount")} Rwf
       </div>
     ),
   },
@@ -202,7 +192,7 @@ export const ordersColumns = (
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-800 hover:bg-blue-50 cursor-pointer"
+            className="h-8 w-8 p-0  hover:bg-blue-50 cursor-pointer"
             onClick={() => onView(order)}
             title="View Order Details"
           >

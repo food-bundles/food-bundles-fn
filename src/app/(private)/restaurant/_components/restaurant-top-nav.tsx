@@ -1,26 +1,20 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { useState } from "react";
-import { Bell, ShoppingCart, Menu, X } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { ShoppingCart, Menu, X, UserPlus, Home } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import NotificationsDrawer from "./notificationDrawer";
 import Image from "next/image";
 import { authService } from "@/app/services/authService";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/app/contexts/auth-context";
-import { useCartSummary } from "@/app/contexts/cart-context";
+import { useCategory } from "@/app/contexts/category-context";
 import { toast } from "sonner";
-import CartDrawer from "@/components/cartDrawer";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const sampleNotifications = [
   {
@@ -71,14 +65,18 @@ const sampleNotifications = [
 ];
 
 export function TopResNav() {
-  const router = useRouter();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const { user, getUserProfileImage } = useAuth();
 
-  const { totalItems, totalQuantity, isLoading } = useCartSummary();
+  const { activeCategories, isLoading: categoriesLoading } = useCategory();
+
+  // Refs for hover timeout management
+  const categoryDropdownTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const unreadCount = sampleNotifications.filter((n) => !n.isRead).length;
   const pathname = usePathname();
@@ -87,9 +85,33 @@ export function TopResNav() {
     { href: "/restaurant", label: "Shop" },
     { href: "/restaurant/orders", label: "Orders" },
     { href: "/restaurant/help", label: "Help & Support" },
-    // { href: "/restaurant/settings", label: "Settings" },
     { href: "/restaurant/dashboard", label: "Dashboard" },
   ];
+
+  // Handle category selection
+  const handleCategorySelect = (categoryName: string) => {
+    // Dispatch custom event for product section to listen to
+    const event = new CustomEvent("categorySelected", {
+      detail: categoryName,
+    });
+    window.dispatchEvent(event);
+    setIsCategoryDropdownOpen(false);
+    setIsMobileMenuOpen(false);
+  };
+
+  // Category hover handlers
+  const handleCategoryMouseEnter = () => {
+    if (categoryDropdownTimeout.current) {
+      clearTimeout(categoryDropdownTimeout.current);
+    }
+    setIsCategoryDropdownOpen(true);
+  };
+
+  const handleCategoryMouseLeave = () => {
+    categoryDropdownTimeout.current = setTimeout(() => {
+      setIsCategoryDropdownOpen(false);
+    }, 150); // Small delay to prevent flickering
+  };
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -109,33 +131,55 @@ export function TopResNav() {
 
   // Get user profile image with fallback
   const profileImage = getUserProfileImage();
-  const userName = user?.name || user?.name || "User";
+  const userName = user?.name || user?.name || "";
 
-  console.log("TopResNav - Current user:", user);
-  console.log("TopResNav - Profile image:", profileImage);
-  console.log("TopResNav - User name:", userName);
-  console.log("TopResNav - Cart total items:", totalItems);
-  console.log("TopResNav - Cart total quantity:", totalQuantity);
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest(".category-dropdown")) {
+        setIsCategoryDropdownOpen(false);
+      }
+      if (!target.closest(".profile-dropdown")) {
+        setIsProfileDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (categoryDropdownTimeout.current) {
+        clearTimeout(categoryDropdownTimeout.current);
+      }
+    };
+  }, []);
+
+
 
   return (
     <>
-      <header className="bg-green-700 border-b border-green-600 sticky top-0 z-50 shadow-lg">
-        <div className="container mx-auto px-3 sm:px-4 lg:px-6">
-          <div className="flex items-center justify-between h-14 sm:h-16">
+      <header className="bg-green-700 border-b border-green-600 sticky top-0 z-50 ">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="flex items-center justify-between h-13">
             {/* Logo section with green-50 background to match header */}
-            <div className="flex items-center gap-2 bg-green-50 px-2 sm:px-3 py-1.5 sm:py-2 rounded border-2 border-primary">
-              <Image
-                src="/imgs/Food_bundle_logo.png"
-                alt="Food Bundles Logo"
-                width={24}
-                height={24}
-                className="rounded object-cover sm:w-8 sm:h-8"
-              />
-              <span className="text-base sm:text-xl font-bold text-black">
-                <span className="hidden sm:inline">Food bundles</span>
-                <span className="sm:hidden">Food</span>
-              </span>
-            </div>
+            <Link href="/">
+              <div className="flex items-center gap-2 bg-green-50 px-2 sm:px-3 py-1 rounded-full border-2 border-primary flex-shrink-0">
+                <Image
+                  src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WhatsApp%20Image%202025-08-26%20at%2017.19.27_37ef906c.jpg-5w6VIINuFETMhj8U6ktDEnUViMPQod.jpeg"
+                  alt="FoodBundle Logo"
+                  width={32}
+                  height={32}
+                  className="rounded-full object-cover w-5 h-5"
+                />
+                <span className="text-2sm font-bold text-black whitespace-nowrap">
+                  FoodBundles
+                </span>
+              </div>
+            </Link>
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center gap-4 xl:gap-8">
@@ -145,109 +189,151 @@ export function TopResNav() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`flex items-center gap-2 font-medium transition-colors text-sm ${
+                    className={`flex items-center gap-2  transition-colors text-[13px]  ${
                       isActive
                         ? "text-secondary"
                         : "text-primary-foreground hover:text-secondary"
                     }`}
                   >
                     <div
-                      className={`w-3 h-3 xl:w-4 xl:h-4 rounded-sm ${
-                        isActive ? "bg-secondary" : ""
+                      className={`w-2 h-2 xl:w-3 xl:h-3 rounded-full ${
+                        isActive ? "bg-orange-400" : ""
                       }`}
                     ></div>
                     {link.label}
                   </Link>
                 );
               })}
+
+              {/* Categories Dropdown with Hover - Desktop Only */}
+              <div
+                className="relative category-dropdown"
+                onMouseEnter={handleCategoryMouseEnter}
+                onMouseLeave={handleCategoryMouseLeave}
+              >
+                <button className="flex items-center gap-2 transition-colors text-[13px] text-primary-foreground hover:text-secondary cursor-pointer">
+                  Categories
+                </button>
+
+                {/* Categories Dropdown Menu */}
+                <div
+                  className={`absolute top-4 left-0 mt-2 w-46 bg-white shadow-lg border border-gray-200 py-2 z-50 max-h-80 overflow-y-auto transition-all duration-200 ${
+                    isCategoryDropdownOpen
+                      ? "opacity-100 visible transform translate-y-0"
+                      : "opacity-0 invisible transform -translate-y-2"
+                  }`}
+                  onMouseEnter={handleCategoryMouseEnter}
+                  onMouseLeave={handleCategoryMouseLeave}
+                >
+                  {/* All Categories Option */}
+                  <button
+                    onClick={() => handleCategorySelect("All Categories")}
+                    className="w-full text-left px-4 py-2 text-[13px] text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors"
+                  >
+                    All Categories
+                  </button>
+
+                  {/* Separator */}
+                  <div className="border-t border-gray-100 my-1"></div>
+
+                  {/* Loading State */}
+                  {categoriesLoading ? (
+                    <div className="px-4 py-2">
+                      {[...Array(5)].map((_, index) => (
+                        <Skeleton key={index} className="h-8 w-full mb-2" />
+                      ))}
+                    </div>
+                  ) : activeCategories.length > 0 ? (
+                    activeCategories.map((category) => (
+                      <button
+                        key={category.id}
+                        onClick={() => handleCategorySelect(category.name)}
+                        className="w-full text-left px-4 py-2 text-[13px] text-gray-900 hover:bg-green-50 hover:text-green-700 transition-colors"
+                      >
+                        {category.name.replace(/_/g, " ")}
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-4 py-2 text-[12px] text-gray-500">
+                      No categories available
+                    </div>
+                  )}
+                </div>
+              </div>
             </nav>
 
-            {/* Right side actions */}
             <div className="flex items-center gap-2 sm:gap-4">
-              {/* Cart */}
-              <CartDrawer
-                isOpen={isCartOpen}
-                onClose={() => setIsCartOpen(false)}
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsCartOpen(true)}
-                className="relative hover:bg-green-600 cursor-pointer text-primary-foreground hover:text-primary-foreground h-8 w-8 sm:h-10 sm:w-10"
-              >
-                <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
-                {!isLoading && totalQuantity > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 flex items-center justify-center bg-secondary text-black text-xs">
-                    {totalItems > 99 ? "99+" : totalItems}
-                  </Badge>
-                )}
-              </Button>
-
-              {/* Notifications */}
-              {/* <Button
-                variant="ghost"
-                size="icon"
-                className="relative hover:bg-green-600 cursor-pointer text-primary-foreground hover:text-primary-foreground h-8 w-8 sm:h-10 sm:w-10"
-                onClick={() => setIsNotificationsOpen(true)}
-              >
-                <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
-                <Badge className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 flex items-center justify-center bg-red-500 text-white text-xs">
-                  {unreadCount}
-                </Badge>
-              </Button> */}
-              {/* Desktop User Menu */}
-              <div className="hidden sm:block">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="flex items-center gap-2 hover:bg-transparent py-3 sm:py-5 cursor-pointer text-primary-foreground hover:text-primary-foreground"
-                    >
-                      <span className="font-medium text-sm hidden md:inline">
+              {/* Desktop User Menu - Custom Dropdown */}
+              <div className="hidden sm:block relative profile-dropdown">
+                <button
+                  onClick={() =>
+                    setIsProfileDropdownOpen(!isProfileDropdownOpen)
+                  }
+                  className="flex items-center gap-2 hover:bg-transparent py-3 sm:py-5 cursor-pointer text-primary-foreground hover:text-primary-foreground"
+                >
+                  {user ? (
+                    <>
+                      <span className="font-medium text-[13px] hidden md:inline">
                         {userName}
                       </span>
-
-                      <div className="p-[1px] sm:p-[2px] bg-green-50 rounded-full flex items-center justify-center">
+                      <div className="rounded-full flex items-center justify-center">
                         {user?.profileImage ? (
                           <Image
-                            src={profileImage|| "/placeholder.svg"}
+                            src={profileImage || "/placeholder.svg"}
                             alt={`${userName}'s profile`}
                             width={32}
                             height={32}
-                            className="rounded-full object-cover w-8 h-8 sm:w-10 sm:h-10"
+                            className="rounded-full object-cover w-6 h-6 sm:w-8 sm:h-8"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               target.src = "/placeholder.svg";
                             }}
                           />
                         ) : (
-                          // Fallback to initials
-                          <div className="rounded-full bg-green-600 text-white flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 font-bold">
+                          <div className="rounded-full bg-green-600 text-white flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 font-medium">
                             {userName.substring(0, 2).toUpperCase()}
                           </div>
                         )}
                       </div>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
-                    <Link href="/restaurant/settings">
-                      <DropdownMenuItem>Profile</DropdownMenuItem>
+                    </>
+                  ) : (
+                    // Skeleton Loader while user is loading
+                    <>
+                      <Skeleton className="h-5 w-20 md:h-6 md:w-24 hidden md:inline bg-green-600/60" />
+                      <Skeleton className="rounded-full h-8 w-8 sm:h-10 sm:w-10 bg-green-600/60" />
+                    </>
+                  )}
+                </button>
+
+                {/* Custom Dropdown Menu */}
+                {isProfileDropdownOpen && (
+                  <div className="absolute right-0 top-17 w-32 bg-white shadow-lg border border-gray-200 py-1 z-50">
+                    <Link href="#" className="block">
+                      <div className="flex items-center gap-1 px-4 py-2 text-[13px] text-gray-700 hover:bg-gray-100 cursor-pointer transition-colors">
+                        <UserPlus className="w-4 h-4" />
+                        Profile
+                      </div>
                     </Link>
-                    <DropdownMenuItem className="text-red-600">
-                      <button
-                        onClick={handleLogout}
-                        disabled={isLoggingOut}
-                        className={cn(
-                          "w-full flex items-center rounded-md text-sm font-medium transition-colors whitespace-nowrap",
-                          "text-gray-800 hover:text-red-500",
-                          isLoggingOut && "opacity-50 cursor-not-allowed"
-                        )}
-                      >
-                        {isLoggingOut ? "Logging out..." : "Logout"}
-                      </button>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                    <Link href="/" className="block">
+                      <div className="flex items-center gap-1 px-4 py-2 text-[13px] text-gray-700 hover:bg-gray-100 cursor-pointer transition-colors">
+                        <Home className="w-4 h-4" />
+                        Home
+                      </div>
+                    </Link>
+                    <div className="border-t border-gray-100 mt-1"></div>
+                    <button
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
+                      className={cn(
+                        "w-full text-left px-4 py-2 text-[13px] transition-colors whitespace-nowrap",
+                        "text-red-600 hover:bg-gray-100",
+                        isLoggingOut && "opacity-50 cursor-not-allowed"
+                      )}
+                    >
+                      {isLoggingOut ? "Logging out..." : "Logout"}
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Mobile menu button */}
@@ -269,7 +355,7 @@ export function TopResNav() {
           {/* Mobile Navigation Menu */}
           {isMobileMenuOpen && (
             <div className="flex justify-between lg:hidden border-t border-green-600 bg-green-700">
-              <div className="px-2 py-4 space-y-1">
+              <div className="px-2 py-4 space-y-1 flex-1">
                 {navLinks.map((link) => {
                   const isActive = pathname === link.href;
                   return (
@@ -277,7 +363,7 @@ export function TopResNav() {
                       key={link.href}
                       href={link.href}
                       onClick={closeMobileMenu}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-md font-medium transition-colors ${
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] transition-colors ${
                         isActive
                           ? "text-secondary bg-green-600"
                           : "text-primary-foreground hover:text-secondary hover:bg-green-600"
@@ -293,22 +379,62 @@ export function TopResNav() {
                   );
                 })}
 
+                {/* Mobile Categories Section */}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-3 px-3 py-2.5">
+                    <div className="w-3 h-3 rounded-sm bg-transparent"></div>
+                    <span className="text-[13px] text-primary-foreground cursor-pointer">
+                      Categories
+                    </span>
+                  </div>
+
+                  {/* All Categories */}
+                  <button
+                    onClick={() => handleCategorySelect("All Categories")}
+                    className="w-full text-left pl-9 pr-3 py-2 text-[13px] text-green-200 hover:text-secondary hover:bg-green-600 rounded-md transition-colors"
+                  >
+                    All Categories
+                  </button>
+
+                  {/* Category List */}
+                  {categoriesLoading ? (
+                    <div className="pl-9 pr-3">
+                      {[...Array(3)].map((_, index) => (
+                        <Skeleton
+                          key={index}
+                          className="h-6 w-full mb-2 bg-green-600/60"
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    activeCategories.map((category) => (
+                      <button
+                        key={category.id}
+                        onClick={() => handleCategorySelect(category.name)}
+                        className="w-full text-left pl-9 pr-3 py-2 text-[13px] text-green-200 hover:text-secondary hover:bg-green-600 rounded-md transition-colors"
+                      >
+                        {category.name.replace(/_/g, " ")}
+                      </button>
+                    ))
+                  )}
+                </div>
+
                 {/* Mobile Profile Section */}
               </div>
               <div className="px-2 py-4">
                 <div className="flex items-center gap-3 px-3 py-2">
-                  <span className="font-medium text-primary-foreground">
+                  <span className="text-[13px] text-primary-foreground">
                     {userName}
                   </span>
                 </div>
 
-                {/* <Link
-                  href="/restaurant/settings"
+                <Link
+                  href="#"
                   onClick={closeMobileMenu}
-                  className="flex items-center px-3 py-2.5 text-primary-foreground hover:text-secondary hover:bg-green-600 rounded-md transition-colors"
+                  className="flex items-center px-3 py-2.5 text-[13px] text-primary-foreground hover:text-secondary hover:bg-green-600 rounded-md transition-colors"
                 >
                   Profile
-                </Link> */}
+                </Link>
 
                 <button
                   onClick={() => {
@@ -317,7 +443,7 @@ export function TopResNav() {
                   }}
                   disabled={isLoggingOut}
                   className={cn(
-                    "w-full flex items-center px-3 py-2.5 text-left rounded-md font-medium transition-colors",
+                    "w-full flex items-center px-3 py-2.5 text-left rounded-md text-[13px] transition-colors",
                     "text-red-300 hover:text-red-200 hover:bg-green-600",
                     isLoggingOut && "opacity-50 cursor-not-allowed"
                   )}

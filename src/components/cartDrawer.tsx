@@ -99,15 +99,12 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   className="text-green-600"
                   size={32}
                 />
-                <p className="text-gray-600 text-sm sm:text-xs">
-                  Loading your cart...
-                </p>
               </div>
             ) : error ? (
               <Card>
                 <CardContent className="p-8 text-center">
                   <p className="text-red-500 text-sm sm:text-xs">
-                    Error loading cart
+                    Something went wrong, Pleas try again.
                   </p>
                   <p className="text-gray-400 text-xs mt-2">{error}</p>
                 </CardContent>
@@ -229,61 +226,80 @@ function CartItem({
             <p className="lg:text-sm text-xs text-gray-600">
               {item.unitPrice}
               <span className="ml-1 text-xs">
-                Rwf/{item.product?.unit || item.unit || "unit"}
+                Rwf ({item.product?.unit || item.unit || "unit"})
               </span>
             </p>
             <p className="text-green-700 font-medium lg:text-sm text-xs">
               {totalAmount}
-              <span className="ml-1 text-xs">
-                Rwf/{item.quantity}
-                {item.product?.unit || item.unit}
-              </span>
+              <span className="ml-1 text-xs">Rwf (Total)</span>
             </p>
           </div>
 
-          {/* Price and Remove Button */}
           <div className="flex flex-col items-end justify-between h-full space-y-0">
-            {/* Quantity Controls */}
-            <div className="flex items-center gap-2 mb-2">
-              <input
-                type="number"
-                value={inputValue}
-                onChange={handleQuantityChange}
-                onKeyDown={async (e) => {
-                  if (e.key === "Enter") await handleQuantityUpdate();
-                  else if (e.key === "ArrowUp") {
-                    const newValue = (Number.parseInt(inputValue) || 0) + 1;
-                    setInputValue(newValue.toString());
-                    setQuantity(newValue);
-                  } else if (e.key === "ArrowDown") {
-                    const newValue = Math.max(
-                      1,
-                      (Number.parseInt(inputValue) || 1) - 1
-                    );
-                    setInputValue(newValue.toString());
-                    setQuantity(newValue);
+            <div className="flex flex-col items-end justify-between h-full space-y-0">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center border border-gray-300 rounded-full overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newValue = Math.max(
+                        1,
+                        (Number.parseInt(inputValue) || 1) - 1
+                      );
+                      setInputValue(newValue.toString());
+                      setQuantity(newValue);
+                    }}
+                    disabled={isUpdating}
+                    className="px-2 py-1 text-sm bg-gray-100 hover:bg-gray-200 disabled:opacity-50 cursor-pointer"
+                  >
+                    -
+                  </button>
+
+                  <input
+                    type="number"
+                    value={inputValue}
+                    onChange={handleQuantityChange}
+                    onKeyDown={async (e) => {
+                      if (e.key === "Enter") await handleQuantityUpdate();
+                    }}
+                    min={1}
+                    disabled={isUpdating}
+                    className="w-12 text-center text-sm font-semibold focus:outline-none disabled:bg-gray-100 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newValue = (Number.parseInt(inputValue) || 0) + 1;
+                      setInputValue(newValue.toString());
+                      setQuantity(newValue);
+                    }}
+                    disabled={isUpdating}
+                    className="px-2 py-1 text-sm bg-gray-100 hover:bg-gray-200 disabled:opacity-50 cursor-pointer"
+                  >
+                    +
+                  </button>
+                </div>
+
+                {/* Update Button */}
+                <Button
+                  onClick={handleQuantityUpdate}
+                  disabled={
+                    isUpdating || Number.parseInt(inputValue) === item.quantity
                   }
-                }}
-                min={1}
-                disabled={isUpdating}
-                className="w-15 sm:w-12 h-6 sm:h-5 px-2 sm:px-1 text-center text-sm sm:text-xs font-semibold border border-gray-300 rounded-full focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-transparent disabled:bg-gray-100"
-              />
-              <Button
-                onClick={handleQuantityUpdate}
-                disabled={
-                  isUpdating || Number.parseInt(inputValue) === item.quantity
-                }
-                size="sm"
-                className="w-15 sm:w-12 h-6 sm:h-5 text-xs sm:text-[10px] bg-green-500 hover:bg-green-600 text-white disabled:opacity-50 flex items-center gap-1 rounded-full"
-              >
-                🗸
-              </Button>
+                  size="sm"
+                  className="w-12 h-6 text-xs bg-green-500 hover:bg-green-600 text-white disabled:opacity-50 flex items-center justify-center rounded-full cursor-pointer"
+                >
+                  🗸
+                </Button>
+              </div>
             </div>
+
             <button
               onClick={handleDelete}
-              className="text-green-500 hover:text-green-400 transition-colors hover:rotate-90 transform duration-200"
+              className="text-green-500 hover:text-green-400 transition-colors hover:rotate-90 transform duration-200 cursor-pointer"
             >
-              <X className="w-6 sm:w-5 h-6 sm:h-5" />
+              <X className="w-8 sm:w-6 h-8 sm:h-6" />
             </button>
           </div>
         </div>

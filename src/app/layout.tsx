@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Poppins } from "next/font/google";
 // import { Geist, Geist_Mono, Poppins } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "./contexts/auth-context";
@@ -6,6 +7,13 @@ import { Toaster } from "@/components/ui/sonner";
 import { CartProvider } from "./contexts/cart-context";
 import { CategoryProvider } from "./contexts/category-context";
 import { ProductProvider } from "./contexts/product-context";
+import { ToastContainer } from "react-toastify";
+
+const poppins = Poppins({
+  weight: ["400", "500", "600", "700"],
+  subsets: ["latin"],
+  variable: "--font-poppins",
+});
 
 // const geistSans = Geist({
 //   variable: "--font-geist-sans",
@@ -32,7 +40,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${poppins.variable}`}>
       <body suppressHydrationWarning>
         <AuthProvider>
           <ProductProvider>
@@ -41,6 +49,7 @@ export default function RootLayout({
             </CartProvider>
           </ProductProvider>
         </AuthProvider>
+        <ToastContainer />
         <Toaster />
       </body>
     </html>

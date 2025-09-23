@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ShoppingCart, Truck, Star } from "lucide-react";
+import { Bike, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -127,7 +127,7 @@ function CircularRestaurantAnimation({
                     />
                   </div>
                 </div>
-                <div className="absolute top-22 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="absolute top-24 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <div className="text-white text-xs px-2 py-1 rounded whitespace-nowrap">
                     {restaurant.name.slice(0, 5)}
                   </div>
@@ -180,19 +180,6 @@ function HeroImageCarousel() {
 }
 
 export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
-  const handleShopNowClick = () => {
-    const element = document.getElementById("products");
-    if (element) {
-      const headerHeight = 80;
-      const elementPosition = element.offsetTop - headerHeight;
-
-      window.scrollTo({
-        top: elementPosition,
-        behavior: "smooth",
-      });
-    }
-  };
-
   return (
     <section className="relative">
       <div
@@ -227,7 +214,7 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
                   </p>
                 </div>
                 <div className="flex items-center justify-center lg:justify-start gap-3 text-orange-400">
-                  <Truck className="w-6 h-6 animate-pulse" />
+                  <Bike className="w-6 h-6 animate-pulse" />
                   <p className="text-sm font-semibold">Fast Delivery</p>
                 </div>
               </div>
@@ -269,20 +256,6 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
                   </div>
                 </div>
 
-                <div
-                  className="absolute top-120 left-1/2 transform -translate-x-1/2 cursor-pointer group"
-                  onClick={handleShopNowClick}
-                >
-                  <div className="relative">
-                    <ShoppingCart className="w-12 h-12 text-orange-400 animate-bounce" />
-                    <div className="absolute inset-0 w-12 h-12 text-orange-400 animate-ping opacity-30">
-                      <ShoppingCart className="w-full h-full" />
-                    </div>
-                  </div>
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 mt-2 text-sm text-orange-400 font-semibold text-center">
-                    Shop Now
-                  </div>
-                </div>
               </div>
 
               <div className="lg:col-span-4 space-y-6 z-10 pt-2 lg:pt-4 pr-3 lg:pr-5">

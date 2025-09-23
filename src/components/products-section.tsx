@@ -1,9 +1,12 @@
-/* eslint-disable react-hooks/rules-of-hooks */
 "use client";
 
-import React, { useState, useCallback } from "react";
+import type React from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-
+import CartDrawer from "@/components/cartDrawer";
+import { useCartSummary } from "@/app/contexts/cart-context";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import {
   Star,
@@ -11,138 +14,12 @@ import {
   ShoppingCart,
   Eye,
   Check,
-  Menu,
-  X,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/auth-context";
 import { useCart } from "@/app/contexts/cart-context";
 import { useProductSection } from "@/hooks/useProductSection";
-import CartDrawer from "./cartDrawer";
+import Link from "next/link";
 
-// Category List Component
-interface CategoryListProps {
-  categories: Array<{
-    name: string;
-    image: string;
-    productCount?: number;
-  }>;
-  selectedCategory: string;
-  onCategorySelect: (category: string) => void;
-  isOpen?: boolean;
-  onClose?: () => void;
-  isMobile?: boolean;
-}
-
-function CategoryList({
-  categories,
-  selectedCategory,
-  onCategorySelect,
-  isOpen = true,
-  onClose,
-  isMobile = false,
-}: CategoryListProps) {
-  const handleCategorySelect = (category: string) => {
-    onCategorySelect(category);
-    if (isMobile && onClose) {
-      onClose();
-    }
-  };
-
-  if (isMobile) {
-    return (
-      <div
-        className={`fixed inset-0 z-40 transform transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:hidden`}
-      >
-        {/* Backdrop */}
-        <div
-          className="absolute inset-0 bg-black bg-opacity-50"
-          onClick={onClose}
-        />
-
-        {/* Sidebar */}
-        <div className="relative w-[220px] lg:w-[280px] h-full bg-white border-r border-gray-200">
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-100">
-            <h2 className="text-2xl font-bold text-gray-900">Categories</h2>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Category List */}
-          <div className="p-4 overflow-y-auto h-full pb-20">
-            <ul className="space-y-2">
-              {categories.map((category, index) => (
-                <li key={index}>
-                  <button
-                    onClick={() => handleCategorySelect(category.name)}
-                    className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center justify-between group ${
-                      selectedCategory === category.name
-                        ? " text-green-700"
-                        : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-                    }`}
-                  >
-                    <span className="font-medium">
-                      {category.name.replace(/_/g, " ")}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Desktop version
-  return (
-    <div
-      className={`hidden lg:block bg-white border-r border-gray-200 h-full transition-all duration-300 ${
-        isOpen ? "w-[150px] min-w-[180px]" : "w-0 min-w-0 overflow-hidden"
-      }`}
-    >
-      {/* Header */}
-      <div className="p-6 border-b border-gray-100">
-        <h2 className="text-2sm font-bold text-gray-900 whitespace-nowrap">
-          Categories 
-        </h2>
-      </div>
-
-      {/* Category List */}
-      <div className="p-4 overflow-y-auto h-full">
-        <ul className="space-y-2">
-          {categories.map((category, index) => (
-            <li key={index}>
-              <button
-                onClick={() => onCategorySelect(category.name)}
-                className={`w-full text-sm text-left px-4 py-3  transition-all duration-200 flex items-center justify-between group ${
-                  selectedCategory === category.name
-                    ? " text-green-700 "
-                    : "text-gray-700 hover:bg-gray-50 hover:text-gray-900 "
-                }`}
-              >
-                <span className="font-medium whitespace-nowrap">
-                  {category.name.replace(/_/g, " ")}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  );
-}
-
-// Product Card Component
 interface ProductCardProps {
   id: string;
   name: string;
@@ -152,7 +29,6 @@ interface ProductCardProps {
   rating: number;
   category?: string;
   discountPercent?: number;
-  isExpanded?: boolean;
 }
 
 function ProductCard({
@@ -163,40 +39,65 @@ function ProductCard({
   image,
   rating,
   discountPercent,
-  isExpanded = false,
 }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const router = useRouter();
-  const { addToCart, cartItems } = useCart();
-  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const [inputValue, setInputValue] = useState("1");
+  const { addToCart, cartItems, updateCartItem } = useCart();
 
-  // Check if product is already in cart
-  const isInCart = cartItems.some((item) => item.productId === id);
 
-  const handleCartClick = useCallback(async () => {
-    if (isInCart) {
-      router.push("/cart");
-      return;
+
+  const cartItem = cartItems.find((item) => item.productId === id);
+  const isInCart = !!cartItem;
+  const cartQuantity = cartItem?.quantity || 0;
+
+  const isUpdateDisabled = isInCart && quantity === cartQuantity;
+
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value === "" || /^\d+$/.test(value)) {
+      setInputValue(value);
+      const numValue = Number.parseInt(value) || 1;
+      if (numValue > 0) {
+        setQuantity(numValue);
+      }
     }
+  };
 
+  const handleQuantityBlur = () => {
+    const numValue = Number.parseInt(inputValue) || 1;
+    const finalValue = Math.max(1, numValue);
+    setQuantity(finalValue);
+    setInputValue(finalValue.toString());
+  };
+
+  const handleCartAction = useCallback(async () => {
     setIsAddingToCart(true);
     try {
-      const success = await addToCart(id, 1);
-      if (success) {
-        console.log("Product added to cart successfully");
+      if (isInCart && cartItem) {
+        // Update existing cart item
+        const success = await updateCartItem(cartItem.id, quantity);
+        if (success) {
+          console.log("Cart updated successfully");
+        }
+      } else {
+        // Add new item to cart
+        const success = await addToCart(id, quantity);
+        if (success) {
+          console.log("Product added to cart successfully");
+        }
       }
     } catch (error) {
-      console.error("Error adding to cart:", error);
+      console.error("Error with cart action:", error);
     } finally {
       setIsAddingToCart(false);
     }
-  }, [isInCart, addToCart, id, router]);
+  }, [isInCart, cartItem, quantity, addToCart, updateCartItem, id]);
 
   const renderStars = (rating: number) => {
     const stars = [];
     const fullStars = Math.floor(rating);
-
     for (let i = 0; i < 5; i++) {
       if (i < fullStars) {
         stars.push(
@@ -212,149 +113,133 @@ function ProductCard({
   return (
     <>
       <div
-        className={`w-full bg-white transition-all duration-300 ${
-          isExpanded
-            ? "max-w-[280px] sm:max-w-[320px]"
-            : "max-w-[200px] sm:max-w-[220px]"
-        }`}
+        className={
+          "w-full bg-white transition-all duration-300 max-w-[200px] sm:max-w-[220px]"
+        }
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <Card className="border border-green-700 shadow-md hover:rounded-lg overflow-hidden transition-all duration-300 hover:shadow-lg p-0 pb-2 h-full">
-          {/* Product Image Container */}
-          <div
-            className={`relative w-full bg-gray-50 flex items-center justify-center group overflow-hidden ${
-              isExpanded ? "h-[220px] sm:h-[260px]" : "h-[160px] sm:h-[180px]"
-            }`}
-          >
+        <Card className="border border-gray-200 shadow hover:shadow-lg rounded-md hover:rounded hover:border-green-500 overflow-hidden transition-all duration-300 p-0 pb-2 h-full">
+          <div className="relative w-full  flex items-center justify-center group overflow-hidden h-[160px] sm:h-[180px] ">
             <Image
               src={image || "/placeholder.svg"}
               alt={name}
-              width={isExpanded ? 280 : 200}
-              height={isExpanded ? 280 : 200}
+              width={200}
+              height={200}
               className="object-contain w-full max-h-full transition-transform duration-300 group-hover:scale-105"
             />
-
-            {/* Discount Badge */}
             {discountPercent && (
               <div className="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">
                 {discountPercent}% OFF
               </div>
             )}
-
-            {/* In Cart Badge */}
-            <CartDrawer
-              isOpen={isCartOpen}
-              onClose={() => setIsCartOpen(false)}
-            />
-            {isInCart && (
-              <div
-                className="absolute top-0 right-0 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-lg flex items-center cursor-pointer"
-                onClick={() => setIsCartOpen(true)}
-              >
-                <Check className="w-3 h-3 mr-1" /> View Cart
-              </div>
+            {isInCart && isHovered && (
+              <Link href="/restaurant/checkout" className="absolute inset-0">
+                <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-lg flex items-center cursor-pointer hover:bg-green-600 transition-colors">
+                  <Check className="w-3 h-3 mr-1" /> Buy Now
+                </div>
+              </Link>
             )}
 
-            {/* Action Buttons */}
             <div
               className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${
                 isHovered ? "opacity-100 scale-100" : "opacity-0 scale-95"
               }`}
             >
-              <div className="bg-green-500 rounded-full flex items-center justify-center shadow-lg p-1 sm:p-2 space-x-6 sm:space-x-8">
-                {/* Quick View */}
+              <div className="bg-green-500 flex items-center justify-center shadow-lg px-1 p-1 space-x-6 sm:space-x-8">
                 <button className="text-white hover:text-gray-200 transition-colors font-bold">
-                  <Eye
-                    className={`${
-                      isExpanded
-                        ? "w-5 h-5"
-                        : "w-5 h-5 sm:w-6 sm:h-6 cursor-pointer"
-                    }`}
-                  />
+                  <Eye className="w-5 h-5 sm:w-6 sm:h-6 cursor-pointer" />
                 </button>
 
-                {/* Add to Cart */}
-                <button
-                  onClick={handleCartClick}
-                  disabled={isAddingToCart || isInCart}
-                  className={`text-white hover:text-gray-200 transition-colors font-bold ${
-                    isAddingToCart ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                >
-                  {isAddingToCart ? (
-                    <div
-                      className={`border-2 border-white border-t-transparent rounded-full animate-spin ${
-                        isExpanded
-                          ? "w-5 h-5"
-                          : "w-5 h-5 sm:w-6 sm:h-6 cursor-pointer"
-                      }`}
-                    />
-                  ) : (
-                    <ShoppingCart
-                      className={`${
-                        isExpanded
-                          ? "w-5 h-5"
-                          : "w-5 h-5 sm:w-6 sm:h-6 cursor-pointer"
-                      }`}
-                    />
-                  )}
-                </button>
-
-                {/* Add to Wishlist */}
-                <button className="text-white hover:text-gray-200 transition-colors font-bold">
-                  <Heart
-                    className={`${
-                      isExpanded
-                        ? "w-5 h-5"
-                        : "w-5 h-5 sm:w-6 sm:h-6 cursor-pointer"
+                <div className="relative">
+                  <button
+                    onClick={handleCartAction}
+                    disabled={isAddingToCart || isUpdateDisabled}
+                    className={`text-white hover:text-gray-200 transition-colors font-bold ${
+                      isAddingToCart || isUpdateDisabled
+                        ? "opacity-50 cursor-not-allowed"
+                        : ""
                     }`}
-                  />
+                  >
+                    {isAddingToCart ? (
+                      <div className="border-2 border-white border-t-transparent rounded-full animate-spin w-5 h-5 sm:w-6 sm:h-6 " />
+                    ) : (
+                      <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 cursor-pointer" />
+                    )}
+                  </button>
+                </div>
+
+                <button className="text-white hover:text-gray-200 transition-colors font-bold">
+                  <Heart className="w-5 h-5 sm:w-6 sm:h-6 cursor-pointer" />
                 </button>
+              </div>
+
+              <div className="flex items-center justify-center gap-2 pt-2">
+                <div className="flex items-center border bg-white border-gray-300 rounded-full overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newValue = Math.max(
+                        1,
+                        (Number.parseInt(inputValue) || 1) - 1
+                      );
+                      setInputValue(newValue.toString());
+                      setQuantity(newValue);
+                    }}
+                    disabled={isAddingToCart}
+                    className="px-2 py-1 text-sm bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+                  >
+                    -
+                  </button>
+
+                  <input
+                    type="number"
+                    value={inputValue}
+                    onChange={handleQuantityChange}
+                    onBlur={handleQuantityBlur}
+                    min={1}
+                    disabled={isAddingToCart}
+                    className="w-12 text-center text-sm font-semibold focus:outline-non disabled:bg-gray-100
+        [&::-webkit-outer-spin-button]:appearance-none 
+        [&::-webkit-inner-spin-button]:appearance-none 
+        [-moz-appearance:textfield]"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newValue = (Number.parseInt(inputValue) || 0) + 1;
+                      setInputValue(newValue.toString());
+                      setQuantity(newValue);
+                    }}
+                    disabled={isAddingToCart}
+                    className="px-2 py-1 text-sm bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Product Info */}
-          <div
-            className={`${isExpanded ? "px-4 sm:px-6 py-2" : "px-3 sm:px-4"}`}
-          >
-            {/* Product Name */}
-            <h3
-              className={`font-semibold text-gray-800 leading-tight line-clamp-2 min-h-[1.5rem] ${
-                isExpanded ? "text-base sm:text-lg" : "text-sm"
-              }`}
-            >
+          <div className="px-3 sm:px-4">
+            <h3 className="font-semibold text-gray-800 leading-tight line-clamp-2 min-h-[1.5rem] text-sm ">
               {name}
             </h3>
 
-            {/* Rating */}
             <div className="flex items-center gap-2 my-1">
               <div className="flex">{renderStars(rating)}</div>
-              <span
-                className={`text-gray-500 ${
-                  isExpanded ? "text-sm" : "text-xs"
-                }`}
-              >
+              <span className="text-gray-500 text-xs ">
                 ({rating.toFixed(2)})
               </span>
             </div>
 
-            {/* Price */}
             <div className="flex items-center gap-2">
-              <span
-                className={`font-bold text-gray-900 ${
-                  isExpanded ? "text-lg sm:text-xl" : "text-base sm:text-lg"
-                }`}
-              >
+              <span className="font-bold text-gray-900 text-base text-[16px] ">
                 {price.toFixed(2)} Rwf
               </span>
               {originalPrice && (
-                <span
-                  className={`text-gray-400 line-through ${
-                    isExpanded ? "text-base" : "text-sm"
-                  }`}
-                >
+                <span className="text-gray-400 line-through text-[12px] ">
                   {originalPrice.toFixed(2)}Rwf
                 </span>
               )}
@@ -365,7 +250,6 @@ function ProductCard({
     </>
   );
 }
-
 
 // Main Products Section Component
 interface Product {
@@ -397,28 +281,37 @@ export function ProductsSection({
   products,
   categories,
 }: ProductsSectionProps) {
-  const {
-    selectedCategory,
-    setSelectedCategory,
-    isMobileMenuOpen,
-    setIsMobileMenuOpen,
-    isDesktopCategoriesOpen,
-    isCardExpanded,
-    handleDesktopToggle,
-  } = useProductSection();
+  const { selectedCategory, setSelectedCategory } = useProductSection();
   const { user, isAuthenticated } = useAuth();
+    const [isCartOpen, setIsCartOpen] = useState(false);
+  const { totalItems, totalQuantity, totalAmount, isLoading } = useCartSummary();
+  
+
+  const [searchQuery, setSearchQuery] = useState("");
 
   const getFilteredProducts = () => {
+    let filtered = products;
+
+    // Filter by category
     if (
-      selectedCategory === "All Categories" ||
-      selectedCategory === "ALL CATEGORIES"
+      selectedCategory !== "All Categories" &&
+      selectedCategory !== "ALL CATEGORIES"
     ) {
-      return products;
+      filtered = filtered.filter(
+        (product) =>
+          product.category.toLowerCase() === selectedCategory.toLowerCase()
+      );
     }
-    return products.filter(
-      (product) =>
-        product.category.toLowerCase() === selectedCategory.toLowerCase()
-    );
+
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(
+        (product) =>
+          product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          product.category.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    return filtered;
   };
 
   // Filter out categories with no products
@@ -446,86 +339,151 @@ export function ProductsSection({
       : [];
 
   const filteredProducts = getFilteredProducts();
-
   const userName = user?.name;
 
-  if (products.length === 0) {
-    return null;
-  }
-  React.useEffect(() => {
+  useEffect(() => {
     if (filteredProducts.length === 0 && categoriesWithAll.length > 0) {
       setSelectedCategory("All Categories");
     }
   }, [filteredProducts.length, categoriesWithAll.length, setSelectedCategory]);
 
+  if (products.length === 0) {
+    return null;
+  }
+
   return (
     <section
       id="products"
-      className="flex justify-center items-start bg-gray-50 border py-0"
+      className="flex justify-center items-start  border py-0"
     >
       <div className="container">
         <div className="flex gap-0 relative">
-          {/* Desktop Category List */}
-          <CategoryList
-            categories={categoriesWithAll}
-            selectedCategory={selectedCategory}
-            onCategorySelect={setSelectedCategory}
-            isOpen={isDesktopCategoriesOpen}
-          />
+          <div className="  w-full">
+            {isAuthenticated && user && (
+              <div className="flex items-center justify-center bg-gray-100 py-4 sm:py-6 border-b border-gray-100">
+                <div className=" flex items-center justify-between gap-4">
+                  <div className=" flex flex-col justify-center px-6">
+                    <div className=" flex flex-col justify-center">
+                      <h1 className="text-[16px] font-semibold text-gray-800 mb-1">
+                        Hello <span className="text-green-600">{userName}</span>
+                        !
+                      </h1>
+                      <p className="text-gray-500 text-[13px]">
+                        Welcome to Our Farm
+                      </p>
+                    </div>
+                    {/* <div className="relative w-full max-w-md">
+                    <input
+                      type="text"
+                      placeholder="Search for fresh products..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full px-4 py-3 pr-12 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
+                    />
+                    <button className="absolute right-0 top-0 h-full px-4 bg-green-600 text-white  hover:bg-green-700 transition-colors duration-200">
+                      <Search className="w-5 h-5" />
+                    </button>
+                  </div> */}
+                  </div>
+                  {/* Benefits & Subscribe Card - Dark Style */}
+                  <div className="bg-gray-200 rounded-full px-6 py-3 shadow-lg min-w-[400px] flex items-center justify-between">
+                    {/* Left: Profile Images */}
+                    <div className="flex items-center -space-x-6">
+                      <div className="w-10 h-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-full border-2 border-gray-800 flex items-center justify-center">
+                        <Image
+                          src="/imgs/restaurant1.jpg"
+                          width={20}
+                          height={20}
+                          alt="avatar"
+                          className="rounded-full w-8 h-10 "
+                        />
+                      </div>
+                      <div className="w-10 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full border-2 border-gray-800 flex items-center justify-center">
+                        <Image
+                          src="/imgs/restaurant1.jpg"
+                          width={20}
+                          height={20}
+                          alt="avatar"
+                          className="rounded-full w-8 h-10 "
+                        />
+                      </div>
+                      <div className="w-10 h-12 bg-gradient-to-br from-green-400 to-teal-500 rounded-full border-2 border-gray-800 flex items-center justify-center">
+                        <Image
+                          src="/imgs/restaurant1.jpg"
+                          width={20}
+                          height={20}
+                          alt="avatar"
+                          className="rounded-full w-8 h-10 "
+                        />
+                      </div>
+                    </div>
 
-          {/* Mobile Category Menu */}
-          <CategoryList
-            categories={categoriesWithAll}
-            selectedCategory={selectedCategory}
-            onCategorySelect={setSelectedCategory}
-            isOpen={isMobileMenuOpen}
-            onClose={() => setIsMobileMenuOpen(false)}
-            isMobile={true}
-          />
+                    {/* Center: Advantages Text */}
+                    <div className=" px-4">
+                      <span className="text-gray-900 text-[13px]">
+                        🗸 IBM Orders 🗸 Stable Pricing 🗸 Adversiment
+                      </span>
+                    </div>
 
-          {/* Products Area */}
-          <div className=" flex-1 bg-gray-50">
-            <div
-              className={`${
-                isAuthenticated && user ? "flex" : "hidden"
-              } items-center w-full p-4`}
-            >
-              <h2 className="text-md animate-bounce">
-                Hello{" "}
-                <span className="font-bold text-green-500">{userName}</span>,
-                Welcome to Our Farm!
-              </h2>
-            </div>
+                    {/* Right: Subscribe Button */}
+                    <Link href="/restaurant/subscribe">
+                      <button className="bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 px-6 py-2 rounded-full text-sm font-bold hover:from-yellow-300 hover:to-orange-300 transition-all duration-200 shadow-md transform hover:scale-105">
+                        Subscribe
+                      </button>
+                    </Link>
+                  </div>
 
-            {/* Header with Mobile Menu Toggle */}
+                  {/* Cart Section */}
+                  <div className="flex items-center gap-3 bg-white rounded p-3 border border-gray-200 shadow">
+                    <div className="flex items-center gap-3">
+                      <div className="relative cursor-pointer">
+                        <Heart className="w-6 h-6 text-gray-900 hover:text-green-600  transition-colors" />
+                        <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center ">
+                          0
+                        </span>
+                      </div>
+                      <div className="relative">
+                        <div
+                          onClick={() => setIsCartOpen(true)}
+                          className="cursor-pointer"
+                        >
+                          <ShoppingCart className="h-6 w-6 text-gray-900 hover:text-green-600 cursor-pointer transition-colors " />
+                          {isLoading ? (
+                            <Skeleton className="absolute -top-2 -right-2 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-green-600/60" />
+                          ) : (
+                            totalQuantity > 0 && (
+                              <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center ">
+                                {totalItems > 99 ? "99+" : totalItems}
+                              </span>
+                            )
+                          )}
+                        </div>
+
+                        <CartDrawer
+                          isOpen={isCartOpen}
+                          onClose={() => setIsCartOpen(false)}
+                        />
+                      </div>
+                    </div>
+                    <div className="border-l border-gray-200 pl-3">
+                      <div className="text-[13px] font-medium text-gray-900">
+                        Cart Total
+                      </div>
+                      <div className="text-[15px] font-bold text-gray-900">
+                        {totalAmount}{" "}
+                        <span className="text-[13px] font-normal">Rwf</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* Header with Category Information */}
             <div className="bg-transparent px-4 sm:px-8">
               <div className="flex items-center justify-between">
                 <div className="flex items-center justify-center gap-3">
-                  {/* Mobile Menu Toggle */}
-                  <button
-                    onClick={() => setIsMobileMenuOpen(true)}
-                    className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    <Menu className="w-5 h-5" />
-                  </button>
-                  {/* Desktop Toggle Button */}
-                  <button
-                    onClick={handleDesktopToggle}
-                    className="hidden lg:flex pt-1 hover:bg-gray-100"
-                    style={{
-                      left: isDesktopCategoriesOpen ? "200px" : "0px",
-                      transition: "left 0.3s ease-in-out",
-                    }}
-                  >
-                    {isDesktopCategoriesOpen ? (
-                      <ChevronLeft className="w-8 h-8 text-gray-900" />
-                    ) : (
-                      <ChevronRight className="w-8 h-8 text-gray-900" />
-                    )}
-                  </button>
-
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
-                    <h1 className="text-2sm px-0 py-4 font-semibold text-gray-900">
+                    <h1 className="text-[18px] px-0 py-4 font-semibold text-gray-900">
                       {selectedCategory === "All Categories"
                         ? "All Products"
                         : selectedCategory.replace(/_/g, " ")}
@@ -534,32 +492,74 @@ export function ProductsSection({
                 </div>
               </div>
             </div>
-
             {/* Products Grid */}
             <div className="px-4 sm:px-6 overflow-y-auto">
               <div className="mb-12">
-                <div
-                  className={`grid gap-4 justify-items-center ${
-                    isCardExpanded
-                      ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
-                      : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
-                  }`}
-                >
-                  {filteredProducts.map((product) => (
-                    <ProductCard
-                      key={product.id}
-                      id={product.id}
-                      name={product.name}
-                      price={product.price}
-                      originalPrice={product.originalPrice}
-                      image={product.image}
-                      rating={product.rating}
-                      category={product.category}
-                      discountPercent={product.discountPercent}
-                      isExpanded={isCardExpanded}
-                    />
-                  ))}
-                </div>
+                {filteredProducts.length > 0 ? (
+                  <div className="grid gap-4 justify-items-center grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+                    {filteredProducts.map((product) => (
+                      <ProductCard
+                        key={product.id}
+                        id={product.id}
+                        name={product.name}
+                        price={product.price}
+                        originalPrice={product.originalPrice}
+                        image={product.image}
+                        rating={product.rating}
+                        category={product.category}
+                        discountPercent={product.discountPercent}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16">
+                    <div className="text-gray-400 mb-4">
+                      <svg
+                        className="w-16 h-16"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={1}
+                          d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m13-8h.01M6 4h.01"
+                        />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      No products found
+                    </h3>
+                    <p className="text-gray-500 text-center max-w-md">
+                      {searchQuery
+                        ? `No products found matching "${searchQuery}".`
+                        : selectedCategory === "All Categories"
+                        ? "There are no products available at the moment."
+                        : `No products found in the "${selectedCategory.replace(
+                            /_/g,
+                            " "
+                          )}" category.`}
+                    </p>
+                    {searchQuery && (
+                      <Button
+                        onClick={() => setSearchQuery("")}
+                        variant="outline"
+                        className="mt-4"
+                      >
+                        Clear Search
+                      </Button>
+                    )}
+                    {selectedCategory !== "All Categories" && !searchQuery && (
+                      <button
+                        onClick={() => setSelectedCategory("All Categories")}
+                        className="mt-4 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                      >
+                        View All Products
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

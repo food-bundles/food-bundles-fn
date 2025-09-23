@@ -1,62 +1,37 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ProductsSection } from "@/components/products-section";
-import { Suspense } from "react";
 import { categoryService } from "@/app/services/categoryService";
 import { productService } from "@/app/services/productService";
-import { UserPlus, User } from "lucide-react";
-import Link from "next/link";
-import { Header } from "@/components/header";
-
-function SearchLoading() {
-  return (
-    <div className="flex items-center justify-center p-4">
-      <div className="animate-pulse">Loading...</div>
-    </div>
-  );
-}
+import { Spinner } from "@/components/ui/shadcn-io/spinner";
 
 // Guest Requirements Notice Component
 function GuestRequirementsNotice() {
   return (
-    <div className="px-4 mx-4 sm:mx-6 mb-0">
-      <div className="flex justify-between items-end  border-b border-gray-200">
-        <div className="pb-2">
-          <h3 className="text-ms font-semibold text-black">
-            Shopping as Guest
-          </h3>
-          <p className="text-xs -medium text-gray-900">
-            <span className="">
-              Minimum order should be{" "}
-              <span className="font-bold text-red-500">100,000 </span> Rwf
-            </span>
-            <br />
-            Orders below this amount will have additional{" "}
-            <span className="text-red-500 font-bold">delivery fees</span> applied.
-          </p>
-        </div>
-        <div className="flex items-end gap-2">
-          {/* <Link
-            href="/auth/register"
-            className="border-b-2 border-orange-500 px-2 py-2 text-green-600 transition-colors text-sm font-medium hover:bg-orange-50 flex items-center gap-1"
-          >
-            <UserPlus className="w-4 h-4 mr-1" />
-            Register
-          </Link> */}
-          {/* <div className="border-l border-gray-300 h-6 mx-1"></div> */}
-          {/* <Link
-            href="/auth/login"
-            className="px-2 py-2 hover:bg-orange-50 transition-colors text-sm border-b-2 border-transparent hover:border-orange-200 flex items-center gap-1"
-          >
-            <User className="w-4 h-4 mr-1" />
-            Sign in
-          </Link> */}
+    <div className="bg-gray-100 ">
+      <div className="py-8 px-4 mx-4 sm:mx-6 mb-0 ">
+        <div className="flex justify-between items-end  border-b border-gray-200">
+          <div className="py-2 pb-4">
+            <h3 className="text-ms font-semibold text-black">
+              Shopping as Guest
+            </h3>
+            <p className="text-xs font-medium text-gray-900">
+              <span>
+                Minimum order should be{" "}
+                <span className="font-bold text-red-500">100,000 </span> Rwf
+              </span>
+              <br />
+              Orders below this amount will have additional{" "}
+              <span className="text-red-500 font-bold">delivery fees</span>{" "}
+              applied.
+            </p>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-// Fetch data on the server (same as restaurant page)
+// Fetch data helpers
 async function getActiveCategories() {
   try {
     const response = await categoryService.getActiveCategories();
@@ -67,7 +42,6 @@ async function getActiveCategories() {
   }
 }
 
-// Fetch products with pagination (same as restaurant page)
 async function getProducts(page = 1, limit = 10) {
   try {
     const response = await productService.getAllProducts();
@@ -90,13 +64,13 @@ async function getProducts(page = 1, limit = 10) {
 }
 
 export default async function GuestPage() {
-  // Fetch data on the server (same as restaurant page)
+  // Fetch data
   const [activeCategories, productsData] = await Promise.all([
     getActiveCategories(),
-    getProducts(1, 20), // Increase limit to get more products
+    getProducts(1, 20),
   ]);
 
-  // Transform categories for the UI (same as restaurant page)
+  // Transform categories
   const categories = activeCategories.map((category: any) => ({
     name: category.name,
     image: "/products/fresh-organic-roma-tomatoes.png",
@@ -105,7 +79,7 @@ export default async function GuestPage() {
     ).length,
   }));
 
-  // Transform products for the UI (same as restaurant page)
+  // Transform products
   const products = productsData.products.map((product: any) => ({
     id: product.id,
     name: product.productName,
@@ -114,9 +88,9 @@ export default async function GuestPage() {
     image: product.images?.[0] || "/placeholder.svg",
     category: product.category?.name || "OTHER",
     inStock: product.quantity > 0,
-    rating: Math.random() * 2 + 3, // Random rating between 3-5
-    isNew: Math.random() > 0.5, // Randomly mark as new
-    isFeatured: Math.random() > 0.7, // Randomly mark as featured
+    rating: Math.random() * 2 + 3,
+    isNew: Math.random() > 0.5,
+    isFeatured: Math.random() > 0.7,
     discountPercent:
       product.discountedPrice && product.unitPrice
         ? Math.round(
@@ -127,20 +101,26 @@ export default async function GuestPage() {
         : undefined,
   }));
 
-  return (
-    <Suspense fallback={<SearchLoading />}>
-      <div className="min-h-screen bg-background">
-        {/* Guest Requirements Notice */}
-        <Header />
-        <div className="pt-15">
-          <GuestRequirementsNotice />
-        </div>
+  const isLoading = !productsData || products.length === 0;
 
-        {/* Reuse the existing ProductsSection component */}
-        <div id="products">
-          <ProductsSection products={products} categories={categories} />
+  return (
+    <div className="">
+
+      {isLoading ? (
+        <div className="flex items-center justify-center min-h-screen">
+          <Spinner variant="ellipsis" className="text-green-600" size={32} />
         </div>
-      </div>
-    </Suspense>
+      ) : (
+        <>
+          <div className="pt-13">
+            <GuestRequirementsNotice />
+          </div>
+
+          <div id="products" className="">
+            <ProductsSection products={products} categories={categories} />
+          </div>
+        </>
+      )}
+    </div>
   );
 }

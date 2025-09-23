@@ -1,32 +1,20 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import type React from "react";
-
 import { useState } from "react";
 import {
-  Phone,
   Mail,
-  MessageCircle,
-  Users,
   ChevronDown,
   ChevronRight,
-  Paperclip,
-  AlertTriangle,
   PhoneOutgoing,
+  Send,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+import Image from "next/image";
+
 
 type ContactInfo = {
   phone: string;
@@ -50,27 +38,46 @@ type Props = {
 
 export function HelpContent({ contactInfo, faqs }: Props) {
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
-    subject: "",
-    message: "",
-    attachment: null as File | null,
-    notifications: false,
-  });
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
-  const handleInputChange = (
-    field: string,
-    value: string | boolean | File | null
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  // chat state
+  const [messages, setMessages] = useState<
+    { id: number; text: string; sender: "user" | "bot"; time: string }[]
+  >([]);
+  const [message, setMessage] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Support request submitted:", formData);
-    // Handle form submission
+    if (!message.trim()) return;
+
+    const newMsg = {
+      id: Date.now(),
+      text: message,
+      sender: "user" as const,
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    };
+
+    setMessages((prev) => [...prev, newMsg]);
+    setMessage("");
+
+    // optional bot reply simulation
+    setTimeout(() => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now() + 1,
+          text: "Thanks for reaching out! Our team will get back to you soon.",
+          sender: "bot",
+          time: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        },
+      ]);
+    }, 1000);
   };
 
   const toggleFAQ = (id: string) => {
@@ -87,18 +94,15 @@ export function HelpContent({ contactInfo, faqs }: Props) {
       </div>
 
       {/* Emergency Issue */}
-      <Card className="relative overflow-hidden border-none bg-red-50 shadow-md">
-        <CardContent className="relative z-10 p-6">
+      <Card className="relative overflow-hidden border rounded-none shadow-none">
+        <CardContent className="relative z-10">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-3 animate-bounce">
-              <div className="p-2 bg-red-100 rounded-full shadow-md">
-                <AlertTriangle className="h-8 w-8 text-red-700 animate-pulse" />
-              </div>
+            <div className="flex items-center gap-3 ">
               <div>
-                <h3 className="text-lg font-bold text-red-900 tracking-wide uppercase">
+                <h3 className="text-[14px] font-bold text-red-900 tracking-wide uppercase">
                   Emergency Issue
                 </h3>
-                <p className="text-sm text-red-700 mt-1 max-w-sm">
+                <p className="text-[13px] text-red-700 mt-1 max-w-sm">
                   Our support team is available right now to assist you. Don’t
                   wait get immediate help.
                 </p>
@@ -109,7 +113,7 @@ export function HelpContent({ contactInfo, faqs }: Props) {
             <div className="flex items-center gap-2">
               <Button
                 size="lg"
-                className="relative bg-red-600 hover:bg-red-700 text-white font-bold shadow-xl rounded-full px-6 py-3 hover:scale-105 transition-transform duration-300"
+                className="relative bg-red-600 hover:bg-red-700 text-white font-bold shadow-xl rounded-full px-6 py-3 hover:scale-105 transition-transform duration-300 animate-bounce"
               >
                 <PhoneOutgoing className="font-bold" /> 0796 897 823
               </Button>
@@ -120,7 +124,9 @@ export function HelpContent({ contactInfo, faqs }: Props) {
       </Card>
 
       <CardHeader>
-        <CardTitle className="text-xl font-bold">Contact Information</CardTitle>
+        <CardTitle className="text-[16px] font-medium">
+          Contact Information
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -136,15 +142,15 @@ export function HelpContent({ contactInfo, faqs }: Props) {
 
           {/* Email Support */}
           <div className="flex flex-col items-center justify-center space-y-4 ">
-            <div className="flex items-center justify-center bg-green-100 p-2 rounded-full">
-              <Mail className="h-5 w-5 text-green-600" />
+            <div className="flex items-center justify-center ">
+              <Mail className="h-10 w-10 text-green-600" />
             </div>
             <div className="flex flex-col items-center">
-              <h4 className="font-semibold text-gray-900 mb-1">
+              <h4 className="font-medium text-[14px] text-black mb-1">
                 Email Support
               </h4>
-              <p className="text-sm text-gray-600 mb-1">{contactInfo.email}</p>
-              <p className="text-xs text-gray-500">
+              <p className="text-[13px] text-gray-700 ">{contactInfo.email}</p>
+              <p className="text-[12px] text-gray-700">
                 {contactInfo.responseTime}
               </p>
             </div>
@@ -152,18 +158,37 @@ export function HelpContent({ contactInfo, faqs }: Props) {
 
           {/* WhatsApp Support */}
           <div className="flex flex-col items-center justify-center space-y-4">
-            <div className="flex flex-col items-center justify-center bg-green-100 p-2 rounded-full ">
-              <MessageCircle className="h-5 w-5 text-green-600" />
+            <div className="flex flex-col items-center justify-center p-2 rounded-full ">
+              <svg
+                className="h-6 w-6 sm:h-8 sm:w-8 text-green-600"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488" />
+              </svg>
             </div>
             <div className="flex flex-col items-center">
-              <h4 className="font-semibold text-gray-900 mb-1">
+              <h4 className="font-medium text-[14px] text-gray-900 mb-1">
                 WhatsApp Support
               </h4>
-              <p className="text-sm text-gray-600 mb-1">
+              <p className="text-[13px] text-gray-700 mb-1">
                 {contactInfo.whatsapp}
               </p>
-              <p className="text-xs text-gray-500">24/7 chat support</p>
+              <p className="text-[12px] text-gray-600">24/7 chat support</p>
             </div>
+          </div>
+
+          {/* Chat Button - Responsive positioning */}
+          <div className="flex flex-col items-center justify-center">
+            <button onClick={() => setIsChatOpen(true)} className="">
+              <Image
+                src="/imgs/AI-icon.svg"
+                alt="whatsapp"
+                width={50}
+                height={50}
+              />
+            </button>
+            <p>What&apos;s Up</p>
           </div>
 
           {/* Live Chat */}
@@ -312,20 +337,21 @@ export function HelpContent({ contactInfo, faqs }: Props) {
 
       {/* FAQ Section */}
       {/* <Card> */}
+      {/* FAQ Section */}
       <CardHeader>
-        <CardTitle className="text-xl font-bold">
+        <CardTitle className="text-[18px] font-bold">
           Frequently Asked Questions
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           {faqs.map((faq) => (
-            <div key={faq.id} className="">
+            <div key={faq.id}>
               <button
                 onClick={() => toggleFAQ(faq.id)}
                 className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
               >
-                <span className="font-medium text-gray-900">
+                <span className="text-[14px] text-gray-900">
                   {faq.question}
                 </span>
                 {expandedFAQ === faq.id ? (
@@ -335,7 +361,7 @@ export function HelpContent({ contactInfo, faqs }: Props) {
                 )}
               </button>
               {expandedFAQ === faq.id && (
-                <div className="px-4 pb-4 text-gray-600 ">
+                <div className="px-4 pb-4 text-[13px] text-gray-600">
                   <p className="pt-3">{faq.answer}</p>
                 </div>
               )}
@@ -343,7 +369,82 @@ export function HelpContent({ contactInfo, faqs }: Props) {
           ))}
         </div>
       </CardContent>
-      {/* </Card> */}
+
+      {/* Chat Window */}
+      {isChatOpen && (
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-[calc(100vw-2rem)] max-w-sm sm:w-80 h-[70vh] sm:h-96 bg-background border border-border rounded-lg shadow-xl z-50 flex flex-col">
+          {/* Chat Header */}
+          <div className="flex items-center justify-between p-3 sm:p-4 border-b border-border">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="relative">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary rounded-full flex items-center justify-center">
+                  <span className="text-primary-foreground font-semibold text-xs sm:text-sm">
+                    S
+                  </span>
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-500 rounded-full border border-background" />
+              </div>
+              <div>
+                <h4 className="font-semibold text-xs sm:text-sm">Quick Talk</h4>
+                <p className="text-green-500 text-xs">Online</p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsChatOpen(false)}
+              className="h-7 w-7 sm:h-8 sm:w-8 p-0"
+            >
+              <X className="h-3 w-3 sm:h-4 sm:w-4" />
+            </Button>
+          </div>
+
+          {/* Chat Messages */}
+          <div className="flex-1 p-3 sm:p-4 overflow-y-auto space-y-2 sm:space-y-3">
+            {messages.map((msg) => (
+              <div
+                key={msg.id}
+                className={`flex ${
+                  msg.sender === "user" ? "justify-end" : "justify-start"
+                }`}
+              >
+                <div
+                  className={`max-w-xs px-3 py-2 rounded-lg text-xs sm:text-sm ${
+                    msg.sender === "user"
+                      ? "bg-green-500 text-primary-foreground"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  <p>{msg.text}</p>
+                  <p className="text-xs opacity-70 mt-1">{msg.time}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Chat Input */}
+          <form
+            onSubmit={handleSendMessage}
+            className="p-3 sm:p-4 border-t border-border"
+          >
+            <div className="flex gap-2">
+              <Input
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Type a message..."
+                className="flex-1 text-sm h-8 sm:h-10"
+              />
+              <Button
+                type="submit"
+                size="sm"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground h-8 w-8 sm:h-10 sm:w-10 p-0"
+              >
+                <Send className="h-3 w-3 sm:h-4 sm:w-4" />
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,6 +3,8 @@ import { ProductsSection } from "@/components/products-section";
 import { Suspense } from "react";
 import { categoryService } from "@/app/services/categoryService";
 import { productService } from "@/app/services/productService";
+import { QuickTalkWrapper } from "@/components/quck-talk-section";
+import { Footer } from "@/components/footer";
 
 function SearchLoading() {
   return (
@@ -86,9 +88,11 @@ export default async function RestaurnatPage() {
   return (
     <Suspense fallback={<SearchLoading />}>
       <div className="min-h-screen bg-background">
-          <div id="products">
-            <ProductsSection products={products} categories={categories} />
+        <div id="products">
+          <ProductsSection products={products} categories={categories} />
         </div>
+        <QuickTalkWrapper />
+        <Footer />
       </div>
     </Suspense>
   );
