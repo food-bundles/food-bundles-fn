@@ -1,4 +1,3 @@
-import { CheckoutProgress } from "../checkout/_components/checkout-progress";
 import { ConfirmationContent } from "./_components/confirmation-content";
 
 async function getOrderData() {
@@ -28,7 +27,6 @@ export default async function ConfirmationPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="container mx-auto px-6 py-8">
-        <CheckoutProgress currentStep="confirmation" />
 
         <ConfirmationContent orderData={orderData} />
       </main>

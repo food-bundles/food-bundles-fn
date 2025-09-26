@@ -17,7 +17,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
-import { MapPin, Navigation, User } from "lucide-react";
+import { MapPin, Navigation} from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { useCart } from "@/app/contexts/cart-context";
@@ -27,6 +27,7 @@ import {
   CheckoutRequest,
 } from "@/app/services/checkoutService";
 import Image from "next/image";
+import { Spinner } from "@/components/ui/shadcn-io/spinner";
 
 // Fix default marker icon
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -153,20 +154,7 @@ export function CheckoutForm({ staticData }: Props) {
     setErrors({});
   };
 
-  // Clear form function
-  const handleClearForm = () => {
-    setDeliveryData({
-      fullName: "",
-      phoneNumber: "",
-      deliveryAddress: "",
-      deliveryInstructions: "",
-      location: { lat: -1.9577, lng: 30.0619 },
-      hasSelectedLocationOnMap: false,
-    });
-    setTempLocation({ lat: -1.9577, lng: 30.0619 });
-    setIsAutoFilled(false);
-    setErrors({});
-  };
+
 
   // Get user's current location
   const getCurrentLocation = () => {
@@ -409,8 +397,8 @@ export function CheckoutForm({ staticData }: Props) {
 
   if (isLoading && !staticData) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-500 text-lg">Loading checkout...</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <Spinner variant="ellipsis" className="text-green-600" size={32} />
       </div>
     );
   }
@@ -420,43 +408,7 @@ export function CheckoutForm({ staticData }: Props) {
     return (
       <div className="max-w-4xl mx-auto">
         <Card className="border-0 shadow-none py-0">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Delivery Information</CardTitle>
-              {isAuthenticated && user && (
-                <div className="flex gap-2">
-                  {!isAutoFilled ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleAutoFillUserData}
-                      className="flex items-center gap-2"
-                    >
-                      <User className="h-4 w-4" />
-                      Use My Info
-                    </Button>
-                  ) : (
-                    <div className="flex gap-2">
-                      <span className="text-sm text-green-600 flex items-center gap-1">
-                        <User className="h-3 w-3" />
-                        Auto-filled
-                      </span>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleClearForm}
-                        className="text-xs"
-                      >
-                        Clear
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </CardHeader>
+          <CardHeader></CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -464,15 +416,9 @@ export function CheckoutForm({ staticData }: Props) {
                 <Input
                   id="fullName"
                   value={deliveryData.fullName}
-                  onChange={(e) =>
-                    handleDeliveryChange("fullName", e.target.value)
-                  }
-                  placeholder="Enter your full name"
+                  readOnly
                   className={errors.fullName ? "border-red-500" : ""}
                 />
-                {errors.fullName && (
-                  <p className="text-red-500 text-sm">{errors.fullName}</p>
-                )}
               </div>
 
               <div className="space-y-2">
@@ -480,15 +426,9 @@ export function CheckoutForm({ staticData }: Props) {
                 <Input
                   id="phoneNumber"
                   value={deliveryData.phoneNumber}
-                  onChange={(e) =>
-                    handleDeliveryChange("phoneNumber", e.target.value)
-                  }
-                  placeholder="Enter phone number"
+                  readOnly
                   className={errors.phoneNumber ? "border-red-500" : ""}
                 />
-                {errors.phoneNumber && (
-                  <p className="text-red-500 text-sm">{errors.phoneNumber}</p>
-                )}
               </div>
 
               <div className="space-y-2 md:col-span-2">
