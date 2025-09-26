@@ -1,4 +1,3 @@
-import { CheckoutProgress } from "./_components/checkout-progress";
 import { cartService } from "@/app/services/cartService";
 import { roleGuard } from "@/lib/role-guard";
 import { UserRole } from "@/lib/types";
@@ -49,8 +48,6 @@ export default async function CheckoutPage() {
     <div className="min-h-screen bg-gray-50">
       <main className="container mx-auto px-6 py-8">
         <div className="flex justify-between"></div>
-        <CheckoutProgress currentStep="checkout" />
-
         <div className="mt-8">
           <CheckoutForm staticData={checkoutData || undefined} />
         </div>
