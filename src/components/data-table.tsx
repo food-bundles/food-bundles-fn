@@ -336,7 +336,7 @@ export function DataTable<TData, TValue>({
                   }
                   size="sm"
                   onClick={() => table.setPageIndex(pageNumber - 1)}
-                  className={`px-3 py-1 ${
+                  className={`px-3 py-1 {
                     table.getState().pagination.pageIndex + 1 === pageNumber
                       ? "bg-green-500 hover:bg-green-600 text-white"
                       : ""

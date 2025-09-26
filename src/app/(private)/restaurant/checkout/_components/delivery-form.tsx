@@ -131,7 +131,7 @@ export function CheckoutForm({ staticData }: Props) {
     if (!user) return;
 
     // Parse user location if available
-    const userLocation = parseLocationString(user.location);
+    const userLocation = parseLocationString(user.location as string);
 
     // Get full address from user profile
     const fullAddress = getUserFullAddress(user);

@@ -50,7 +50,6 @@ export default function RestaurantOrdersPage() {
 
 
       setFormattedOrders(formatted);
-      console.log("Formatted orders:", formatted); // Debug log
     } else {
       setFormattedOrders([]);
     }

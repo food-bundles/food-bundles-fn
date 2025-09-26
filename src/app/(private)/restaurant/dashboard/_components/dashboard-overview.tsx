@@ -16,10 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import Link from "next/link";
 import Image from "next/image";
-import { recentOrdersColumns, type RecentOrder } from "./recent-orders-columns";
-import { DataTable } from "@/components/data-table";
 
 type DashboardData = {
   date: string;
@@ -409,16 +406,6 @@ export function DashboardOverview({ data }: Props) {
     );
   };
 
-  const recentOrdersData: RecentOrder[] = data.recentOrders
-    .slice(0, 3)
-    .map((order) => ({
-      id: order.id,
-      customer: order.customer,
-      products: order.products,
-      total: order.total,
-      status: order.status,
-      date: order.date,
-    }));
 
   return (
     <div className="space-y-6">
@@ -626,26 +613,6 @@ export function DashboardOverview({ data }: Props) {
           </CardContent>
         </Card>
       </div>
-
-      {/* Recent Orders - Using reusable DataTable component */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Recent Orders</CardTitle>
-          <Button variant="ghost" size="sm" asChild>
-            <Link href="/restaurant/orders">View All Orders</Link>
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <DataTable
-            columns={recentOrdersColumns}
-            data={recentOrdersData}
-            showSearch={false}
-            showColumnVisibility={false}
-            showPagination={false}
-            showRowSelection={false}
-          />
-        </CardContent>
-      </Card>
     </div>
   );
 }

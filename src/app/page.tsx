@@ -2,19 +2,9 @@ import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { HeroWithRestaurants } from "@/components/hero-section";
 import { QuickTalkWrapper } from "@/components/quck-talk-section";
-import { Suspense } from "react";
-
-function SearchLoading() {
-  return (
-    <div className="flex items-center justify-center p-4">
-      <div className="animate-pulse">Loading...</div>
-    </div>
-  );
-}
 
 
 export default async function HomePage() {
-
   const restaurants = [
     {
       name: "Bella Vista",
@@ -148,10 +138,7 @@ export default async function HomePage() {
     },
   ];
 
-
-
   return (
-    <Suspense fallback={<SearchLoading />}>
       <div className="min-h-screen bg-background">
         <Header />
         <div className="h-12 bg-green-700"></div>
@@ -165,6 +152,5 @@ export default async function HomePage() {
           <Footer />
         </div>
       </div>
-    </Suspense>
   );
 }

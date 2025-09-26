@@ -6,7 +6,7 @@ export async function roleGuard(allowedRoles: string[]) {
   const cookieStore = cookies();
   const token = (await cookieStore).get("auth-token")?.value;
 
-  if (!token) redirect("/?showLogin=true");
+  if (!token) redirect("/login");
 
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/me`, {
@@ -18,7 +18,7 @@ export async function roleGuard(allowedRoles: string[]) {
     });
 
     if (!res.ok) {
-      redirect("/?showLogin=true");
+      redirect("/login");
     }
 
     const data = await res.json();
@@ -33,6 +33,6 @@ export async function roleGuard(allowedRoles: string[]) {
     return data.user;
   } catch (error) {
     console.error("Role guard error:", error);
-    redirect("/?showLogin=true");
+    redirect("/");
   }
 }

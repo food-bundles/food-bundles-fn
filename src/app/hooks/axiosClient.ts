@@ -59,7 +59,7 @@ const createAxiosClient = (): AxiosInstance => {
         const { response } = error;
         if (response?.status === 401) {
           removeToken();
-          window.location.href = "/?showLogin=true";
+          window.location.href = "/login";
         }
       } catch (e) {
         console.error("Axios Error", e);

@@ -10,7 +10,7 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.59 0.207 142.5);
+  --primary: oklch(0.624 0.194 149.214);
   --primary-foreground: oklch(1 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
@@ -31,7 +31,7 @@
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.59 0.207 142.5);
+  --sidebar-primary: oklch(0.624 0.194 149.214);
   --sidebar-primary-foreground: oklch(1 0 0);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
@@ -66,7 +66,7 @@
   --chart-5: oklch(0.645 0.246 16.439);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.59 0.207 142.5);
+  --sidebar-primary: oklch(0.624 0.194 149.214);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
@@ -75,7 +75,7 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-poppins);
   --font-mono: var(--font-geist-mono);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -146,6 +146,27 @@
   animation: slide-x 1s ease-in-out infinite; /* fast and smooth */
 }
 }
+
+.toast-guest {
+  background-color: #fef9c3; 
+  border-left: 6px solid #facc15;
+  color: #1f2937; 
+  font-size: 14px;
+  font-weight: 500;
+  padding: 12px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toast-guest svg {
+  color: #ca8a04; 
+  flex-shrink: 0;
+}
+
+
+
   
 
 
