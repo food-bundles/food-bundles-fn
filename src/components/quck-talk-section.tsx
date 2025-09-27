@@ -11,17 +11,17 @@ import { AnimatedDotsBackground } from "./animated-dots-background";
 // Move farmers data outside component to prevent useEffect recreation
 const farmers = [
   {
-    name: "Kinyinya Farmers",
+    name: "Kinyinya Farmer",
     favoriteProduct: "Vegetables",
     image: ["/farmers/farm1.jpg", "/farmers/farm3.jpeg"],
   },
   {
-    name: "Musanze Farmers",
+    name: "Musanze Farmer",
     favoriteProduct: "Fresh Fruits",
     image: ["/farmers/farm4.png", "/farmers/farm5.jpg"],
   },
   {
-    name: "Ntasho Farmers",
+    name: "Ntasho Farmer",
     favoriteProduct: "Vegetables",
     image: ["/farmers/farm2.jpg", "/farmers/farm6.jpg"],
   },
@@ -107,10 +107,10 @@ function QuickTalkSection() {
         {/* Our Farmers Section - Responsive */}
         <div className="pt-4 bg-white/90 backdrop-blur-sm p-3 sm:p-4 md:p-6 rounded-lg shadow-lg">
           <h3 className="font-semibold text-lg sm:text-xl md:text-2xl text-black mb-4 md:mb-6">
-            Our Farmer
+            Our Farm
           </h3>
 
-          {/* Farmers Grid with Auto-Rotating Background Images */}
+          {/* Farmers Grid with Auto- Background Images */}
           <div className="grid sm:grid-cols-2 xl:grid-cols-3    ">
             {farmers.map((farmer, index) => (
               <div
