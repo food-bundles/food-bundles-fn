@@ -5,43 +5,69 @@ import { CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Mail, Phone, MapPin, Send, X, MessageCircle } from "lucide-react";
-import { useState } from "react";
-import Image from "next/image";
+import { useEffect, useState } from "react";
 import { AnimatedDotsBackground } from "./animated-dots-background";
+
+// Move farmers data outside component to prevent useEffect recreation
+const farmers = [
+  {
+    name: "Kinyinya Farmers",
+    favoriteProduct: "Vegetables",
+    image: ["/farmers/farm1.jpg", "/farmers/farm3.jpeg"],
+  },
+  {
+    name: "Musanze Farmers",
+    favoriteProduct: "Fresh Fruits",
+    image: ["/farmers/farm4.png", "/farmers/farm5.jpg"],
+  },
+  {
+    name: "Ntasho Farmers",
+    favoriteProduct: "Vegetables",
+    image: ["/farmers/farm2.jpg", "/farmers/farm6.jpg"],
+  },
+];
+
+type Message = {
+  id: number;
+  text: string;
+  sender: "bot" | "user";
+  time: string;
+};
 
 function QuickTalkSection() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState([
+  const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
       text: "Hi! I'm Food bundle Assistant. How can I help you with your restaurant supply needs today?",
-
       sender: "bot",
-      time: "10:30 AM",
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
     },
   ]);
 
-  const farmers = [
-    {
-      name: "Kinyinya Farmers",
-      favoriteProduct: "Vegetables",
-      image: "/farmers/kinyinya-vegetables.jpg",
-    },
-    {
-      name: "Musanze Farmers",
-      phone: "+1 (555) 987-6543",
-      favoriteProduct: "Fresh Fruits",
-      image: "/farmers/musanze-fruits.jpg",
-    },
-    {
-      name: "Ntasho Farmers",
-      phone: "+1 (555) 456-7890",
-      favoriteProduct: "Vegetables",
-      image: "/farmers/ntashyo-vegetables.jpg",
-    },
-  ];
-  
+  // State for rotating images
+  const [currentImageIndexes, setCurrentImageIndexes] = useState(
+    farmers.map(() => 0)
+  );
+
+  // Auto-rotate images every 3 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndexes(prev => 
+        prev.map((currentIndex, farmerIndex) => {
+          const farmer = farmers[farmerIndex];
+          return (currentIndex + 1) % farmer.image.length;
+        })
+      );
+    }, 6000);
+
+    return () => clearInterval(interval);
+  }, []); // Empty dependency array
+
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim()) {
@@ -69,41 +95,58 @@ function QuickTalkSection() {
           }),
         };
         setMessages((prev) => [...prev, botResponse]);
-      }, 1000);
+      }, 600);
     }
   };
 
   return (
     <>
+
       {/* Main Grid - Responsive for all screen sizes */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         {/* Our Farmers Section - Responsive */}
         <div className="pt-4 bg-white/90 backdrop-blur-sm p-3 sm:p-4 md:p-6 rounded-lg shadow-lg">
-          <h3 className="font-semibold  text-lg sm:text-xl md:text-2xl text-black mb-4 md:mb-6">
-            Our Farmers
+          <h3 className="font-semibold text-lg sm:text-xl md:text-2xl text-black mb-4 md:mb-6">
+            Our Farmer
           </h3>
 
-          {/* Farmers Grid - Responsive breakpoints */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 md:gap-6 mb-4 md:mb-6">
+          {/* Farmers Grid with Auto-Rotating Background Images */}
+          <div className="grid sm:grid-cols-2 xl:grid-cols-3    ">
             {farmers.map((farmer, index) => (
               <div
                 key={index}
-                className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow"
+                className="bg-white rounded-xl shadow-lg  border border-gray-100 overflow-hidden hover:shadow-xl cursor-pointer group relative h-52 sm:h-52 md:h-70"
+                style={{
+                  backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.2)), url(${farmer.image[currentImageIndexes[index]]})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat'
+                }}
               >
-                <Image
-                  src={farmer.image || "/placeholder.svg"}
-                  alt={farmer.name}
-                  width={300}
-                  height={200}
-                  className="w-full h-32 sm:h-36 md:h-38 object-cover"
-                />
-                <div className="p-3 sm:p-4 text-center">
-                  <h4 className="font-medium text-sm sm:text-base text-black-800 mb-2">
-                    {farmer.name}
-                  </h4>
-                  <p className="text-xs sm:text-sm text-green-600">
-                    {farmer.favoriteProduct}
-                  </p>
+                {/* Content overlay */}
+                <div className="absolute inset-0 flex flex-col justify-end p-3 sm:p-4">
+                  <div className="text-center">
+                    <h4 className="font-medium text-sm sm:text-base text-white mb-2 drop-shadow-lg">
+                      {farmer.name}
+                    </h4>
+                    <p className="text-xs sm:text-sm text-green-200 drop-shadow-lg">
+                      {farmer.favoriteProduct}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Image indicators */}
+                <div className="absolute top-3 right-3 flex space-x-1">
+                  {farmer.image?.map((_, imgIndex) => (
+                    <div
+                      key={imgIndex}
+                      className={`absolute inset-0 transition-opacity duration-6000 ease-in-out ${
+                        imgIndex === currentImageIndexes[index] 
+                          ? 'opacity-100' 
+                          : 'opacity-0'
+                      }`}
+                    />
+                  ))}
                 </div>
               </div>
             ))}
@@ -130,7 +173,9 @@ function QuickTalkSection() {
                       Email Support
                     </p>
                     <a
-                      href="mailto:sales@food.rw"
+                      href="https://mail.google.com/mail/?view=cm&to=sales@food.rw"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-xs sm:text-sm text-muted-foreground hover:text-primary break-all"
                     >
                       sales@food.rw
@@ -167,14 +212,16 @@ function QuickTalkSection() {
               </div>
 
               {/* Chat Button - Responsive positioning */}
-              <div className="w-full lg:w-auto flex  flex-col items-center gap-2 mb-2 mr-2">
+              <div className="w-full lg:w-auto flex bg-gray-100 border border-green-300 rounded-sm flex-col items-center justify-center gap-2 p-3 mb-2 mr-2 hover:bg-gray-200 transition-all duration-100">
                 <Button
                   onClick={() => setIsChatOpen(true)}
-                  className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-green-500 hover:bg-primary/90 text-primary-foreground shadow-lg z-50"
+                  className="flex items-center justify-center w-14 h-14 cursor-pointer rounded-full bg-green-500 hover:bg-green-600 text-white hover:shadow-2xl transition-all duration-300 shadow-lg z-50"
                 >
-                  <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
+                  <MessageCircle className="h-6 w-6 text-white" />
                 </Button>
-                <p>What&apos;s Up</p>
+                <p className="text-xs font-medium text-center animate-bounce z-20">
+                  What&apos;s Up
+                </p>
               </div>
             </div>
 
@@ -272,7 +319,7 @@ function QuickTalkSection() {
           className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center cursor-pointer rounded-full bg-green-500 hover:bg-primary/90 text-primary-foreground shadow-lg animate-bounce z-50 hover:scale-105 transition-transform"
         >
           <svg
-            className="h-6 w-6 sm:h-8 sm:w-8 text-white-500"
+            className="h-6 w-6 sm:h-8 sm:w-8 text-white"
             viewBox="0 0 24 24"
             fill="currentColor"
           >
@@ -362,14 +409,14 @@ function QuickTalkSection() {
 
 export function QuickTalkWrapper() {
   return (
-
-    <div className=" flex flex-col">
+    <div className="flex flex-col">
       <AnimatedDotsBackground className="flex-1 bg-muted/30">
         <section id="ai-assistant" className="container mx-auto px-4 sm:px-6 lg:px-8 pb-0">
           <div className="text-center mb-8 sm:mb-12">
-            <h2 className="text-xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-4 pt-4">Ask Help</h2>
+            <h2 className="text-xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-4 pt-4">
+              Ask Help
+            </h2>
           </div>
-
           <QuickTalkSection />
         </section>
       </AnimatedDotsBackground>
