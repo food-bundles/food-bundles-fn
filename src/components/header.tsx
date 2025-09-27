@@ -68,6 +68,7 @@ export function Header() {
   const [activeSection, setActiveSection] = useState("home");
   const [isShopDropdownOpen, setIsShopDropdownOpen] = useState(false);
   const [isAuthTransitioning, setIsAuthTransitioning] = useState(false);
+  const [hasAnimated, setHasAnimated] = useState(false);
 
   const lastScrollY = useRef(0);
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -79,12 +80,6 @@ export function Header() {
   const navigationItems = [
     { label: "Home", href: "#home", id: "home" },
     { label: "Ask help", href: "#ask-help", id: "ask-help" },
-    {
-      label: "Subscribe to our farm",
-      href: "#subscribe",
-      id: "subscribe",
-      hasDropdown: true,
-    },
   ];
 
   const getRedirectPathMemo = useCallback((userRole: string) => {
@@ -216,6 +211,17 @@ export function Header() {
     }, 100);
   }, [detectActiveSection]);
 
+  // Animation effect for subscribe button
+  useEffect(() => {
+    if (!hasAnimated) {
+      const timer = setTimeout(() => {
+        setHasAnimated(true);
+      }, 500); // Start animation after 500ms
+
+      return () => clearTimeout(timer);
+    }
+  }, [hasAnimated]);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       window.addEventListener("scroll", handleScroll, { passive: true });
@@ -240,6 +246,7 @@ export function Header() {
 
   return (
     <>
+ 
       <header className="fixed top-0 left-0 right-0 z-50">
         <div className="bg-green-700 border-b border-green-600">
           <div className="container mx-auto px-4 sm:px-6">
@@ -262,65 +269,83 @@ export function Header() {
               {/* Desktop Navigation */}
               <nav className="hidden md:flex items-center gap-4 lg:gap-6">
                 {navigationItems.map((item) => (
-                  <div
+                  <a
                     key={item.id}
-                    className="relative"
-                    onMouseEnter={
-                      item.hasDropdown ? handleShopMouseEnter : undefined
-                    }
-                    onMouseLeave={
-                      item.hasDropdown ? handleShopMouseLeave : undefined
-                    }
+                    href={item.href}
+                    onClick={(e) => handleNavClick(e, item.id)}
+                    className="hover:border-b hover:border-orange-400 py-1 transition-colors text-[14px] text-white cursor-pointer flex items-center gap-1"
                   >
-                    <a
-                      href={item.href}
-                      onClick={(e) => handleNavClick(e, item.id)}
-                      className="hover:border-b hover:border-orange-400 py-1 transition-colors text-[14px] text-white  cursor-pointer flex items-center gap-1"
-                    >
-                      {item.label}
-                    </a>
-
-                    {/* Subscribe Dropdown */}
-                    {item.hasDropdown && (
-                      <div
-                        className={`absolute top-full -left-1 mt-2 w-60 bg-white shadow-lg border border-gray-200 transition-all duration-200 ${
-                          isShopDropdownOpen
-                            ? "opacity-100 visible transform translate-y-0"
-                            : "opacity-0 invisible transform -translate-y-2"
-                        }`}
-                        onMouseEnter={handleShopMouseEnter}
-                        onMouseLeave={handleShopMouseLeave}
-                      >
-                        <div className="py-2">
-                          <Link href="/signup">
-                            <button
-                              onClick={() => {
-                                window.dispatchEvent(
-                                  new CustomEvent("openSignupRestaurant")
-                                );
-                                setIsShopDropdownOpen(false);
-                              }}
-                              className="flex items-center  w-full text-left px-4 py-3 text-[13px] text-gray-900 border-b hover:bg-green-50 hover:text-green-700 transition-colors"
-                            >
-                              <UserPlus className="w-4 h-4 mr-2 text-green-500" />
-                              Subscribe as Restaurant
-                            </button>
-                          </Link>
-                          <button
-                            onClick={() => {
-                              setIsShopDropdownOpen(false);
-                              window.location.href = "/guest";
-                            }}
-                            className="flex items-center w-full text-left px-4 py-3 text-[13px] text-gray-900 hover:bg-green-50 hover:text-green-700 transition-colors"
-                          >
-                            <ShoppingCart className="w-4 h-4 mr-2  text-green-500" />
-                            Shop as Guest
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                    {item.label}
+                  </a>
                 ))}
+
+                {/* Vertical Separator */}
+                <div className="vertical-separator"></div>
+
+                {/* Enhanced Subscribe Button */}
+                <div
+                  className={`relative ${
+                    hasAnimated ? "subscribe-animate" : ""
+                  }`}
+                  onMouseEnter={handleShopMouseEnter}
+                  onMouseLeave={handleShopMouseLeave}
+                >
+                  <button
+                    className="subscribe-button text-white px-4 py-1 rounded-full transition-all duration-300 text-[13px] whitespace-nowrap flex items-center gap-2 hover:scale-105"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      scrollToSection("subscribe");
+                    }}
+                  >
+                    <span className="relative z-10">Subscribe To Our Farm</span>
+                  </button>
+
+                  {/* Enhanced Dropdown */}
+                  <div
+                    className={`absolute top-full -left-1 mt-3 w-64 bg-white border border-orange-200 transition-all duration-300 ${
+                      isShopDropdownOpen
+                        ? "opacity-100 visible transform translate-y-0"
+                        : "opacity-0 invisible transform -translate-y-2"
+                    }`}
+                    onMouseEnter={handleShopMouseEnter}
+                    onMouseLeave={handleShopMouseLeave}
+                  >
+                    <div className="py-2">
+               
+                      <Link href="/signup">
+                        <button
+                          onClick={() => {
+                            window.dispatchEvent(
+                              new CustomEvent("openSignupRestaurant")
+                            );
+                            setIsShopDropdownOpen(false);
+                          }}
+                          className="flex items-center w-full text-left px-4 py-3 text-[13px] text-gray-900 border-b  hover:text-green-500 transition-colors group"
+                        >
+                          <UserPlus className="w-4 h-4 mr-3 text-orange-400 group-hover:text-orange-600" />
+                          <div>
+                            <div className="font-medium">
+                              Subscribe as Restaurant
+                            </div>
+                      
+                          </div>
+                        </button>
+                      </Link>
+                      <button
+                        onClick={() => {
+                          setIsShopDropdownOpen(false);
+                          window.location.href = "/guest";
+                        }}
+                        className="flex items-center w-full text-left px-4 py-3 text-[13px] text-gray-900  hover:text-green-500 transition-colors group"
+                      >
+                        <ShoppingCart className="w-4 h-4 mr-3 text-orange-400 group-hover:text-orange-500" />
+                        <div>
+                          <div className="font-medium">Shop as Guest</div>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </nav>
 
               {/* Right actions */}
@@ -387,10 +412,8 @@ export function Header() {
                     </>
                   ) : isAuthTransitioning || isLoading ? (
                     <div className="flex items-center gap-2 px-3">
-                      <Skeleton className="h-6 w-20 rounded bg-green-600/60" />{" "}
-                      {/* username skeleton */}
-                      <Skeleton className="h-6 w-6 rounded-full bg-green-600/60" />{" "}
-                      {/* profile image skeleton */}
+                      <Skeleton className="h-6 w-20 rounded bg-green-600/60" />
+                      <Skeleton className="h-6 w-6 rounded-full bg-green-600/60" />
                     </div>
                   ) : (
                     <Link href="/login">
@@ -421,59 +444,77 @@ export function Header() {
               <div className="md:hidden pb-4 border-t border-green-600 mt-2">
                 <nav className="flex flex-col gap-3 pt-4">
                   {navigationItems.map((item) => (
-                    <div key={item.id}>
-                      <a
-                        href={item.href}
-                        onClick={(e) => {
-                          if (item.hasDropdown) {
-                            e.preventDefault();
-                            setIsShopDropdownOpen(!isShopDropdownOpen);
-                          } else {
-                            handleNavClick(e, item.id);
-                          }
-                        }}
-                        className={`hover:text-secondary transition-colors cursor-pointer px-2 py-1 rounded flex items-center justify-between ${
-                          activeSection === item.id
-                            ? "text-yellow-300 bg-green-800/50"
-                            : "text-primary-foreground"
-                        }`}
-                      >
-                        <span>{item.label}</span>
-                      </a>
-
-                      {/* Mobile Subscribe Options */}
-                      {item.hasDropdown && isShopDropdownOpen && (
-                        <div className="ml-4 mt-2 space-y-2">
-                          <Link href="/subscribe">
-                            <button
-                              onClick={() => {
-                                setIsMenuOpen(false);
-                                setIsShopDropdownOpen(false);
-                              }}
-                              className="block w-full text-left px-2 py-2 text-sm text-green-200 hover:text-white transition-colors"
-                            >
-                              Subscribe as Restaurant
-                            </button>
-                          </Link>
-                          <Link href="/subscribe">
-                            <button
-                              onClick={() => {
-                                setIsMenuOpen(false);
-                                setIsShopDropdownOpen(false);
-                                window.location.href = "/guest";
-                              }}
-                              className="block w-full text-left px-2 py-2 text-sm text-green-200 hover:text-white transition-colors"
-                            >
-                              Shop as Guest
-                            </button>
-                          </Link>
-                        </div>
-                      )}
-                    </div>
+                    <a
+                      key={item.id}
+                      href={item.href}
+                      onClick={(e) => handleNavClick(e, item.id)}
+                      className={`hover:text-secondary transition-colors cursor-pointer px-2 py-1 rounded flex items-center justify-between ${
+                        activeSection === item.id
+                          ? "text-yellow-300 bg-green-800/50"
+                          : "text-primary-foreground"
+                      }`}
+                    >
+                      <span>{item.label}</span>
+                    </a>
                   ))}
 
-                  {/* Mobile Login/Profile */}
+                  {/* Mobile Subscribe Button */}
+                  <div className="mt-2 pt-2 border-t border-green-600/50">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setIsShopDropdownOpen(!isShopDropdownOpen);
+                      }}
+                      className={`subscribe-button text-white font-semibold px-4 py-3 rounded-full transition-all duration-300 text-sm w-full flex items-center justify-center gap-2 ${
+                        hasAnimated ? "subscribe-animate" : ""
+                      }`}
+                    >
+                      🌾 Subscribe To Our Farm
+                    </button>
 
+                    {/* Mobile Subscribe Options */}
+                    {isShopDropdownOpen && (
+                      <div className="mt-3 space-y-2 bg-green-800/30 rounded-lg p-3">
+                        <Link href="/subscribe">
+                          <button
+                            onClick={() => {
+                              setIsMenuOpen(false);
+                              setIsShopDropdownOpen(false);
+                            }}
+                            className="flex items-center w-full text-left px-3 py-3 text-sm text-green-100 hover:text-white transition-colors rounded-lg hover:bg-green-700/50"
+                          >
+                            <UserPlus className="w-4 h-4 mr-3 text-orange-400" />
+                            <div>
+                              <div className="font-medium">
+                                Subscribe as Restaurant
+                              </div>
+                              <div className="text-xs text-green-300">
+                                Get fresh produce daily
+                              </div>
+                            </div>
+                          </button>
+                        </Link>
+                        <button
+                          onClick={() => {
+                            setIsMenuOpen(false);
+                            setIsShopDropdownOpen(false);
+                            window.location.href = "/guest";
+                          }}
+                          className="flex items-center w-full text-left px-3 py-3 text-sm text-green-100 hover:text-white transition-colors rounded-lg hover:bg-green-700/50"
+                        >
+                          <ShoppingCart className="w-4 h-4 mr-3 text-orange-400" />
+                          <div>
+                            <div className="font-medium">Shop as Guest</div>
+                            <div className="text-xs text-green-300">
+                              Browse without account
+                            </div>
+                          </div>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Mobile Login/Profile */}
                   {isAuthenticated ? (
                     <div className="mt-2 pt-2 border-t border-green-600">
                       <div className="flex items-center gap-2 px-2 py-1 text-primary-foreground">
@@ -484,7 +525,7 @@ export function Header() {
                               alt={`${userName}'s profile`}
                               width={20}
                               height={20}
-                              className="rounded-full object-cover p-[15px] "
+                              className="rounded-full object-cover p-[15px]"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.src = "/placeholder.svg";
@@ -529,8 +570,8 @@ export function Header() {
                   ) : isLoading ? (
                     <>
                       <div className="flex items-center gap-2 px-3">
-                        <Skeleton className="h-6 w-20 rounded bg-green-600/60" />{" "}
-                        <Skeleton className="h-6 w-6 rounded-full bg-green-600/60" />{" "}
+                        <Skeleton className="h-6 w-20 rounded bg-green-600/60" />
+                        <Skeleton className="h-6 w-6 rounded-full bg-green-600/60" />
                       </div>
                     </>
                   ) : (
