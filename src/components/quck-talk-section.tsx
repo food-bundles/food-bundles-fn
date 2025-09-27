@@ -11,12 +11,12 @@ import { AnimatedDotsBackground } from "./animated-dots-background";
 // Move farmers data outside component to prevent useEffect recreation
 const farmers = [
   {
-    name: "Kinyinya Farmer",
+    name: "Kinyinya Farm",
     favoriteProduct: "Vegetables",
     image: ["/farmers/farm1.jpg", "/farmers/farm3.jpeg"],
   },
   {
-    name: "Musanze Farmer",
+    name: "Musanze Farm",
     favoriteProduct: "Fresh Fruits",
     image: ["/farmers/farm4.png", "/farmers/farm5.jpg"],
   },
