@@ -4,7 +4,6 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Eye,
@@ -15,12 +14,10 @@ import {
   MapPin,
   Phone,
   Building2,
-  Tractor,
-  ArrowLeft,
   UserRoundCheck,
 } from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   ICreateFarmerData,
   ICreateRestaurantData,
@@ -74,7 +71,6 @@ function SignupForm() {
     textAddress: "",
   });
 
-  const router = useRouter();
 
   useEffect(() => {
     checkBackendAvailability();
@@ -273,14 +269,14 @@ function SignupForm() {
   }
 
   return (
-    <div className=" flex items-center w-full max-w-3xl ">
+    <div className="flex flex-col lg:flex-row items-stretch w-full max-w-3xl bg-white rounded-md shadow-sm">
       {/* Search params handler */}
       <Suspense fallback={null}>
         <SignupSearchParamsHandler setSelectedRole={setSelectedRole} />
       </Suspense>
 
       {/* Left side: role selection */}
-      <div className="w-1/2 p-8 flex flex-col justify-center bg-white">
+      <div className="w-full lg:w-1/2 p-6 lg:p-8 flex flex-col justify-center">
         <h2 className="text-[16px] font-medium text-black mb-4">
           Choose Your Role
         </h2>
@@ -319,10 +315,10 @@ function SignupForm() {
       </div>
 
       {/* Vertical divider */}
-      <div className="w-[.5px] bg-gray-300 h-100" />
+      <div className="hidden lg:block w-[.5px] bg-gray-300" />
 
       {/* Right side: form */}
-      <div className="w-1/2 p-8">
+      <div className="w-full lg:w-1/2 p-6 lg:p-8">
         {!isBackendAvailable && (
           <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-md text-sm mb-4">
             {backendMessage}

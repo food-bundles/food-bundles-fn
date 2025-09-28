@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { Bike, Star } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 interface Restaurant {
@@ -22,7 +21,6 @@ function CircularRestaurantAnimation({
 }: {
   restaurants: Restaurant[];
 }) {
-  const router = useRouter();
   const [rotation, setRotation] = useState(0);
   const animationRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
@@ -82,7 +80,9 @@ function CircularRestaurantAnimation({
   };
 
   const handleRestaurantClick = (restaurantName: string) => {
-    router.push(`/stories?restaurant=${encodeURIComponent(restaurantName)}`);
+    window.location.href = `/stories?restaurant=${encodeURIComponent(
+      restaurantName
+    )}`;
   };
 
   const displayRestaurants = restaurants.slice(0, 10);
@@ -255,7 +255,6 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
                     </div>
                   </div>
                 </div>
-
               </div>
 
               <div className="lg:col-span-4 space-y-6 z-10 pt-2 lg:pt-4 pr-3 lg:pr-5">

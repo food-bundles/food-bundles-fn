@@ -108,7 +108,7 @@ export default async function GuestPage() {
 
       {isLoading ? (
         <div className="flex items-center justify-center min-h-screen">
-          <Spinner variant="ellipsis" className="text-green-600" size={32} />
+          <Spinner />
         </div>
       ) : (
         <>

@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
-import { ArrowLeft, ArrowRight} from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
@@ -15,11 +15,11 @@ export default function Unauthorized() {
   };
 
   const handleGoHome = () => {
-    router.push("/");
+    window.location.href = "/";
   };
 
   const handleLogin = () => {
-    window.location.href = ("/login");
+    window.location.href = "/login";
   };
 
   return (

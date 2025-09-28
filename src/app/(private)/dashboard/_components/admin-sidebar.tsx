@@ -18,7 +18,7 @@ import {
   UserCog,
   Soup,
 } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname} from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
 import Image from "next/image";
@@ -69,7 +69,6 @@ const menuItems = [
 
 export function AdminSidebar() {
   const pathname = usePathname();
-  const router = useRouter();
   const [expandedItems, setExpandedItems] = useState(new Set());
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -88,10 +87,10 @@ export function AdminSidebar() {
     try {
       await authService.logout();
       await new Promise((resolve) => setTimeout(resolve, 500));
-       router.push("/");
+      window.location.href = "/";
     } catch (error) {
       console.error("Logout error:", error);
-       window.location.href = "/";
+      window.location.href = "/";
     }
   };
 
