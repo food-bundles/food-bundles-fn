@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -79,7 +78,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
           {cartItems.length > 0 && (
             <div className="flex justify-between items-center">
               <p className="text-gray-600 text-sm sm:text-xs lg:text-sm">
-                You have {totalItems} items in your cart
+                You have <span className="text-green-500 font-bold">{totalItems}</span> items in your cart
               </p>
               <button
                 onClick={handleClearCart}
@@ -94,11 +93,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
           <div className="space-y-0">
             {isLoading && cartItems.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 space-y-3">
-                <Spinner
-                  variant="ellipsis"
-                  className="text-green-600"
-                  size={32}
-                />
+                <Spinner />
               </div>
             ) : error ? (
               <Card>
@@ -141,9 +136,9 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   {totalAmount} Rwf
                 </span>
               </div>
-              <Link href="/restaurant/checkout">
+              <Link href="/checkout">
                 <Button className="w-full py-3 sm:py-2 text-sm sm:text-xs bg-green-600 hover:bg-green-700 rounded-none">
-                  Proceed to CheckOut
+                  Buy Now
                 </Button>
               </Link>
             </div>
@@ -297,9 +292,10 @@ function CartItem({
 
             <button
               onClick={handleDelete}
-              className="text-green-500 hover:text-green-400 transition-colors hover:rotate-90 transform duration-200 cursor-pointer"
+              disabled={isDeleting} 
+              className="text-green-500 hover:text-green-400 transition-colors hover:rotate-90 transform duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <X className="w-8 sm:w-6 h-8 sm:h-6" />
+                <X className="w-8 sm:w-6 h-8 sm:h-6" />
             </button>
           </div>
         </div>

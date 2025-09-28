@@ -134,7 +134,7 @@ function ProductCard({
               </div>
             )}
             {isInCart && isHovered && (
-              <Link href="/restaurant/checkout" className="absolute inset-0">
+              <Link href="/checkout" className="absolute inset-0">
                 <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-lg flex items-center cursor-pointer hover:bg-green-600 transition-colors">
                   <Check className="w-3 h-3 mr-1" /> Buy Now
                 </div>
@@ -360,112 +360,101 @@ export function ProductsSection({
         <div className="flex gap-0 relative">
           <div className="  w-full">
             {isAuthenticated && user && (
-              <div className="flex items-center justify-center bg-gray-100 py-4 sm:py-6 border-b border-gray-100">
-                <div className=" flex items-center justify-between gap-4">
-                  <div className=" flex flex-col justify-center px-6">
-                    <div className=" flex flex-col justify-center">
-                      <h1 className="text-[16px] font-semibold text-gray-800 mb-1">
-                        Hello <span className="text-green-600">{userName}</span>
-                        !
-                      </h1>
-                      <p className="text-gray-500 text-[13px]">
-                        Welcome to Our Farm
+              <div className="flex items-center justify-center bg-gray-100 py-4 sm:py-6 px-10 border-b border-gray-100">
+                <div className="flex flex-col lg:flex-row items-center lg:items-stretch justify-between gap-4 w-full px-4">
+                  {/* Left: Greeting */}
+                  <div className="flex flex-col justify-center text-center lg:text-left">
+                    <h1 className="text-[16px] font-semibold text-gray-800 mb-1">
+                      Hello <span className="text-green-600">{userName}</span>!
+                    </h1>
+                    <p className="text-gray-500 text-[13px]">
+                      Welcome to Our Farm
+                    </p>
+                  </div>
+
+                  {/* Middle: Benefits & Subscribe */}
+                  <div className="bg-gray-200 md:rounded-full rounded-md px-4 sm:px-6 py-3 shadow-lg w-full lg:w-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+                    {/* Profile Images */}
+                    <div className="flex items-center -space-x-6">
+                      {[
+                        "/imgs/restaurant1.jpg",
+                        "/imgs/restaurant1.jpg",
+                        "/imgs/restaurant1.jpg",
+                        "/imgs/restaurant1.jpg",
+                        "/imgs/restaurant1.jpg",
+                        "/imgs/restaurant1.jpg",
+                      ].map((src, i) => (
+                        <div
+                          key={i}
+                          className="w-10 h-10 bg-gradient-to-br from-orange-400 to-red-500 rounded-full border-2 border-gray-800 flex items-center justify-center overflow-hidden"
+                        >
+                          <Image
+                            src={src}
+                            width={32}
+                            height={32}
+                            alt="avatar"
+                            className="rounded-full w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}{" "}
+                      <p className="ml-7 text-[18px] text-green-500 font-bold">
+                        {" "}
+                        + 20
                       </p>
                     </div>
-                    {/* <div className="relative w-full max-w-md">
-                    <input
-                      type="text"
-                      placeholder="Search for fresh products..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full px-4 py-3 pr-12 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200"
-                    />
-                    <button className="absolute right-0 top-0 h-full px-4 bg-green-600 text-white  hover:bg-green-700 transition-colors duration-200">
-                      <Search className="w-5 h-5" />
-                    </button>
-                  </div> */}
-                  </div>
-                  {/* Benefits & Subscribe Card - Dark Style */}
-                  <div className="bg-gray-200 rounded-full px-6 py-3 shadow-lg min-w-[400px] flex items-center justify-between">
-                    {/* Left: Profile Images */}
-                    <div className="flex items-center -space-x-6">
-                      <div className="w-10 h-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-full border-2 border-gray-800 flex items-center justify-center">
-                        <Image
-                          src="/imgs/restaurant1.jpg"
-                          width={20}
-                          height={20}
-                          alt="avatar"
-                          className="rounded-full w-8 h-10 "
-                        />
-                      </div>
-                      <div className="w-10 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full border-2 border-gray-800 flex items-center justify-center">
-                        <Image
-                          src="/imgs/restaurant1.jpg"
-                          width={20}
-                          height={20}
-                          alt="avatar"
-                          className="rounded-full w-8 h-10 "
-                        />
-                      </div>
-                      <div className="w-10 h-12 bg-gradient-to-br from-green-400 to-teal-500 rounded-full border-2 border-gray-800 flex items-center justify-center">
-                        <Image
-                          src="/imgs/restaurant1.jpg"
-                          width={20}
-                          height={20}
-                          alt="avatar"
-                          className="rounded-full w-8 h-10 "
-                        />
-                      </div>
+
+                    {/* Advantages Text */}
+                    <div className=" flex flex-col text-start sm:text-left text-gray-900 text-[13px]">
+                      <span>🗸 IBM Orders</span>
+                      <span>🗸 Stable Pricing</span>
+                      <span>🗸 Advertisement</span>
                     </div>
 
-                    {/* Center: Advantages Text */}
-                    <div className=" px-4">
-                      <span className="text-gray-900 text-[13px]">
-                        🗸 IBM Orders 🗸 Stable Pricing 🗸 Adversiment
-                      </span>
-                    </div>
-
-                    {/* Right: Subscribe Button */}
-                    <Link href="/restaurant/subscribe">
-                      <button className="bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 px-6 py-2 rounded-full text-sm font-bold hover:from-yellow-300 hover:to-orange-300 transition-all duration-200 shadow-md transform hover:scale-105">
+                    {/* Subscribe Button */}
+                    <Link href="/restaurant/subscribe" className="shrink-0">
+                      <button className="bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 px-4 sm:px-6 py-2 rounded-full text-sm font-bold hover:from-yellow-300 hover:to-orange-300 transition-all duration-200 shadow-md transform hover:scale-105">
                         Subscribe
                       </button>
                     </Link>
                   </div>
 
-                  {/* Cart Section */}
-                  <div className="flex items-center gap-3 bg-white rounded p-3 border border-gray-200 shadow">
+                  {/* Right: Cart Section */}
+                  <div className="flex items-center gap-3 bg-white rounded p-3 border border-gray-200 shadow w-full sm:w-auto">
                     <div className="flex items-center gap-3">
+                      {/* Wishlist */}
                       <div className="relative cursor-pointer">
-                        <Heart className="w-6 h-6 text-gray-900 hover:text-green-600  transition-colors" />
-                        <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center ">
+                        <Heart className="w-6 h-6 text-gray-900 hover:text-green-600 transition-colors" />
+                        <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                           0
                         </span>
                       </div>
+
+                      {/* Cart */}
                       <div className="relative">
                         <div
                           onClick={() => setIsCartOpen(true)}
                           className="cursor-pointer"
                         >
-                          <ShoppingCart className="h-6 w-6 text-gray-900 hover:text-green-600 cursor-pointer transition-colors " />
+                          <ShoppingCart className="h-6 w-6 text-gray-900 hover:text-green-600 transition-colors" />
                           {isLoading ? (
                             <Skeleton className="absolute -top-2 -right-2 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-green-600/60" />
                           ) : (
                             totalQuantity > 0 && (
-                              <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center ">
+                              <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                                 {totalItems > 99 ? "99+" : totalItems}
                               </span>
                             )
                           )}
                         </div>
-
                         <CartDrawer
                           isOpen={isCartOpen}
                           onClose={() => setIsCartOpen(false)}
                         />
                       </div>
                     </div>
-                    <div className="border-l border-gray-200 pl-3">
+
+                    {/* Cart Total */}
+                    <div className="border-l border-gray-200 pl-3 text-center sm:text-left">
                       <div className="text-[13px] font-medium text-gray-900">
                         Cart Total
                       </div>
@@ -478,6 +467,7 @@ export function ProductsSection({
                 </div>
               </div>
             )}
+
             {/* Header with Category Information */}
             <div className="bg-transparent px-4 sm:px-8">
               <div className="flex items-center justify-between">

@@ -74,25 +74,25 @@ export default function PaymentModal({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex justify-center gap-2 mb-4">
+        <div className="flex flex-wrap justify-center gap-2 mb-4">
           <Button
             variant={method === "wallet" ? "default" : "outline"}
             onClick={() => setMethod("wallet")}
-            className="rounded w-25 h-7 text-[13px] font-normal"
+            className="rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal"
           >
             Wallet
           </Button>
           <Button
             variant={method === "momo" ? "default" : "outline"}
             onClick={() => setMethod("momo")}
-            className=" rounded w-25 h-7 text-[13px] font-normal"
+            className="rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal"
           >
             MoMo
           </Button>
           <Button
             variant={method === "card" ? "default" : "outline"}
             onClick={() => setMethod("card")}
-            className="rounded w-25 h-7 text-[13px] font-normal"
+            className="rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal"
           >
             Card
           </Button>

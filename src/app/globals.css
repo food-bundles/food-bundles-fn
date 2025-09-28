@@ -201,15 +201,6 @@
           animation: slideAndShake 1s ease-out forwards;
         }
 
-       .subscribe-button {
-          color:#fb923c;
-          position: relative;
-          overflow: hidden;
-          border: 1px solid transparent;
-          border-image: linear-gradient() 1;
-         border-radius: 8px; /* optional */
-        }
-
         .subscribe-button::before {
           content: "";
           position: absolute;

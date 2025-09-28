@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ShoppingCart, Menu, X, UserPlus, Home } from "lucide-react";
+import { ShoppingCart, Menu, X, UserPlus, Home, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -67,15 +67,14 @@ const sampleNotifications = [
 export function TopResNav() {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
   const { user, getUserProfileImage } = useAuth();
+  const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false);
 
   const { activeCategories, isLoading: categoriesLoading } = useCategory();
 
-  // Refs for hover timeout management
   const categoryDropdownTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const unreadCount = sampleNotifications.filter((n) => !n.isRead).length;
@@ -88,9 +87,7 @@ export function TopResNav() {
     { href: "/restaurant/dashboard", label: "Dashboard" },
   ];
 
-  // Handle category selection
   const handleCategorySelect = (categoryName: string) => {
-    // Dispatch custom event for product section to listen to
     const event = new CustomEvent("categorySelected", {
       detail: categoryName,
     });
@@ -99,7 +96,6 @@ export function TopResNav() {
     setIsMobileMenuOpen(false);
   };
 
-  // Category hover handlers
   const handleCategoryMouseEnter = () => {
     if (categoryDropdownTimeout.current) {
       clearTimeout(categoryDropdownTimeout.current);
@@ -110,7 +106,7 @@ export function TopResNav() {
   const handleCategoryMouseLeave = () => {
     categoryDropdownTimeout.current = setTimeout(() => {
       setIsCategoryDropdownOpen(false);
-    }, 150); // Small delay to prevent flickering
+    }, 150); 
   };
 
   const handleLogout = async () => {
@@ -129,11 +125,9 @@ export function TopResNav() {
     setIsMobileMenuOpen(false);
   };
 
-  // Get user profile image with fallback
   const profileImage = getUserProfileImage();
   const userName = user?.name || user?.name || "";
 
-  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -149,7 +143,6 @@ export function TopResNav() {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       if (categoryDropdownTimeout.current) {
@@ -158,14 +151,11 @@ export function TopResNav() {
     };
   }, []);
 
-
-
   return (
     <>
       <header className="bg-green-700 border-b border-green-600 sticky top-0 z-50 ">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-13">
-            {/* Logo section with green-50 background to match header */}
             <Link href="/">
               <div className="flex items-center gap-2 bg-green-50 px-2 sm:px-3 py-1 rounded-full border-2 border-primary flex-shrink-0">
                 <Image
@@ -215,7 +205,6 @@ export function TopResNav() {
                   Categories
                 </button>
 
-                {/* Categories Dropdown Menu */}
                 <div
                   className={`absolute top-4 left-0 mt-2 w-46 bg-white shadow-lg border border-gray-200 py-2 z-50 max-h-80 overflow-y-auto transition-all duration-200 ${
                     isCategoryDropdownOpen
@@ -225,7 +214,6 @@ export function TopResNav() {
                   onMouseEnter={handleCategoryMouseEnter}
                   onMouseLeave={handleCategoryMouseLeave}
                 >
-                  {/* All Categories Option */}
                   <button
                     onClick={() => handleCategorySelect("All Categories")}
                     className="w-full text-left px-4 py-2 text-[13px] text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors"
@@ -233,10 +221,8 @@ export function TopResNav() {
                     All Categories
                   </button>
 
-                  {/* Separator */}
                   <div className="border-t border-gray-100 my-1"></div>
 
-                  {/* Loading State */}
                   {categoriesLoading ? (
                     <div className="px-4 py-2">
                       {[...Array(5)].map((_, index) => (
@@ -297,7 +283,6 @@ export function TopResNav() {
                       </div>
                     </>
                   ) : (
-                    // Skeleton Loader while user is loading
                     <>
                       <Skeleton className="h-5 w-20 md:h-6 md:w-24 hidden md:inline bg-green-600/60" />
                       <Skeleton className="rounded-full h-8 w-8 sm:h-10 sm:w-10 bg-green-600/60" />
@@ -381,41 +366,54 @@ export function TopResNav() {
 
                 {/* Mobile Categories Section */}
                 <div className="space-y-1">
-                  <div className="flex items-center gap-3 px-3 py-2.5">
+                  <div
+                    onClick={() =>
+                      setIsMobileCategoriesOpen(!isMobileCategoriesOpen)
+                    }
+                    className="flex items-center gap-3 px-3 py-2.5 cursor-pointer"
+                  >
                     <div className="w-3 h-3 rounded-sm bg-transparent"></div>
-                    <span className="text-[13px] text-primary-foreground cursor-pointer">
+                    <span className="text-[13px] text-primary-foreground">
                       Categories
                     </span>
+                    <ChevronDown
+                      className={`w-5 h-5 text-white transform transition-transform duration-200 ${
+                        isMobileCategoriesOpen ? "rotate-180" : "rotate-0"
+                      }`}
+                    />
                   </div>
 
-                  {/* All Categories */}
-                  <button
-                    onClick={() => handleCategorySelect("All Categories")}
-                    className="w-full text-left pl-9 pr-3 py-2 text-[13px] text-green-200 hover:text-secondary hover:bg-green-600 rounded-md transition-colors"
-                  >
-                    All Categories
-                  </button>
-
-                  {/* Category List */}
-                  {categoriesLoading ? (
-                    <div className="pl-9 pr-3">
-                      {[...Array(3)].map((_, index) => (
-                        <Skeleton
-                          key={index}
-                          className="h-6 w-full mb-2 bg-green-600/60"
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    activeCategories.map((category) => (
+                  {isMobileCategoriesOpen && (
+                    <>
                       <button
-                        key={category.id}
-                        onClick={() => handleCategorySelect(category.name)}
+                        onClick={() => handleCategorySelect("All Categories")}
                         className="w-full text-left pl-9 pr-3 py-2 text-[13px] text-green-200 hover:text-secondary hover:bg-green-600 rounded-md transition-colors"
                       >
-                        {category.name.replace(/_/g, " ")}
+                        All Categories
                       </button>
-                    ))
+
+                      {/* Category List */}
+                      {categoriesLoading ? (
+                        <div className="pl-9 pr-3">
+                          {[...Array(3)].map((_, index) => (
+                            <Skeleton
+                              key={index}
+                              className="h-6 w-full mb-2 bg-green-600/60"
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        activeCategories.map((category) => (
+                          <button
+                            key={category.id}
+                            onClick={() => handleCategorySelect(category.name)}
+                            className="w-full text-left pl-9 pr-3 py-2 text-[13px] text-green-200 hover:text-secondary hover:bg-green-600 rounded-md transition-colors"
+                          >
+                            {category.name.replace(/_/g, " ")}
+                          </button>
+                        ))
+                      )}
+                    </>
                   )}
                 </div>
 
