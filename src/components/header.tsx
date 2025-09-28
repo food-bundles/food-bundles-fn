@@ -291,7 +291,7 @@ export function Header() {
                   onMouseLeave={handleShopMouseLeave}
                 >
                   <button
-                    className="subscribe-button text-white px-4 py-1 rounded-full transition-all duration-300 text-[13px] whitespace-nowrap flex items-center gap-2 hover:scale-105"
+                    className="subscribe-button px-4 py-1 rounded-full text-orange-400 transition-all duration-300 text-[13px] whitespace-nowrap flex items-center gap-2 hover:scale-105"
                     onClick={(e) => {
                       e.preventDefault();
                       scrollToSection("subscribe");
@@ -347,6 +347,67 @@ export function Header() {
                   </div>
                 </div>
               </nav>
+
+              {/* Mobile Subscribe Button - Visible on Mobile */}
+              <div className="md:hidden flex items-center">
+                <div
+                  className={`relative ${
+                    hasAnimated ? "subscribe-animate" : ""
+                  }`}
+                >
+                  <button
+                    className="subscribe-button  bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 rounded-full text-sm font-bold hover:from-yellow-300 hover:to-orange-300 py-[7px] px-3 transition-all duration-300 text-[13px] whitespace-nowrap flex items-center gap-2 hover:scale-105 mr-2"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setIsShopDropdownOpen(!isShopDropdownOpen);
+                    }}
+                  >
+                    <span className="relative z-10">Subscribe</span>
+                  </button>
+
+                  {/* Mobile Subscribe Dropdown - Positioned appropriately */}
+                  <div
+                    className={`absolute top-full right-0 mt-2 w-56 bg-white border border-orange-200 rounded-lg shadow-lg transition-all duration-300 ${
+                      isShopDropdownOpen
+                        ? "opacity-100 visible transform translate-y-0"
+                        : "opacity-0 invisible transform -translate-y-2"
+                    }`}
+                  >
+                    <div className="py-2">
+                      <Link href="/signup">
+                        <button
+                          onClick={() => {
+                            window.dispatchEvent(
+                              new CustomEvent("openSignupRestaurant")
+                            );
+                            setIsShopDropdownOpen(false);
+                          }}
+                          className="flex items-center w-full text-left px-4 py-3 text-[13px] text-gray-900 border-b hover:text-green-500 transition-colors group"
+                        >
+                          <UserPlus className="w-4 h-4 mr-3 text-orange-400 group-hover:text-orange-600" />
+                          <div>
+                            <div className="font-medium">
+                              Subscribe as Restaurant
+                            </div>
+                          </div>
+                        </button>
+                      </Link>
+                      <button
+                        onClick={() => {
+                          setIsShopDropdownOpen(false);
+                          window.location.href = "/guest";
+                        }}
+                        className="flex items-center w-full text-left px-4 py-3 text-[13px] text-gray-900 hover:text-green-500 transition-colors group"
+                      >
+                        <ShoppingCart className="w-4 h-4 mr-3 text-orange-400 group-hover:text-orange-500" />
+                        <div>
+                          <div className="font-medium">Shop as Guest</div>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               {/* Right actions */}
               <div className="flex items-center gap-2">
@@ -439,7 +500,7 @@ export function Header() {
               </div>
             </div>
 
-            {/* Mobile Navigation */}
+            {/* Mobile Navigation Menu */}
             {isMenuOpen && (
               <div className="md:hidden pb-4 border-t border-green-600 mt-2">
                 <nav className="flex flex-col gap-3 pt-4">
@@ -579,6 +640,7 @@ export function Header() {
                       <Link href="/login">
                         <Button
                           variant="secondary"
+                          onClick={() => setIsMenuOpen(!isMenuOpen)}
                           size="sm"
                           className="w-fit bg-green-50 text-black hover:bg-green-100 mt-2"
                         >
