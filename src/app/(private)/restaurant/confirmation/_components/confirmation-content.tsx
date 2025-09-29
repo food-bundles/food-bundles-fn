@@ -258,7 +258,7 @@ export function ConfirmationContent({ orderData }: Props) {
 
               <div className="text-center mt-4 sm:mt-6">
                 <Link
-                  href="/restaurant/dashboard"
+                  href="/restaurant/"
                   className="text-green-600 hover:text-green-700 transition-colors text-sm sm:text-base"
                 >
                   Continue Shopping →

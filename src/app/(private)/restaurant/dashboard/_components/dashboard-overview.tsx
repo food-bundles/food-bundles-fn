@@ -1,11 +1,19 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { Key, useState } from "react";
 import {
-  ArrowUpRight,
-  ArrowDownRight,
   TrendingUp,
   BarChart3,
+  CheckCircle,
+  Clock,
+  Truck,
+  Package,
+  Home,
+  ShoppingBag,
+  ChefHat,
+  XCircle,
+  RotateCcw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Image from "next/image";
+import { Order, OrderStatus } from "@/lib/types";
 
 type DashboardData = {
   date: string;
@@ -59,14 +68,7 @@ type DashboardData = {
     unitsSold: number;
     image: string;
   }>;
-  recentOrders: Array<{
-    id: string;
-    customer: string;
-    products: string;
-    total: number;
-    status: string;
-    date: string;
-  }>;
+  recentOrders: Order[];
 };
 
 type Props = {
@@ -77,11 +79,97 @@ export function DashboardOverview({ data }: Props) {
   const [chartPeriod, setChartPeriod] = useState<"week" | "month">("week");
   const [chartType, setChartType] = useState<"line" | "bar">("line");
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
+  // Get status icon and color based on OrderStatus
+  const getStatusConfig = (status: OrderStatus) => {
+    switch (status) {
+      case OrderStatus.PENDING:
+        return {
+          icon: Clock,
+          color: "text-yellow-600",
+          bgColor: "bg-yellow-100",
+        };
+      case OrderStatus.CONFIRMED:
+        return {
+          icon: CheckCircle,
+          color: "text-green-600",
+          bgColor: "bg-green-100",
+        };
+      case OrderStatus.PREPARING:
+        return {
+          icon: ChefHat,
+          color: "text-orange-600",
+          bgColor: "bg-orange-100",
+        };
+      case OrderStatus.READY:
+        return {
+          icon: Package,
+          color: "text-purple-600",
+          bgColor: "bg-purple-100",
+        };
+      case OrderStatus.IN_TRANSIT:
+        return { icon: Truck, color: "text-green-600", bgColor: "bg-green-100" };
+      case OrderStatus.DELIVERED:
+        return { icon: Home, color: "text-green-600", bgColor: "bg-green-100" };
+      case OrderStatus.CANCELLED:
+        return { icon: XCircle, color: "text-red-600", bgColor: "bg-red-100" };
+      case OrderStatus.REFUNDED:
+        return {
+          icon: RotateCcw,
+          color: "text-gray-600",
+          bgColor: "bg-gray-100",
+        };
+      default:
+        return { icon: Clock, color: "text-gray-600", bgColor: "bg-gray-100" };
+    }
+  };
+
+  // Mock order tracking data - this would come from your backend
+  const orderTrackingData = {
+    currentStep: 2, // 0: Order placed, 1: Preparing, 2: Shipped, 3: Delivered
+    steps: [
+      {
+        label: "Pending",
+        icon: ShoppingBag,
+        completed: true,
+        time: "10:30 AM",
+        status: OrderStatus.PENDING,
+      },
+      {
+        label: "Confirmed",
+        icon: ShoppingBag,
+        completed: true,
+        time: "10:30 AM",
+        status: OrderStatus.CONFIRMED,
+      },
+      {
+        label: "Preparing",
+        icon: ChefHat,
+        completed: true,
+        time: "11:15 AM",
+        status: OrderStatus.PREPARING,
+      },
+      {
+        label: "Ready",
+        icon: Truck,
+        completed: true,
+        time: "2:30 PM",
+        status: OrderStatus.READY,
+      },
+      {
+        label: "Shipped",
+        icon: Truck,
+        completed: true,
+        time: "2:30 PM",
+        status: OrderStatus.IN_TRANSIT,
+      },
+      {
+        label: "Delivered",
+        icon: Home,
+        completed: false,
+        time: "Expected 4:00 PM",
+        status: OrderStatus.DELIVERED,
+      },
+    ],
   };
 
   const LineChart = () => {
@@ -89,6 +177,7 @@ export function DashboardOverview({ data }: Props) {
       ...data.salesChart.currentPeriod.map((d) => d.sales),
       ...data.salesChart.previousPeriod.map((d) => d.sales)
     );
+
     const chartWidth = 600;
     const chartHeight = 200;
     const padding = 40;
@@ -239,6 +328,7 @@ export function DashboardOverview({ data }: Props) {
       ...data.salesChart.currentPeriod.map((d) => d.sales),
       ...data.salesChart.previousPeriod.map((d) => d.sales)
     );
+
     const chartWidth = 600;
     const chartHeight = 240;
     const padding = 60;
@@ -406,212 +496,263 @@ export function DashboardOverview({ data }: Props) {
     );
   };
 
-
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold text-gray-900">Dashboard Overview</h1>
-        <p className="text-gray-600 mt-1">{data.date}</p>
-      </div>
+      <div className="flex flex-col lg:flex-row gap-6 w-full">
+        <div className="w-full lg:w-7/10 space-y-6">
+          <div className="w-full border-b border-gray-200 pb-2 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="px-4">
+              <h3 className="text-[14px] font-medium">Track Order</h3>
+              <input
+                type="text"
+                placeholder="Enter Order ID"
+                value={""}
+                // onChange={(e) => setOrderId(e.target.value)}
+                className="w-30 border border-gray-300 text-[13px] rounded px-2 py-1 mt-2"
+              />
+            </div>
+            <div className="px-4">
+              <div className="flex items-center gap-2">
+                {orderTrackingData.steps.map((step, index) => {
+                  const Icon = step.icon;
+                  const isCompleted = step.completed;
+                  const isCurrent = index === orderTrackingData.currentStep;
 
-      {/* Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">Total Sales</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {formatCurrency(data.metrics.totalSales.current)}
-                </p>
-                <div className="flex items-center mt-2">
-                  <ArrowUpRight className="h-4 w-4 text-green-600" />
-                  <span className="text-sm text-green-600 font-medium">
-                    {data.metrics.totalSales.change}%
-                  </span>
+                  return (
+                    <div
+                      key={index}
+                      className="flex flex-col items-center relative z-10"
+                    >
+                      <div className="relative">
+                        <div
+                          className={`w-12 h-12 rounded-full flex items-center justify-center relative z-10 ${
+                            isCompleted
+                              ? "border-2 border-green-500 bg-green-700 text-green-500 shadow-md"
+                              : isCurrent
+                              ? " text-white animate-pulse"
+                              : "border-2 border-gray-200 bg-white text-gray-900 shadow-md"
+                          }`}
+                        >
+                          <Icon className="w-6 h-6" />
+                        </div>
+                      </div>
+
+                      {/* Step Label */}
+                      <div className={`text-center mt-3 px-3 rounded-full border " ${
+                        isCompleted
+                          ? "border-green-500 shadow-md"
+                          : isCurrent
+                          ? " text-white animate-pulse"
+                          : "border-2 border-gray-200 bg-white text-gray-900 shadow-md"
+                      }  ` }>
+                        <p
+                          className={`text-[13px] font-medium ${
+                            isCompleted
+                              ? "text-green-600"
+                              : isCurrent
+                              ? "text-green-600"
+                              : "text-gray-900"
+                          }`}
+                        >
+                          {step.label}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Statistics Chart */}
+          <Card className="w-full border-none shadow-none">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <CardTitle className="text-[14px] font-medium">
+                  Products Sold by Restaurant
+                </CardTitle>
+                <div className="flex items-center space-x-2 bg-white shadow rounded p-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setChartType("line")}
+                    className={`px-3  text-xs transition-all ${
+                      chartType === "line"
+                        ? "bg-white text-green-600 shadow-sm hover:bg-white"
+                        : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
+                    }`}
+                  >
+                    <TrendingUp className="h-2 w-2 mr-1" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setChartType("bar")}
+                    className={`px-3  text-xs transition-all ${
+                      chartType === "bar"
+                        ? "bg-white text-green-600 shadow-sm hover:bg-white"
+                        : "text-gray-600  hover:bg-gray-50"
+                    }`}
+                  >
+                    <BarChart3 className="h-2 w-2 mr-1" />
+                  </Button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Compared to {formatCurrency(data.metrics.totalSales.previous)}{" "}
-                  {data.metrics.totalSales.period}
-                </p>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Total Orders
-                </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {data.metrics.totalOrders.current}
-                </p>
-                <div className="flex items-center mt-2">
-                  <ArrowUpRight className="h-4 w-4 text-green-600" />
-                  <span className="text-sm text-green-600 font-medium">
-                    {data.metrics.totalOrders.change}%
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Compared to {data.metrics.totalOrders.previous}{" "}
-                  {data.metrics.totalOrders.period}
-                </p>
+              <Select
+                value={chartPeriod}
+                onValueChange={(value: "week" | "month") =>
+                  setChartPeriod(value)
+                }
+              >
+                <SelectTrigger className="w-24">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="">
+                  <SelectItem value="week" className="text-[12px]">
+                    Week
+                  </SelectItem>
+                  <SelectItem value="month" className="text-[12px]">
+                    Month
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </CardHeader>
+            <CardContent>
+              {chartType === "line" ? <LineChart /> : <BarChart />}
+              <div className="flex justify-between text-sm text-gray-900 mt-6 pt-5">
+                <span>
+                  Min Products Sold:{" "}
+                  <strong>{data.salesChart.stats.min} units</strong>
+                </span>
+                <span>
+                  Avg Products Sold:{" "}
+                  <strong>{data.salesChart.stats.avg} units</strong>
+                </span>
+                <span>
+                  Max Products Sold:{" "}
+                  <strong>{data.salesChart.stats.max} units</strong>
+                </span>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Average Order Value
-                </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {formatCurrency(data.metrics.averageOrderValue.current)}
-                </p>
-                <div className="flex items-center mt-2">
-                  <ArrowDownRight className="h-4 w-4 text-red-600" />
-                  <span className="text-sm text-red-600 font-medium">
-                    {Math.abs(data.metrics.averageOrderValue.change)}%
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Compared to{" "}
-                  {formatCurrency(data.metrics.averageOrderValue.previous)}{" "}
-                  {data.metrics.averageOrderValue.period}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Vertical divider */}
+        <div className="hidden lg:block w-[0.5px] bg-gray-300" />
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">
-                  On-time Delivery Rate
-                </p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {data.metrics.onTimeDeliveryRate.current}%
-                </p>
-                <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
-                  <div
-                    className="bg-blue-600 h-2 rounded-full"
-                    style={{
-                      width: `${data.metrics.onTimeDeliveryRate.current}%`,
-                    }}
-                  ></div>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  {data.metrics.onTimeDeliveryRate.note}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Charts and Top Products */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Sales Chart */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <CardTitle>Products Sold by Restaurant</CardTitle>
-              <div className="flex items-center space-x-2 bg-gray-100 rounded-lg p-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setChartType("line")}
-                  className={`px-3 py-1 text-xs transition-all ${
-                    chartType === "line"
-                      ? "bg-white text-blue-600 shadow-sm hover:bg-white"
-                      : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
-                  }`}
-                >
-                  <TrendingUp className="h-3 w-3 mr-1" />
-                  {/* Line Chart */}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setChartType("bar")}
-                  className={`px-3 py-1 text-xs transition-all ${
-                    chartType === "bar"
-                      ? "bg-white text-blue-600 shadow-sm hover:bg-white"
-                      : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
-                  }`}
-                >
-                  <BarChart3 className="h-3 w-3 mr-1" />
-                  {/* Bar Chart */}
-                </Button>
-              </div>
-            </div>
-            <Select
-              value={chartPeriod}
-              onValueChange={(value: "week" | "month") => setChartPeriod(value)}
-            >
-              <SelectTrigger className="w-24">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="week">Week</SelectItem>
-                <SelectItem value="month">Month</SelectItem>
-              </SelectContent>
-            </Select>
-          </CardHeader>
-          <CardContent>
-            {chartType === "line" ? <LineChart /> : <BarChart />}
-
-            <div className="flex justify-between text-sm text-gray-600 mt-6 pt-5 ">
-              <span>
-                Min Products Sold:{" "}
-                <strong>{data.salesChart.stats.min} units</strong>
-              </span>
-              <span>
-                Avg Products Sold:{" "}
-                <strong>{data.salesChart.stats.avg} units</strong>
-              </span>
-              <span>
-                Max Products Sold:{" "}
-                <strong>{data.salesChart.stats.max} units</strong>
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Top Products */}
-        <Card className="">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Top Three Sold Products</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-10">
-            {data.topProducts.map((product) => (
-              <div key={product.id} className="flex items-center space-x-3">
-                <Image
-                  src={product.image || "/placeholder.svg"}
-                  alt={product.name}
-                  width={40}
-                  height={40}
-                  className="rounded-lg object-cover w-30 h-20"
-                />
+        {/* RIGHT SIDE */}
+        <div className="w-full lg:w-3/10 space-y-6">
+          <div className="px-2 w-full">
+            <div className="">
+              <div className="flex space-y-6">
                 <div className="flex-1">
-                  <p className="font-medium text-gray-900">{product.name}</p>
-                  <p className="text-sm text-gray-600">
-                    {product.unitsSold} units sold
+                  <p className="text-[14px]  text-gray-600">Total Orders</p>
+                  <p className="text-[14px] font-bold text-gray-900">
+                    {data.metrics.totalOrders.current}
+                  </p>
+                </div>
+                {/* Profit Section */}
+                <div className="flex-1">
+                  <p className="text-[12px]  text-gray-600">
+                    Amount you would have paid in fees
+                  </p>
+                  <p className="text-[12px] font-bold text-green-600">
+                    RWF 2,000
                   </p>
                 </div>
               </div>
-            ))}
-          </CardContent>
-        </Card>
+            </div>
+            <p className="text-[12px] text-gray-900 mt-1">
+              Compared to{" "}
+              <span className="font-bold text-green-500">
+                {data.metrics.totalOrders.previous}
+              </span>{" "}
+              {data.metrics.totalOrders.period}
+            </p>
+          </div>
+
+          <div className="w-full px-2">
+              <h3 className="text-[14px] font-semibold text-green-500 pb-2">Latest Orders</h3>
+            <div className="space-y-4">
+              {data.recentOrders.slice(0, 3).map((order) => {
+                const statusConfig = getStatusConfig(order.status);
+                const StatusIcon = statusConfig.icon;
+
+                return (
+                  <div
+                    key={order.id}
+                    className="flex items-start space-x-3 p-4 border border-gray-200 rounded hover:bg-gray-50 transition-colors"
+                  >
+                    {/* Order Items Images */}
+                    <div className="flex -space-x-2">
+                      {order.items
+                        .slice(0, 1)
+                        .map(
+                          (
+                            item: { image: any; name: string },
+                            index: Key | null | undefined
+                          ) => (
+                            <Image
+                              key={index}
+                              src={item.image || "/placeholder.svg"}
+                              alt={item.name}
+                              width={40}
+                              height={40}
+                              className="rounded-full object-cover w-10 h-10 border-2 border-white"
+                            />
+                          )
+                        )}
+                      {order.items.length > 2 && (
+                        <div className="w-10 h-10 rounded-full bg-transparent flex items-center justify-center">
+                          <span className="text-xs font-medium text-gray-900">
+                            +{order.items.length - 2}
+                          </span>
+                        </div>
+                       )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      {/* Order ID and Status */}
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-medium text-gray-900 text-sm truncate">
+                          {order.id}
+                        </p>
+                        <div className="relative">
+                          <div
+                            className={`w-6 h-6 rounded-full flex items-center justify-center ${statusConfig.bgColor}`}
+                          >
+                            <StatusIcon
+                              className={`w-3 h-3 ${statusConfig.color}`}
+                            />
+                          </div>
+                          {order.status === OrderStatus.DELIVERED && (
+                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full flex items-center justify-center">
+                              <CheckCircle className="w-2 h-2 text-white" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Item Names */}
+                      <p className="text-xs text-gray-900 mb-1 line-clamp-1">
+                        {order.items
+                          .map((item: { name: any }) => item.name)
+                          .join(", ")}
+                      </p>
+
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold text-gray-900">
+                          RWF {order.total.toFixed(2)}
+                        </p>
+                        <p className="text-xs text-gray-900">{order.timeAgo}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

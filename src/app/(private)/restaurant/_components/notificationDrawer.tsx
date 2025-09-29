@@ -188,7 +188,7 @@ export default function NotificationsDrawer({
           {/* Notifications list */}
           <div className="space-y-4">
             {filteredNotifications.length === 0 ? (
-              <Card>
+              <Card className="">
                 <CardContent className="p-8 text-center">
                   <p className="text-gray-500">No notifications found</p>
                 </CardContent>
@@ -199,14 +199,14 @@ export default function NotificationsDrawer({
                   key={notification.id}
                   className={`${getNotificationBg(
                     notification
-                  )} transition-colors ${
+                  )} transition-colors rounded py-1 ${
                     !notification.isRead ? "cursor-pointer hover:shadow-md" : ""
                   }`}
                   onClick={() =>
                     !notification.isRead && handleMarkAsRead(notification.id)
                   }
                 >
-                  <CardContent className="p-4">
+                  <CardContent className="p-4 ">
                     <div className="space-y-3">
                       <div className="flex items-start justify-between">
                         <h3 className="font-semibold text-gray-900 text-sm">
