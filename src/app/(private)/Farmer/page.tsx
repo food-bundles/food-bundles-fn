@@ -1,6 +1,7 @@
 
 
 import DashboardHeader from "./_components/farmerheader"
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import StatsCards from "./_components/stats-cards"
 import ProductManagement from "./_components/product-management"
 import { ProductProvider } from "./_components/product-context"

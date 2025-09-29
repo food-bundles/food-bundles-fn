@@ -4,9 +4,10 @@ import type React from "react";
 import { CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, Phone, MapPin, Send, X, MessageCircle } from "lucide-react";
+import { Mail, Phone, MapPin, Send, X} from "lucide-react";
 import { useEffect, useState } from "react";
 import { AnimatedDotsBackground } from "./animated-dots-background";
+import { BsFillChatRightQuoteFill } from "react-icons/bs";
 
 // Move farmers data outside component to prevent useEffect recreation
 const farmers = [
@@ -212,14 +213,14 @@ function QuickTalkSection() {
               </div>
 
               {/* Chat Button - Responsive positioning */}
-              <div className="w-full lg:w-auto flex bg-gray-100 border border-green-300 rounded-sm flex-col items-center justify-center gap-2 p-3 mb-2 mr-2 hover:bg-gray-200 transition-all duration-100">
-                <Button
-                  onClick={() => setIsChatOpen(true)}
-                  className="flex items-center justify-center w-14 h-14 cursor-pointer rounded-full bg-green-500 hover:bg-green-600 text-white hover:shadow-2xl transition-all duration-300 shadow-lg z-50"
-                >
-                  <MessageCircle className="h-6 w-6 text-white" />
-                </Button>
-                <p className="text-xs font-medium text-center animate-bounce z-20">
+              <div className="w-full lg:w-auto flex rounded-sm flex-col items-center  justify-center gap-2 p-3 mb-2 mr-2 transition-all duration-100">
+               <button
+               onClick={() => setIsChatOpen(true)}
+               className="flex items-center  justify-center  rounded-full cursor-pointer  transition-all duration-300  z-50"
+               >
+               <BsFillChatRightQuoteFill className="h-10 w-10"/>
+               </button>
+                <p className="text-xs font-medium text-center z-20">
                   What&apos;s Up
                 </p>
               </div>
@@ -327,7 +328,6 @@ function QuickTalkSection() {
           </svg>
         </button>
       )}
-
       {/* Chat Window - Responsive sizing and positioning */}
       {isChatOpen && (
         <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-[calc(100vw-2rem)] max-w-sm sm:w-80 h-[70vh] sm:h-96 bg-background border border-border rounded-lg shadow-xl z-50 flex flex-col">
@@ -337,7 +337,7 @@ function QuickTalkSection() {
               <div className="relative">
                 <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary rounded-full flex items-center justify-center">
                   <span className="text-primary-foreground font-semibold text-xs sm:text-sm">
-                    S
+                   F
                   </span>
                 </div>
                 <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-500 rounded-full border border-background" />
