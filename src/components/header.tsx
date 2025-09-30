@@ -272,31 +272,28 @@ export function Header() {
                     key={item.id}
                     href={item.href}
                     onClick={(e) => handleNavClick(e, item.id)}
-                    className="hover:border-b hover:border-orange-400 py-1 transition-colors text-[14px] text-white cursor-pointer flex items-center gap-1"
+                    className="hover:border-b hover:border-orange-400 py-1  text-[14px] text-white cursor-pointer flex items-center gap-1"
                   >
                     {item.label}
                   </a>
                 ))}
 
-                {/* Vertical Separator */}
-                <div className="vertical-separator"></div>
-
                 {/* Enhanced Subscribe Button */}
                 <div
                   className={`relative ${
-                    hasAnimated ? "subscribe-animate" : ""
+                    hasAnimated ? "" : ""
                   }`}
                   onMouseEnter={handleShopMouseEnter}
                   onMouseLeave={handleShopMouseLeave}
                 >
                   <button
-                    className="subscribe-button px-4 py-1 rounded-full text-orange-400 transition-all duration-300 text-[13px] whitespace-nowrap flex items-center gap-2 hover:scale-105"
+                    className="py-1 rounded-full text-orange-400 transition-all duration-300 text-[14px] whitespace-nowrap flex items-center gap-2 hover:scale-105"
                     onClick={(e) => {
                       e.preventDefault();
                       scrollToSection("subscribe");
                     }}
                   >
-                    <span className="relative z-10">Subscribe To Our Farm</span>
+                    <span className="relative z-20">Subscribe To Our Farm</span>
                   </button>
 
                   {/* Enhanced Dropdown */}
@@ -349,7 +346,7 @@ export function Header() {
               <div className="md:hidden flex items-center">
                 <div
                   className={`relative ${
-                    hasAnimated ? "subscribe-animate" : ""
+                    hasAnimated ? "" : ""
                   }`}
                 >
                   <button
@@ -516,61 +513,7 @@ export function Header() {
                     </a>
                   ))}
 
-                  {/* Mobile Subscribe Button */}
-                  <div className="mt-2 pt-2 border-t border-green-600/50">
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setIsShopDropdownOpen(!isShopDropdownOpen);
-                      }}
-                      className={`subscribe-button text-white font-semibold px-4 py-3 rounded-full transition-all duration-300 text-sm w-full flex items-center justify-center gap-2 ${
-                        hasAnimated ? "subscribe-animate" : ""
-                      }`}
-                    >
-                      🌾 Subscribe To Our Farm
-                    </button>
 
-                    {/* Mobile Subscribe Options */}
-                    {isShopDropdownOpen && (
-                      <div className="mt-3 space-y-2 bg-green-800/30 rounded-lg p-3">
-                        <Link href="/subscribe">
-                          <button
-                            onClick={() => {
-                              setIsMenuOpen(false);
-                              setIsShopDropdownOpen(false);
-                            }}
-                            className="flex items-center w-full text-left px-3 py-3 text-sm text-green-100 hover:text-white transition-colors rounded-lg hover:bg-green-700/50"
-                          >
-                            <UserPlus className="w-4 h-4 mr-3 text-orange-400" />
-                            <div>
-                              <div className="font-medium">
-                                Subscribe as Restaurant
-                              </div>
-                              <div className="text-xs text-green-300">
-                                Get fresh produce daily
-                              </div>
-                            </div>
-                          </button>
-                        </Link>
-                        <button
-                          onClick={() => {
-                            setIsMenuOpen(false);
-                            setIsShopDropdownOpen(false);
-                            window.location.href = "/guest";
-                          }}
-                          className="flex items-center w-full text-left px-3 py-3 text-sm text-green-100 hover:text-white transition-colors rounded-lg hover:bg-green-700/50"
-                        >
-                          <ShoppingCart className="w-4 h-4 mr-3 text-orange-400" />
-                          <div>
-                            <div className="font-medium">Shop as Guest</div>
-                            <div className="text-xs text-green-300">
-                              Browse without account
-                            </div>
-                          </div>
-                        </button>
-                      </div>
-                    )}
-                  </div>
 
                   {/* Mobile Login/Profile */}
                   {isAuthenticated ? (

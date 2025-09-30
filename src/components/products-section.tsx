@@ -134,11 +134,11 @@ function ProductCard({
               </div>
             )}
             {isInCart && isHovered && (
-              <Link href="/checkout" className="absolute inset-0">
+              <a href="/checkout" className="absolute inset-0">
                 <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-lg flex items-center cursor-pointer hover:bg-green-600 transition-colors">
                   <Check className="w-3 h-3 mr-1" /> Buy Now
                 </div>
-              </Link>
+              </a>
             )}
 
             <div
@@ -405,8 +405,8 @@ export function ProductsSection({
 
                     {/* Advantages Text */}
                     <div className=" flex flex-col text-start sm:text-left text-gray-900 text-[13px]">
-                      <span>🗸 IBM Orders</span>
-                      <span>🗸 Stable Pricing</span>
+                      <span>🗸 Free Delivery</span>
+                      <span>🗸 EBM Orders</span>
                       <span>🗸 Advertisement</span>
                     </div>
 

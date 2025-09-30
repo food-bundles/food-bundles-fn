@@ -136,11 +136,11 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   {totalAmount} Rwf
                 </span>
               </div>
-              <Link href="/checkout">
+              <a href="/checkout">
                 <Button className="w-full py-3 sm:py-2 text-sm sm:text-xs bg-green-600 hover:bg-green-700 rounded-none">
                   Buy Now
                 </Button>
-              </Link>
+              </a>
             </div>
           )}
         </div>

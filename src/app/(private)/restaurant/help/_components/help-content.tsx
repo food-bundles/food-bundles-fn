@@ -113,7 +113,7 @@ export function HelpContent({ contactInfo, faqs }: Props) {
             <div className="flex items-center gap-2">
               <Button
                 size="lg"
-                className="relative bg-red-600 hover:bg-red-700 text-white font-bold shadow-xl rounded-full px-6 py-3 hover:scale-105 transition-transform duration-300 animate-bounce"
+                className="relative bg-red-600 hover:bg-red-700 text-white font-bold shadow-xl rounded-full px-6 py-3 hover:scale-105 transition-transform duration-300 "
               >
                 <PhoneOutgoing className="font-bold" /> 0796 897 823
               </Button>
