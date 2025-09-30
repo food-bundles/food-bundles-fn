@@ -5,15 +5,10 @@ import { Key, useState } from "react";
 import {
   TrendingUp,
   BarChart3,
-  CheckCircle,
-  Clock,
   Truck,
-  Package,
   Home,
   ShoppingBag,
   ChefHat,
-  XCircle,
-  RotateCcw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -78,50 +73,6 @@ type Props = {
 export function DashboardOverview({ data }: Props) {
   const [chartPeriod, setChartPeriod] = useState<"week" | "month">("week");
   const [chartType, setChartType] = useState<"line" | "bar">("line");
-
-  // Get status icon and color based on OrderStatus
-  const getStatusConfig = (status: OrderStatus) => {
-    switch (status) {
-      case OrderStatus.PENDING:
-        return {
-          icon: Clock,
-          color: "text-yellow-600",
-          bgColor: "bg-yellow-100",
-        };
-      case OrderStatus.CONFIRMED:
-        return {
-          icon: CheckCircle,
-          color: "text-green-600",
-          bgColor: "bg-green-100",
-        };
-      case OrderStatus.PREPARING:
-        return {
-          icon: ChefHat,
-          color: "text-orange-600",
-          bgColor: "bg-orange-100",
-        };
-      case OrderStatus.READY:
-        return {
-          icon: Package,
-          color: "text-purple-600",
-          bgColor: "bg-purple-100",
-        };
-      case OrderStatus.IN_TRANSIT:
-        return { icon: Truck, color: "text-green-600", bgColor: "bg-green-100" };
-      case OrderStatus.DELIVERED:
-        return { icon: Home, color: "text-green-600", bgColor: "bg-green-100" };
-      case OrderStatus.CANCELLED:
-        return { icon: XCircle, color: "text-red-600", bgColor: "bg-red-100" };
-      case OrderStatus.REFUNDED:
-        return {
-          icon: RotateCcw,
-          color: "text-gray-600",
-          bgColor: "bg-gray-100",
-        };
-      default:
-        return { icon: Clock, color: "text-gray-600", bgColor: "bg-gray-100" };
-    }
-  };
 
   // Mock order tracking data - this would come from your backend
   const orderTrackingData = {
@@ -503,13 +454,7 @@ export function DashboardOverview({ data }: Props) {
           <div className="w-full border-b border-gray-200 pb-2 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div className="px-4">
               <h3 className="text-[14px] font-medium">Track Order</h3>
-              <input
-                type="text"
-                placeholder="Enter Order ID"
-                value={""}
-                // onChange={(e) => setOrderId(e.target.value)}
-                className="w-30 border border-gray-300 text-[13px] rounded px-2 py-1 mt-2"
-              />
+              <p className="text-[12px] text-green-500">#ORD-7829</p>
             </div>
             <div className="px-4">
               <div className="flex items-center gap-2">
@@ -538,13 +483,15 @@ export function DashboardOverview({ data }: Props) {
                       </div>
 
                       {/* Step Label */}
-                      <div className={`text-center mt-3 px-3 rounded-full border " ${
-                        isCompleted
-                          ? "border-green-500 shadow-md"
-                          : isCurrent
-                          ? " text-white animate-pulse"
-                          : "border-2 border-gray-200 bg-white text-gray-900 shadow-md"
-                      }  ` }>
+                      <div
+                        className={`text-center mt-3 px-3 rounded-full border " ${
+                          isCompleted
+                            ? "border-2 border-green-500 shadow-md"
+                            : isCurrent
+                            ? " text-white animate-pulse"
+                            : "border-2 border-gray-200 bg-white text-gray-900 shadow-md"
+                        }  `}
+                      >
                         <p
                           className={`text-[13px] font-medium ${
                             isCompleted
@@ -672,16 +619,17 @@ export function DashboardOverview({ data }: Props) {
           </div>
 
           <div className="w-full px-2">
-              <h3 className="text-[14px] font-semibold text-green-500 pb-2">Latest Orders</h3>
+            <h3 className="text-[14px] font-semibold text-green-500 pb-2">
+              Latest Orders
+            </h3>
             <div className="space-y-4">
               {data.recentOrders.slice(0, 3).map((order) => {
-                const statusConfig = getStatusConfig(order.status);
-                const StatusIcon = statusConfig.icon;
+         
 
                 return (
                   <div
                     key={order.id}
-                    className="flex items-start space-x-3 p-4 border border-gray-200 rounded hover:bg-gray-50 transition-colors"
+                    className="flex items-start space-x-3 p-4 border border-green-500 rounded hover:bg-gray-50 transition-colors"
                   >
                     {/* Order Items Images */}
                     <div className="flex -space-x-2">
@@ -708,7 +656,7 @@ export function DashboardOverview({ data }: Props) {
                             +{order.items.length - 2}
                           </span>
                         </div>
-                       )}
+                      )}
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -717,19 +665,15 @@ export function DashboardOverview({ data }: Props) {
                         <p className="font-medium text-gray-900 text-sm truncate">
                           {order.id}
                         </p>
-                        <div className="relative">
-                          <div
-                            className={`w-6 h-6 rounded-full flex items-center justify-center ${statusConfig.bgColor}`}
-                          >
-                            <StatusIcon
-                              className={`w-3 h-3 ${statusConfig.color}`}
-                            />
-                          </div>
-                          {order.status === OrderStatus.DELIVERED && (
-                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full flex items-center justify-center">
-                              <CheckCircle className="w-2 h-2 text-white" />
-                            </div>
-                          )}
+                        <div className="px-2  rounded-full border">
+                          <p className="text-[10px] lowercase">
+                            {order.status}
+                          </p>
+                        </div>
+                        <div className="">
+                          <p className="text-[10px] text-green-500">
+                            Reoder
+                          </p>
                         </div>
                       </div>
 
@@ -744,7 +688,9 @@ export function DashboardOverview({ data }: Props) {
                         <p className="text-sm font-semibold text-gray-900">
                           RWF {order.total.toFixed(2)}
                         </p>
-                        <p className="text-xs text-gray-900">{order.timeAgo}</p>
+                        <p className="text-[10px] text-gray-900">
+                          {order.timeAgo}
+                        </p>
                       </div>
                     </div>
                   </div>

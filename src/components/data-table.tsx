@@ -14,7 +14,7 @@ import {
   useReactTable,
   type VisibilityState,
 } from "@tanstack/react-table";
-import { ChevronDown, Download, Plus } from "lucide-react";
+import { ChevronDown, ChevronsLeft, ChevronsRight, Download, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -144,6 +144,12 @@ export function DataTable<TData, TValue>({
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageIndex: 0,
+        pageSize: 5, 
+      },
+    },
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
@@ -222,13 +228,13 @@ export function DataTable<TData, TValue>({
           {showColumnVisibility && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="min-w-[100px] justify-between bg-transparent ml-auto"
+                <button
+                  // variant="outline"
+                  className="min-w-[100px] flex items-center justify-between bg-transparent ml-auto rounded border-2 border-green-500 px-3 py-1 text-[13px] text-gray-900 hover:bg-green-100"
                 >
                   Columns
                   <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
+                </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {table
@@ -257,10 +263,16 @@ export function DataTable<TData, TValue>({
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow
+                key={headerGroup.id}
+                className="bg-green-700 hover:bg-green-800"
+              >
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id}>
+                    <TableHead
+                      key={header.id}
+                      className="text-white py-0 text-[13px]"
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -279,6 +291,7 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  className="hover:bg-green-50 text-[13px]"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
@@ -308,7 +321,7 @@ export function DataTable<TData, TValue>({
       {(showPagination || showRowSelection) && (
         <div className="flex items-center justify-between py-4">
           {showRowSelection && (
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-gray-700 text-[13px]">
               {table.getFilteredSelectedRowModel().rows.length} of{" "}
               {table.getFilteredRowModel().rows.length} row(s) selected.
             </div>
@@ -316,45 +329,43 @@ export function DataTable<TData, TValue>({
 
           {showPagination && (
             <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
+              <button
                 onClick={() => table.previousPage()}
                 disabled={!table.getCanPreviousPage()}
-                className="px-3 py-1"
+                className={`p-1 rounded  ${
+                  table.getCanNextPage()
+                    ? "text-gray-900 hover:bg-gray-100"
+                    : "text-gray-400 cursor-not-allowed"
+                }`}
               >
-                Previous
-              </Button>
+                {/* previous */}
+                <ChevronsLeft className="h-6 w-6" />
+              </button>
 
               {getPageNumbers().map((pageNumber) => (
-                <Button
+                <button
                   key={pageNumber}
-                  variant={
-                    table.getState().pagination.pageIndex + 1 === pageNumber
-                      ? "default"
-                      : "outline"
-                  }
-                  size="sm"
                   onClick={() => table.setPageIndex(pageNumber - 1)}
-                  className={`px-3 py-1 {
+                  className={`px-3 rounded ${
                     table.getState().pagination.pageIndex + 1 === pageNumber
-                      ? "bg-green-500 hover:bg-green-600 text-white"
-                      : ""
+                      ? "bg-green-700 hover:bg-green-800 text-white"
+                      : "bg-white hover:bg-gray-100 text-gray-900"
                   }`}
                 >
                   {pageNumber}
-                </Button>
+                </button>
               ))}
-
-              <Button
-                variant="outline"
-                size="sm"
+              <button
                 onClick={() => table.nextPage()}
                 disabled={!table.getCanNextPage()}
-                className="px-3 py-1"
+                className={`p-1 rounded ${
+                  table.getCanNextPage()
+                    ? "text-gray-900 hover:bg-gray-100"
+                    : "text-gray-400 cursor-not-allowed"
+                }`}
               >
-                Next
-              </Button>
+                <ChevronsRight className="h-6 w-6" />
+              </button>
             </div>
           )}
 
@@ -377,9 +388,7 @@ export function DataTable<TData, TValue>({
                   ))}
                 </SelectContent>
               </Select>
-              <span className="text-sm text-muted-foreground">
-                rows per page
-              </span>
+              <span className="text-[13px] text-gray-900">rows per page</span>
             </div>
           )}
         </div>

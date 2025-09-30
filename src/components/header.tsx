@@ -278,8 +278,6 @@ export function Header() {
                   </a>
                 ))}
 
-                {/* Vertical Separator */}
-                <div className="vertical-separator"></div>
                 {/* Enhanced Subscribe Button */}
                 <div
                   className={`relative ${
@@ -289,13 +287,13 @@ export function Header() {
                   onMouseLeave={handleShopMouseLeave}
                 >
                   <button
-                    className="subscribe-button py-1 rounded-full text-orange-400 transition-all duration-300 text-[13px] whitespace-nowrap flex items-center gap-2 hover:scale-105"
+                    className="py-1 rounded-full text-orange-400 transition-all duration-300 text-[14px] whitespace-nowrap flex items-center gap-2 hover:scale-105"
                     onClick={(e) => {
                       e.preventDefault();
                       scrollToSection("subscribe");
                     }}
                   >
-                    <span className="relative z-10">Subscribe To Our Farm</span>
+                    <span className="relative z-20">Subscribe To Our Farm</span>
                   </button>
 
                   {/* Enhanced Dropdown */}

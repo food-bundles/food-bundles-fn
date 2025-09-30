@@ -220,7 +220,7 @@ export function Checkout() {
 
       if (response.success) {
         localStorage.setItem("selectedPaymentMethod", paymentMethodMap[method]);
-        window.location.href = "/payment";
+        window.location.href = "/restaurant/updates";
       } else {
         setErrors({
           submit: response.message || "Checkout failed. Please try again.",

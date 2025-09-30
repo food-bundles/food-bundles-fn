@@ -89,7 +89,7 @@ export function TopResNav() {
   const pathname = usePathname();
 
   const navLinks = [
-    { href: "/restaurant/dashboard", label: "Updates" },
+    { href: "/restaurant/updates", label: "Updates" },
     { href: "/restaurant/orders", label: "Orders" },
     { href: "/restaurant/help", label: "Help & Support" },
   ];
