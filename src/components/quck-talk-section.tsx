@@ -107,7 +107,7 @@ function QuickTalkSection() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         {/* Our Farmers Section - Responsive */}
         <div className="pt-4 bg-white/90 backdrop-blur-sm p-3 sm:p-4 md:p-6 rounded-lg shadow-lg">
-          <h3 className="font-semibold text-lg sm:text-xl md:text-2xl text-black mb-4 md:mb-6">
+          <h3 className="font-semibold text-[16px]   text-black mb-4 md:mb-6">
             Our Farm
           </h3>
 
@@ -127,10 +127,10 @@ function QuickTalkSection() {
                 {/* Content overlay */}
                 <div className="absolute inset-0 flex flex-col justify-end p-3 sm:p-4">
                   <div className="text-center">
-                    <h4 className="font-medium text-sm sm:text-base text-white mb-2 drop-shadow-lg">
+                    <h4 className="font-medium text-[14px]  text-white mb-2 drop-shadow-lg">
                       {farmer.name}
                     </h4>
-                    <p className="text-xs sm:text-sm text-green-200 drop-shadow-lg">
+                    <p className="text-[13px] text-green-200 drop-shadow-lg">
                       {farmer.favoriteProduct}
                     </p>
                   </div>
@@ -157,7 +157,7 @@ function QuickTalkSection() {
         {/* Contact Section - Responsive */}
         <div className="pt-4 bg-white/90 backdrop-blur-sm p-3 sm:p-4 md:p-6 rounded-lg shadow-lg">
           <CardHeader className="px-0 pb-2 sm:pb-4">
-            <p className="text-lg sm:text-xl md:text-2xl font-semibold text-black">
+            <p className="text-[16px]   font-semibold text-black">
               Let&apos;s Keep in Talk
             </p>
           </CardHeader>
@@ -170,14 +170,14 @@ function QuickTalkSection() {
                 <div className="flex items-center gap-2 sm:gap-3">
                   <Mail className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="font-medium text-sm sm:text-base">
+                    <p className="font-medium text-[14px] ">
                       Email Support
                     </p>
                     <a
                       href="https://mail.google.com/mail/?view=cm&to=sales@food.rw"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs sm:text-sm text-muted-foreground hover:text-primary break-all"
+                      className="text-[13px]  text-muted-foreground hover:text-primary break-all"
                     >
                       sales@food.rw
                     </a>
@@ -187,12 +187,12 @@ function QuickTalkSection() {
                 <div className="flex items-center gap-2 sm:gap-3">
                   <Phone className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="font-medium text-sm sm:text-base">
+                    <p className="font-medium text-[14px] ">
                       Phone Support
                     </p>
                     <a
                       href="tel:+250796897823"
-                      className="text-xs sm:text-sm text-muted-foreground hover:text-primary"
+                      className="text-[13px]  text-muted-foreground hover:text-primary"
                     >
                       +250 796 897 823
                     </a>
@@ -202,10 +202,10 @@ function QuickTalkSection() {
                 <div className="flex items-center gap-2 sm:gap-3">
                   <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="font-medium text-sm sm:text-base">
+                    <p className="font-medium text-[14px] ">
                       Company Location
                     </p>
-                    <p className="text-xs sm:text-sm text-muted-foreground">
+                    <p className="text-[13px] text-muted-foreground">
                       KG 5 Ave, Kigali
                     </p>
                   </div>
@@ -220,7 +220,7 @@ function QuickTalkSection() {
                >
                <BsFillChatRightQuoteFill className="h-10 w-10"/>
                </button>
-                <p className="text-xs font-medium text-center z-20">
+                <p className="text-[13px] font-medium text-center z-20">
                   What&apos;s Up
                 </p>
               </div>
@@ -228,7 +228,7 @@ function QuickTalkSection() {
 
             {/* Social Media and Quick Info - Responsive layout */}
             <div className="pt-3 sm:pt-4 border-t">
-              <p className="text-xs sm:text-sm font-medium mb-2 sm:mb-3">
+              <p className="text-[13px] sm:text-sm font-medium mb-2 sm:mb-3">
                 Connect with us
               </p>
 
@@ -285,7 +285,7 @@ function QuickTalkSection() {
                 {/* USSD and Emergency - Responsive layout */}
                 <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
                   <div className="text-center sm:text-left">
-                    <p className="text-xs sm:text-sm">
+                    <p className="text-[13px] sm:text-sm">
                       USSD Code:{" "}
                       <span className="text-green-500 text-sm sm:text-base font-semibold">
                         883
@@ -294,9 +294,9 @@ function QuickTalkSection() {
                   </div>
 
                   <div className="text-center sm:text-left">
-                    <p className="text-xs sm:text-sm">
+                    <p className="text-[12px] sm:text-sm">
                       Emergency Call{" "}
-                      <span className="text-red-500 text-sm sm:text-base font-semibold">
+                      <span className="text-red-500 text-[13px] sm:text-base font-semibold">
                         <a
                           href="tel:+250796897823"
                           className="hover:text-primary"
@@ -343,8 +343,8 @@ function QuickTalkSection() {
                 <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-500 rounded-full border border-background" />
               </div>
               <div>
-                <h4 className="font-semibold text-xs sm:text-sm">Quick Talk</h4>
-                <p className="text-green-500 text-xs">Online</p>
+                <h4 className="font-semibold text-[14px] sm:text-sm">Quick Talk</h4>
+                <p className="text-green-500 text-[13px]">Online</p>
               </div>
             </div>
             <Button
@@ -367,14 +367,14 @@ function QuickTalkSection() {
                 }`}
               >
                 <div
-                  className={`max-w-xs px-3 py-2 rounded-lg text-xs sm:text-sm ${
+                  className={`max-w-xs px-3 py-2 rounded-lg text-[13px] sm:text-sm ${
                     msg.sender === "user"
                       ? "bg-green-500 text-primary-foreground"
                       : "bg-muted text-muted-foreground"
                   }`}
                 >
                   <p>{msg.text}</p>
-                  <p className="text-xs opacity-70 mt-1">{msg.time}</p>
+                  <p className="text-[13px] opacity-70 mt-1">{msg.time}</p>
                 </div>
               </div>
             ))}
@@ -413,7 +413,7 @@ export function QuickTalkWrapper() {
       <AnimatedDotsBackground className="flex-1 bg-muted/30">
         <section id="ai-assistant" className="container mx-auto px-4 sm:px-6 lg:px-8 pb-0">
           <div className="text-center mb-8 sm:mb-12">
-            <h2 className="text-xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-4 pt-4">
+            <h2 className="text-[18px]  font-bold mb-2 sm:mb-4 pt-4">
               Ask Help
             </h2>
           </div>

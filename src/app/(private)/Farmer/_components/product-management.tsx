@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus, Calendar, Eye, Trash2, Package, Tag, X, Hash, MapPin } from "lucide-react"
+import { Plus, Calendar, Eye, Trash2, Package, Tag, X, Hash, MapPin, RefreshCw, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
 import ProductSubmissionModal, { ProductSubmissionData } from "./product-submission-modal"
 import { productColumns } from "./product-columns"
 import { DataTable } from "@/components/data-table"
@@ -51,8 +53,6 @@ const transformSubmissionToProduct = (submission: Submission): Product => {
     submission.village,
     submission.cell,
     submission.sector,
-    // submission.district,
-    // submission.province
   ].filter(Boolean)
 
   const location = locationParts.length > 0 ? locationParts.join(", ") : "Rwanda"
@@ -83,7 +83,6 @@ export default function ProductManagement() {
   const [showDateFilter, setShowDateFilter] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [viewProduct, setViewProduct] = useState<Product | null>(null) 
-  const [isLockedOpen, setIsLockedOpen] = useState(false);
 
   const statusOptions = ["All", "PENDING", "VERIFIED", "APPROVED", "REJECTED"]
 
@@ -116,10 +115,6 @@ export default function ProductManagement() {
     return matchesStatus && matchesDate && matchesSearch
   })
 
-  const addProduct = (product: Product) => {
-    setProducts((prev) => [...prev, product])
-  }
-
   const handleProductSubmit = async (data: ProductSubmissionData) => {
     try {
       setLoading(true)
@@ -136,251 +131,285 @@ export default function ProductManagement() {
   }
 
   const handleViewDetails = (product: Product | null, lock = false) => {
-    setViewProduct(product) // <-- opens side modal
+    setViewProduct(product)
   }
 
   const handleRefresh = () => {
     fetchSubmissions()
   }
 
+  const handleClearFilters = () => {
+    setSearchTerm("")
+    setSelectedStatus("All")
+    setDateFilter("")
+  }
+
+  // Loading state
   if (loading && products.length === 0) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900">Product Management</h2>
-          <Button disabled className="bg-green-600 hover:bg-green-700 text-white">
-            <Plus className="w-4 h-4 mr-2" /> Submit Product
-          </Button>
-        </div>
-        <div className="text-center py-12">
-          <div className="text-gray-500 mb-2">Loading submissions...</div>
-        </div>
+      <div className="min-h-screen bg-gray-50">
+        <main className="container mx-auto px-6 py-8">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <Skeleton className="h-8 w-48 mb-2" />
+                <Skeleton className="h-4 w-64" />
+              </div>
+              <Skeleton className="h-10 w-32" />
+            </div>
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          </div>
+        </main>
       </div>
     )
   }
 
+  // Error state
   if (error) {
     return (
-      <div className="space-y-6 mx-auto">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900">Product Management</h2>
-          <Button onClick={handleRefresh} className="bg-green-600 hover:bg-green-700 text-white">
-            <Plus className="w-4 h-4 mr-2" /> Submit Product
-          </Button>
-        </div>
-        <div className="text-center py-12">
-          <div className="text-red-500 mb-2">{error}</div>
-          <Button onClick={handleRefresh} variant="outline">
-            Try Again
-          </Button>
-        </div>
+      <div className="min-h-screen bg-gray-50">
+        <main className="container mx-auto px-6 py-8">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="text-center py-12">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Failed to load products
+              </h3>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <Button onClick={handleRefresh} variant="outline">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Try Again
+              </Button>
+            </div>
+          </div>
+        </main>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h2 className="text-xl font-semibold text-gray-900">Product Management</h2>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            onClick={() => setShowSubmissionModal(true)}
-            className="bg-green-600 hover:bg-green-700 text-white"
-            disabled={loading}
-          >
-            <Plus className="w-4 h-4 mr-2" /> Submit Product
-          </Button>
-        </div>
-      </div>
-
-      {/* Status Filter */}
-      <div className="flex flex-wrap gap-2">
-        {statusOptions.map((status) => (
-          <Button
-            key={status}
-            variant="outline"
-            size="sm"
-            onClick={() => setSelectedStatus(status)}
-            className={
-              selectedStatus === status
-                ? "bg-green-600 text-white border-green-600"
-                : "bg-transparent text-gray-600 border-gray-300 hover:bg-gray-50"
-            }
-          >
-            {status} ({status === "All" ? products.length : products.filter((p) => p.status === status).length})
-          </Button>
-        ))}
-      </div>
-
-      {/* Search and Date Filter */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <Input
-              placeholder="Search products, categories, or locations..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full"
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowDateFilter(!showDateFilter)}>
-              <Calendar className="w-4 h-4 mr-1" /> Filter by Date
-            </Button>
-            {dateFilter && (
-              <Button variant="outline" size="sm" onClick={() => setDateFilter("")} className="text-red-600">
-                Clear Filter
+    <div className="min-h-screen bg-gray-50">
+      <main className="container mx-auto px-6 py-8">
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Product Management
+              </h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => setShowSubmissionModal(true)}
+                className="bg-green-600 hover:bg-green-700 text-white"
+                size="sm"
+                disabled={loading}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Submit Product
               </Button>
-            )}
-          </div>
-        </div>
-        {showDateFilter && (
-          <div className="max-w-xs">
-            <Input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} />
-          </div>
-        )}
-      </div>
-
-      {/* Data Table */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-lg ">
-        <div className="overflow-x-auto">
-          <div className="p-6">
-            <DataTable
-              columns={productColumns(handleViewDetails)}
-              data={filteredProducts}
-              searchKey="name"
-              showSearch={false}
-              showColumnVisibility
-              showPagination
-              showRowSelection={false}
-            />
+            </div>
           </div>
 
+          {/* Status Filter Buttons */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            {statusOptions.map((status) => (
+              <Button
+                key={status}
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedStatus(status)}
+                className={
+                  selectedStatus === status
+                    ? "bg-green-600 text-white border-green-600 hover:bg-green-700"
+                    : "bg-transparent text-gray-600 border-gray-300 hover:bg-gray-50"
+                }
+              >
+                {status} ({status === "All" ? products.length : products.filter((p) => p.status === status).length})
+              </Button>
+            ))}
+          </div>
+
+          {/* Search and Date Filter */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="flex-1">
+              <Input
+                placeholder="Search products, categories, or locations..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowDateFilter(!showDateFilter)}
+              >
+                <Calendar className="w-4 h-4 mr-2" />
+                Date Filter
+              </Button>
+              {(searchTerm || selectedStatus !== "All" || dateFilter) && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleClearFilters}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {showDateFilter && (
+            <div className="mb-6 max-w-xs">
+              <Input 
+                type="date" 
+                value={dateFilter} 
+                onChange={(e) => setDateFilter(e.target.value)}
+                placeholder="Filter by date"
+              />
+            </div>
+          )}
+
+          {/* Data Table */}
+          <DataTable
+            columns={productColumns(handleViewDetails)}
+            data={filteredProducts}
+            title=""
+            descrption=""
+            showExport={false}
+            showSearch={false}
+            showColumnVisibility={true}
+            showPagination={true}
+            showRowSelection={false}
+          />
+
+          {/* Empty State */}
           {filteredProducts.length === 0 && !loading && (
             <div className="text-center py-12">
-              <div className="text-gray-500 mb-2">No products found</div>
-              <div className="text-sm text-gray-400">
-                {searchTerm || dateFilter || selectedStatus !== "All"
-                  ? "Try adjusting your filters"
-                  : "Start by submitting your first product"}
-              </div>
+              <p className="text-gray-500">No products found</p>
+              <Button
+                onClick={handleClearFilters}
+                variant="outline"
+                className="mt-4"
+              >
+                Clear Filters
+              </Button>
             </div>
           )}
         </div>
-      </div>
+      </main>
 
-      {/* Submission Modal */}
+      {/* Product Submission Modal */}
       <ProductSubmissionModal
         isOpen={showSubmissionModal}
         onClose={() => setShowSubmissionModal(false)}
         onSubmit={handleProductSubmit}
       />
 
+      {/* Product Details Hover Card */}
+      {!!viewProduct && (
+        <div 
+          className="fixed z-50 top-40 right-4 bg-white rounded-2xl shadow-2xl w-auto max-w-xs p-4 border border-gray-200"
+          onMouseLeave={() => setViewProduct(null)}
+        >
+          <button
+            onClick={() => setViewProduct(null)}
+            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+          >
+            <X className="w-4 h-4 text-gray-600" />
+          </button>
 
+          <h2 className="text-lg font-semibold text-gray-900 mb-3 pr-6">Product Details</h2>
 
-       {!!viewProduct && (
-  <div 
-    className="fixed z-50 top-40 right-0 bg-green-200 rounded-2xl shadow-2xl w-auto max-w-xs p-4"
-    onMouseEnter={() => {
-      // Keep modal open when hovering over it
-    }}
-    onMouseLeave={() => setViewProduct(null)}
-  >
-    <button
-      onClick={() => setViewProduct(null)}
-      className="absolute top-2 right-2 w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
-    >
-      <X className="w-4 h-4 text-gray-600" />
-    </button>
+          <div className="flex flex-col gap-3 text-sm text-gray-700">
+            {/* Name */}
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                  <Package className="w-3 h-3 text-blue-600" />
+                </div>
+                <span className="font-medium">Name:</span>
+              </div>
+              <span className="text-right">{viewProduct.name}</span>
+            </div>
 
-    <h2 className="text-lg font-semibold text-gray-900 mb-2">Product Details</h2>
+            {/* Category */}
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+                  <Tag className="w-3 h-3 text-purple-600" />
+                </div>
+                <span className="font-medium">Category:</span>
+              </div>
+              <span className="text-right">{viewProduct.category}</span>
+            </div>
 
-    <div className="flex flex-col gap-2 text-sm text-gray-700">
-      {/* Name */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center">
-            <Package className="w-3 h-3 text-blue-600" />
+            {/* Quantity */}
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+                  <Hash className="w-3 h-3 text-green-600" />
+                </div>
+                <span className="font-medium">Quantity:</span>
+              </div>
+              <span className="text-right">{viewProduct.quantity}</span>
+            </div>
+
+            {/* Location */}
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
+                  <MapPin className="w-3 h-3 text-red-600" />
+                </div>
+                <span className="font-medium">Location:</span>
+              </div>
+              <span className="text-right">{viewProduct.location}</span>
+            </div>
+
+            {/* Price */}
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 rounded-lg bg-yellow-100 flex items-center justify-center flex-shrink-0">
+                  <div className="w-2 h-2 rounded-full bg-yellow-600"></div>
+                </div>
+                <span className="font-medium">Price:</span>
+              </div>
+              <span className="text-right font-semibold">{viewProduct.price}</span>
+            </div>
+
+            {/* Status */}
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                  <div className="w-2 h-2 rounded-full bg-gray-600"></div>
+                </div>
+                <span className="font-medium">Status:</span>
+              </div>
+              <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(viewProduct.status)}`}>
+                {viewProduct.status}
+              </span>
+            </div>
+
+            {/* Submitted */}
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                  <Calendar className="w-3 h-3 text-indigo-600" />
+                </div>
+                <span className="font-medium">Submitted:</span>
+              </div>
+              <span className="text-right">{viewProduct.submittedDate}</span>
+            </div>
           </div>
-          <span className="font-medium">Name:</span>
         </div>
-        <span>{viewProduct.name}</span>
-      </div>
-
-      {/* Category */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <div className="w-6 h-6 rounded-lg bg-purple-100 flex items-center justify-center">
-            <Tag className="w-3 h-3 text-purple-600" />
-          </div>
-          <span className="font-medium">Category:</span>
-        </div>
-        <span>{viewProduct.category}</span>
-      </div>
-
-      {/* Quantity */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <div className="w-6 h-6 rounded-lg bg-green-100 flex items-center justify-center">
-            <Hash className="w-3 h-3 text-green-600" />
-          </div>
-          <span className="font-medium">Quantity:</span>
-        </div>
-        <span>{viewProduct.quantity}</span>
-      </div>
-
-      {/* Location */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <div className="w-6 h-6 rounded-lg bg-red-100 flex items-center justify-center">
-            <MapPin className="w-3 h-3 text-red-600" />
-          </div>
-          <span className="font-medium">Location:</span>
-        </div>
-        <span>{viewProduct.location}</span>
-      </div>
-
-      {/* Price */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <div className="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center">
-            <div className="w-2 h-2 rounded-full bg-gray-600"></div>
-          </div>
-          <span className="font-medium">Price:</span>
-        </div>
-        <span>{viewProduct.price}</span>
-      </div>
-
-      {/* Status */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <div className="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center">
-            <div className="w-2 h-2 rounded-full bg-gray-600"></div>
-          </div>
-          <span className="font-medium">Status:</span>
-        </div>
-        <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(viewProduct.status)}`}>
-          {viewProduct.status}
-        </span>
-      </div>
-
-      {/* Submitted */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <div className="w-6 h-6 rounded-lg bg-indigo-100 flex items-center justify-center">
-            <Calendar className="w-3 h-3 text-indigo-600" />
-          </div>
-          <span className="font-medium">Submitted:</span>
-        </div>
-        <span>{viewProduct.submittedDate}</span>
-      </div>
-    </div>
-  </div>
-)}
-
+      )}
     </div>
   )
 }
