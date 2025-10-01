@@ -12,6 +12,7 @@ import { DataTable } from "@/components/data-table"
 import { Product } from "./product-context"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { productSubmissionService, Submission } from "@/app/services/productSubmissionService"
+import { TableFilters, FilterConfig, createCommonFilters } from "@/components/filters"
 
 interface productSubmitData {
   productName: string
@@ -79,12 +80,17 @@ export default function ProductManagement() {
   const [error, setError] = useState<string | null>(null)
   const [selectedStatus, setSelectedStatus] = useState<string>("All")
   const [showSubmissionModal, setShowSubmissionModal] = useState(false)
-  const [dateFilter, setDateFilter] = useState("")
-  const [showDateFilter, setShowDateFilter] = useState(false)
+  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined)
   const [searchTerm, setSearchTerm] = useState("")
-  const [viewProduct, setViewProduct] = useState<Product | null>(null) 
+  const [viewProduct, setViewProduct] = useState<Product | null>(null)
 
-  const statusOptions = ["All", "PENDING", "VERIFIED", "APPROVED", "REJECTED"]
+  const statusOptions = [
+    { label: "All", value: "All" },
+    { label: "PENDING", value: "PENDING" },
+    { label: "VERIFIED", value: "VERIFIED" },
+    { label: "APPROVED", value: "APPROVED" },
+    { label: "REJECTED", value: "REJECTED" },
+  ]
 
   const fetchSubmissions = async () => {
     try {
@@ -107,7 +113,7 @@ export default function ProductManagement() {
 
   const filteredProducts = products.filter((product) => {
     const matchesStatus = selectedStatus === "All" || product.status === selectedStatus
-    const matchesDate = !dateFilter || product.submittedDate.includes(dateFilter)
+    const matchesDate = !dateFilter || product.submittedDate.includes(dateFilter.toLocaleDateString())
     const matchesSearch =
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -141,55 +147,19 @@ export default function ProductManagement() {
   const handleClearFilters = () => {
     setSearchTerm("")
     setSelectedStatus("All")
-    setDateFilter("")
+    setDateFilter(undefined)
   }
 
-  // Loading state
-  if (loading && products.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <main className="container mx-auto px-6 py-8">
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <Skeleton className="h-8 w-48 mb-2" />
-                <Skeleton className="h-4 w-64" />
-              </div>
-              <Skeleton className="h-10 w-32" />
-            </div>
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          </div>
-        </main>
-      </div>
-    )
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <main className="container mx-auto px-6 py-8">
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="text-center py-12">
-              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Failed to load products
-              </h3>
-              <p className="text-gray-600 mb-4">{error}</p>
-              <Button onClick={handleRefresh} variant="outline">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Try Again
-              </Button>
-            </div>
-          </div>
-        </main>
-      </div>
-    )
-  }
+  // Create filter configurations
+  const filters: FilterConfig[] = [
+    createCommonFilters.search(
+      searchTerm,
+      setSearchTerm,
+      "Search products, categories, or locations..."
+    ),
+    createCommonFilters.status(selectedStatus, setSelectedStatus, statusOptions),
+    createCommonFilters.date(dateFilter, setDateFilter, "Date Filter"),
+  ]
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -198,7 +168,7 @@ export default function ProductManagement() {
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-[16px] font-bold text-gray-900">
                 Product Management
               </h1>
             </div>
@@ -215,67 +185,39 @@ export default function ProductManagement() {
             </div>
           </div>
 
-          {/* Status Filter Buttons */}
+          {/* Status Summary Buttons */}
           <div className="flex flex-wrap gap-2 mb-4">
             {statusOptions.map((status) => (
               <Button
-                key={status}
+                key={status.value}
                 variant="outline"
                 size="sm"
-                onClick={() => setSelectedStatus(status)}
+                onClick={() => setSelectedStatus(status.value)}
                 className={
-                  selectedStatus === status
+                  selectedStatus === status.value
                     ? "bg-green-600 text-white border-green-600 hover:bg-green-700"
                     : "bg-transparent text-gray-600 border-gray-300 hover:bg-gray-50"
                 }
               >
-                {status} ({status === "All" ? products.length : products.filter((p) => p.status === status).length})
+                {status.label} ({status.value === "All" ? products.length : products.filter((p) => p.status === status.value).length})
               </Button>
             ))}
           </div>
 
-          {/* Search and Date Filter */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <Input
-                placeholder="Search products, categories, or locations..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => setShowDateFilter(!showDateFilter)}
+          {/* Filter Component */}
+          <div className="mb-6">
+            <TableFilters filters={filters} />
+            {(searchTerm || selectedStatus !== "All" || dateFilter) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleClearFilters}
+                className="mt-4 text-red-600 hover:text-red-700"
               >
-                <Calendar className="w-4 h-4 mr-2" />
-                Date Filter
+                Clear Filters
               </Button>
-              {(searchTerm || selectedStatus !== "All" || dateFilter) && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleClearFilters}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  Clear Filters
-                </Button>
-              )}
-            </div>
+            )}
           </div>
-
-          {showDateFilter && (
-            <div className="mb-6 max-w-xs">
-              <Input 
-                type="date" 
-                value={dateFilter} 
-                onChange={(e) => setDateFilter(e.target.value)}
-                placeholder="Filter by date"
-              />
-            </div>
-          )}
 
           {/* Data Table */}
           <DataTable
@@ -292,8 +234,8 @@ export default function ProductManagement() {
 
           {/* Empty State */}
           {filteredProducts.length === 0 && !loading && (
-            <div className="text-center py-12">
-              <p className="text-gray-500">No products found</p>
+            <div className="text-center py-2">
+              <p className="text-gray-600">No products found.</p>
               <Button
                 onClick={handleClearFilters}
                 variant="outline"
@@ -315,7 +257,7 @@ export default function ProductManagement() {
 
       {/* Product Details Hover Card */}
       {!!viewProduct && (
-        <div 
+        <div
           className="fixed z-50 top-40 right-4 bg-white rounded-2xl shadow-2xl w-auto max-w-xs p-4 border border-gray-200"
           onMouseLeave={() => setViewProduct(null)}
         >
