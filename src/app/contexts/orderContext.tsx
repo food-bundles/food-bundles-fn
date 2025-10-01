@@ -17,17 +17,12 @@ import {
 import { useAuth } from "./auth-context";
 
 interface OrderContextType {
-  // Orders
   orders: Order[];
   loading: boolean;
   error: string | null;
-
-  // Statistics
   statistics: OrderStatistics | null;
   statsLoading: boolean;
   statsError: string | null;
-
-  // Actions
   createOrderFromCheckout: (
     data: CreateOrderFromCheckoutData
   ) => Promise<OrderResponse>;
@@ -41,12 +36,11 @@ interface OrderContextType {
     data: UpdateOrderData
   ) => Promise<OrderResponse>;
   cancelOrder: (orderId: string) => Promise<OrderResponse>;
+  reorderOrder: (orderId: string) => Promise<OrderResponse>;
   deleteOrder: (
     orderId: string
   ) => Promise<{ success: boolean; message?: string }>;
   getOrderStatistics: (params?: any) => Promise<StatisticsResponse>;
-
-  // State management
   refreshOrders: () => Promise<void>;
   refreshStatistics: () => Promise<void>;
 }
@@ -73,7 +67,6 @@ export function OrderProvider({ children }: OrderProviderProps) {
         setLoading(true);
         const response = await orderService.createOrderFromCheckout(data);
         if (response.success) {
-          // Refresh orders after creation
           await refreshOrders();
         }
         return response;
@@ -143,22 +136,21 @@ export function OrderProvider({ children }: OrderProviderProps) {
     }
   }, []);
 
- const getMyOrders = useCallback(async (params?: any) => {
-   try {
-     setLoading(true);
-     const response = await orderService.getMyOrders(params);
-     if (response.success) {
-       setOrders(response.data || []);
-     }
-     return response;
-   } catch (err: any) {
-     setError(err.response?.data?.message || "Failed to fetch orders");
-     throw err;
-   } finally {
-     setLoading(false);
-   }
- }, []);
-
+  const getMyOrders = useCallback(async (params?: any) => {
+    try {
+      setLoading(true);
+      const response = await orderService.getMyOrders(params);
+      if (response.success) {
+        setOrders(response.data || []);
+      }
+      return response;
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to fetch orders");
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const updateOrder = useCallback(
     async (orderId: string, data: UpdateOrderData) => {
@@ -196,6 +188,22 @@ export function OrderProvider({ children }: OrderProviderProps) {
     }
   }, []);
 
+  const reorderOrder = useCallback(async (orderId: string) => {
+    try {
+      setLoading(true);
+      const response = await orderService.reorderOrder(orderId);
+      if (response.success) {
+        await refreshOrders();
+      }
+      return response;
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to reorder");
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const deleteOrder = useCallback(async (orderId: string) => {
     try {
       setLoading(true);
@@ -216,15 +224,19 @@ export function OrderProvider({ children }: OrderProviderProps) {
   const getOrderStatistics = useCallback(async (params?: any) => {
     try {
       setStatsLoading(true);
+      setStatsError(null);
       const response = await orderService.getOrderStatistics(params);
-      if (response.success) {
+      console.log("[OrderContext] Statistics response:", response);
+      if (response.success && response.data) {
         setStatistics(response.data);
+        console.log("[OrderContext] Statistics set:", response.data);
       }
       return response;
     } catch (err: any) {
-      setStatsError(
-        err.response?.data?.message || "Failed to fetch statistics"
-      );
+      const errorMsg =
+        err.response?.data?.message || "Failed to fetch statistics";
+      setStatsError(errorMsg);
+      console.error("[OrderContext] Statistics error:", errorMsg);
       throw err;
     } finally {
       setStatsLoading(false);
@@ -243,7 +255,6 @@ export function OrderProvider({ children }: OrderProviderProps) {
     await getOrderStatistics();
   }, [getOrderStatistics]);
 
-  // Load initial data when authenticated
   React.useEffect(() => {
     if (isAuthenticated) {
       refreshOrders();
@@ -266,6 +277,7 @@ export function OrderProvider({ children }: OrderProviderProps) {
     getMyOrders,
     updateOrder,
     cancelOrder,
+    reorderOrder,
     deleteOrder,
     getOrderStatistics,
     refreshOrders,

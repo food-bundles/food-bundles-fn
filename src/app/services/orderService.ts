@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import createAxiosClient from "../hooks/axiosClient";
 
 export interface OrderItem {
@@ -26,9 +27,10 @@ export interface Order {
     | "DELIVERED"
     | "CANCELLED"
     | "REFUNDED";
-  paymentStatus: "PENDING" | "PAID" | "FAILED" | "REFUNDED";
+  paymentStatus: "PENDING" | "PAID" | "FAILED" | "REFUNDED" | "PROCESSING";
   paymentMethod: "CASH" | "MOBILE_MONEY" | "CARD" | "BANK_TRANSFER";
   items: OrderItem[];
+  orderItems?: any[];
   billingAddress: string;
   billingName: string;
   billingPhone: string;
@@ -39,17 +41,29 @@ export interface Order {
   updatedAt: string;
   cancelledAt?: string;
   deliveredAt?: string;
+  restaurant?: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+  };
 }
 
 export interface OrderStatistics {
   totalOrders: number;
-  pendingOrders: number;
-  completedOrders: number;
-  cancelledOrders: number;
-  totalRevenue: number;
-  averageOrderValue: number;
-  ordersByStatus: Record<string, number>;
-  recentOrders: Order[];
+  ordersByStatus: {
+    pending: number;
+    confirmed: number;
+    preparing: number;
+    ready: number;
+    inTransit: number;
+    delivered: number;
+    cancelled: number;
+  };
+  revenue: {
+    total: number;
+    average: number;
+  };
 }
 
 export interface CreateOrderFromCheckoutData {
@@ -102,7 +116,6 @@ export interface StatisticsResponse {
 }
 
 export const orderService = {
-  // Create order from completed checkout
   createOrderFromCheckout: async (
     checkoutData: CreateOrderFromCheckoutData
   ): Promise<OrderResponse> => {
@@ -114,7 +127,6 @@ export const orderService = {
     return response.data;
   },
 
-  // Create direct order (without checkout process)
   createDirectOrder: async (
     orderData: CreateDirectOrderData
   ): Promise<OrderResponse> => {
@@ -123,21 +135,18 @@ export const orderService = {
     return response.data;
   },
 
-  // Get order by ID
   getOrderById: async (orderId: string): Promise<OrderResponse> => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.get(`/orders/${orderId}`);
     return response.data;
   },
 
-  // Get order by order number
   getOrderByNumber: async (orderNumber: string): Promise<OrderResponse> => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.get(`/orders/number/${orderNumber}`);
     return response.data;
   },
 
-  // Get all orders (Admin only)
   getAllOrders: async (params?: {
     page?: number;
     limit?: number;
@@ -151,7 +160,6 @@ export const orderService = {
     return response.data;
   },
 
-  // Get current restaurant's orders
   getMyOrders: async (params?: {
     page?: number;
     limit?: number;
@@ -163,13 +171,12 @@ export const orderService = {
     const response = await axiosClient.get("/orders/my-orders", { params });
     return {
       success: true,
-      data: response.data.data, // ✅ extract the actual array
+      data: response.data.data,
       pagination: response.data.pagination,
       message: response.data.message,
     };
   },
 
-  // Update order
   updateOrder: async (
     orderId: string,
     updateData: UpdateOrderData
@@ -179,14 +186,18 @@ export const orderService = {
     return response.data;
   },
 
-  // Cancel order
   cancelOrder: async (orderId: string): Promise<OrderResponse> => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.post(`/orders/${orderId}/cancel`);
     return response.data;
   },
 
-  // Delete order (Admin only)
+  reorderOrder: async (orderId: string): Promise<OrderResponse> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(`/orders/${orderId}/reorder`);
+    return response.data;
+  },
+
   deleteOrder: async (
     orderId: string
   ): Promise<{ success: boolean; message?: string }> => {
@@ -195,7 +206,6 @@ export const orderService = {
     return response.data;
   },
 
-  // Get order statistics
   getOrderStatistics: async (params?: {
     period?: "day" | "week" | "month" | "year";
     startDate?: string;
@@ -204,6 +214,10 @@ export const orderService = {
   }): Promise<StatisticsResponse> => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.get("/orders/statistics", { params });
-    return response.data;
+    return {
+      success: true,
+      data: response.data.data,
+      message: response.data.message,
+    };
   },
 };

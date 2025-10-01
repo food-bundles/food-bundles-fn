@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { User, Phone, MapPin, Navigation, X, Loader2 } from "lucide-react";
+import { User, Phone, MapPin, Navigation, X, Loader2, ExternalLink, Info } from "lucide-react";
 import { useCart } from "@/app/contexts/cart-context";
 import { useAuth } from "@/app/contexts/auth-context";
 import {
@@ -55,6 +55,9 @@ type PaymentMethod = "wallet" | "momo" | "card";
 export function Checkout() {
   const { cart, totalItems, totalQuantity, totalAmount, isLoading } = useCart();
   const { user, isAuthenticated } = useAuth();
+  const [showFlutterwaveInfo, setShowFlutterwaveInfo] = useState(false);
+  const [flutterwaveRedirectUrl, setFlutterwaveRedirectUrl] =
+    useState<string>("");
 
   const [method, setMethod] = useState<PaymentMethod>("momo");
 
@@ -63,38 +66,58 @@ export function Checkout() {
     phoneNumber: "",
     deliveryAddress: "",
     deliveryInstructions: "",
-    location: { lat: -1.9577, lng: 30.0619 },
+    location: null as LocationData | null,
     hasSelectedLocationOnMap: false,
+    useMapLocation: false,
   });
-
+  
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
-  const [tempLocation, setTempLocation] = useState<LocationData>({
-    lat: -1.9577,
-    lng: 30.0619,
-  });
+  const [tempLocation, setTempLocation] = useState<LocationData | null>(null);
 
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Auto-fill user data on mount
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      const userLocation = parseLocationString(user.location as string);
-      const fullAddress = getUserFullAddress(user);
+useEffect(() => {
+  if (isAuthenticated && user) {
+    const fullAddress = getUserFullAddress(user);
 
-      setFormData({
-        fullName: user.name || "",
-        phoneNumber: user.phone || "",
-        deliveryAddress: fullAddress,
-        deliveryInstructions: "",
-        location: userLocation,
-        hasSelectedLocationOnMap: !!user.location,
-      });
+    setFormData({
+      fullName: user.name || "",
+      phoneNumber: user.phone || "",
+      deliveryAddress: fullAddress,
+      deliveryInstructions: "",
+      location: null,
+      hasSelectedLocationOnMap: false,
+      useMapLocation: false,
+    });
 
-      setTempLocation(userLocation);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const userCurrentLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+          // ✅ Automatically mark location as selected/pinned
+          setFormData((prev) => ({
+            ...prev,
+            location: userCurrentLocation,
+            hasSelectedLocationOnMap: true,
+            useMapLocation: true, // <-- This is the key
+            deliveryAddress: "", // Clear text address if using map
+          }));
+          setTempLocation(userCurrentLocation);
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          setTempLocation(null);
+        }
+      );
     }
-  }, [isAuthenticated, user]);
+  }
+}, [isAuthenticated, user]);
+
 
   const summaryData = {
     totalItems,
@@ -105,12 +128,24 @@ export function Checkout() {
     total: totalAmount,
   };
 
-  const handleInputChange = (field: string, value: string) => {
+const handleInputChange = (field: string, value: string) => {
+  if (field === "deliveryAddress" && value.trim()) {
+    // If user starts typing, clear map selection
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+      hasSelectedLocationOnMap: false,
+      useMapLocation: false,
+      location: null,
+    }));
+  } else {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }));
-    }
-  };
+  }
+
+  if (errors[field]) {
+    setErrors((prev) => ({ ...prev, [field]: "" }));
+  }
+};
 
   const LocationMarker = () => {
     useMapEvents({
@@ -118,7 +153,9 @@ export function Checkout() {
         setTempLocation({ lat: e.latlng.lat, lng: e.latlng.lng });
       },
     });
-    return <Marker position={[tempLocation.lat, tempLocation.lng]} />;
+    return tempLocation ? (
+      <Marker position={[tempLocation.lat, tempLocation.lng]} />
+    ) : null;
   };
 
   const getCurrentLocation = () => {
@@ -140,97 +177,143 @@ export function Checkout() {
     }
   };
 
-  const handleSelectLocation = () => {
-    setFormData((prev) => ({
-      ...prev,
-      location: tempLocation,
-      hasSelectedLocationOnMap: true,
-    }));
+const handleSelectLocation = () => {
+  setFormData((prev) => ({
+    ...prev,
+    location: tempLocation,
+    hasSelectedLocationOnMap: true,
+    useMapLocation: true,
+    deliveryAddress: "", // Clear text input when map is used
+  }));
 
-    if (errors.deliveryAddress) {
-      setErrors((prev) => ({ ...prev, deliveryAddress: "" }));
-    }
+  if (errors.deliveryAddress) {
+    setErrors((prev) => ({ ...prev, deliveryAddress: "" }));
+  }
 
-    setIsLocationModalOpen(false);
-  };
+  setIsLocationModalOpen(false);
+};
+ const handleOpenLocationModal = () => {
+   if (formData.location) {
+     setTempLocation(formData.location);
+   } else {
+     // Get current location when opening modal
+     if (navigator.geolocation) {
+       navigator.geolocation.getCurrentPosition(
+         (position) => {
+           setTempLocation({
+             lat: position.coords.latitude,
+             lng: position.coords.longitude,
+           });
+         },
+         (error) => {
+           console.error("Error getting location:", error);
+         }
+       );
+     }
+   }
+   setIsLocationModalOpen(true);
+ };
 
-  const handleOpenLocationModal = () => {
-    setTempLocation(formData.location);
-    getCurrentLocation();
-    setIsLocationModalOpen(true);
-  };
+const validateForm = (): boolean => {
+  const newErrors: Record<string, string> = {};
 
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
+  if (!formData.fullName.trim()) {
+    newErrors.fullName = "Full name is required";
+  }
+  if (!formData.phoneNumber.trim()) {
+    newErrors.phoneNumber = "Phone number is required";
+  }
 
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = "Full name is required";
-    }
-    if (!formData.phoneNumber.trim()) {
-      newErrors.phoneNumber = "Phone number is required";
-    }
-    if (
-      !formData.hasSelectedLocationOnMap &&
-      !formData.deliveryAddress.trim()
-    ) {
-      newErrors.deliveryAddress = "Delivery address is required";
-    }
-    if (!cart?.id) {
-      newErrors.cart = "No cart found. Please add items to cart first.";
-    }
+  // Must have either map location OR text address (not both required)
+  if (!formData.useMapLocation && !formData.deliveryAddress.trim()) {
+    newErrors.deliveryAddress =
+      "Please select location on map or enter address";
+  }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  if (!cart?.id) {
+    newErrors.cart = "No cart found. Please add items to cart first.";
+  }
 
-  const handleCheckout = async () => {
-    if (!validateForm()) return;
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
 
-    setIsSubmitting(true);
+const handleCheckout = async () => {
+  if (!validateForm()) return;
 
-    try {
-      const paymentMethodMap = {
-        wallet: "CASH" as const,
-        momo: "MOBILE_MONEY" as const,
-        card: "CARD" as const,
-      };
+  setIsSubmitting(true);
 
-      const checkoutPayload: CheckoutRequest = {
-        cartId: cart!.id,
-        paymentMethod: paymentMethodMap[method],
-        billingName: formData.fullName,
-        billingEmail: user?.email || "",
-        billingPhone: formData.phoneNumber,
-        billingAddress: formData.hasSelectedLocationOnMap
-          ? `${formData.location.lat},${formData.location.lng}${
-              formData.deliveryAddress.trim()
-                ? ` - ${formData.deliveryAddress.trim()}`
-                : ""
-            }`
+  try {
+    const paymentMethodMap = {
+      wallet: "CASH" as const,
+      momo: "MOBILE_MONEY" as const,
+      card: "CARD" as const,
+    };
+
+    const checkoutPayload: CheckoutRequest = {
+      cartId: cart!.id,
+      paymentMethod: paymentMethodMap[method],
+      billingName: formData.fullName,
+      billingEmail: user?.email || "",
+      billingPhone: formData.phoneNumber,
+      billingAddress:
+        formData.useMapLocation && formData.location
+          ? `${formData.location.lat},${formData.location.lng}`
           : formData.deliveryAddress.trim(),
-        notes: formData.deliveryInstructions,
-        deliveryDate: new Date().toISOString(),
-        clientIp: "192.168.1.1",
-        deviceFingerprint: "web-checkout",
-        narration: `Order from ${formData.fullName}`,
-        currency: "RWF",
-      };
+      notes: formData.deliveryInstructions,
+      deliveryDate: new Date().toISOString(),
+      clientIp: "192.168.1.1",
+      deviceFingerprint: "web-checkout",
+      narration: `Order from ${formData.fullName}`,
+      currency: "RWF",
+    };
 
-      const response = await checkoutService.createCheckout(checkoutPayload);
+    const response = await checkoutService.createCheckout(checkoutPayload);
 
-      if (response.success) {
-        localStorage.setItem("selectedPaymentMethod", paymentMethodMap[method]);
-        window.location.href = "/restaurant/updates";
+    if (response.success) {
+      localStorage.setItem("selectedPaymentMethod", paymentMethodMap[method]);
+
+      // Handle MoMo payment provider logic
+      if (method === "momo") {
+         const responseData = response.data as any;
+         const paymentProvider = responseData?.checkout?.paymentProvider;
+         const requiresRedirect = responseData?.requiresRedirect;
+         const redirectUrl = responseData?.redirectUrl;
+
+        if (paymentProvider === "PAYPACK") {
+          window.location.href = "/restaurant/updates";
+        } else if (
+          paymentProvider === "FLUTTERWAVE" &&
+          requiresRedirect &&
+          redirectUrl
+        ) {
+          // Flutterwave: Show modal with instructions
+          setFlutterwaveRedirectUrl(redirectUrl);
+          setShowFlutterwaveInfo(true);
+        } else {
+          // Fallback for any other case
+          window.location.href = "/restaurant/updates";
+        }
       } else {
-        setErrors({
-          submit: response.message || "Checkout failed. Please try again.",
-        });
+        // For wallet or card payments, redirect directly
+        window.location.href = "/restaurant/updates";
       }
-    } catch (error) {
-      console.error("Checkout error:", error);
-      setErrors({ submit: "An unexpected error occurred. Please try again." });
-    } finally {
-      setIsSubmitting(false);
+    } else {
+      setErrors({
+        submit: response.message || "Checkout failed. Please try again.",
+      });
+    }
+  } catch (error) {
+    console.error("Checkout error:", error);
+    setErrors({ submit: "An unexpected error occurred. Please try again." });
+  } finally {
+    setIsSubmitting(false);
+  }
+  };
+  
+  const handleFlutterwaveRedirect = () => {
+    if (flutterwaveRedirectUrl) {
+      window.location.href = flutterwaveRedirectUrl;
     }
   };
 
@@ -303,17 +386,6 @@ export function Checkout() {
                 />
               </div>
 
-              <div className="relative">
-                <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-900" />
-                <input
-                  type="tel"
-                  value={formData.phoneNumber}
-                  readOnly
-                  className="w-full pl-10 h-10 border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none rounded-none text-[14px] border-gray-300"
-                  disabled={isSubmitting}
-                />
-              </div>
-
               <div className="space-y-2">
                 <div className="flex gap-2">
                   <div className="relative flex-1">
@@ -323,9 +395,11 @@ export function Checkout() {
                       placeholder={
                         formData.hasSelectedLocationOnMap
                           ? "Location selected on map"
-                          : "Delivery Address"
+                          : "Type your delivery address"
                       }
-                      value={formData.deliveryAddress}
+                      value={
+                        formData.useMapLocation ? "" : formData.deliveryAddress
+                      }
                       onChange={(e) =>
                         handleInputChange("deliveryAddress", e.target.value)
                       }
@@ -358,8 +432,7 @@ export function Checkout() {
                 {formData.hasSelectedLocationOnMap && (
                   <p className="text-green-600 text-xs flex items-center gap-1">
                     <MapPin className="h-3 w-3" />
-                    Location pinned: {formData.location.lat.toFixed(4)},{" "}
-                    {formData.location.lng.toFixed(4)}
+                    Location pinned on map
                   </p>
                 )}
               </div>
@@ -377,6 +450,7 @@ export function Checkout() {
                 />
               </div>
 
+              {/* Payment Method Section */}
               <div className="space-y-3">
                 <div className="flex items-center">
                   <h3 className="text-[14px] mr-5 font-medium text-gray-900">
@@ -424,6 +498,67 @@ export function Checkout() {
                 </div>
               </div>
 
+              {/* Dynamic Payment Inputs */}
+              {method === "momo" && (
+                <div className="relative mt-3">
+                  <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-900" />
+                  <input
+                    type="tel"
+                    placeholder="Enter MoMo Phone Number"
+                    value={formData.phoneNumber}
+                    onChange={(e) =>
+                      handleInputChange("phoneNumber", e.target.value)
+                    }
+                    className="w-full pl-10 h-10 border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none rounded-none text-[14px] border-gray-300"
+                    disabled={isSubmitting}
+                  />
+                </div>
+              )}
+
+              {method === "card" && (
+                <div className="space-y-2 mt-3">
+                  <input
+                    type="text"
+                    placeholder="Card Number"
+                    className="w-full h-8 px-3 placeholder:text-[12px] border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none text-[14px] border-gray-300"
+                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="MM/YY"
+                      className="flex-1 h-8 px-3 placeholder:text-[12px] border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none text-[14px] border-gray-300"
+                    />
+                    <input
+                      type="text"
+                      placeholder="CVV"
+                      className="w-20 h-8 px-3 placeholder:text-[12px] border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none text-[14px] border-gray-300"
+                    />
+                  </div>
+                  <input
+                    type="password"
+                    placeholder="Card PIN"
+                    className="w-full h-8 px-3 border placeholder:text-[12px] text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none text-[14px] border-gray-300"
+                  />
+                </div>
+              )}
+
+              {method === "wallet" && (
+                <div className="space-y-2 mt-3">
+                  <input
+                    type="text"
+                    placeholder="Wallet ID"
+                    value={""}
+                    onChange={(e) =>
+                      handleInputChange("walletId", e.target.value)
+                    }
+                    className="w-full h-10 px-3 border text-gray-900 focus:border-green-500 
+                 focus:ring-green-500 focus:ring-1 focus:outline-none  
+                 text-[14px] border-gray-300"
+                    disabled={isSubmitting}
+                  />
+                </div>
+              )}
+
               <button
                 type="button"
                 onClick={handleCheckout}
@@ -467,7 +602,10 @@ export function Checkout() {
 
                     <div className="flex-1 rounded border border-gray-300 overflow-hidden">
                       <MapContainer
-                        center={[tempLocation.lat, tempLocation.lng]}
+                        center={[
+                          tempLocation?.lat || -1.9577,
+                          tempLocation?.lng || 30.0619,
+                        ]}
                         zoom={15}
                         style={{ height: "100%", width: "100%" }}
                       >
@@ -478,8 +616,8 @@ export function Checkout() {
 
                     <div className="flex justify-between items-center pt-2 border-t border-gray-200">
                       <div className="text-[13px] text-gray-600">
-                        Selected: {tempLocation.lat.toFixed(6)},{" "}
-                        {tempLocation.lng.toFixed(6)}
+                        Selected: {tempLocation?.lat?.toFixed(6) ?? ""},{" "}
+                        {tempLocation?.lng?.toFixed(6) ?? ""}
                       </div>
                       <div className="flex gap-2">
                         <button
@@ -503,6 +641,44 @@ export function Checkout() {
           </div>
         </div>
       </div>
+      {showFlutterwaveInfo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-md w-full max-w-md flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 className="text-[16px] font-medium text-gray-900 flex items-center gap-2">
+                <Info className="h-4 w-4 text-blue-500" />
+                Complete Payment
+              </h3>
+              <button
+                onClick={() => setShowFlutterwaveInfo(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-4 space-y-4">
+              <div className="p-4">
+                <ul className="text-[13px] text-gray-900 space-y-1 list-decimal">
+                  <li>Click Continue</li>
+                  <li>Enter the OTP sent to your WhatsApp</li>
+                  <li>Press *182*7*1# then Track your Order</li>
+                </ul>
+              </div>
+
+              <button
+                onClick={handleFlutterwaveRedirect}
+                className="w-full h-10 bg-green-600 hover:bg-green-700 text-white text-[14px] font-medium cursor-pointer flex items-center justify-center gap-2"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Continue to Payment
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

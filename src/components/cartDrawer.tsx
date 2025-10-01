@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 import { useCart } from "@/app/contexts/cart-context";
-import Link from "next/link";
 import { Spinner } from "./ui/shadcn-io/spinner";
 
 interface CartDrawerProps {
@@ -98,7 +97,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
             ) : error ? (
               <Card>
                 <CardContent className="p-8 text-center">
-                  <p className="text-red-500 text-sm sm:text-xs">
+                  <p className="text-gray-500 text-sm sm:text-xs">
                     Something went wrong, Pleas try again.
                   </p>
                   <p className="text-gray-400 text-xs mt-2">{error}</p>

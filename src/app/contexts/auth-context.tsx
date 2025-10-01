@@ -20,6 +20,7 @@ interface User {
   role: string;
   profileImage?: string;
   location?: string;
+  restaurantId?: string;
 }
 
 interface AuthContextType {

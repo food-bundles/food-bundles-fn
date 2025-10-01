@@ -1,29 +1,99 @@
-import { Order, OrderStatus } from "@/lib/types";
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
+
+import { useOrders } from "@/app/contexts/orderContext";
+import { useEffect, useState, useCallback } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { DashboardOverview } from "./_components/dashboard-overview";
+import { toast } from "sonner";
 
-// Dummy analytics data
-async function getDashboardData() {
-  await new Promise((resolve) => setTimeout(resolve, 100));
+export default function RestaurantDashboard() {
+  const {
+    orders,
+    statistics,
+    loading,
+    statsLoading,
+    refreshOrders,
+    refreshStatistics,
+    reorderOrder,
+  } = useOrders();
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [reorderingId, setReorderingId] = useState<string | null>(null);
 
-  return {
-    date: "Wednesday, August 13, 2025",
+  useEffect(() => {
+    refreshOrders();
+    refreshStatistics();
+    console.log("[Dashboard] Refreshing orders & statistics...");
+  }, []);
+
+  useEffect(() => {
+    if (orders.length > 0 && !selectedOrder) {
+      setSelectedOrder(orders[0]);
+    }
+  }, [orders, selectedOrder]);
+
+  console.log("[Dashboard] Orders:", orders);
+  console.log("[Dashboard] Statistics |||:", statistics);
+
+  const handleReorder = useCallback(async (orderId: string) => {
+    try {
+      console.log("[Dashboard] Reorder clicked for:", orderId);
+      setReorderingId(orderId);
+      const response = await reorderOrder(orderId);
+
+      if (response.success) {
+        toast.success("Order reordered successfully!");
+      } else {
+        toast.error(response.message || "Failed to reorder");
+      }
+    } catch (err: any) {
+      console.error("[Dashboard] Reorder error:", err);
+      toast.error(err.response?.data?.message || "Failed to reorder order");
+    } finally {
+      setTimeout(() => {
+        setReorderingId(null);
+      }, 500);
+    }
+  }, [reorderOrder]);
+
+  if (loading || statsLoading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <main className="container mx-auto px-6 py-8">
+          <div className="space-y-6">
+            <Skeleton className="h-48 w-full" />
+            <Skeleton className="h-64 w-full" />
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  const dashboardData = {
+    date: new Date().toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }),
     metrics: {
       totalSales: {
-        current: 12547,
-        previous: 10934,
-        change: 14.8,
+        current: statistics?.revenue?.total || 0,
+        previous: 0,
+        change: 0,
         period: "last week",
       },
       totalOrders: {
-        current: 387,
-        previous: 358,
-        change: 8.4,
+        current: statistics?.totalOrders || 0,
+        previous: 0,
+        change: 0,
         period: "last week",
       },
       averageOrderValue: {
-        current: 32.42,
-        previous: 33.12,
-        change: -2.1,
+        current: statistics?.revenue?.average || 0,
+        previous: 0,
+        change: 0,
         period: "last week",
       },
       onTimeDeliveryRate: {
@@ -76,76 +146,48 @@ async function getDashboardData() {
         image: "/imgs/eggs.svg",
       },
     ],
-    recentOrders: [
-      {
-        id: "#ORD-7829",
-        customer: "John Smith",
-        items: [
-          { name: "Mixed Greens", image: "/imgs/eggs.svg", quantity: 2 },
-          { name: "Beef Sirloin", image: "/imgs/eggs.svg", quantity: 1 },
-        ],
-        total: 85.2,
-        status: OrderStatus.DELIVERED,
-        timeAgo: "2 hours ago",
-      },
-      {
-        id: "#ORD-7830",
-        customer: "Emma Wilson",
-        items: [
-          { name: "Artisanal Bread", image: "/imgs/eggs.svg", quantity: 1 },
-          { name: "Olive Oil", image: "/imgs/eggs.svg", quantity: 1 },
-        ],
-        total: 32.45,
-        status: OrderStatus.PREPARING,
-        timeAgo: "3 hours ago",
-      },
-      {
-        id: "#ORD-7831",
-        customer: "Michael Brown",
-        items: [
-          { name: "Chicken Breast", image: "/imgs/eggs.svg", quantity: 2 },
-          { name: "Fresh Tomatoes", image: "/imgs/eggs.svg", quantity: 3 },
-        ],
-        total: 64.8,
-        status: OrderStatus.PENDING,
-        timeAgo: "4 hours ago",
-      },
-      {
-        id: "#ORD-7832",
-        customer: "Sofia Garcia",
-        items: [
-          {
-            name: "Premium Beef Sirloin",
-            image: "/imgs/eggs.svg",
-            quantity: 1,
-          },
-        ],
-        total: 72.5,
-        status: OrderStatus.DELIVERED,
-        timeAgo: "1 day ago",
-      },
-      {
-        id: "#ORD-7833",
-        customer: "David Lee",
-        items: [
-          { name: "Mixed Greens", image: "/imgs/eggs.svg", quantity: 1 },
-          { name: "Artisanal Bread", image: "/imgs/eggs.svg", quantity: 2 },
-        ],
-        total: 28.9,
-        status: OrderStatus.DELIVERED,
-        timeAgo: "1 day ago",
-      },
-    ] as Order[],
-  };
-}
+    recentOrders: orders.slice(0, 3).map((order) => {
+      const statusMap: Record<string, any> = {
+        PROCESSING: "PREPARING",
+        SHIPPED: "IN_TRANSIT",
+        READY_FOR_PICKUP: "READY",
+      };
 
-export default async function RestaurantDashboard() {
-  const dashboardData = await getDashboardData();
+      return {
+        id: order.orderNumber,
+        customer: order.billingName || "Unknown",
+        items:
+          order.orderItems?.map((item: any) => ({
+            name: item.productName || "Unknown Product",
+            image: item.images?.[0] || "/imgs/eggs.svg",
+            quantity: item.quantity,
+          })) ||
+          order.items?.map((item: any) => ({
+            name: item.productName || "Unknown Product",
+            image: item.image || "/imgs/eggs.svg",
+            quantity: item.quantity,
+          })) ||
+          [],
+        total: order.totalAmount || 0,
+        status: statusMap[order.status] || order.status,
+        timeAgo: new Date(order.createdAt).toLocaleDateString(),
+        originalData: order,
+      };
+    }),
+    selectedOrderForTracking: selectedOrder,
+    ordersByStatus: statistics?.ordersByStatus || {},
+  };
+
+  console.log("[Dashboard] dashboardData prepared:", dashboardData);
 
   return (
     <div className="min-h-screen bg-white">
       <main className="container mx-auto px-6 py-8">
-        <DashboardOverview data={dashboardData} />
+        <DashboardOverview
+          data={dashboardData}
+          onReorder={handleReorder}
+          reorderingId={reorderingId}
+        />
       </main>
     </div>
   );
