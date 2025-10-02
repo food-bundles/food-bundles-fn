@@ -534,11 +534,6 @@ const handleCheckout = async () => {
                       className="w-20 h-8 px-3 placeholder:text-[12px] border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none text-[14px] border-gray-300"
                     />
                   </div>
-                  <input
-                    type="password"
-                    placeholder="Card PIN"
-                    className="w-full h-8 px-3 border placeholder:text-[12px] text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none text-[14px] border-gray-300"
-                  />
                 </div>
               )}
 
