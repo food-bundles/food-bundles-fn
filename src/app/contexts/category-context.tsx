@@ -92,9 +92,7 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
     try {
       setError(null);
 
-      console.log("Fetching active categories...");
       const response = await categoryService.getActiveCategories();
-      console.log("Active categories response:", response);
 
       if (response.success && response.data) {
         setActiveCategories(response.data);

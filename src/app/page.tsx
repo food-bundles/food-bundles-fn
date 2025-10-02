@@ -3,7 +3,6 @@ import { Header } from "@/components/header";
 import { HeroWithRestaurants } from "@/components/hero-section";
 import { QuickTalkWrapper } from "@/components/quck-talk-section";
 
-
 export default async function HomePage() {
   const restaurants = [
     {
@@ -88,18 +87,18 @@ export default async function HomePage() {
   ];
 
   return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="h-12 bg-green-700"></div>
-        <div>
-          <div id="home">
-            <HeroWithRestaurants restaurants={restaurants} />
-          </div>
-          <div id="ask-help">
-            <QuickTalkWrapper />
-          </div>
-          <Footer />
+    <div className="min-h-screen bg-background">
+      <Header />
+      <div className="h-12 bg-green-700"></div>
+      <div>
+        <div id="home">
+          <HeroWithRestaurants restaurants={restaurants} />
         </div>
+        <div id="ask-help">
+          <QuickTalkWrapper />
+        </div>
+        <Footer />
       </div>
+    </div>
   );
 }

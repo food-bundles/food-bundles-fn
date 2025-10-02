@@ -1,7 +1,8 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { Key, useState } from "react";
+import { Key, useState, useMemo, useEffect } from "react";
 import {
   TrendingUp,
   BarChart3,
@@ -9,6 +10,7 @@ import {
   Home,
   ShoppingBag,
   ChefHat,
+  Package,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Image from "next/image";
-import { Order, OrderStatus } from "@/lib/types";
+import { Order } from "@/lib/types";
 
 type DashboardData = {
   date: string;
@@ -64,64 +66,220 @@ type DashboardData = {
     image: string;
   }>;
   recentOrders: Order[];
+  selectedOrderForTracking?: any;
 };
 
 type Props = {
   data: DashboardData;
+  onReorder?: (orderId: string) => void;
+  reorderingId?: string | null;
 };
 
-export function DashboardOverview({ data }: Props) {
+export function DashboardOverview({ data, onReorder, reorderingId }: Props) {
   const [chartPeriod, setChartPeriod] = useState<"week" | "month">("week");
   const [chartType, setChartType] = useState<"line" | "bar">("line");
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [orderToTrack, setOrderToTrack] = useState<any>(null);
 
-  // Mock order tracking data - this would come from your backend
-  const orderTrackingData = {
-    currentStep: 2, // 0: Order placed, 1: Preparing, 2: Shipped, 3: Delivered
-    steps: [
-      {
+  // Initialize with the first order or selected order
+  useEffect(() => {
+    if (data.selectedOrderForTracking) {
+      const orderId =
+        (data.selectedOrderForTracking as any).originalData?.id ||
+        data.selectedOrderForTracking.id;
+      setSelectedOrderId(orderId);
+      setOrderToTrack(data.selectedOrderForTracking);
+    } else if (data.recentOrders.length > 0 && !selectedOrderId) {
+      const firstOrder = data.recentOrders[0];
+      const firstOrderId =
+        (firstOrder as any).originalData?.id || firstOrder.id;
+      setSelectedOrderId(firstOrderId);
+      setOrderToTrack(firstOrder);
+    }
+  }, [data.selectedOrderForTracking, data.recentOrders.length]);
+
+  // Update orderToTrack whenever selectedOrderId changes
+  useEffect(() => {
+    if (selectedOrderId) {
+      const foundOrder = data.recentOrders.find(
+        (order) =>
+          order.id === selectedOrderId ||
+          (order as any).originalData?.id === selectedOrderId
+      );
+
+      if (foundOrder) {
+        setOrderToTrack(foundOrder);
+      } else if (data.selectedOrderForTracking) {
+        setOrderToTrack(data.selectedOrderForTracking);
+      }
+    }
+  }, [selectedOrderId, data.recentOrders, data.selectedOrderForTracking]);
+
+  // Check if order is failed/cancelled
+  const isFailedOrder = useMemo(() => {
+    if (!orderToTrack) return false;
+    return (
+      orderToTrack.status === "FAILED" || orderToTrack.status === "CANCELLED"
+    );
+  }, [orderToTrack]);
+
+  // Get status display label and color configuration
+  const getStatusConfig = (status: string) => {
+    const statusConfig: Record<
+      string,
+      { label: string; bg: string; text: string; border: string }
+    > = {
+      PENDING: {
         label: "Pending",
-        icon: ShoppingBag,
-        completed: true,
-        time: "10:30 AM",
-        status: OrderStatus.PENDING,
+        bg: "bg-amber-50",
+        text: "text-amber-700",
+        border: "border-amber-200",
       },
-      {
-        label: "Confirmed",
-        icon: ShoppingBag,
-        completed: true,
-        time: "10:30 AM",
-        status: OrderStatus.CONFIRMED,
+      CONFIRMED: {
+        label: "Paid",
+        bg: "bg-blue-50",
+        text: "text-blue-700",
+        border: "border-blue-200",
       },
-      {
+      PREPARING: {
         label: "Preparing",
-        icon: ChefHat,
-        completed: true,
-        time: "11:15 AM",
-        status: OrderStatus.PREPARING,
+        bg: "bg-purple-50",
+        text: "text-purple-700",
+        border: "border-purple-200",
       },
-      {
-        label: "Ready",
-        icon: Truck,
-        completed: true,
-        time: "2:30 PM",
-        status: OrderStatus.READY,
-      },
-      {
+      READY: {
         label: "Shipped",
-        icon: Truck,
-        completed: true,
-        time: "2:30 PM",
-        status: OrderStatus.IN_TRANSIT,
+        bg: "bg-cyan-50",
+        text: "text-cyan-700",
+        border: "border-cyan-200",
       },
-      {
+      IN_TRANSIT: {
+        label: "Shipped",
+        bg: "bg-indigo-50",
+        text: "text-indigo-700",
+        border: "border-indigo-200",
+      },
+      DELIVERED: {
         label: "Delivered",
-        icon: Home,
-        completed: false,
-        time: "Expected 4:00 PM",
-        status: OrderStatus.DELIVERED,
+        bg: "bg-green-50",
+        text: "text-green-700",
+        border: "border-green-200",
       },
-    ],
+      CANCELLED: {
+        label: "Failed",
+        bg: "bg-red-50",
+        text: "text-red-700",
+        border: "border-red-200",
+      },
+      FAILED: {
+        label: "Failed",
+        bg: "bg-red-50",
+        text: "text-red-700",
+        border: "border-red-200",
+      },
+      REFUNDED: {
+        label: "Refunded",
+        bg: "bg-gray-50",
+        text: "text-gray-700",
+        border: "border-gray-200",
+      },
+      PROCESSING: {
+        label: "Processing",
+        bg: "bg-yellow-50",
+        text: "text-yellow-700",
+        border: "border-yellow-200",
+      },
+    };
+    return (
+      statusConfig[status] || {
+        label: status,
+        bg: "bg-gray-50",
+        text: "text-gray-700",
+        border: "border-gray-200",
+      }
+    );
   };
+
+  // Define all possible order statuses with their icons
+  const allOrderSteps = [
+    {
+      label: "Pending",
+      icon: ShoppingBag,
+      status: "PENDING",
+    },
+    {
+      label: "paid",
+      icon: Package,
+      status: "CONFIRMED",
+    },
+    {
+      label: "Preparing",
+      icon: ChefHat,
+      status: ["PREPARING"],
+    },
+    {
+      label: "Shipped",
+      icon: Truck,
+      status: ["READY", "IN_TRANSIT"],
+    },
+    {
+      label: "Delivered",
+      icon: Home,
+      status: "DELIVERED",
+    },
+  ];
+
+  // Dynamically generate order tracking data based on actual order
+  const orderTrackingData = useMemo(() => {
+    if (!orderToTrack) {
+      return {
+        currentStep: 0,
+        steps: allOrderSteps.map((step) => ({
+          ...step,
+          completed: false,
+          time: "",
+        })),
+        orderNumber: "No orders",
+      };
+    }
+
+    const currentStatus = orderToTrack.status;
+
+    // Find current step index
+    const currentStepIndex = allOrderSteps.findIndex((step) => {
+      if (Array.isArray(step.status)) {
+        return step.status.includes(currentStatus);
+      }
+      return step.status === currentStatus;
+    });
+
+    // Generate steps with completion status
+    const steps = allOrderSteps.map((step, index) => {
+      const isCompleted =
+        index < currentStepIndex ||
+        (Array.isArray(step.status) && step.status.includes(currentStatus)) ||
+        step.status === currentStatus;
+
+      return {
+        label: step.label,
+        icon: step.icon,
+        completed: isCompleted,
+        time: isCompleted
+          ? new Date(orderToTrack.createdAt).toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : `Expected`,
+        status: Array.isArray(step.status) ? step.status[0] : step.status,
+      };
+    });
+
+    return {
+      currentStep: currentStepIndex >= 0 ? currentStepIndex : 0,
+      steps,
+      orderNumber: orderToTrack.orderNumber || orderToTrack.id || "N/A",
+    };
+  }, [orderToTrack]);
 
   const LineChart = () => {
     const maxValue = Math.max(
@@ -148,7 +306,6 @@ export function DashboardOverview({ data }: Props) {
           viewBox={`0 0 ${chartWidth} ${chartHeight + 60}`}
           className="overflow-visible"
         >
-          {/* Grid lines */}
           <defs>
             <pattern
               id="grid"
@@ -167,7 +324,6 @@ export function DashboardOverview({ data }: Props) {
           </defs>
           <rect width="100%" height={chartHeight} fill="url(#grid)" />
 
-          {/* Y-axis labels */}
           {[0, 9, 18, 27, 36].map((value) => (
             <g key={value}>
               <text
@@ -190,7 +346,6 @@ export function DashboardOverview({ data }: Props) {
             </g>
           ))}
 
-          {/* Current Week Line */}
           <polyline
             fill="none"
             stroke="#1e40af"
@@ -200,7 +355,6 @@ export function DashboardOverview({ data }: Props) {
               .join(" ")}
           />
 
-          {/* Current Week Points */}
           {data.salesChart.currentPeriod.map((d, i) => (
             <circle
               key={`current-${i}`}
@@ -213,7 +367,6 @@ export function DashboardOverview({ data }: Props) {
             />
           ))}
 
-          {/* Previous Week Line */}
           <polyline
             fill="none"
             stroke="#93c5fd"
@@ -223,7 +376,6 @@ export function DashboardOverview({ data }: Props) {
               .join(" ")}
           />
 
-          {/* Previous Week Points */}
           {data.salesChart.previousPeriod.map((d, i) => (
             <circle
               key={`previous-${i}`}
@@ -236,7 +388,6 @@ export function DashboardOverview({ data }: Props) {
             />
           ))}
 
-          {/* X-axis labels */}
           {data.salesChart.currentPeriod.map((d, i) => (
             <text
               key={d.day}
@@ -250,12 +401,10 @@ export function DashboardOverview({ data }: Props) {
           ))}
         </svg>
 
-        {/* Y-axis label */}
         <div className="absolute left-2 top-1/2 transform -rotate-90 -translate-y-1/2 text-xs text-gray-500">
           Units
         </div>
 
-        {/* Legend */}
         <div className="flex items-center justify-center space-x-6 mt-2">
           <div className="flex items-center space-x-2">
             <div className="w-3 h-0.5 bg-blue-600"></div>
@@ -300,7 +449,6 @@ export function DashboardOverview({ data }: Props) {
           viewBox={`0 0 ${chartWidth} ${chartHeight + 20}`}
           className="overflow-visible"
         >
-          {/* Grid lines */}
           <defs>
             <pattern
               id="grid"
@@ -318,7 +466,6 @@ export function DashboardOverview({ data }: Props) {
             </pattern>
           </defs>
 
-          {/* Y-axis labels and grid lines */}
           {[0, 9, 18, 27, 36].map((value) => (
             <g key={value}>
               <text
@@ -341,7 +488,6 @@ export function DashboardOverview({ data }: Props) {
             </g>
           ))}
 
-          {/* Bars */}
           {data.salesChart.currentPeriod.map((d, i) => {
             const x = getX(i);
             const currentHeight = getBarHeight(d.sales);
@@ -351,7 +497,6 @@ export function DashboardOverview({ data }: Props) {
 
             return (
               <g key={d.day}>
-                {/* Current Period Bar */}
                 <rect
                   x={x}
                   y={chartHeight - padding - currentHeight}
@@ -361,7 +506,6 @@ export function DashboardOverview({ data }: Props) {
                   rx="2"
                 />
 
-                {/* Previous Period Bar */}
                 <rect
                   x={x + barWidth + barSpacing}
                   y={chartHeight - padding - previousHeight}
@@ -371,7 +515,6 @@ export function DashboardOverview({ data }: Props) {
                   rx="2"
                 />
 
-                {/* Value labels on top of bars */}
                 <text
                   x={x + barWidth / 2}
                   y={chartHeight - padding - currentHeight - 8}
@@ -389,7 +532,6 @@ export function DashboardOverview({ data }: Props) {
                   {data.salesChart.previousPeriod[i].sales}
                 </text>
 
-                {/* X-axis labels */}
                 <text
                   x={x + barWidth + barSpacing / 2}
                   y={chartHeight - padding + 20}
@@ -402,7 +544,6 @@ export function DashboardOverview({ data }: Props) {
             );
           })}
 
-          {/* X-axis line */}
           <line
             x1={padding}
             y1={chartHeight - padding}
@@ -412,7 +553,6 @@ export function DashboardOverview({ data }: Props) {
             strokeWidth="1"
           />
 
-          {/* Y-axis line */}
           <line
             x1={padding}
             y1={padding}
@@ -423,12 +563,10 @@ export function DashboardOverview({ data }: Props) {
           />
         </svg>
 
-        {/* Y-axis label */}
         <div className="absolute left-2 top-1/2 transform -rotate-90 -translate-y-1/2 text-xs text-gray-500">
           Units
         </div>
 
-        {/* Legend */}
         <div className="flex items-center justify-center space-x-6 mt-4">
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-blue-600 rounded-sm"></div>
@@ -451,67 +589,76 @@ export function DashboardOverview({ data }: Props) {
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row gap-6 w-full">
         <div className="w-full lg:w-7/10 space-y-6">
-          <div className="w-full border-b border-gray-200 pb-2 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="w-full border-b border-gray-200 pb-2 flex flex-col lg:flex-row lg:items-center gap-10">
             <div className="px-4">
               <h3 className="text-[14px] font-medium">Track Order</h3>
-              <p className="text-[12px] text-green-500">#ORD-7829</p>
+              <p className="text-[12px] text-green-500">
+                {orderTrackingData.orderNumber}
+              </p>
             </div>
             <div className="px-4">
-              <div className="flex items-center gap-2">
-                {orderTrackingData.steps.map((step, index) => {
-                  const Icon = step.icon;
-                  const isCompleted = step.completed;
-                  const isCurrent = index === orderTrackingData.currentStep;
+              {isFailedOrder ? (
+                <div className="">
+                  <h4 className="text-[14px] text-red-700 ">Order Failed</h4>
+                  <p className="text-[12px] text-gray-600 ">
+                    This order failed, please Reorder.
+                  </p>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 overflow-x-auto">
+                  {orderTrackingData.steps.map((step, index) => {
+                    const Icon = step.icon;
+                    const isCompleted = step.completed;
+                    const isCurrent = index === orderTrackingData.currentStep;
 
-                  return (
-                    <div
-                      key={index}
-                      className="flex flex-col items-center relative z-10"
-                    >
-                      <div className="relative">
+                    return (
+                      <div
+                        key={index}
+                        className="flex flex-col items-center relative z-10"
+                      >
+                        <div className="relative">
+                          <div
+                            className={`w-12 h-12 rounded-full flex items-center justify-center relative z-10 transition-all duration-300 ${
+                              isCompleted
+                                ? "border-2 border-green-500 bg-green-700 text-white shadow-md"
+                                : isCurrent
+                                ? "border-2 border-green-500 bg-white text-green-600 animate-pulse shadow-md"
+                                : "border-2 border-gray-200 bg-white text-gray-400 shadow-md"
+                            }`}
+                          >
+                            <Icon className="w-6 h-6" />
+                          </div>
+                        </div>
+
                         <div
-                          className={`w-12 h-12 rounded-full flex items-center justify-center relative z-10 ${
+                          className={`text-center mt-3 px-3 rounded-full border transition-all duration-300 ${
                             isCompleted
-                              ? "border-2 border-green-500 bg-green-700 text-green-500 shadow-md"
+                              ? "border-2 border-green-500 shadow-md bg-white"
                               : isCurrent
-                              ? " text-white animate-pulse"
-                              : "border-2 border-gray-200 bg-white text-gray-900 shadow-md"
+                              ? "border-2 border-green-500 bg-white animate-pulse shadow-md"
+                              : "border-2 border-gray-200 bg-white shadow-md"
                           }`}
                         >
-                          <Icon className="w-6 h-6" />
+                          <p
+                            className={`text-[13px] font-medium ${
+                              isCompleted
+                                ? "text-green-600"
+                                : isCurrent
+                                ? "text-green-600"
+                                : "text-gray-400"
+                            }`}
+                          >
+                            {step.label}
+                          </p>
                         </div>
                       </div>
-
-                      {/* Step Label */}
-                      <div
-                        className={`text-center mt-3 px-3 rounded-full border " ${
-                          isCompleted
-                            ? "border-2 border-green-500 shadow-md"
-                            : isCurrent
-                            ? " text-white animate-pulse"
-                            : "border-2 border-gray-200 bg-white text-gray-900 shadow-md"
-                        }  `}
-                      >
-                        <p
-                          className={`text-[13px] font-medium ${
-                            isCompleted
-                              ? "text-green-600"
-                              : isCurrent
-                              ? "text-green-600"
-                              : "text-gray-900"
-                          }`}
-                        >
-                          {step.label}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Statistics Chart */}
           <Card className="w-full border-none shadow-none">
             <CardHeader className="flex flex-row items-center justify-between">
               <div className="flex items-center space-x-3">
@@ -523,7 +670,7 @@ export function DashboardOverview({ data }: Props) {
                     variant="ghost"
                     size="sm"
                     onClick={() => setChartType("line")}
-                    className={`px-3  text-xs transition-all ${
+                    className={`px-3 text-xs transition-all ${
                       chartType === "line"
                         ? "bg-white text-green-600 shadow-sm hover:bg-white"
                         : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
@@ -535,10 +682,10 @@ export function DashboardOverview({ data }: Props) {
                     variant="ghost"
                     size="sm"
                     onClick={() => setChartType("bar")}
-                    className={`px-3  text-xs transition-all ${
+                    className={`px-3 text-xs transition-all ${
                       chartType === "bar"
                         ? "bg-white text-green-600 shadow-sm hover:bg-white"
-                        : "text-gray-600  hover:bg-gray-50"
+                        : "text-gray-600 hover:bg-gray-50"
                     }`}
                   >
                     <BarChart3 className="h-2 w-2 mr-1" />
@@ -554,7 +701,7 @@ export function DashboardOverview({ data }: Props) {
                 <SelectTrigger className="w-24">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="">
+                <SelectContent>
                   <SelectItem value="week" className="text-[12px]">
                     Week
                   </SelectItem>
@@ -584,23 +731,20 @@ export function DashboardOverview({ data }: Props) {
           </Card>
         </div>
 
-        {/* Vertical divider */}
         <div className="hidden lg:block w-[0.5px] bg-gray-300" />
 
-        {/* RIGHT SIDE */}
         <div className="w-full lg:w-3/10 space-y-6">
           <div className="px-2 w-full">
-            <div className="">
+            <div>
               <div className="flex space-y-6">
                 <div className="flex-1">
-                  <p className="text-[14px]  text-gray-600">Total Orders</p>
+                  <p className="text-[14px] text-gray-600">Total Orders</p>
                   <p className="text-[14px] font-bold text-gray-900">
                     {data.metrics.totalOrders.current}
                   </p>
                 </div>
-                {/* Profit Section */}
                 <div className="flex-1">
-                  <p className="text-[12px]  text-gray-600">
+                  <p className="text-[12px] text-gray-600">
                     Amount you would have paid in fees
                   </p>
                   <p className="text-[12px] font-bold text-green-600">
@@ -624,14 +768,26 @@ export function DashboardOverview({ data }: Props) {
             </h3>
             <div className="space-y-4">
               {data.recentOrders.slice(0, 3).map((order) => {
-         
+                const originalOrderId =
+                  (order as any).originalData?.id || order.id;
+                const isReordering = reorderingId === originalOrderId;
+                const isSelected =
+                  selectedOrderId === originalOrderId ||
+                  selectedOrderId === order.id;
+                const statusConfig = getStatusConfig(order.status);
 
                 return (
                   <div
                     key={order.id}
-                    className="flex items-start space-x-3 p-4 border border-green-500 rounded hover:bg-gray-50 transition-colors"
+                    onClick={() => {
+                      setSelectedOrderId(originalOrderId || order.id);
+                    }}
+                    className={`flex items-start space-x-3 p-4 rounded cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg ${
+                      isSelected
+                        ? "border-2 border-green-500 bg-green-50 shadow-md"
+                        : "border border-gray-200 hover:border-green-300 bg-white"
+                    }`}
                   >
-                    {/* Order Items Images */}
                     <div className="flex -space-x-2">
                       {order.items
                         .slice(0, 1)
@@ -660,24 +816,44 @@ export function DashboardOverview({ data }: Props) {
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      {/* Order ID and Status */}
                       <div className="flex items-center justify-between mb-1">
                         <p className="font-medium text-gray-900 text-sm truncate">
                           {order.id}
                         </p>
-                        <div className="px-2  rounded-full border">
-                          <p className="text-[10px] lowercase">
-                            {order.status}
+                        <div
+                          className={`px-2 py-0.5 rounded-full ${statusConfig.bg} ${statusConfig.border} border transition-all duration-300`}
+                        >
+                          <p
+                            className={`text-[10px] font-medium lowercase ${statusConfig.text}`}
+                          >
+                            {statusConfig.label}
                           </p>
                         </div>
-                        <div className="">
-                          <p className="text-[10px] text-green-500">
-                            Reoder
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (onReorder) {
+                              console.log(
+                                "Reorder clicked for:",
+                                originalOrderId
+                              );
+                              onReorder(originalOrderId);
+                            }
+                          }}
+                          disabled={isReordering || !onReorder}
+                          className={`flex items-center gap-1 transition-all duration-200 ${
+                            isReordering
+                              ? "text-gray-400 cursor-not-allowed"
+                              : "text-green-500 hover:text-green-600 hover:scale-110 cursor-pointer"
+                          }`}
+                          title={isReordering ? "Reordering..." : "Reorder"}
+                        >
+                          <p className="text-[10px] font-medium">
+                            {isReordering ? "..." : "Reorder"}
                           </p>
-                        </div>
+                        </button>
                       </div>
 
-                      {/* Item Names */}
                       <p className="text-xs text-gray-900 mb-1 line-clamp-1">
                         {order.items
                           .map((item: { name: any }) => item.name)

@@ -440,19 +440,17 @@ export function Header() {
                       </button>
 
                       {isProfileDropdownOpen && (
-                        <div className="absolute -right-6 top-full mt-2 w-32 bg-white shadow-lg border border-gray-200 py-1 z-50">
+                        <div className="absolute -right-6 top-full mt-2 w-40 bg-white shadow-lg border border-gray-200 py-1 z-50">
                           <button
                             className="block sm:flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             onClick={handleDashboardNavigation}
                           >
-                            <BrickWall className="w-4 h-4 mr-1" />
-                            Dashboard
+                            My Account
                           </button>
                           <button
                             className="sm:flex items-center block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             onClick={handleProfileNavigation}
                           >
-                            <User className="w-4 h-4 mr-1" />
                             Profile
                           </button>
                           <div className="border-t border-gray-100 mt-1"></div>

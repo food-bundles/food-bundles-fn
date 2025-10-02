@@ -1,11 +1,13 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
+import { useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {  Eye } from "lucide-react";
+import { Eye, Copy, Check, RefreshCw } from "lucide-react";
 
 export type OrderStatus =
   | "pending"
@@ -25,7 +27,7 @@ export type Order = {
   totalAmount: number;
   deliveryAddress: string;
   status: OrderStatus;
-  originalData?: any; // For accessing backend data
+  originalData?: any;
 };
 
 const getStatusColor = (status: OrderStatus) => {
@@ -49,9 +51,56 @@ const getStatusColor = (status: OrderStatus) => {
   }
 };
 
+const isMapCoordinates = (address: string): boolean => {
+  if (!address) return false;
+
+  const coordPattern = /^-?\d+\.?\d*\s*,\s*-?\d+\.?\d*$/;
+  const labeledCoordPattern = /(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)/;
+
+  return coordPattern.test(address.trim()) || labeledCoordPattern.test(address);
+};
+
+const extractCoordinates = (address: string): string => {
+  const match = address.match(/(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)/);
+  return match ? `${match[1]}, ${match[2]}` : address;
+};
+
+// Component for copy button with state
+const CopyButton = ({ coordinates }: { coordinates: string }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(coordinates);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy coordinates");
+    }
+  };
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-6 w-6 p-0 hover:bg-gray-100 flex-shrink-0"
+      onClick={handleCopy}
+    >
+      {copied ? (
+        <div className="flex items-center ml-3">
+          <Check className="h-3 w-3 text-green-600" />{" "}
+          <p className="text-[8px]">Copied</p>
+        </div>
+      ) : (
+        <Copy className="h-3 w-3" />
+      )}
+    </Button>
+  );
+};
 
 export const ordersColumns = (
-  onView: (order: Order) => void
+  onView: (order: Order) => void,
+  onReorder: (orderId: string) => void
 ): ColumnDef<Order>[] => [
   {
     id: "select",
@@ -160,14 +209,27 @@ export const ordersColumns = (
   {
     accessorKey: "deliveryAddress",
     header: "Delivery Address",
-    cell: ({ row }) => (
-      <div
-        className="max-w-[200px] truncate"
-        title={row.getValue("deliveryAddress")}
-      >
-        {row.getValue("deliveryAddress")}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const address = row.getValue("deliveryAddress") as string;
+      const isCoordinates = isMapCoordinates(address);
+      const coordinates = isCoordinates ? extractCoordinates(address) : "";
+
+      return (
+        <div className="flex items-center gap-2 max-w-[200px]">
+          <div
+            className="truncate"
+            title={isCoordinates ? coordinates : address}
+          >
+            {isCoordinates ? (
+              <span className="text-[13px]">Map Location</span>
+            ) : (
+              address
+            )}
+          </div>
+          {isCoordinates && <CopyButton coordinates={coordinates} />}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "status",
@@ -186,18 +248,22 @@ export const ordersColumns = (
     header: "Actions",
     cell: ({ row }) => {
       const order = row.original;
+      console.log("Rendering actions for order:", order.id); // Debug log
 
       return (
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0  hover:bg-blue-50 cursor-pointer"
-            onClick={() => onView(order)}
-            title="View Order Details "
+          <button
+            className=" p-0 cursor-pointer "
+            onClick={() => {
+              console.log("Reorder clicked for:", order.id);
+              onReorder(order.id);
+            }}
+            title="Reorder"
           >
-            <Eye className="h-4 w-4" />
-          </Button>
+            <span className="h-4 w-4 text-green-600 text-[12px]" >
+              Reoder
+            </span>
+          </button>
         </div>
       );
     },
