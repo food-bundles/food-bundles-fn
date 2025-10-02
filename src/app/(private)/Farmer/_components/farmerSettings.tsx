@@ -1,12 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-"use client"
-
 import { useEffect, useState } from "react"
-import { X, Settings, Eye, Bell, Moon, Sun, Globe } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { X, Settings, Eye, Bell, Globe } from "lucide-react"
 
 interface SettingsDrawerProps {
   isOpen: boolean
@@ -22,191 +15,139 @@ export default function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps)
     smsNotifications: false,
   })
 
-  // Handle escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        onClose()
-      }
+      if (e.key === "Escape" && isOpen) onClose()
     }
-
     document.addEventListener("keydown", handleEscape)
     return () => document.removeEventListener("keydown", handleEscape)
   }, [isOpen, onClose])
 
-  // Apply dark mode to document
   useEffect(() => {
-    if (settings.darkMode) {
-      document.documentElement.classList.add("dark")
-    } else {
-      document.documentElement.classList.remove("dark")
-    }
+    document.documentElement.classList.toggle("dark", settings.darkMode)
   }, [settings.darkMode])
+
+  useEffect(() => {
+    document.body.style.overflow = isOpen ? 'hidden' : 'unset'
+    return () => { document.body.style.overflow = 'unset' }
+  }, [isOpen])
 
   const handleSettingChange = (key: string, value: boolean | string) => {
     setSettings((prev) => ({ ...prev, [key]: value }))
   }
-
-  const languages = [
-    { value: "en", label: "English" },
-    { value: "es", label: "Español" },
-    { value: "fr", label: "Français" },
-    { value: "de", label: "Deutsch" },
-    { value: "it", label: "Italiano" },
-    { value: "pt", label: "Português" },
-  ]
+  const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
+    <button
+      role="switch"
+      aria-checked={checked}
+      onClick={onChange}
+      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-700 ${
+        checked ? "bg-green-700" : "bg-gray-300 dark:bg-gray-600"
+      }`}
+    >
+      <span className={`inline-block h-3 w-3 rounded-full bg-white transition-transform ${
+        checked ? "translate-x-5" : "translate-x-1"
+      }`} />
+    </button>
+  )
 
   return (
     <>
-      {/* Backdrop */}
-      {isOpen && <div className="fixed inset-0 bg-black/20 z-40" onClick={onClose} />}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+          onClick={onClose}
+        />
+      )}
 
       <div
-        className={`fixed top-0 right-0 h-full w-[540px] bg-background text-foreground z-50 transform transition-all duration-300 ease-in-out overflow-y-auto shadow-2xl border-l border-border scrollbar-hide ${
+        className={`fixed top-0 right-0 h-full w-full sm:w-96 bg-white dark:bg-gray-900 z-50 transform transition-transform duration-300 overflow-y-auto shadow-2xl ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
+        role="dialog"
+        aria-modal="true"
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-background border-b border-border flex justify-between items-center p-6">
+        <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-800">
           <div className="flex items-center gap-2">
-            <Settings className="w-5 h-5 text-muted-foreground" />
-            <span className="text-xl font-bold text-foreground">Settings</span>
+            <Settings className="w-5 h-5 text-gray-500" />
+            <span className="text-lg font-bold">Settings</span>
           </div>
-          <button
-            onClick={onClose}
-            className="text-muted-foreground hover:text-foreground transition-colors hover:rotate-90 transform duration-200"
-          >
-            <X className="w-6 h-6" />
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-900 dark:hover:text-gray-100 p-1">
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
-          {/* Submissions Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Eye className="w-5 h-5 text-primary" />
-                Submissions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Mark submissions as seen</p>
-                  <p className="text-xs text-muted-foreground">
-                    Automatically mark submissions as viewed when you open them
-                  </p>
-                </div>
-                <Switch
-                  checked={settings.seenSubmissions}
-                  onCheckedChange={(checked: any) => handleSettingChange("seenSubmissions", checked)}
-                />
+        <div className="p-4 space-y-4 pb-20">
+          {/* Submissions */}
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+            <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+              <Eye className="w-4 h-4 text-green-700 dark:text-green-500" />
+              <h2 className="font-semibold text-sm">Submissions</h2>
+            </div>
+            <div className="p-3 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">Mark as seen</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">Auto-mark when opened</p>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Notification Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Bell className="w-5 h-5 text-primary" />
-                Notifications
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Device notifications</p>
-                  <p className="text-xs text-muted-foreground">Allow notifications to appear on your device</p>
-                </div>
-                <Switch
-                  checked={settings.deviceNotifications}
-                  onCheckedChange={(checked: any) => handleSettingChange("deviceNotifications", checked)}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">SMS notifications</p>
-                  <p className="text-xs text-muted-foreground">Receive important updates via text message</p>
-                </div>
-                <Switch
-                  checked={settings.smsNotifications}
-                  onCheckedChange={(checked: any) => handleSettingChange("smsNotifications", checked)}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Appearance Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                {settings.darkMode ? (
-                  <Moon className="w-5 h-5 text-primary" />
-                ) : (
-                  <Sun className="w-5 h-5 text-primary" />
-                )}
-                Appearance
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Dark mode</p>
-                  <p className="text-xs text-muted-foreground">Switch between light and dark themes</p>
-                </div>
-                <Switch
-                  checked={settings.darkMode}
-                  onCheckedChange={(checked: any) => handleSettingChange("darkMode", checked)}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Language Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Globe className="w-5 h-5 text-primary" />
-                Language
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Select your language</p>
-                <Select value={settings.language} onValueChange={(value) => handleSettingChange("language", value)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select language" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {languages.map((lang) => (
-                      <SelectItem key={lang.value} value={lang.value}>
-                        {lang.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Save Settings Button */}
-          <div className="pt-4">
-            <Button
-              onClick={() => {
-                // Here you would typically save settings to your backend
-                console.log("Settings saved:", settings)
-                onClose()
-              }}
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              Save Settings
-            </Button>
+              <Toggle checked={settings.seenSubmissions} onChange={() => handleSettingChange("seenSubmissions", !settings.seenSubmissions)} />
+            </div>
           </div>
 
-          <div className="h-8"></div>
+          {/* Notifications */}
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+            <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+              <Bell className="w-4 h-4 text-green-700 dark:text-green-500" />
+              <h2 className="font-semibold text-sm">Notifications</h2>
+            </div>
+            <div className="p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Device notifications</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Allow on device</p>
+                </div>
+                <Toggle checked={settings.deviceNotifications} onChange={() => handleSettingChange("deviceNotifications", !settings.deviceNotifications)} />
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">SMS notifications</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Updates via text</p>
+                </div>
+                <Toggle checked={settings.smsNotifications} onChange={() => handleSettingChange("smsNotifications", !settings.smsNotifications)} />
+              </div>
+            </div>
+          </div>
+
+          {/* Language */}
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+            <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+              <Globe className="w-4 h-4 text-green-700 dark:text-green-500" />
+              <h2 className="font-semibold text-sm">Language</h2>
+            </div>
+            <div className="p-3">
+              <select
+                value={settings.language}
+                onChange={(e) => handleSettingChange("language", e.target.value)}
+                className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-green-700"
+              >
+                <option value="en">English</option>
+                <option value="fr">Français</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Save Button */}
+        <div className="fixed bottom-0 right-0 w-full sm:w-96 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 p-4">
+          <button
+            onClick={() => {
+              console.log("Settings saved:", settings)
+              onClose()
+            }}
+            className="w-full bg-green-700 hover:bg-green-800 text-white font-medium py-2.5 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-green-700 text-sm"
+          >
+            Save Settings
+          </button>
         </div>
       </div>
     </>

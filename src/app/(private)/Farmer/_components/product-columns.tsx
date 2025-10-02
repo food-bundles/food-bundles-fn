@@ -3,9 +3,8 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Eye, Trash2, MapPin, Pencil, Pen } from "lucide-react"
+import { Eye, MapPin } from "lucide-react"
 import { Product } from "./product-context"
-import { useState } from "react"
 
 export const productColumns = (
   handleViewDetails: (p: Product | null) => void,

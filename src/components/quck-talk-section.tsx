@@ -4,9 +4,10 @@ import type React from "react";
 import { CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, Phone, MapPin, Send, X, MessageCircle } from "lucide-react";
+import { Mail, Phone, MapPin, Send, X} from "lucide-react";
 import { useEffect, useState } from "react";
 import { AnimatedDotsBackground } from "./animated-dots-background";
+import { BsFillChatRightQuoteFill } from "react-icons/bs";
 
 // Move farmers data outside component to prevent useEffect recreation
 const farmers = [
@@ -106,8 +107,8 @@ function QuickTalkSection() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         {/* Our Farmers Section - Responsive */}
         <div className="pt-4 bg-white/90 backdrop-blur-sm p-3 sm:p-4 md:p-6 rounded-lg shadow-lg">
-          <h3 className="font-semibold text-lg sm:text-xl md:text-2xl text-black mb-4 md:mb-6">
-            Our Farm
+          <h3 className="font-semibold text-[16px]   text-black mb-4 md:mb-6">
+            Our Farms
           </h3>
 
           {/* Farmers Grid with Auto- Background Images */}
@@ -126,10 +127,10 @@ function QuickTalkSection() {
                 {/* Content overlay */}
                 <div className="absolute inset-0 flex flex-col justify-end p-3 sm:p-4">
                   <div className="text-center">
-                    <h4 className="font-medium text-sm sm:text-base text-white mb-2 drop-shadow-lg">
+                    <h4 className="font-medium text-[14px]  text-white mb-2 drop-shadow-lg">
                       {farmer.name}
                     </h4>
-                    <p className="text-xs sm:text-sm text-green-200 drop-shadow-lg">
+                    <p className="text-[13px] text-green-200 drop-shadow-lg">
                       {farmer.favoriteProduct}
                     </p>
                   </div>
@@ -156,8 +157,8 @@ function QuickTalkSection() {
         {/* Contact Section - Responsive */}
         <div className="pt-4 bg-white/90 backdrop-blur-sm p-3 sm:p-4 md:p-6 rounded-lg shadow-lg">
           <CardHeader className="px-0 pb-2 sm:pb-4">
-            <p className="text-[14px] sm:text-[16px] md:text-[20px] font-semibold text-black">
-              Ask help
+            <p className="text-[16px]   font-semibold text-black">
+              Get support 
             </p>
           </CardHeader>
 
@@ -169,14 +170,14 @@ function QuickTalkSection() {
                 <div className="flex items-center gap-2 sm:gap-3">
                   <Mail className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="font-medium text-sm sm:text-base">
+                    <p className="font-medium text-[14px] ">
                       Email Support
                     </p>
                     <a
                       href="https://mail.google.com/mail/?view=cm&to=sales@food.rw"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs sm:text-sm text-muted-foreground hover:text-primary break-all"
+                      className="text-[13px]  text-muted-foreground hover:text-primary break-all"
                     >
                       sales@food.rw
                     </a>
@@ -186,12 +187,12 @@ function QuickTalkSection() {
                 <div className="flex items-center gap-2 sm:gap-3">
                   <Phone className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="font-medium text-sm sm:text-base">
+                    <p className="font-medium text-[14px] ">
                       Phone Support
                     </p>
                     <a
                       href="tel:+250796897823"
-                      className="text-xs sm:text-sm text-muted-foreground hover:text-primary"
+                      className="text-[13px]  text-muted-foreground hover:text-primary"
                     >
                       +250 796 897 823
                     </a>
@@ -201,10 +202,10 @@ function QuickTalkSection() {
                 <div className="flex items-center gap-2 sm:gap-3">
                   <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="font-medium text-sm sm:text-base">
+                    <p className="font-medium text-[14px] ">
                       Company Location
                     </p>
-                    <p className="text-xs sm:text-sm text-muted-foreground">
+                    <p className="text-[13px] text-muted-foreground">
                       KG 5 Ave, Kigali
                     </p>
                   </div>
@@ -212,22 +213,22 @@ function QuickTalkSection() {
               </div>
 
               {/* Chat Button - Responsive positioning */}
-              <div className="w-full lg:w-auto flex bg-gray-100 border border-green-300 rounded-sm flex-col items-center justify-center gap-2 p-3 mb-2 mr-2 hover:bg-gray-200 transition-all duration-100">
-                <Button
-                  onClick={() => setIsChatOpen(true)}
-                  className="flex items-center justify-center w-14 h-14 cursor-pointer rounded-full bg-green-500 hover:bg-green-600 text-white hover:shadow-2xl transition-all duration-300 shadow-lg z-50"
-                >
-                  <MessageCircle className="h-6 w-6 text-white" />
-                </Button>
-                <p className="text-xs font-medium text-center animate-bounce z-20">
-                  What&apos;s Up
-                </p>
-              </div>
+             <div className="group flex flex-col items-center  gap-1.5 p-2">
+  <button
+    onClick={() => setIsChatOpen(true)}
+    className="flex items-center justify-center rounded-full transition-all cursor-pointer hover:scale-105"
+  >
+    <BsFillChatRightQuoteFill className="h-9 w-9 text-green-600" />
+  </button>
+  <p className="text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+    What&apos;s Up
+  </p>
+</div>
             </div>
 
             {/* Social Media and Quick Info - Responsive layout */}
             <div className="pt-3 sm:pt-4 border-t">
-              <p className="text-xs sm:text-sm font-medium mb-2 sm:mb-3">
+              <p className="text-[13px] sm:text-sm font-medium mb-2 sm:mb-3">
                 Connect with us
               </p>
 
@@ -284,7 +285,7 @@ function QuickTalkSection() {
                 {/* USSD and Emergency - Responsive layout */}
                 <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
                   <div className="text-center sm:text-left">
-                    <p className="text-xs sm:text-sm">
+                    <p className="text-[13px] sm:text-sm">
                       USSD Code:{" "}
                       <span className="text-green-500 text-sm sm:text-base font-semibold">
                         883
@@ -293,9 +294,9 @@ function QuickTalkSection() {
                   </div>
 
                   <div className="text-center sm:text-left">
-                    <p className="text-xs sm:text-sm">
+                    <p className="text-[12px] sm:text-sm">
                       Emergency Call{" "}
-                      <span className="text-red-500 text-sm sm:text-base font-semibold">
+                      <span className="text-red-500 text-[13px] sm:text-base font-semibold">
                         <a
                           href="tel:+250796897823"
                           className="hover:text-primary"
@@ -327,7 +328,6 @@ function QuickTalkSection() {
           </svg>
         </button>
       )}
-
       {/* Chat Window - Responsive sizing and positioning */}
       {isChatOpen && (
         <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-[calc(100vw-2rem)] max-w-sm sm:w-80 h-[70vh] sm:h-96 bg-background border border-border rounded-lg shadow-xl z-50 flex flex-col">
@@ -337,14 +337,14 @@ function QuickTalkSection() {
               <div className="relative">
                 <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary rounded-full flex items-center justify-center">
                   <span className="text-primary-foreground font-semibold text-xs sm:text-sm">
-                    S
+                   F
                   </span>
                 </div>
                 <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-500 rounded-full border border-background" />
               </div>
               <div>
-                <h4 className="font-semibold text-xs sm:text-sm">Quick Talk</h4>
-                <p className="text-green-500 text-xs">Online</p>
+                <h4 className="font-semibold text-[14px] sm:text-sm">Ask Help</h4>
+                <p className="text-green-500 text-[13px]">Online</p>
               </div>
             </div>
             <Button
@@ -367,14 +367,14 @@ function QuickTalkSection() {
                 }`}
               >
                 <div
-                  className={`max-w-xs px-3 py-2 rounded-lg text-xs sm:text-sm ${
+                  className={`max-w-xs px-3 py-2 rounded-lg text-[13px] sm:text-sm ${
                     msg.sender === "user"
                       ? "bg-green-500 text-primary-foreground"
                       : "bg-muted text-muted-foreground"
                   }`}
                 >
                   <p>{msg.text}</p>
-                  <p className="text-xs opacity-70 mt-1">{msg.time}</p>
+                  <p className="text-[13px] opacity-70 mt-1">{msg.time}</p>
                 </div>
               </div>
             ))}
@@ -406,14 +406,13 @@ function QuickTalkSection() {
     </>
   );
 }
-
 export function QuickTalkWrapper() {
   return (
     <div className="flex flex-col">
       <AnimatedDotsBackground className="flex-1 bg-muted/30">
         <section id="ai-assistant" className="container mx-auto px-4 sm:px-6 lg:px-8 pb-0">
           <div className="text-center mb-8 sm:mb-12">
-            <h2 className="text-xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-4 pt-4">
+            <h2 className="text-[18px]  font-bold mb-2 sm:mb-4 pt-4">
               Ask Help
             </h2>
           </div>

@@ -4,7 +4,6 @@
 "use client";
 
 import React, { useState, useEffect, Suspense } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Eye,
@@ -719,13 +718,13 @@ function SignupForm() {
   }
 
   return (
-    <div className="flex items-center w-full max-w-3xl">
+    <div className="flex flex-col md:flex-row items-center w-full max-w-3xl">
       <Suspense fallback={null}>
         <SignupSearchParamsHandler setSelectedRole={setSelectedRole} />
       </Suspense>
 
       {/* Left side: role selection */}
-      <div className="w-1/2 p-8 flex flex-col justify-center bg-white">
+      <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col justify-center bg-white">
         <h2 className="text-[16px] font-medium text-black mb-4">Choose Your Role</h2>
 
         <div className="flex flex-col space-y-4">
@@ -762,10 +761,10 @@ function SignupForm() {
       </div>
 
       {/* Vertical divider */}
-      <div className="w-[.5px] bg-gray-300 h-100" />
+      <div className="hidden md:block w-[.5px] bg-gray-300 h-100" />
 
       {/* Right side: form */}
-      <div className="w-1/2 p-8">
+      <div className="w-full md:w-1/2 p-6 md:p-8">
         {!isBackendAvailable && (
           <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-md text-sm mb-4">
             {backendMessage}

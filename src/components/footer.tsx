@@ -9,11 +9,11 @@ export function Footer() {
           {/* FoodBundle */}
           <div className="space-y-4">
             <div>
-              <span className="text-xl font-semibold text-white">
+              <span className="text-[14px] font-semibold text-white">
                 FoodBundle
               </span>
             </div>
-            <p className="text-green-200 text-sm leading-relaxed">
+            <p className="text-green-200 text-[13px] leading-relaxed">
               Connect your restaurant with FoodBundles for fresh, quality
               ingredients.
             </p>
@@ -21,17 +21,17 @@ export function Footer() {
 
           {/* Quick Links */}
           <div className="space-y-4 pt-0">
-            <h3 className="text-lg font-semibold text-white">Quick Links</h3>
+            <h3 className="text-[14px] font-semibold text-white">Quick Links</h3>
             <div className="space-y-2">
               <Link
                 href="/farmer"
-                className="block text-green-200 hover:text-white transition-colors text-sm"
+                className="block text-green-200 hover:text-white transition-colors text-[13px]"
               >
                 For Farmers
               </Link>
               <Link
                 href="/restaurant"
-                className="block text-green-200 hover:text-white transition-colors text-sm"
+                className="block text-green-200 hover:text-white transition-colors text-[13px]"
               >
                 For Restaurants
               </Link>
@@ -40,7 +40,7 @@ export function Footer() {
 
           {/* Support */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white">Support</h3>
+            <h3 className="text-[14px] font-semibold text-white">Support</h3>
             <div className="space-y-2">
               <Link
                 href="https://wa.me/250796897823"
@@ -59,16 +59,16 @@ export function Footer() {
 
           {/* Contact Us */}
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white">Contact Us</h3>
-            <div className="space-y-2 text-sm text-green-200">
+            <h3 className="text-[14px] font-semibold text-white">Contact Us</h3>
+            <div className="space-y-2 text-[13px] text-green-200">
               <p>KG 5 Ave, Kigali</p>
               <p>info@foodbundle.com</p>
             </div>
           </div>
         </div>
 
-        <div className="border-t border-green-600 mt-4 pt-4 pb-0  flex flex-col md:flex-row justify-between items-center">
-          <p className="text-green-200 text-sm">
+        <div className="border-t border-green-600 mt-4 pt-4 md:pt-0 flex flex-col md:flex-row justify-between items-center">
+          <p className="text-green-200 text-[13px] ">
             © 2025 FoodBundle. All rights reserved.
           </p>
           <div className="flex space-x-4 mt-4 md:mt-0">
