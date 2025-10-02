@@ -3,8 +3,8 @@ import {  Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="bg-green-700 text-white py-12">
-      <div className="max-w-7xl mx-auto px-4">
+    <footer className="bg-green-700 text-white py-12 pt-2  ">
+      <div className="max-w-7xl mx-auto px-4 ">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* FoodBundle */}
           <div className="space-y-4">
@@ -20,17 +20,17 @@ export function Footer() {
           </div>
 
           {/* Quick Links */}
-          <div className="space-y-4">
+          <div className="space-y-4 pt-0">
             <h3 className="text-lg font-semibold text-white">Quick Links</h3>
             <div className="space-y-2">
               <Link
-                href="/farmers"
+                href="/farmer"
                 className="block text-green-200 hover:text-white transition-colors text-sm"
               >
                 For Farmers
               </Link>
               <Link
-                href="/restaurants"
+                href="/restaurant"
                 className="block text-green-200 hover:text-white transition-colors text-sm"
               >
                 For Restaurants
@@ -43,13 +43,13 @@ export function Footer() {
             <h3 className="text-lg font-semibold text-white">Support</h3>
             <div className="space-y-2">
               <Link
-                href="/help"
+                href="https://wa.me/250796897823"
                 className="block text-green-200 hover:text-white transition-colors text-sm"
               >
                 Help Center
               </Link>
               <Link
-                href="/contact"
+                href="https://mail.google.com/mail/?view=cm&to=sales@food.rw"
                 className="block text-green-200 hover:text-white transition-colors text-sm"
               >
                 Contact Us
@@ -67,7 +67,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-green-600 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+        <div className="border-t border-green-600 mt-4 pt-4 pb-0  flex flex-col md:flex-row justify-between items-center">
           <p className="text-green-200 text-sm">
             © 2025 FoodBundle. All rights reserved.
           </p>
