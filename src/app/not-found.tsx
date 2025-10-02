@@ -16,11 +16,11 @@ export default function NotFound() {
   };
 
   const handleLogin = () => {
-      window.location.href=("/login");
+    window.location.href = "/login";
   };
 
   const handleGoHome = () => {
-    router.push("/");
+    window.location.href = "/";
   };
 
   return (

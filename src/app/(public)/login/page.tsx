@@ -12,13 +12,10 @@ import { getRedirectPath } from "@/lib/navigations";
 import { useAuth } from "@/app/contexts/auth-context";
 import { useSearchParams } from "next/navigation";
 
-// Separate component for handling search params
 function LoginSearchParamsHandler() {
   const searchParams = useSearchParams();
 
-  // Handle any search params logic here if needed
   useEffect(() => {
-    // Example: handle redirect parameter
     const redirect = searchParams?.get("redirect");
     const reason = searchParams?.get("reason");
 
@@ -27,14 +24,12 @@ function LoginSearchParamsHandler() {
     }
 
     if (reason === "expired") {
-      // Show session expired message if needed
     }
   }, [searchParams]);
 
-  return null; // This component doesn't render anything
+  return null; 
 }
 
-// Main login form component
 function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -153,7 +148,7 @@ function LoginForm() {
               type="text"
               name="identifier"
               placeholder="Email or Phone"
-              className="pl-10 h-10 border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-none text-gray-900"
+              className="pl-10 h-10 text-[13px] border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-none text-gray-900"
               disabled={!isBackendAvailable || isLoading}
             />
           </div>
@@ -163,7 +158,7 @@ function LoginForm() {
               type={showPassword ? "text" : "password"}
               name="password"
               placeholder="Password"
-              className="pl-10 h-10 border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-none text-gray-900"
+              className="pl-10 h-10 text-[13px] border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-none text-gray-900"
               disabled={!isBackendAvailable || isLoading}
             />
             <button
@@ -223,8 +218,8 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen  bg-white">
-      <div className="h-[8rem] mt-12 w-full flex items-center justify-center bg-gray-100">
+    <div className=" bg-white">
+      <div className="md:h-[8rem] h-[5rem] mt-12 w-full flex items-center justify-center bg-gray-100">
         <h1 className="text-2xl font-bold text-black">My Account</h1>
       </div>
       <div className="flex items-center justify-center py-6  px-6 lg:px-8">
@@ -253,7 +248,6 @@ export default function LoginPage() {
           <LoginForm />
         </Suspense>
 
-        {/* Handle search params separately */}
         <Suspense fallback={null}>
           <LoginSearchParamsHandler />
         </Suspense>

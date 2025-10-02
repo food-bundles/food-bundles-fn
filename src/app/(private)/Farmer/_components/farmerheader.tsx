@@ -1,9 +1,8 @@
-"use client"
+"use client";
 
 import { useState, useMemo, useId, useEffect } from "react"
 import { Bell, User, ChevronDown, Settings, LogOut, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useRouter } from "next/navigation"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,17 +22,21 @@ import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 
 const testNotifications: {
-  id: string
-  title: string
-  message: string
-  orderId: string
-  timestamp: string
-  isRead: boolean
-  type: "order_initiated" | "order_completed" | "order_cancelled" | "payment_received"
-}[] = []
+  id: string;
+  title: string;
+  message: string;
+  orderId: string;
+  timestamp: string;
+  isRead: boolean;
+  type:
+    | "order_initiated"
+    | "order_completed"
+    | "order_cancelled"
+    | "payment_received";
+}[] = [];
 
 export default function DashboardHeader() {
-  const dropdownId = useId()
+  const dropdownId = useId();
 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
@@ -43,7 +46,6 @@ export default function DashboardHeader() {
   const [, setIsProfileDropdownOpen] = useState(false)
   
   const unreadCount = testNotifications.filter((n) => !n.isRead).length
-  const router = useRouter()
 
   const { user, getUserProfileImage } = useAuth();
 
@@ -68,20 +70,20 @@ export default function DashboardHeader() {
   
   const handleLogout = async () => {
     try {
-      setIsLoggingOut(true)
-      await authService.logout().catch(() => {})
-      localStorage.removeItem("token")
-      localStorage.removeItem("user")
-      sessionStorage.clear()
-      toast.success("Logged out successfully")
-      router.push("/")
+      setIsLoggingOut(true);
+      await authService.logout().catch(() => {});
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      sessionStorage.clear();
+      toast.success("Logged out successfully");
+      window.location.href = "/";
     } catch (error) {
-      console.error("Logout error:", error)
-      toast.error("Failed to logout. Please try again.")
+      console.error("Logout error:", error);
+      toast.error("Failed to logout. Please try again.");
     } finally {
-      setIsLoggingOut(false)
+      setIsLoggingOut(false);
     }
-  }
+  };
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false)
@@ -175,15 +177,25 @@ export default function DashboardHeader() {
                     )}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-48 sm:w-56" align="end" forceMount>
+                <DropdownMenuContent
+                  className="w-48 sm:w-56"
+                  align="end"
+                  forceMount
+                >
                   <div className="px-3 py-2 border-b border-gray-100">
                     <p className="text-xs text-gray-500">{email}</p>
                   </div>
-                  <DropdownMenuItem className="cursor-pointer" onClick={handleProfileClick}>
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={handleProfileClick}
+                  >
                     <User className="mr-3 h-4 w-4" />
                     <span>Profile</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer" onClick={handleSettingClick}>
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={handleSettingClick}
+                  >
                     <Settings className="mr-3 h-4 w-4" />
                     <span>Settings</span>
                   </DropdownMenuItem>
@@ -314,8 +326,14 @@ export default function DashboardHeader() {
         notifications={testNotifications}
       />
 
-      <ProfileDrawer isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
-      <SettingsDrawer isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <ProfileDrawer
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+      />
+      <SettingsDrawer
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
     </>
   )
 }

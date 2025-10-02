@@ -39,9 +39,10 @@ export default function RestaurantOrdersPage() {
         items:
           order.orderItems
             ?.map(
-              (item: any) => `${item.quantity}x ${item.product?.productName}`
+              (item: any) => `${item.product?.productName} (${item.quantity})`
             )
             .join(", ") || "No items",
+
         totalAmount: order.totalAmount || 0,
         deliveryAddress: order.deliveryLocation || "No address provided",
         status: mapBackendStatus(order.status),
@@ -101,7 +102,7 @@ export default function RestaurantOrdersPage() {
     createCommonFilters.search(
       searchValue,
       setSearchValue,
-      "Search orders, customers, or items..."
+      "Search orders, items"
     ),
     createCommonFilters.status(
       selectedStatus,
@@ -177,19 +178,19 @@ export default function RestaurantOrdersPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <main className="container mx-auto px-6 py-8">
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center justify-between mb-6">
+      <main className="container mx-auto px-2 py-2">
+        <div className="bg-white rounded shadow-sm p-4">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-[16px] font-medium text-gray-900">
                 Orders Management
               </h1>
    
             </div>
             <div className="flex items-center gap-2">
-              <Button onClick={handleExport} variant="outline" size="sm">
+              <button onClick={handleExport}  className="border-2 px-4 text-[13px] bg-green-700 border-green-500 text-white hover:bg-green-800 cursor-pointer rounded ">
                 Export
-              </Button>
+              </button>
             </div>
           </div>
 

@@ -75,14 +75,14 @@ export function TableFilters({ filters, className }: TableFiltersProps) {
             key={filter.key}
             className={`relative ${filter.width || "w-full max-w-sm"}`}
           >
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2  text-gray-900" />
             <Input
               placeholder={
                 filter.placeholder || `Search ${filter.label.toLowerCase()}...`
               }
               value={(filter.value as string) || ""}
               onChange={(e) => filter.onChange?.(e.target.value)}
-              className="pl-10"
+              className="pl-10 text-xs text-gray-900 rounded border border-green-700"
             />
           </div>
         );
@@ -95,7 +95,7 @@ export function TableFilters({ filters, className }: TableFiltersProps) {
                 variant="outline"
                 className={`${
                   filter.width || "min-w-[120px]"
-                } justify-between bg-transparent`}
+                } justify-between font-normal rounded border border-green-700 bg-white hover:bg-green-100 cursor-pointer`}
               >
                 {filter.options?.find((option) => option.value === filter.value)
                   ?.label || filter.label}
@@ -125,7 +125,7 @@ export function TableFilters({ filters, className }: TableFiltersProps) {
                 className={cn(
                   filter.width || "min-w-[120px]",
                   "justify-between text-left font-normal",
-                  !filter.value && "text-muted-foreground"
+                  !filter.value && "text-gray-900 rounded border border-green-700 bg-white hover:bg-green-100 cursor-pointer"
                 )}
               >
                 {filter.value
