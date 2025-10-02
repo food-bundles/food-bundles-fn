@@ -1,3 +1,4 @@
+import { Order, OrderStatus } from "@/lib/types";
 import { DashboardOverview } from "./_components/dashboard-overview";
 
 // Dummy analytics data
@@ -79,44 +80,62 @@ async function getDashboardData() {
       {
         id: "#ORD-7829",
         customer: "John Smith",
-        products: "Mixed Greens, Beef Sirloin",
+        items: [
+          { name: "Mixed Greens", image: "/imgs/eggs.svg", quantity: 2 },
+          { name: "Beef Sirloin", image: "/imgs/eggs.svg", quantity: 1 },
+        ],
         total: 85.2,
-        status: "delivered",
-        date: "Today, 2:30 PM",
+        status: OrderStatus.DELIVERED,
+        timeAgo: "2 hours ago",
       },
       {
         id: "#ORD-7830",
         customer: "Emma Wilson",
-        products: "Artisanal Bread, Olive Oil",
+        items: [
+          { name: "Artisanal Bread", image: "/imgs/eggs.svg", quantity: 1 },
+          { name: "Olive Oil", image: "/imgs/eggs.svg", quantity: 1 },
+        ],
         total: 32.45,
-        status: "processing",
-        date: "Today, 1:15 PM",
+        status: OrderStatus.PREPARING,
+        timeAgo: "3 hours ago",
       },
       {
         id: "#ORD-7831",
         customer: "Michael Brown",
-        products: "Chicken Breast, Fresh Tomatoes",
+        items: [
+          { name: "Chicken Breast", image: "/imgs/eggs.svg", quantity: 2 },
+          { name: "Fresh Tomatoes", image: "/imgs/eggs.svg", quantity: 3 },
+        ],
         total: 64.8,
-        status: "pending",
-        date: "Today, 11:45 AM",
+        status: OrderStatus.PENDING,
+        timeAgo: "4 hours ago",
       },
       {
         id: "#ORD-7832",
         customer: "Sofia Garcia",
-        products: "Premium Beef Sirloin",
+        items: [
+          {
+            name: "Premium Beef Sirloin",
+            image: "/imgs/eggs.svg",
+            quantity: 1,
+          },
+        ],
         total: 72.5,
-        status: "delivered",
-        date: "Yesterday, 7:20 PM",
+        status: OrderStatus.DELIVERED,
+        timeAgo: "1 day ago",
       },
       {
         id: "#ORD-7833",
         customer: "David Lee",
-        products: "Mixed Greens, Artisanal Bread",
+        items: [
+          { name: "Mixed Greens", image: "/imgs/eggs.svg", quantity: 1 },
+          { name: "Artisanal Bread", image: "/imgs/eggs.svg", quantity: 2 },
+        ],
         total: 28.9,
-        status: "delivered",
-        date: "Yesterday, 5:40 PM",
+        status: OrderStatus.DELIVERED,
+        timeAgo: "1 day ago",
       },
-    ],
+    ] as Order[],
   };
 }
 
@@ -124,7 +143,7 @@ export default async function RestaurantDashboard() {
   const dashboardData = await getDashboardData();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <main className="container mx-auto px-6 py-8">
         <DashboardOverview data={dashboardData} />
       </main>

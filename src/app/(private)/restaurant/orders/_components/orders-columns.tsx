@@ -82,7 +82,7 @@ export const ordersColumns = (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-medium"
+          className="h-auto p-0 font-medium text-[13px]"
         >
           Order ID
         </Button>
@@ -118,7 +118,7 @@ export const ordersColumns = (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-medium"
+          className="h-auto p-0 font-medium text-[13px]"
         >
           Order Date
         </Button>
@@ -145,7 +145,7 @@ export const ordersColumns = (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-medium"
+          className="h-auto p-0 font-medium text-[13px]"
         >
           Total Amount
         </Button>
@@ -194,7 +194,7 @@ export const ordersColumns = (
             size="sm"
             className="h-8 w-8 p-0  hover:bg-blue-50 cursor-pointer"
             onClick={() => onView(order)}
-            title="View Order Details"
+            title="View Order Details "
           >
             <Eye className="h-4 w-4" />
           </Button>

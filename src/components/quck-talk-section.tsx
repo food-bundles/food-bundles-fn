@@ -156,8 +156,8 @@ function QuickTalkSection() {
         {/* Contact Section - Responsive */}
         <div className="pt-4 bg-white/90 backdrop-blur-sm p-3 sm:p-4 md:p-6 rounded-lg shadow-lg">
           <CardHeader className="px-0 pb-2 sm:pb-4">
-            <p className="text-lg sm:text-xl md:text-2xl font-semibold text-black">
-              Let&apos;s Keep in Talk
+            <p className="text-[14px] sm:text-[16px] md:text-[20px] font-semibold text-black">
+              Ask help
             </p>
           </CardHeader>
 

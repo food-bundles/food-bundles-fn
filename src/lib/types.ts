@@ -1,3 +1,4 @@
+import { exportTraceState } from "next/dist/trace";
 
 export interface IUssdRequest {
   sessionId: string;
@@ -83,7 +84,8 @@ export enum UserRole {
   AGGREGATOR = "AGGREGATOR",
   FOOD_BUNDLE = "FOOD_BUNDLE",
 }
-// export type UserRole = "FARMER" | "RESTAURANT" | "ADMIN" |"LOGISTIC" |"AGGREGATOR" | "FOOD_BUNDLE";
+
+ 
 
 export interface IUser {
   id: string;
@@ -103,3 +105,31 @@ export interface AuthContextType {
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
 }
+
+ 
+export enum OrderStatus {
+  PENDING = "PENDING",  
+  CONFIRMED = "CONFIRMED",  
+  PREPARING = "PREPARING",  
+  READY = "READY",  
+  IN_TRANSIT = "IN_TRANSIT",  
+  DELIVERED = "DELIVERED",  
+  CANCELLED = "CANCELLED",  
+  REFUNDED = "REFUNDED",  
+}
+
+export type Order = {
+  id: string
+  customer: string
+  items: Array<{
+    name: string
+    image: string
+    quantity: number
+  }>
+  total: number
+  status: OrderStatus
+  deliveryPerson?: string
+  timeAgo: string
+  estimatedTime?: string
+}
+
