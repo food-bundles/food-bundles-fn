@@ -108,7 +108,7 @@ function QuickTalkSection() {
         {/* Our Farmers Section - Responsive */}
         <div className="pt-4 bg-white/90 backdrop-blur-sm p-3 sm:p-4 md:p-6 rounded-lg shadow-lg">
           <h3 className="font-semibold text-[16px]   text-black mb-4 md:mb-6">
-            Our Farm
+            Our Farms
           </h3>
 
           {/* Farmers Grid with Auto- Background Images */}
@@ -158,7 +158,7 @@ function QuickTalkSection() {
         <div className="pt-4 bg-white/90 backdrop-blur-sm p-3 sm:p-4 md:p-6 rounded-lg shadow-lg">
           <CardHeader className="px-0 pb-2 sm:pb-4">
             <p className="text-[16px]   font-semibold text-black">
-              Let&apos;s Keep in Talk
+              Get support 
             </p>
           </CardHeader>
 
@@ -213,17 +213,17 @@ function QuickTalkSection() {
               </div>
 
               {/* Chat Button - Responsive positioning */}
-              <div className="w-full lg:w-auto flex rounded-sm flex-col items-center  justify-center gap-2 p-3 mb-2 mr-2 transition-all duration-100">
-               <button
-               onClick={() => setIsChatOpen(true)}
-               className="flex items-center  justify-center  rounded-full cursor-pointer  transition-all duration-300  z-50"
-               >
-               <BsFillChatRightQuoteFill className="h-10 w-10"/>
-               </button>
-                <p className="text-[13px] font-medium text-center z-20">
-                  What&apos;s Up
-                </p>
-              </div>
+             <div className="group flex flex-col items-center  gap-1.5 p-2">
+  <button
+    onClick={() => setIsChatOpen(true)}
+    className="flex items-center justify-center rounded-full transition-all cursor-pointer hover:scale-105"
+  >
+    <BsFillChatRightQuoteFill className="h-9 w-9 text-green-600" />
+  </button>
+  <p className="text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+    What&apos;s Up
+  </p>
+</div>
             </div>
 
             {/* Social Media and Quick Info - Responsive layout */}
@@ -343,7 +343,7 @@ function QuickTalkSection() {
                 <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-500 rounded-full border border-background" />
               </div>
               <div>
-                <h4 className="font-semibold text-[14px] sm:text-sm">Quick Talk</h4>
+                <h4 className="font-semibold text-[14px] sm:text-sm">Ask Help</h4>
                 <p className="text-green-500 text-[13px]">Online</p>
               </div>
             </div>
@@ -406,7 +406,6 @@ function QuickTalkSection() {
     </>
   );
 }
-
 export function QuickTalkWrapper() {
   return (
     <div className="flex flex-col">

@@ -1,24 +1,16 @@
-"use client";
-
-import type React from "react";
-import { useEffect, useState } from "react";
-import { X, User, Camera, Edit3 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
-import Image from "next/image";
+import { useEffect, useState } from "react"
+import { X, User, Camera, Edit3 } from "lucide-react"
 
 interface ProfileDrawerProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen: boolean
+  onClose: () => void
   user?: {
     name?: string
     email?: string
     phone?: string
     location?: string
     profilePhoto?: string
+    profileImage?: string
   }
 }
 
@@ -27,150 +19,165 @@ export default function ProfileDrawer({
   onClose,
   user,
 }: ProfileDrawerProps) {
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(false)
 
-  const [name, setName] = useState(user?.name || "");
-  const [email, setEmail] = useState(user?.email || "");
-  const [phone, setPhone] = useState(user?.phone || "");
-  const [location, setLocation] = useState("Rwanda");
+  // Use same display name logic as DashboardHeader
+  const displayName = user?.name || user?.phone || "Farmer"
+  
+  const [name, setName] = useState(displayName)
+  const [email, setEmail] = useState(user?.email || "")
+  const [phone, setPhone] = useState(user?.phone || "")
+  const [location, setLocation] = useState(user?.location || "Rwanda")
   const [profilePhoto, setProfilePhoto] = useState<string | null>(
-    user?.profilePhoto || null
-  );
+    user?.profileImage || user?.profilePhoto || null
+  )
 
-  const [originalName, setOriginalName] = useState(user?.name || "");
-  const [originalEmail, setOriginalEmail] = useState(user?.email || "");
-  const [originalPhone, setOriginalPhone] = useState(user?.phone || "");
-  const [originalLocation, setOriginalLocation] = useState("Rwanda");
+  const [originalName, setOriginalName] = useState(displayName)
+  const [originalEmail, setOriginalEmail] = useState(user?.email || "")
+  const [originalPhone, setOriginalPhone] = useState(user?.phone || "")
+  const [originalLocation, setOriginalLocation] = useState(user?.location || "Rwanda")
 
   useEffect(() => {
-    setName(user?.name || "");
-    setEmail(user?.email || "");
-    setPhone(user?.phone || "");
-    setProfilePhoto(user?.profilePhoto || null);
-    setOriginalName(user?.name || "");
-    setOriginalEmail(user?.email || "");
-    setOriginalPhone(user?.phone || "");
-  }, [user]);
+    const currentDisplayName = user?.name || user?.phone || "Farmer"
+    setName(currentDisplayName)
+    setEmail(user?.email || "")
+    setPhone(user?.phone || "")
+    setLocation(user?.location || "Rwanda")
+    setProfilePhoto(user?.profileImage || user?.profilePhoto || null)
+    setOriginalName(currentDisplayName)
+    setOriginalEmail(user?.email || "")
+    setOriginalPhone(user?.phone || "")
+    setOriginalLocation(user?.location || "Rwanda")
+  }, [user])
 
   // Handle escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen) {
-        onClose();
+        onClose()
       }
-    };
-
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
-  }, [isOpen, onClose]);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (isOpen && !target.closest("[data-drawer-content]")) {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
     }
 
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen, onClose]);
+    document.addEventListener("keydown", handleEscape)
+    return () => document.removeEventListener("keydown", handleEscape)
+  }, [isOpen, onClose])
+
+  // Prevent body scroll when drawer is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [isOpen])
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const file = e.target.files?.[0]
     if (file) {
-      const reader = new FileReader();
-      reader.onload = () => setProfilePhoto(reader.result as string);
-      reader.readAsDataURL(file);
+      const reader = new FileReader()
+      reader.onload = () => setProfilePhoto(reader.result as string)
+      reader.readAsDataURL(file)
     }
-  };
+  }
 
   const handleSaveAll = async () => {
     try {
-      // TODO: Integrate with actual API
-      toast.success("Profile updated successfully!");
-      setIsEditing(false);
-      // Update original values
-      setOriginalName(name);
-      setOriginalEmail(email);
-      setOriginalPhone(phone);
-      setOriginalLocation(location);
+     
+      console.log("Profile updated:", { name, email, phone, location, profilePhoto })
+      setIsEditing(false)
+      setOriginalName(name)
+      setOriginalEmail(email)
+      setOriginalPhone(phone)
+      setOriginalLocation(location)
     } catch (error) {
-      console.error(error);
-      toast.error("Failed to update profile");
+      console.error("Failed to save profile:", error)
     }
-  };
+  }
 
   const handleCancel = () => {
-    setName(originalName);
-    setEmail(originalEmail);
-    setPhone(originalPhone);
-    setLocation(originalLocation);
-    setIsEditing(false);
-  };
+    setName(originalName)
+    setEmail(originalEmail)
+    setPhone(originalPhone)
+    setLocation(originalLocation)
+    setIsEditing(false)
+  }
 
-  const avatarLetter = (user?.name || "F").charAt(0).toUpperCase();
+  // Get avatar letter - same logic as header
+  const avatarLetter = displayName.substring(0, 2).toUpperCase()
 
   return (
     <>
       {/* Backdrop */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black/20 z-40" onClick={onClose} />
+        <div 
+          className="fixed inset-0  backdrop-blur-sm z-40 transition-opacity duration-300"
+          onClick={onClose}
+          aria-hidden="true"
+        />
       )}
 
       <div
-        data-drawer-content
-        className={`fixed top-0 right-0 h-full w-[540px] bg-background text-foreground z-50 transform transition-all duration-300 ease-in-out overflow-y-auto shadow-2xl border-l border-border scrollbar-hide ${
+        className={`fixed top-0 right-0  w-[85%] sm:w-[340px] md:w-[380px] bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 z-50 transform transition-transform duration-300 ease-out overflow-y-auto shadow-2xl border-l border-gray-200 dark:border-gray-800 ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="profile-title"
       >
-        <div className="sticky top-0 z-10 bg-background border-b border-border flex justify-between items-center p-6">
+        {/* Header */}
+        <div className="sticky top-0 z-10 bg-white  border-b border-gray-200 flex justify-between items-center p-3 sm:p-4">
           <div className="flex items-center gap-2">
-            <User className="w-5 h-5 text-muted-foreground" />
-            <span className="text-xl font-bold text-foreground">
+            <User className="w-4 h-4 text-gray-500 " />
+            <span id="profile-title" className="text-[16px] sm:text-lg font-bold text-black-900 ">
               User Profile
             </span>
           </div>
           <button
             onClick={onClose}
-            className="text-muted-foreground hover:text-foreground transition-colors hover:rotate-90 transform duration-200"
+            className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-all hover:rotate-90 transform duration-200 p-1"
+            aria-label="Close profile"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
-          {/* Profile Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <User className="w-5 h-5 text-primary" />
+        {/* Content */}
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 pb-6">
+          {/* Profile Photo Card */}
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="flex items-center gap-2 text-[14px] sm:text-[16px] font-semibold text-gray-900 dark:text-gray-100">
+                <User className="w-4 h-4 sm:w-5 sm:h-5 text-green-700  flex-shrink-0" />
                 Profile Photo
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <div className="w-16 h-16 rounded-full overflow-hidden bg-muted border-2 border-border">
+              </h2>
+            </div>
+            <div className="p-4 sm:p-5">
+              <div className="flex items-center gap-3 sm:gap-4">
+                <div className="relative flex-shrink-0">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600">
                     {profilePhoto ? (
-                      <Image
-                        width={100}
-                        height={100}
-                        src={profilePhoto || "/placeholder.svg"}
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={profilePhoto}
                         alt="Profile"
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          target.parentElement!.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-lg sm:text-xl font-semibold">${avatarLetter}</div>`;
+                        }}
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-primary/10 text-primary text-xl font-semibold">
+                      <div className="w-full h-full flex items-center justify-center bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-lg sm:text-xl font-semibold">
                         {avatarLetter}
                       </div>
                     )}
                   </div>
-                  <label className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/90 transition-colors">
-                    <Camera className="w-3 h-3 text-primary-foreground" />
+                  <label className="absolute -bottom-1 -right-1 w-6 h-6 sm:w-7 sm:h-7 bg-green-700 rounded-full flex items-center justify-center cursor-pointer hover:bg-green-800 transition-colors shadow-md">
+                    <Camera className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
                     <input
                       type="file"
                       accept="image/*"
@@ -179,136 +186,135 @@ export default function ProfileDrawer({
                     />
                   </label>
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground">
-                    {name || "Your name"}
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
+                    {name || "Farmer"}
                   </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {email || "yourname@gmail.com"}
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">
+                    {email || (phone ? `Phone: ${phone}` : "No email provided")}
                   </p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between text-lg">
-                <span className="flex items-center gap-2">
-                  <Edit3 className="w-5 h-5 text-primary" />
+          {/* Personal Details Card */}
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100">
                   Personal Details
-                </span>
+                </h2>
                 {!isEditing && (
-                  <Button
+                  <button
                     onClick={() => setIsEditing(true)}
-                    variant="outline"
-                    size="sm"
-                    className="text-primary hover:bg-primary/10"
+                    className="text-xs px-2.5 py-1 border border-green-700 dark:border-green-600 text-green-700 dark:text-green-500 rounded-md hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors flex items-center gap-1"
                   >
-                    <Edit3 className="w-4 h-4 mr-1" />
+                    <Edit3 className="w-3 h-3" />
                     Edit
-                  </Button>
+                  </button>
                 )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              </div>
+            </div>
+            <div className="p-3 space-y-3">
               {/* Name Field */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-foreground">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-gray-900 dark:text-gray-100 block">
                   Name
-                </Label>
+                </label>
                 {isEditing ? (
-                  <Input
+                  <input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full"
+                    className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent"
+                    placeholder="Enter your name"
                   />
                 ) : (
-                  <p className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
-                    {name || "Your name"}
+                  <p className="text-xs text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 p-2 rounded-md">
+                    {name || "Farmer"}
                   </p>
                 )}
               </div>
 
               {/* Email Field */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-foreground">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-gray-900 dark:text-gray-100 block">
                   Email account
-                </Label>
+                </label>
                 {isEditing ? (
-                  <Input
+                  <input
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full"
+                    className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent"
                     type="email"
+                    placeholder="Enter your email"
                   />
                 ) : (
-                  <p className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
-                    {email || "yourname@gmail.com"}
+                  <p className="text-xs text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 p-2 rounded-md break-all">
+                    {email || "No email provided"}
                   </p>
                 )}
               </div>
 
               {/* Phone Field */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-foreground">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-gray-900 dark:text-gray-100 block">
                   Mobile number
-                </Label>
+                </label>
                 {isEditing ? (
-                  <Input
+                  <input
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full"
+                    className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent"
                     type="tel"
+                    placeholder="Enter your phone number"
                   />
                 ) : (
-                  <p className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
-                    {phone || "Add number"}
+                  <p className="text-xs text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 p-2 rounded-md">
+                    {phone || "No phone number"}
                   </p>
                 )}
               </div>
 
               {/* Location Field */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-foreground">
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-gray-900 dark:text-gray-100 block">
                   Location
-                </Label>
+                </label>
                 {isEditing ? (
-                  <Input
+                  <input
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
-                    className="w-full"
+                    className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent"
+                    placeholder="Enter your location"
                   />
                 ) : (
-                  <p className="text-sm text-muted-foreground bg-muted p-2 rounded-md">
+                  <p className="text-xs text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 p-2 rounded-md">
                     {location}
                   </p>
                 )}
               </div>
 
               {isEditing && (
-                <div className="flex gap-2 pt-4">
-                  <Button
+                <div className="flex gap-2 pt-1">
+                  <button
                     onClick={handleSaveAll}
-                    className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+                    className="flex-1 bg-green-700 hover:bg-green-800 active:bg-green-900 text-white font-medium py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-green-700 focus:ring-offset-2 text-xs"
                   >
                     Save Changes
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     onClick={handleCancel}
-                    variant="outline"
-                    className="flex-1 bg-transparent"
+                    className="flex-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 text-xs"
                   >
                     Cancel
-                  </Button>
+                  </button>
                 </div>
               )}
-            </CardContent>
-          </Card>
-
-          <div className="h-8"></div>
+            </div>
+          </div>
         </div>
       </div>
     </>
-  );
+  )
 }

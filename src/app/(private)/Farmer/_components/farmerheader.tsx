@@ -48,7 +48,7 @@ export default function DashboardHeader() {
   const { user, getUserProfileImage } = useAuth();
 
   // Nice fallbacks if name is missing
-  const displayName = useMemo(() => user?.name || user?.name || "User", [user])
+  const displayName = useMemo(() => user?.name || user?.name ||user?.phone|| " Farmer", [user])
   const email = user?.email || ""
   const profileImage = getUserProfileImage()
 

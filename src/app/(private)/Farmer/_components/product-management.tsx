@@ -166,7 +166,7 @@ export default function ProductManagement() {
       <main className="container mx-auto px-6 py-8">
         <div className="bg-white rounded-lg shadow-sm p-6">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex  flex-col sm:flex-row sm:items-center  justify-between mb-6">
             <div>
               <h1 className="text-[16px] font-bold text-gray-900">
                 Product Management
@@ -175,7 +175,7 @@ export default function ProductManagement() {
             <div className="flex items-center gap-2">
               <Button
                 onClick={() => setShowSubmissionModal(true)}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="bg-green-600 hover:bg-green-700 text-white w-40 sm:w-auto"
                 size="sm"
                 disabled={loading}
               >
@@ -206,13 +206,13 @@ export default function ProductManagement() {
 
           {/* Filter Component */}
           <div className="mb-6">
-            <TableFilters filters={filters} />
+            <TableFilters filters={filters} className="flex-col sm:flex-row items-stretch sm:items-center " />
             {(searchTerm || selectedStatus !== "All" || dateFilter) && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleClearFilters}
-                className="mt-4 text-red-600 hover:text-red-700"
+                className="mt-4 text-red-600 hover:text-red-700 w-full sm:w-auto"
               >
                 Clear Filters
               </Button>
@@ -268,7 +268,7 @@ export default function ProductManagement() {
             <X className="w-4 h-4 text-gray-600" />
           </button>
 
-          <h2 className="text-lg font-semibold text-gray-900 mb-3 pr-6">Product Details</h2>
+          <h2 className="text-[18px] font-semibold text-gray-900 mb-3 pr-6">Product Details</h2>
 
           <div className="flex flex-col gap-3 text-sm text-gray-700">
             {/* Name */}
@@ -277,7 +277,7 @@ export default function ProductManagement() {
                 <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
                   <Package className="w-3 h-3 text-blue-600" />
                 </div>
-                <span className="font-medium">Name:</span>
+                <span className="font-medium ">Name:</span>
               </div>
               <span className="text-right">{viewProduct.name}</span>
             </div>

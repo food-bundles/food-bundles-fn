@@ -3,8 +3,6 @@
 import { useState } from 'react';
 import { 
   User, 
-  Phone, 
-  Mail, 
   MapPin,
   Camera,
   Save,
@@ -14,7 +12,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
@@ -93,11 +90,7 @@ export default function FarmerProfile() {
           {/* Profile Photo Section */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 pb-6 border-b">
             <div className="relative">
-              <img
-                src={profile.profilePhoto}
-                alt="Profile"
-                className="w-32 h-32 rounded-full object-cover border-4 border-green-200"
-              />
+             
               {isEditing && (
                 <label className="absolute -bottom-2 -right-2 cursor-pointer">
                   <Button
