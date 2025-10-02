@@ -21,7 +21,6 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     removeCartItem,
     clearCart,
     isLoading,
-    error,
     totalItems,
     totalAmount,
   } = useCart();
@@ -77,7 +76,9 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
           {cartItems.length > 0 && (
             <div className="flex justify-between items-center">
               <p className="text-gray-600 text-sm sm:text-xs lg:text-sm">
-                You have <span className="text-green-500 font-bold">{totalItems}</span> items in your cart
+                You have{" "}
+                <span className="text-green-500 font-bold">{totalItems}</span>{" "}
+                items in your cart
               </p>
               <button
                 onClick={handleClearCart}
@@ -94,15 +95,6 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
               <div className="flex flex-col items-center justify-center py-12 space-y-3">
                 <Spinner />
               </div>
-            ) : error ? (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <p className="text-gray-500 text-sm sm:text-xs">
-                    Something went wrong, Pleas try again.
-                  </p>
-                  <p className="text-gray-400 text-xs mt-2">{error}</p>
-                </CardContent>
-              </Card>
             ) : cartItems.length === 0 ? (
               <Card className="border-0 shadow-none">
                 <CardContent className="p-8 text-center">
