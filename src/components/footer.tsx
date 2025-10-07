@@ -62,7 +62,7 @@ export function Footer() {
             <h3 className="text-[14px] font-semibold text-white">Contact Us</h3>
             <div className="space-y-2 text-[13px] text-green-200">
               <p>KG 5 Ave, Kigali</p>
-              <p>info@foodbundle.com</p>
+              <p>info@food.rw</p>
             </div>
           </div>
         </div>
