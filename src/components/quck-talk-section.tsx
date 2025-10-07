@@ -257,14 +257,16 @@ function QuickTalkSection() {
                     >
                       sales@food.rw
                     </a>
-                    <a
-                      href="https://mail.google.com/mail/?view=cm&to=info@food.rw"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[13px]  hover:text-green-600 break-all transition-colors"
-                    >
-                      info@food.rw
-                    </a>
+                    <p>
+                      <a
+                        href="https://mail.google.com/mail/?view=cm&to=info@food.rw"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[13px]  hover:text-green-600 break-all transition-colors"
+                      >
+                        info@food.rw
+                      </a>
+                    </p>
                   </div>
                 </div>
 
