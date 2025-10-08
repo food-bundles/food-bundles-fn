@@ -36,29 +36,26 @@ export default function RestaurantDashboard() {
   console.log("[Dashboard] Orders:", orders);
   console.log("[Dashboard] Statistics |||:", statistics);
 
-  const handleReorder = useCallback(
-    async (orderId: string) => {
-      try {
-        console.log("[Dashboard] Reorder clicked for:", orderId);
-        setReorderingId(orderId);
-        const response = await reorderOrder(orderId);
+  const handleReorder = useCallback(async (orderId: string) => {
+    try {
+      console.log("[Dashboard] Reorder clicked for:", orderId);
+      setReorderingId(orderId);
+      const response = await reorderOrder(orderId);
 
-        if (response.success) {
-          toast.success("Order reordered successfully!");
-        } else {
-          toast.error(response.message || "Failed to reorder");
-        }
-      } catch (err: any) {
-        console.error("[Dashboard] Reorder error:", err);
-        toast.error(err.response?.data?.message || "Failed to reorder order");
-      } finally {
-        setTimeout(() => {
-          setReorderingId(null);
-        }, 500);
+      if (response.success) {
+        toast.success("Order reordered successfully!");
+      } else {
+        toast.error(response.message || "Failed to reorder");
       }
-    },
-    [reorderOrder]
-  );
+    } catch (err: any) {
+      console.error("[Dashboard] Reorder error:", err);
+      toast.error(err.response?.data?.message || "Failed to reorder order");
+    } finally {
+      setTimeout(() => {
+        setReorderingId(null);
+      }, 500);
+    }
+  }, [reorderOrder]);
 
   if (loading || statsLoading) {
     return (

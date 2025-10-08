@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import Image from "next/image";
 import { Order } from "@/lib/types";
+import { MovingBorderCircle } from "@/components/ui/moving-border-circle";
 
 type DashboardData = {
   date: string;
@@ -264,12 +265,6 @@ export function DashboardOverview({ data, onReorder, reorderingId }: Props) {
         label: step.label,
         icon: step.icon,
         completed: isCompleted,
-        time: isCompleted
-          ? new Date(orderToTrack.createdAt).toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : `Expected`,
         status: Array.isArray(step.status) ? step.status[0] : step.status,
       };
     });
@@ -588,63 +583,74 @@ export function DashboardOverview({ data, onReorder, reorderingId }: Props) {
   return (
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row gap-6 w-full">
-        <div className="w-full lg:w-7/10 space-y-6">
-          <div className="w-full border-b border-gray-200 pb-2 flex flex-col lg:flex-row lg:items-center gap-10">
-            <div className="px-4">
-              <h3 className="text-[14px] font-medium">Track Order</h3>
-              <p className="text-[12px] text-green-500">
-                {orderTrackingData.orderNumber}
-              </p>
-            </div>
-            <div className="px-4">
+        <div className="w-full lg:w-7/10 space-y-0">
+          {/* Order Tracking */}
+          <Card className="mb-4 gradient-card rounded shadow-md border-gray-100 ">
+            <CardHeader className="">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg font-semibold">
+                    Track Order
+                  </CardTitle>
+                  <p className="text-sm text-green-600">
+                    #{orderTrackingData.orderNumber}
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="">
               {isFailedOrder ? (
-                <div className="">
-                  <h4 className="text-[14px] text-red-700 ">Order Failed</h4>
-                  <p className="text-[12px] text-gray-600 ">
-                    This order failed, please Reorder.
+                <div className=" ">
+                  <p className="text-sm font-medium text-red-700">
+                    Your order has failed. Please reorder.
                   </p>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 overflow-x-auto">
+              <div className="flex items-center justify-between overflow-x-auto pb-4">
                   {orderTrackingData.steps.map((step, index) => {
                     const Icon = step.icon;
                     const isCompleted = step.completed;
                     const isCurrent = index === orderTrackingData.currentStep;
+                    const isNext = index === orderTrackingData.currentStep + 1;
 
                     return (
                       <div
                         key={index}
-                        className="flex flex-col items-center relative z-10"
+                        className="flex flex-col items-center min-w-0 flex-1"
                       >
                         <div className="relative">
-                          <div
-                            className={`w-12 h-12 rounded-full flex items-center justify-center relative z-10 transition-all duration-300 ${
-                              isCompleted
-                                ? "border-2 border-green-500 bg-green-700 text-white shadow-md"
-                                : isCurrent
-                                ? "border-2 border-green-500 bg-white text-green-600 animate-pulse shadow-md"
-                                : "border-2 border-gray-200 bg-white text-gray-400 shadow-md"
-                            }`}
-                          >
-                            <Icon className="w-6 h-6" />
-                          </div>
+                          {isNext ? (
+                            <MovingBorderCircle
+                              duration={2000}
+                              borderClassName="h-1.5 w-1.5 bg-gradient-to-r from-green-400 to-green-600"
+                            >
+                              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-white text-green-400 border-2 border-green-300 transition-all">
+                                <Icon className="w-5 h-5" />
+                              </div>
+                            </MovingBorderCircle>
+                          ) : (
+                            <div
+                              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                                isCompleted
+                                  ? "bg-green-500 text-white shadow-lg border-2 border-green-600"
+                                  : isCurrent
+                                  ? "bg-green-100 text-green-600 border-2 border-green-500"
+                                  : "bg-gray-100 text-gray-400 border-2 border-gray-300"
+                              }`}
+                            >
+                              <Icon className="w-5 h-5" />
+                            </div>
+                          )}
                         </div>
-
-                        <div
-                          className={`text-center mt-3 px-3 rounded-full border transition-all duration-300 ${
-                            isCompleted
-                              ? "border-2 border-green-500 shadow-md bg-white"
-                              : isCurrent
-                              ? "border-2 border-green-500 bg-white animate-pulse shadow-md"
-                              : "border-2 border-gray-200 bg-white shadow-md"
-                          }`}
-                        >
+                        <div className="text-center mt-3">
                           <p
-                            className={`text-[13px] font-medium ${
+                            className={`text-xs font-medium ${
                               isCompleted
                                 ? "text-green-600"
                                 : isCurrent
                                 ? "text-green-600"
+                                : isNext
+                                ? "text-green-400"
                                 : "text-gray-400"
                             }`}
                           >
@@ -656,14 +662,14 @@ export function DashboardOverview({ data, onReorder, reorderingId }: Props) {
                   })}
                 </div>
               )}
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           <Card className="w-full border-none shadow-none">
             <CardHeader className="flex flex-row items-center justify-between">
               <div className="flex items-center space-x-3">
                 <CardTitle className="text-[14px] font-medium">
-                  Products Sold by Restaurant
+                  Orders
                 </CardTitle>
                 <div className="flex items-center space-x-2 bg-white shadow rounded p-1">
                   <Button
@@ -735,31 +741,39 @@ export function DashboardOverview({ data, onReorder, reorderingId }: Props) {
 
         <div className="w-full lg:w-3/10 space-y-6">
           <div className="px-2 w-full">
-            <div>
-              <div className="flex space-y-6">
-                <div className="flex-1">
-                  <p className="text-[14px] text-gray-600">Total Orders</p>
-                  <p className="text-[14px] font-bold text-gray-900">
-                    {data.metrics.totalOrders.current}
-                  </p>
-                </div>
-                <div className="flex-1">
-                  <p className="text-[12px] text-gray-600">
-                    Amount you would have paid in fees
-                  </p>
-                  <p className="text-[12px] font-bold text-green-600">
-                    RWF 2,000
-                  </p>
-                </div>
+            {/* Top metrics row */}
+            <div className="flex gap-4">
+              {/* Total Orders card */}
+              <div className="flex-1 border border-orange-200 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
+                <p className="text-[13px] text-gray-600 font-medium">
+                  Total Orders
+                </p>
+                <p className="text-lg font-semibold text-yellow-500 mt-1">
+                  {data.metrics.totalOrders.current}
+                </p>
+              </div>
+
+              {/* Amount you would have paid in fees card */}
+              <div className="flex-1 border border-green-500 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
+                <p className="text-[13px] text-gray-600 font-medium">
+                  Amount you would have paid in fees
+                </p>
+                <p className="text-lg font-semibold text-green-600 mt-1">
+                  RWF 2,000
+                </p>
               </div>
             </div>
-            <p className="text-[12px] text-gray-900 mt-1">
-              Compared to{" "}
-              <span className="font-bold text-green-500">
-                {data.metrics.totalOrders.previous}
-              </span>{" "}
-              {data.metrics.totalOrders.period}
-            </p>
+
+            {/* Comparison section */}
+            <div className="mt-3  pt-2 text-center">
+              <p className="text-sm text-gray-800">
+                Compared to{" "}
+                <span className="font-bold text-green-500">
+                  {data.metrics.totalOrders.previous}
+                </span>{" "}
+                {data.metrics.totalOrders.period}
+              </p>
+            </div>
           </div>
 
           <div className="w-full px-2">
@@ -782,7 +796,7 @@ export function DashboardOverview({ data, onReorder, reorderingId }: Props) {
                     onClick={() => {
                       setSelectedOrderId(originalOrderId || order.id);
                     }}
-                    className={`flex items-start space-x-3 p-4 rounded cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg ${
+                    className={`flex items-start space-x-3 p-4 rounded cursor-pointer transition-all duration-300 transform hover:scale-[1.01] hover:shadow-md ${
                       isSelected
                         ? "border-2 border-green-500 bg-green-50 shadow-md"
                         : "border border-gray-200 hover:border-green-300 bg-white"

@@ -14,14 +14,14 @@ export interface CheckoutRequest {
   deviceFingerprint?: string;
   narration?: string;
   currency?: string;
-
-  // Card payment specific fields
-  cardNumber?: string;
-  expiryDate?: string;
-  cvv?: string;
+  cardDetails?: {
+    cardNumber: string;
+    expiryMonth: string;
+    expiryYear: string;
+    cvv: string;
+  }
   cardholderName?: string;
 
-  // Mobile money specific fields
   phoneNumber?: string;
 }
 

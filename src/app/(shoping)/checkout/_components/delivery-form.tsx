@@ -2,7 +2,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { User, Phone, MapPin, Navigation, X, Loader2, ExternalLink, Info } from "lucide-react";
+import {
+  User,
+  Phone,
+  MapPin,
+  Navigation,
+  X,
+  Loader2,
+  ExternalLink,
+  Info,
+} from "lucide-react";
 import { useCart } from "@/app/contexts/cart-context";
 import { useAuth } from "@/app/contexts/auth-context";
 import {
@@ -69,8 +78,12 @@ export function Checkout() {
     location: null as LocationData | null,
     hasSelectedLocationOnMap: false,
     useMapLocation: false,
+    cardNumber: "",
+    cardCvv: "",
+    cardExpiryMonth: "",
+    cardExpiryYear: "",
   });
-  
+
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [tempLocation, setTempLocation] = useState<LocationData | null>(null);
 
@@ -78,46 +91,45 @@ export function Checkout() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-useEffect(() => {
-  if (isAuthenticated && user) {
-    const fullAddress = getUserFullAddress(user);
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const fullAddress = getUserFullAddress(user);
 
-    setFormData({
-      fullName: user.name || "",
-      phoneNumber: user.phone || "",
-      deliveryAddress: fullAddress,
-      deliveryInstructions: "",
-      location: null,
-      hasSelectedLocationOnMap: false,
-      useMapLocation: false,
-    });
+      setFormData((prev) => ({
+        ...prev,
+        fullName: user.name || "",
+        phoneNumber: user.phone || "",
+        deliveryAddress: fullAddress,
+        deliveryInstructions: "",
+        location: null,
+        hasSelectedLocationOnMap: false,
+        useMapLocation: false,
+      }));
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const userCurrentLocation = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          };
-          // ✅ Automatically mark location as selected/pinned
-          setFormData((prev) => ({
-            ...prev,
-            location: userCurrentLocation,
-            hasSelectedLocationOnMap: true,
-            useMapLocation: true, // <-- This is the key
-            deliveryAddress: "", // Clear text address if using map
-          }));
-          setTempLocation(userCurrentLocation);
-        },
-        (error) => {
-          console.error("Error getting location:", error);
-          setTempLocation(null);
-        }
-      );
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const userCurrentLocation = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            };
+            setFormData((prev) => ({
+              ...prev,
+              location: userCurrentLocation,
+              hasSelectedLocationOnMap: true,
+              useMapLocation: true,
+              deliveryAddress: "",
+            }));
+            setTempLocation(userCurrentLocation);
+          },
+          (error) => {
+            console.error("Error getting location:", error);
+            setTempLocation(null);
+          }
+        );
+      }
     }
-  }
-}, [isAuthenticated, user]);
-
+  }, [isAuthenticated, user]);
 
   const summaryData = {
     totalItems,
@@ -128,24 +140,23 @@ useEffect(() => {
     total: totalAmount,
   };
 
-const handleInputChange = (field: string, value: string) => {
-  if (field === "deliveryAddress" && value.trim()) {
-    // If user starts typing, clear map selection
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-      hasSelectedLocationOnMap: false,
-      useMapLocation: false,
-      location: null,
-    }));
-  } else {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  }
+  const handleInputChange = (field: string, value: string) => {
+    if (field === "deliveryAddress" && value.trim()) {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: value,
+        hasSelectedLocationOnMap: false,
+        useMapLocation: false,
+        location: null,
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    }
 
-  if (errors[field]) {
-    setErrors((prev) => ({ ...prev, [field]: "" }));
-  }
-};
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: "" }));
+    }
+  };
 
   const LocationMarker = () => {
     useMapEvents({
@@ -177,140 +188,155 @@ const handleInputChange = (field: string, value: string) => {
     }
   };
 
-const handleSelectLocation = () => {
-  setFormData((prev) => ({
-    ...prev,
-    location: tempLocation,
-    hasSelectedLocationOnMap: true,
-    useMapLocation: true,
-    deliveryAddress: "", // Clear text input when map is used
-  }));
+  const handleSelectLocation = () => {
+    setFormData((prev) => ({
+      ...prev,
+      location: tempLocation,
+      hasSelectedLocationOnMap: true,
+      useMapLocation: true,
+      deliveryAddress: "",
+    }));
 
-  if (errors.deliveryAddress) {
-    setErrors((prev) => ({ ...prev, deliveryAddress: "" }));
-  }
+    if (errors.deliveryAddress) {
+      setErrors((prev) => ({ ...prev, deliveryAddress: "" }));
+    }
 
-  setIsLocationModalOpen(false);
-};
- const handleOpenLocationModal = () => {
-   if (formData.location) {
-     setTempLocation(formData.location);
-   } else {
-     // Get current location when opening modal
-     if (navigator.geolocation) {
-       navigator.geolocation.getCurrentPosition(
-         (position) => {
-           setTempLocation({
-             lat: position.coords.latitude,
-             lng: position.coords.longitude,
-           });
-         },
-         (error) => {
-           console.error("Error getting location:", error);
-         }
-       );
-     }
-   }
-   setIsLocationModalOpen(true);
- };
+    setIsLocationModalOpen(false);
+  };
 
-const validateForm = (): boolean => {
-  const newErrors: Record<string, string> = {};
+  const handleOpenLocationModal = () => {
+    if (formData.location) {
+      setTempLocation(formData.location);
+    } else {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setTempLocation({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            });
+          },
+          (error) => {
+            console.error("Error getting location:", error);
+          }
+        );
+      }
+    }
+    setIsLocationModalOpen(true);
+  };
 
-  if (!formData.fullName.trim()) {
-    newErrors.fullName = "Full name is required";
-  }
-  if (!formData.phoneNumber.trim()) {
-    newErrors.phoneNumber = "Phone number is required";
-  }
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
 
-  // Must have either map location OR text address (not both required)
-  if (!formData.useMapLocation && !formData.deliveryAddress.trim()) {
-    newErrors.deliveryAddress =
-      "Please select location on map or enter address";
-  }
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = "Full name is required";
+    }
+    if (!formData.phoneNumber.trim()) {
+      newErrors.phoneNumber = "Phone number is required";
+    }
 
-  if (!cart?.id) {
-    newErrors.cart = "No cart found. Please add items to cart first.";
-  }
+    if (!formData.useMapLocation && !formData.deliveryAddress.trim()) {
+      newErrors.deliveryAddress =
+        "Please select location on map or enter address";
+    }
 
-  setErrors(newErrors);
-  return Object.keys(newErrors).length === 0;
-};
+    // Card validation
+    if (method === "card") {
+      if (!formData.cardNumber.trim()) {
+        newErrors.cardNumber = "Card number is required";
+      }
+      if (!formData.cardCvv.trim()) {
+        newErrors.cardCvv = "CVV is required";
+      }
+      if (!formData.cardExpiryMonth.trim() || !formData.cardExpiryYear.trim()) {
+        newErrors.cardExpiry = "Card expiry is required";
+      }
+    }
 
-const handleCheckout = async () => {
-  if (!validateForm()) return;
+    if (!cart?.id) {
+      newErrors.cart = "No cart found. Please add items to cart first.";
+    }
 
-  setIsSubmitting(true);
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-  try {
-    const paymentMethodMap = {
-      wallet: "CASH" as const,
-      momo: "MOBILE_MONEY" as const,
-      card: "CARD" as const,
-    };
+  const handleCheckout = async () => {
+    if (!validateForm()) return;
 
-    const checkoutPayload: CheckoutRequest = {
-      cartId: cart!.id,
-      paymentMethod: paymentMethodMap[method],
-      billingName: formData.fullName,
-      billingEmail: user?.email || "",
-      billingPhone: formData.phoneNumber,
-      billingAddress:
-        formData.useMapLocation && formData.location
-          ? `${formData.location.lat},${formData.location.lng}`
-          : formData.deliveryAddress.trim(),
-      notes: formData.deliveryInstructions,
-      deliveryDate: new Date().toISOString(),
-      clientIp: "192.168.1.1",
-      deviceFingerprint: "web-checkout",
-      narration: `Order from ${formData.fullName}`,
-      currency: "RWF",
-    };
+    setIsSubmitting(true);
 
-    const response = await checkoutService.createCheckout(checkoutPayload);
+    try {
+      const paymentMethodMap = {
+        wallet: "CASH" as const,
+        momo: "MOBILE_MONEY" as const,
+        card: "CARD" as const,
+      };
 
-    if (response.success) {
-      localStorage.setItem("selectedPaymentMethod", paymentMethodMap[method]);
+      const checkoutPayload: CheckoutRequest = {
+        cartId: cart!.id,
+        paymentMethod: paymentMethodMap[method],
+        billingName: formData.fullName,
+        billingEmail: method === "card" ? user?.email || "" : undefined,
+        billingPhone:
+          method === "card" ? formData.phoneNumber : formData.phoneNumber,
+        billingAddress:
+          formData.useMapLocation && formData.location
+            ? `${formData.location.lat},${formData.location.lng}`
+            : formData.deliveryAddress.trim(),
+        notes: formData.deliveryInstructions,
+        deliveryDate: new Date().toISOString().split("T")[0],
+        currency: "RWF",
+      };
 
-      // Handle MoMo payment provider logic
-      if (method === "momo") {
-         const responseData = response.data as any;
-         const paymentProvider = responseData?.checkout?.paymentProvider;
-         const requiresRedirect = responseData?.requiresRedirect;
-         const redirectUrl = responseData?.redirectUrl;
+      if (method === "card") {
+        checkoutPayload.cardDetails = {
+          cardNumber: formData.cardNumber.replace(/\s/g, ""),
+          cvv: formData.cardCvv,
+          expiryMonth: formData.cardExpiryMonth.padStart(2, "0"),
+          expiryYear: formData.cardExpiryYear,
+        };
+      }
 
-        if (paymentProvider === "PAYPACK") {
-          window.location.href = "/restaurant/updates";
-        } else if (
-          paymentProvider === "FLUTTERWAVE" &&
-          requiresRedirect &&
-          redirectUrl
-        ) {
-          // Flutterwave: Show modal with instructions
-          setFlutterwaveRedirectUrl(redirectUrl);
-          setShowFlutterwaveInfo(true);
+      const response = await checkoutService.createCheckout(checkoutPayload);
+
+      if (response.success) {
+        localStorage.setItem("selectedPaymentMethod", paymentMethodMap[method]);
+
+        if (method === "momo") {
+          const responseData = response.data as any;
+          const paymentProvider = responseData?.checkout?.paymentProvider;
+          const requiresRedirect = responseData?.requiresRedirect;
+          const redirectUrl = responseData?.redirectUrl;
+
+          if (paymentProvider === "PAYPACK") {
+            window.location.href = "/restaurant/updates";
+          } else if (
+            paymentProvider === "FLUTTERWAVE" &&
+            requiresRedirect &&
+            redirectUrl
+          ) {
+            setFlutterwaveRedirectUrl(redirectUrl);
+            setShowFlutterwaveInfo(true);
+          } else {
+            window.location.href = "/restaurant/updates";
+          }
         } else {
-          // Fallback for any other case
           window.location.href = "/restaurant/updates";
         }
       } else {
-        // For wallet or card payments, redirect directly
-        window.location.href = "/restaurant/updates";
+        setErrors({
+          submit: response.message || "Checkout failed. Please try again.",
+        });
       }
-    } else {
-      setErrors({
-        submit: response.message || "Checkout failed. Please try again.",
-      });
+    } catch (error) {
+      console.error("Checkout error:", error);
+      setErrors({ submit: "An unexpected error occurred. Please try again." });
+    } finally {
+      setIsSubmitting(false);
     }
-  } catch (error) {
-    console.error("Checkout error:", error);
-    setErrors({ submit: "An unexpected error occurred. Please try again." });
-  } finally {
-    setIsSubmitting(false);
-  }
   };
-  
+
   const handleFlutterwaveRedirect = () => {
     if (flutterwaveRedirectUrl) {
       window.location.href = flutterwaveRedirectUrl;
@@ -520,19 +546,78 @@ const handleCheckout = async () => {
                   <input
                     type="text"
                     placeholder="Card Number"
-                    className="w-full h-8 px-3 placeholder:text-[12px] border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none text-[14px] border-gray-300"
+                    value={formData.cardNumber}
+                    onChange={(e) =>
+                      handleInputChange("cardNumber", e.target.value)
+                    }
+                    className={`w-full h-8 px-3 placeholder:text-[12px] border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none text-[14px] ${
+                      errors.cardNumber ? "border-red-500" : "border-gray-300"
+                    }`}
+                    disabled={isSubmitting}
                   />
+                  {errors.cardNumber && (
+                    <p className="text-red-600 text-xs">{errors.cardNumber}</p>
+                  )}
                   <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="MM/YY"
-                      className="flex-1 h-8 px-3 placeholder:text-[12px] border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none text-[14px] border-gray-300"
-                    />
-                    <input
-                      type="text"
-                      placeholder="CVV"
-                      className="w-20 h-8 px-3 placeholder:text-[12px] border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none text-[14px] border-gray-300"
-                    />
+                    <div className="flex-1">
+                      <div className="flex gap-1">
+                        <input
+                          type="text"
+                          placeholder="MM"
+                          maxLength={2}
+                          value={formData.cardExpiryMonth}
+                          onChange={(e) =>
+                            handleInputChange("cardExpiryMonth", e.target.value)
+                          }
+                          className={`flex-1 h-8 px-3 placeholder:text-[12px] border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none text-[14px] ${
+                            errors.cardExpiry
+                              ? "border-red-500"
+                              : "border-gray-300"
+                          }`}
+                          disabled={isSubmitting}
+                        />
+                        <input
+                          type="text"
+                          placeholder="YY"
+                          maxLength={2}
+                          value={formData.cardExpiryYear}
+                          onChange={(e) =>
+                            handleInputChange("cardExpiryYear", e.target.value)
+                          }
+                          className={`flex-1 h-8 px-3 placeholder:text-[12px] border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none text-[14px] ${
+                            errors.cardExpiry
+                              ? "border-red-500"
+                              : "border-gray-300"
+                          }`}
+                          disabled={isSubmitting}
+                        />
+                      </div>
+                      {errors.cardExpiry && (
+                        <p className="text-red-600 text-xs mt-1">
+                          {errors.cardExpiry}
+                        </p>
+                      )}
+                    </div>
+                    <div className="w-20">
+                      <input
+                        type="text"
+                        placeholder="CVV"
+                        maxLength={3}
+                        value={formData.cardCvv}
+                        onChange={(e) =>
+                          handleInputChange("cardCvv", e.target.value)
+                        }
+                        className={`w-full h-8 px-3 placeholder:text-[12px] border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none text-[14px] ${
+                          errors.cardCvv ? "border-red-500" : "border-gray-300"
+                        }`}
+                        disabled={isSubmitting}
+                      />
+                      {errors.cardCvv && (
+                        <p className="text-red-600 text-xs mt-1">
+                          {errors.cardCvv}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -639,10 +724,9 @@ const handleCheckout = async () => {
       {showFlutterwaveInfo && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-md w-full max-w-md flex flex-col">
-            {/* Modal Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <h3 className="text-[16px] font-medium text-gray-900 flex items-center gap-2">
-                <Info className="h-4 w-4 text-blue-500" />
+                <Info className="h-4 w-4 text-green-500" />
                 Complete Payment
               </h3>
               <button
@@ -653,7 +737,6 @@ const handleCheckout = async () => {
               </button>
             </div>
 
-            {/* Modal Content */}
             <div className="p-4 space-y-4">
               <div className="p-4">
                 <ul className="text-[13px] text-gray-900 space-y-1 list-decimal">

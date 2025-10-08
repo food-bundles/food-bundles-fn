@@ -439,7 +439,7 @@ export function ProductsSection({
                           {isLoading ? (
                             <Skeleton className="absolute -top-2 -right-2 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-green-600/60" />
                           ) : (
-                            totalQuantity > 0 && (
+                            totalQuantity >= 0 && (
                               <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                                 {totalItems > 99 ? "99+" : totalItems}
                               </span>
