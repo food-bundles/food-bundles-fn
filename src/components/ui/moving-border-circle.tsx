@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import React from "react";
 import {
@@ -23,7 +24,7 @@ export function MovingBorderCircle({
   borderClassName?: string;
   [key: string]: any;
 }) {
-  const pathRef = useRef<any>();
+  const pathRef = useRef<SVGPolygonElement>(null);
   const progress = useMotionValue<number>(0);
 
   useAnimationFrame((time) => {
@@ -56,7 +57,10 @@ export function MovingBorderCircle({
 
   return (
     <div
-      className={cn("relative w-12 h-12", className)}
+      className={cn(
+        "relative w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12",
+        className
+      )}
       {...otherProps}
     >
       {/* Gray circular path */}
@@ -69,7 +73,7 @@ export function MovingBorderCircle({
         <circle
           fill="none"
           stroke="#d1d5db"
-          strokeWidth="2"
+          strokeWidth="1.5"
           cx="50%"
           cy="50%"
           r="45%"
@@ -79,11 +83,11 @@ export function MovingBorderCircle({
           cx="50%"
           cy="50%"
           r="45%"
-          ref={pathRef}
+          ref={pathRef as any}
           opacity="0"
         />
       </svg>
-      
+
       {/* Moving green line */}
       <motion.div
         style={{
@@ -96,15 +100,13 @@ export function MovingBorderCircle({
       >
         <div
           className={cn(
-            "h-0.5 w-6 bg-green-500 rounded-full",
-            borderClassName,
+            "h-1.5 w-1.5 md:h-0.5 md:w-6 bg-green-500 rounded-full",
+            borderClassName
           )}
         />
       </motion.div>
-      
-      <div className="relative z-10 w-full h-full">
-        {children}
-      </div>
+
+      <div className="relative z-10 w-full h-full">{children}</div>
     </div>
   );
 }

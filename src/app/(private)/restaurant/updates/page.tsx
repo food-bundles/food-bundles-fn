@@ -4,7 +4,6 @@
 
 import { useOrders } from "@/app/contexts/orderContext";
 import { useEffect, useState, useCallback } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { DashboardOverview } from "./_components/dashboard-overview";
 import { toast } from "sonner";
 
@@ -12,11 +11,10 @@ export default function RestaurantDashboard() {
   const {
     orders,
     statistics,
-    loading,
-    statsLoading,
     refreshOrders,
     refreshStatistics,
     reorderOrder,
+    loading,
   } = useOrders();
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [reorderingId, setReorderingId] = useState<string | null>(null);
@@ -60,18 +58,7 @@ export default function RestaurantDashboard() {
     [reorderOrder]
   );
 
-  if (loading || statsLoading) {
-    return (
-      <div className="min-h-screen bg-white">
-        <main className="container mx-auto px-6 py-8">
-          <div className="space-y-6">
-            <Skeleton className="h-48 w-full" />
-            <Skeleton className="h-64 w-full" />
-          </div>
-        </main>
-      </div>
-    );
-  }
+
 
   const dashboardData = {
     date: new Date().toLocaleDateString("en-US", {
@@ -173,7 +160,16 @@ export default function RestaurantDashboard() {
           [],
         total: order.totalAmount || 0,
         status: statusMap[order.status] || order.status,
-        timeAgo: new Date(order.createdAt).toLocaleDateString(),
+        time: new Date(order.createdAt).toLocaleString("en-US", {
+          weekday: "short",
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        }),
+
         originalData: order,
       };
     }),
@@ -190,6 +186,7 @@ export default function RestaurantDashboard() {
           data={dashboardData}
           onReorder={handleReorder}
           reorderingId={reorderingId}
+          loading={loading}
         />
       </main>
     </div>

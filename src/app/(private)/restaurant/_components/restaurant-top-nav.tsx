@@ -94,12 +94,25 @@ export function TopResNav() {
   ];
 
   const handleCategorySelect = (categoryName: string) => {
+    // Navigate to restaurant page with category
+    const url = new URL('/restaurant', window.location.origin);
+    if (categoryName !== 'All Categories') {
+      url.searchParams.set('category', categoryName);
+    }
+    
+    // Dispatch event for same-page updates
     const event = new CustomEvent("categorySelected", {
       detail: categoryName,
     });
     window.dispatchEvent(event);
+    
     setIsCategoryDropdownOpen(false);
     setIsMobileMenuOpen(false);
+    
+    // Navigate if not already on restaurant page
+    if (window.location.pathname !== '/restaurant') {
+      window.location.href = url.toString();
+    }
   };
 
   const handleShopMouseEnter = () => {
@@ -378,19 +391,13 @@ export function TopResNav() {
                     <Link
                       href="/restaurant"
                       onClick={closeMobileMenu}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] transition-colors flex-1 ${
+                      className={`flex items-center gap-3 px-1 py-2.5 rounded-md text-[13px] transition-colors flex-1 ${
                         pathname === "/restaurant"
                           ? "text-secondary bg-green-600"
                           : "text-primary-foreground hover:text-secondary hover:bg-green-600"
                       }`}
                     >
-                      <div
-                        className={`w-3 h-3 rounded-sm ${
-                          pathname === "/restaurant"
-                            ? "bg-secondary"
-                            : "bg-transparent"
-                        }`}
-                      ></div>
+                     
                       Shop
                     </Link>
                     <button
@@ -449,17 +456,13 @@ export function TopResNav() {
                       key={link.href}
                       href={link.href}
                       onClick={closeMobileMenu}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] transition-colors ${
+                      className={`flex items-center gap-3 px-1  py-1 rounded-md text-[13px] transition-colors ${
                         isActive
                           ? "text-secondary bg-green-600"
                           : "text-primary-foreground hover:text-secondary hover:bg-green-600"
                       }`}
                     >
-                      <div
-                        className={`w-3 h-3 rounded-sm ${
-                          isActive ? "bg-secondary" : "bg-transparent"
-                        }`}
-                      ></div>
+                     
                       {link.label}
                     </Link>
                   );

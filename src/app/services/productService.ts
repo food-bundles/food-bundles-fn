@@ -55,9 +55,16 @@ export const productService = {
     return response.data;
   },
 
-  getAllProducts: async () => {
+  getAllProducts: async (params?: {
+    page?: number;
+    limit?: number;
+    categoryId?: string;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.get("/products");
+    const response = await axiosClient.get("/products", { params });
     return response.data;
   },
 
@@ -65,6 +72,20 @@ export const productService = {
     try {
       const axiosClient = createAxiosClient();
       const response = await axiosClient.get("/products/role-based");
+      return response.data;
+    } catch (error: any) {
+      console.error("Error fetching role-based products:", error);
+      return {
+        success: false,
+        data: [],
+        message: error.response?.data?.message || "Failed to fetch products",
+      };
+    }
+  },
+  getAllProductsByCategoryId: async (categoryId: string) => {
+    try {
+      const axiosClient = createAxiosClient();
+      const response = await axiosClient.get(`/category/${categoryId}`);
       return response.data;
     } catch (error: any) {
       console.error("Error fetching role-based products:", error);

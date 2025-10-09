@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { X, Info, ExternalLink, Loader2 } from "lucide-react";
 
 type PaymentModalProps = {

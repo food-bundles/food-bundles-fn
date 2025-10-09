@@ -24,7 +24,7 @@ export async function roleGuard(allowedRoles: string[]) {
     const data = await res.json();
     const role = data.user?.role;
 
-    console.log("User role:", role);
+    // console.log("User role:", role);
 
     if (!role || !allowedRoles.includes(role)) {
       redirect("/unauthorized");

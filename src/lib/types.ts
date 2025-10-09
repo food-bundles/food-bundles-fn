@@ -129,7 +129,7 @@ export type Order = {
   total: number
   status: OrderStatus
   deliveryPerson?: string
-  timeAgo: string
+  time: string
   estimatedTime?: string
 }
 
