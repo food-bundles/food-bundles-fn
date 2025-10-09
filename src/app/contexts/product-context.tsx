@@ -2,18 +2,22 @@
 "use client";
 
 import type React from "react";
-import { createContext, useContext, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useCallback,
+  useState,
+  useEffect,
+} from "react";
 import { productService } from "@/app/services/productService";
+import { categoryService } from "@/app/services/categoryService";
 
-export type ProductCategory =
-  | "VEGETABLES"
-  | "FRUITS"
-  | "GRAINS"
-  | "TUBERS"
-  | "LEGUMES"
-  | "HERBS_SPICES"
-  | "ANIMAL_PRODUCTS"
-  | "OTHER";
+export interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  isActive?: boolean;
+}
 
 export interface Product {
   id: string;
@@ -31,7 +35,7 @@ export interface Product {
   images: string[];
   quantity: number;
   sku: string;
-  category: ProductCategory;
+  category: Category | null; 
   rating?: number;
   soldCount?: number;
   status: string;
@@ -46,24 +50,47 @@ export interface ProductsResponse {
 }
 
 interface ProductContextType {
+  categories: Category[];
   getAllProducts: () => Promise<ProductsResponse>;
   getAllProductsRoleBased: () => Promise<ProductsResponse>;
+  getAllProductsByCategoryId: (categoryId: string) => Promise<ProductsResponse>;
   getProductById: (productId: string) => Promise<{ data: Product }>;
+  refreshCategories: () => Promise<void>;
 }
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
 
 export function ProductProvider({ children }: { children: React.ReactNode }) {
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  const refreshCategories = useCallback(async () => {
+    try {
+      const response = await categoryService.getActiveCategories();
+      if (response.success && response.data) {
+        setCategories(response.data);
+      } else {
+        setCategories(response.data || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch categories:", error);
+      setCategories([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshCategories();
+  }, [refreshCategories]);
+
   const getAllProducts = useCallback(async (): Promise<ProductsResponse> => {
     try {
       const response = await productService.getAllProducts();
 
-      // Transform API response to match component expectations
       const transformedProducts = response.data.map((product: any) => ({
         ...product,
         expiryDate: product.expiryDate ? new Date(product.expiryDate) : null,
-        // Add default values for missing fields
-        rating: product.rating || Math.random() * 2 + 3, // Random rating between 3-5 for demo
+        category:
+          categories.find((cat) => cat.id === product.categoryId) || null,
+        rating: product.rating || Math.random() * 2 + 3,
         soldCount: product.soldCount || Math.floor(Math.random() * 100),
       }));
 
@@ -73,23 +100,20 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
       };
     } catch (error) {
       console.error("Failed to fetch products:", error);
-      return {
-        success: false,
-        data: [],
-        message: "Failed to fetch products",
-      };
+      return { success: false, data: [], message: "Failed to fetch products" };
     }
-  }, []);
+  }, [categories]);
 
   const getAllProductsRoleBased =
     useCallback(async (): Promise<ProductsResponse> => {
       try {
         const response = await productService.getAllProductsRoleBased();
 
-        // Transform response just like in getAllProducts
         const transformedProducts = response.data.map((product: any) => ({
           ...product,
           expiryDate: product.expiryDate ? new Date(product.expiryDate) : null,
+          category:
+            categories.find((cat) => cat.id === product.categoryId) || null,
           rating: product.rating || Math.random() * 2 + 3,
           soldCount: product.soldCount || Math.floor(Math.random() * 100),
         }));
@@ -106,16 +130,51 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
           message: "Failed to fetch role-based products",
         };
       }
-    }, []);
+    }, [categories]);
+
+  const getAllProductsByCategoryId = useCallback(
+    async (categoryId: string): Promise<ProductsResponse> => {
+      try {
+        const response = await productService.getAllProductsByCategoryId(
+          categoryId
+        );
+
+        const transformedProducts = response.data.map((product: any) => ({
+          ...product,
+          expiryDate: product.expiryDate ? new Date(product.expiryDate) : null,
+          category:
+            categories.find((cat) => cat.id === product.categoryId) || null,
+          rating: product.rating || Math.random() * 2 + 3,
+          soldCount: product.soldCount || Math.floor(Math.random() * 100),
+        }));
+
+        return {
+          success: true,
+          data: transformedProducts,
+        };
+      } catch (error) {
+        console.error("Failed to fetch products by category ID:", error);
+        return {
+          success: false,
+          data: [],
+          message: "Failed to fetch products by category ID",
+        };
+      }
+    },
+    [categories]
+  );
 
   const getProductById = useCallback(async (productId: string) => {
     return await productService.getProductById(productId);
   }, []);
 
   const contextValue: ProductContextType = {
+    categories,
     getAllProducts,
     getAllProductsRoleBased,
+    getAllProductsByCategoryId,
     getProductById,
+    refreshCategories,
   };
 
   return (
@@ -127,7 +186,7 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
 
 export function useProducts() {
   const context = useContext(ProductContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useProducts must be used within a ProductProvider");
   }
   return context;

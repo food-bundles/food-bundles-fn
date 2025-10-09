@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import CartDrawer from "@/components/cartDrawer";
 import { useCartSummary } from "@/app/contexts/cart-context";
@@ -15,6 +15,13 @@ import {
   Eye,
   Check,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/app/contexts/auth-context";
 import { useCart } from "@/app/contexts/cart-context";
 import { useProductSection } from "@/hooks/useProductSection";
@@ -264,22 +271,50 @@ interface Product {
   isNew?: boolean;
   isFeatured?: boolean;
   discountPercent?: number;
+  createdAt: string;
 }
 
 interface Category {
+  id?: string;
   name: string;
   image: string;
   productCount?: number;
 }
 
+interface PaginationProps {
+  currentPage: number;
+  totalPages: number;
+  totalProducts?: number;
+  onPageChange: (page: number) => void;
+  isLoading?: boolean;
+}
+
+interface SearchProps {
+  query: string;
+  onSearch: (query: string) => void;
+}
+
+interface SortingProps {
+  sortBy: string;
+  onSortChange: (sortBy: string) => void;
+}
+
 interface ProductsSectionProps {
   products: Product[];
   categories: Category[];
+  onCategorySelect?: (categoryName: string) => void;
+  pagination?: PaginationProps;
+  search?: SearchProps;
+  sorting?: SortingProps;
 }
 
 export function ProductsSection({
   products,
   categories,
+  onCategorySelect,
+  pagination,
+  search,
+  sorting,
 }: ProductsSectionProps) {
   const { selectedCategory, setSelectedCategory } = useProductSection();
   const { user, isAuthenticated } = useAuth();
@@ -287,69 +322,58 @@ export function ProductsSection({
   const { totalItems, totalQuantity, totalAmount, isLoading } = useCartSummary();
   
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const searchQuery = search?.query || "";
+  const setSearchQuery = search?.onSearch || (() => {});
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
 
-  const getFilteredProducts = () => {
-    let filtered = products;
-
-    // Filter by category
-    if (
-      selectedCategory !== "All Categories" &&
-      selectedCategory !== "ALL CATEGORIES"
-    ) {
-      filtered = filtered.filter(
-        (product) =>
-          product.category.toLowerCase() === selectedCategory.toLowerCase()
-      );
-    }
-
-    if (searchQuery.trim()) {
-      filtered = filtered.filter(
-        (product) =>
-          product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          product.category.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    return filtered;
-  };
-
-  // Filter out categories with no products
-  const categoriesWithProducts = categories.filter((category) => {
-    const categoryProducts = products.filter(
-      (product) =>
-        product.category.toLowerCase() === category.name.toLowerCase()
-    );
-    return categoryProducts.length > 0;
-  });
-
-  const allCategoriesCount = products.length;
-
-  // Only show categories that have products, plus "All Categories" if there are any products
-  const categoriesWithAll =
-    allCategoriesCount > 0
-      ? [
-          {
-            name: "All Categories",
-            image: "",
-            productCount: allCategoriesCount,
-          },
-          ...categoriesWithProducts,
-        ]
-      : [];
-
-  const filteredProducts = getFilteredProducts();
-  const userName = user?.name;
-
+  // Debounce search to avoid API calls on every keystroke
   useEffect(() => {
-    if (filteredProducts.length === 0 && categoriesWithAll.length > 0) {
-      setSelectedCategory("All Categories");
-    }
-  }, [filteredProducts.length, categoriesWithAll.length, setSelectedCategory]);
+    const timer = setTimeout(() => {
+      if (localSearchQuery !== searchQuery) {
+        setSearchQuery(localSearchQuery);
+      }
+    }, 500);
 
-  if (products.length === 0) {
-    return null;
-  }
+    return () => clearTimeout(timer);
+  }, [localSearchQuery, searchQuery, setSearchQuery]);
+
+  // Update local search when external search changes
+  useEffect(() => {
+    setLocalSearchQuery(searchQuery);
+  }, [searchQuery]);
+
+  // Apply client-side sorting
+  const sortedProducts = useMemo(() => {
+    if (!sorting?.sortBy || sorting.sortBy === "random") return products;
+    
+    const sorted = [...products];
+    switch (sorting.sortBy) {
+      case "price_asc":
+        return sorted.sort((a, b) => a.price - b.price);
+      case "price_desc":
+        return sorted.sort((a, b) => b.price - a.price);
+      case "name_asc":
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+      case "name_desc":
+        return sorted.sort((a, b) => b.name.localeCompare(a.name));
+      case "newest":
+        return sorted.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      case "rating":
+        return sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      default:
+        return sorted;
+    }
+  }, [products, sorting?.sortBy]);
+
+  // Show all categories (backend handles filtering)
+  const categoriesWithAll = [
+    {
+      name: "All Categories",
+      image: "",
+    },
+    ...categories,
+  ];
+  const userName = user?.name;
 
   return (
     <section
@@ -377,8 +401,6 @@ export function ProductsSection({
                     {/* Profile Images */}
                     <div className="flex items-center -space-x-6">
                       {[
-                        "/imgs/restaurant1.jpg",
-                        "/imgs/restaurant1.jpg",
                         "/imgs/restaurant1.jpg",
                         "/imgs/restaurant1.jpg",
                         "/imgs/restaurant1.jpg",
@@ -439,7 +461,7 @@ export function ProductsSection({
                           {isLoading ? (
                             <Skeleton className="absolute -top-2 -right-2 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-green-600/60" />
                           ) : (
-                            totalQuantity > 0 && (
+                            totalQuantity >= 0 && (
                               <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                                 {totalItems > 99 ? "99+" : totalItems}
                               </span>
@@ -468,26 +490,92 @@ export function ProductsSection({
               </div>
             )}
 
-            {/* Header with Category Information */}
+            {/* Header with Search and Sort */}
             <div className="bg-transparent px-4 sm:px-8">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center justify-center gap-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
-                    <h1 className="text-[18px] px-0 py-4 font-semibold text-gray-900">
-                      {selectedCategory === "All Categories"
-                        ? "All Products"
-                        : selectedCategory.replace(/_/g, " ")}
-                    </h1>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-4">
+                {/* Category Filter Buttons */}
+                <div className="px-4 sm:px-8 pb-4">
+                  <div className="flex flex-wrap gap-2">
+                    {categoriesWithAll.map((category) => {
+                      const isSelected = selectedCategory === category.name;
+                      return (
+                        <button
+                          key={category.name}
+                          onClick={() => {
+                            setSelectedCategory(category.name);
+                            onCategorySelect?.(category.name);
+                          }}
+                          className={`px-4 py-[3px] rounded-full text-[13px] font-medium transition-all ${
+                            isSelected
+                              ? "bg-green-600 text-white shadow-md"
+                              : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300"
+                          }`}
+                        >
+                          {category.name === "All Categories"
+                            ? `All`
+                            : `${category.name.replace(/_/g, " ")}`}
+                        </button>
+                      );
+                    })}
                   </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                  {/* Search Input */}
+                  {search && (
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Search products by name or price..."
+                        value={localSearchQuery}
+                        onChange={(e) => setLocalSearchQuery(e.target.value)}
+                        className="w-full sm:w-64 px-4 py-2 placeholder:text-[12px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                      />
+                    </div>
+                  )}
+
+                  {/* Sort Dropdown */}
+                  {sorting && (
+                    <div className="lg:w-1/2 sm:w-auto">
+                      <Select
+                        value={sorting.sortBy}
+                        onValueChange={(value) => sorting.onSortChange(value)}
+                      >
+                        <SelectTrigger
+                          className="
+          w-full sm:w-48 
+          border border-gray-300 
+          focus:ring-2 focus:ring-green-500 focus:border-green-500
+          rounded-lg text-[12px] sm:text-[13px]
+          bg-white
+        "
+                        >
+                          <SelectValue placeholder="Sort by" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white">
+                          <SelectItem value="random">Random Order</SelectItem>
+                          <SelectItem value="newest">Newest First</SelectItem>
+                          <SelectItem value="price_asc">Low to High</SelectItem>
+                          <SelectItem value="price_desc">
+                            High to Low
+                          </SelectItem>
+                          <SelectItem value="name_asc">A to Z</SelectItem>
+                          <SelectItem value="name_desc">Z to A</SelectItem>
+                          <SelectItem value="rating">Top Rated</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
+
             {/* Products Grid */}
             <div className="px-4 sm:px-6 overflow-y-auto">
               <div className="mb-12">
-                {filteredProducts.length > 0 ? (
+                {sortedProducts.length > 0 ? (
                   <div className="grid gap-4 justify-items-center grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-                    {filteredProducts.map((product) => (
+                    {sortedProducts.map((product) => (
                       <ProductCard
                         key={product.id}
                         id={product.id}
@@ -533,7 +621,10 @@ export function ProductsSection({
                     </p>
                     {searchQuery && (
                       <Button
-                        onClick={() => setSearchQuery("")}
+                        onClick={() => {
+                          setSearchQuery("");
+                          setLocalSearchQuery("");
+                        }}
                         variant="outline"
                         className="mt-4"
                       >
@@ -548,6 +639,113 @@ export function ProductsSection({
                         View All Products
                       </button>
                     )}
+                  </div>
+                )}
+
+                {/* Pagination */}
+                {pagination && pagination.totalPages > 1 && (
+                  <div className="flex flex-col sm:flex-row items-center justify-end gap-4 mt-8 ">
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() =>
+                          pagination.onPageChange(pagination.currentPage - 1)
+                        }
+                        disabled={
+                          pagination.currentPage === 1 || pagination.isLoading
+                        }
+                        className={`p-1 rounded ${
+                          pagination.currentPage === 1 || pagination.isLoading
+                            ? "text-gray-400 cursor-not-allowed"
+                            : "text-gray-900 hover:bg-gray-100"
+                        }`}
+                        title="Previous Page"
+                      >
+                        <svg
+                          className="h-6 w-6"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 19l-7-7 7-7"
+                          />
+                        </svg>
+                      </button>
+
+                      {/* Page Numbers */}
+                      {Array.from(
+                        { length: Math.min(pagination.totalPages, 5) },
+                        (_, i) => {
+                          let pageNumber;
+                          if (pagination.totalPages <= 5) {
+                            pageNumber = i + 1;
+                          } else {
+                            const current = pagination.currentPage;
+                            const total = pagination.totalPages;
+
+                            if (current <= 3) {
+                              pageNumber = i + 1;
+                            } else if (current >= total - 2) {
+                              pageNumber = total - 4 + i;
+                            } else {
+                              pageNumber = current - 2 + i;
+                            }
+                          }
+
+                          return (
+                            <button
+                              key={pageNumber}
+                              onClick={() =>
+                                pagination.onPageChange(pageNumber)
+                              }
+                              disabled={pagination.isLoading}
+                              className={`px-3 py-1 rounded text-sm ${
+                                pageNumber === pagination.currentPage
+                                  ? "bg-green-700 hover:bg-green-800 text-white"
+                                  : "bg-white hover:bg-gray-100 text-gray-900 border border-gray-300"
+                              }`}
+                            >
+                              {pageNumber}
+                            </button>
+                          );
+                        }
+                      )}
+
+                      {/* Next Page Button */}
+                      <button
+                        onClick={() =>
+                          pagination.onPageChange(pagination.currentPage + 1)
+                        }
+                        disabled={
+                          pagination.currentPage === pagination.totalPages ||
+                          pagination.isLoading
+                        }
+                        className={`p-1 rounded ${
+                          pagination.currentPage === pagination.totalPages ||
+                          pagination.isLoading
+                            ? "text-gray-400 cursor-not-allowed"
+                            : "text-gray-900 hover:bg-gray-100"
+                        }`}
+                        title="Next Page"
+                      >
+                        <svg
+                          className="h-6 w-6"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

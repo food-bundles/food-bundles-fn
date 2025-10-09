@@ -25,7 +25,7 @@ export default function SubscribePage() {
               <Badge className="bg-green-100 text-green-800 mb-2 rounded">
                 Basic Plan
               </Badge>
-              <div className="text-xl font-bold text-black">5,000 Rwf</div>
+              <div className="text-xl font-bold text-black">20,000 Rwf</div>
               <div className="text-gray-800">per month</div>
             </div>
             <div className="space-y-3 mb-1">
@@ -66,7 +66,7 @@ export default function SubscribePage() {
               <Badge className="bg-yellow-100 text-yellow-800 mb-2 rounded">
                 Premium Plan
               </Badge>
-              <div className="text-xl font-bold text-black">10,000 Rwf</div>
+              <div className="text-xl font-bold text-black">50,000 Rwf</div>
               <div className="text-gray-800">per month</div>
             </div>
             <div className="space-y-3 mb-1">
@@ -86,6 +86,12 @@ export default function SubscribePage() {
                 <p className="text-green-500 text-[16px] mr-2">🗸</p>
                 <span className="text-gray-800 text-[13px]">
                   Advertising Showcase your products to reach more guests.
+                </span>
+              </div>
+              <div className="flex items-start space-x-2">
+                <p className="text-green-500 text-[16px] mr-2">🗸</p>
+                <span className="text-gray-800 text-[13px]">
+                Make Orders on Credit,
                 </span>
               </div>
             </div>

@@ -4,8 +4,6 @@
 
 import { Key, useState, useMemo, useEffect } from "react";
 import {
-  TrendingUp,
-  BarChart3,
   Truck,
   Home,
   ShoppingBag,
@@ -13,7 +11,6 @@ import {
   Package,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -23,6 +20,8 @@ import {
 } from "@/components/ui/select";
 import Image from "next/image";
 import { Order } from "@/lib/types";
+import { MovingBorderCircle } from "@/components/ui/moving-border-circle";
+import { Spinner } from "@/components/ui/shadcn-io/spinner";
 
 type DashboardData = {
   date: string;
@@ -73,11 +72,11 @@ type Props = {
   data: DashboardData;
   onReorder?: (orderId: string) => void;
   reorderingId?: string | null;
+  loading?: boolean;
 };
 
-export function DashboardOverview({ data, onReorder, reorderingId }: Props) {
+export function DashboardOverview({ data, onReorder, reorderingId, loading }: Props) {
   const [chartPeriod, setChartPeriod] = useState<"week" | "month">("week");
-  const [chartType, setChartType] = useState<"line" | "bar">("line");
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [orderToTrack, setOrderToTrack] = useState<any>(null);
 
@@ -231,6 +230,19 @@ export function DashboardOverview({ data, onReorder, reorderingId }: Props) {
 
   // Dynamically generate order tracking data based on actual order
   const orderTrackingData = useMemo(() => {
+    if (loading) {
+      return {
+        currentStep: 0,
+        steps: allOrderSteps.map((step) => ({
+          ...step,
+          completed: false,
+          time: "",
+        })),
+        orderNumber: "Loading...",
+        isLoading: true,
+      };
+    }
+    
     if (!orderToTrack) {
       return {
         currentStep: 0,
@@ -264,12 +276,6 @@ export function DashboardOverview({ data, onReorder, reorderingId }: Props) {
         label: step.label,
         icon: step.icon,
         completed: isCompleted,
-        time: isCompleted
-          ? new Date(orderToTrack.createdAt).toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : `Expected`,
         status: Array.isArray(step.status) ? step.status[0] : step.status,
       };
     });
@@ -287,9 +293,9 @@ export function DashboardOverview({ data, onReorder, reorderingId }: Props) {
       ...data.salesChart.previousPeriod.map((d) => d.sales)
     );
 
-    const chartWidth = 600;
-    const chartHeight = 200;
-    const padding = 40;
+    const chartWidth = 800;
+    const chartHeight = 240;
+    const padding = 50;
 
     const getX = (index: number) =>
       padding +
@@ -299,12 +305,13 @@ export function DashboardOverview({ data, onReorder, reorderingId }: Props) {
       chartHeight - padding - (value / maxValue) * (chartHeight - 2 * padding);
 
     return (
-      <div className="w-full h-64 relative">
+      <div className="w-full relative">
         <svg
           width="100%"
           height="100%"
           viewBox={`0 0 ${chartWidth} ${chartHeight + 60}`}
           className="overflow-visible"
+          preserveAspectRatio="xMidYMid meet"
         >
           <defs>
             <pattern
@@ -402,181 +409,19 @@ export function DashboardOverview({ data, onReorder, reorderingId }: Props) {
         </svg>
 
         <div className="absolute left-2 top-1/2 transform -rotate-90 -translate-y-1/2 text-xs text-gray-500">
-          Units
+          Items
         </div>
 
-        <div className="flex items-center justify-center space-x-6 mt-2">
+        <div className="flex items-center justify-center flex-wrap space-x-4 sm:space-x-6 mt-2 gap-y-2">
           <div className="flex items-center space-x-2">
             <div className="w-3 h-0.5 bg-blue-600"></div>
-            <span className="text-sm text-gray-700">
+            <span className="text-xs sm:text-sm text-gray-700">
               Current {chartPeriod === "week" ? "Week" : "Month"}
             </span>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-3 h-0.5 bg-blue-300"></div>
-            <span className="text-sm text-gray-400">
-              Previous {chartPeriod === "week" ? "Week" : "Month"}
-            </span>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const BarChart = () => {
-    const maxValue = Math.max(
-      ...data.salesChart.currentPeriod.map((d) => d.sales),
-      ...data.salesChart.previousPeriod.map((d) => d.sales)
-    );
-
-    const chartWidth = 600;
-    const chartHeight = 240;
-    const padding = 60;
-    const barWidth = 24;
-    const barSpacing = 8;
-    const groupSpacing = 40;
-
-    const getX = (index: number) =>
-      padding + index * (groupSpacing + barWidth * 2 + barSpacing);
-    const getBarHeight = (value: number) =>
-      (value / maxValue) * (chartHeight - 2 * padding);
-
-    return (
-      <div className="w-full h-64 relative">
-        <svg
-          width="100%"
-          height="100%"
-          viewBox={`0 0 ${chartWidth} ${chartHeight + 20}`}
-          className="overflow-visible"
-        >
-          <defs>
-            <pattern
-              id="grid"
-              width="100"
-              height="40"
-              patternUnits="userSpaceOnUse"
-            >
-              <path
-                d="M 100 0 L 0 0 0 40"
-                fill="none"
-                stroke="#f3f4f6"
-                strokeWidth="1"
-                strokeDasharray="2,2"
-              />
-            </pattern>
-          </defs>
-
-          {[0, 9, 18, 27, 36].map((value) => (
-            <g key={value}>
-              <text
-                x="35"
-                y={chartHeight - padding - getBarHeight(value) + 5}
-                className="text-xs fill-gray-500"
-                textAnchor="end"
-              >
-                {value}
-              </text>
-              <line
-                x1={padding}
-                y1={chartHeight - padding - getBarHeight(value)}
-                x2={chartWidth - padding}
-                y2={chartHeight - padding - getBarHeight(value)}
-                stroke="#f3f4f6"
-                strokeWidth="1"
-                strokeDasharray="2,2"
-              />
-            </g>
-          ))}
-
-          {data.salesChart.currentPeriod.map((d, i) => {
-            const x = getX(i);
-            const currentHeight = getBarHeight(d.sales);
-            const previousHeight = getBarHeight(
-              data.salesChart.previousPeriod[i].sales
-            );
-
-            return (
-              <g key={d.day}>
-                <rect
-                  x={x}
-                  y={chartHeight - padding - currentHeight}
-                  width={barWidth}
-                  height={currentHeight}
-                  fill="#1e40af"
-                  rx="2"
-                />
-
-                <rect
-                  x={x + barWidth + barSpacing}
-                  y={chartHeight - padding - previousHeight}
-                  width={barWidth}
-                  height={previousHeight}
-                  fill="#93c5fd"
-                  rx="2"
-                />
-
-                <text
-                  x={x + barWidth / 2}
-                  y={chartHeight - padding - currentHeight - 8}
-                  className="text-xs fill-gray-700 font-medium"
-                  textAnchor="middle"
-                >
-                  {d.sales}
-                </text>
-                <text
-                  x={x + barWidth + barSpacing + barWidth / 2}
-                  y={chartHeight - padding - previousHeight - 8}
-                  className="text-xs fill-gray-500"
-                  textAnchor="middle"
-                >
-                  {data.salesChart.previousPeriod[i].sales}
-                </text>
-
-                <text
-                  x={x + barWidth + barSpacing / 2}
-                  y={chartHeight - padding + 20}
-                  className="text-xs fill-gray-600"
-                  textAnchor="middle"
-                >
-                  {d.day}
-                </text>
-              </g>
-            );
-          })}
-
-          <line
-            x1={padding}
-            y1={chartHeight - padding}
-            x2={chartWidth - padding}
-            y2={chartHeight - padding}
-            stroke="#e5e7eb"
-            strokeWidth="1"
-          />
-
-          <line
-            x1={padding}
-            y1={padding}
-            x2={padding}
-            y2={chartHeight - padding}
-            stroke="#e5e7eb"
-            strokeWidth="1"
-          />
-        </svg>
-
-        <div className="absolute left-2 top-1/2 transform -rotate-90 -translate-y-1/2 text-xs text-gray-500">
-          Units
-        </div>
-
-        <div className="flex items-center justify-center space-x-6 mt-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-blue-600 rounded-sm"></div>
-            <span className="text-sm text-gray-700">
-              Current {chartPeriod === "week" ? "Week" : "Month"}
-            </span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-blue-300 rounded-sm"></div>
-            <span className="text-sm text-gray-400">
+            <span className="text-xs sm:text-sm text-gray-400">
               Previous {chartPeriod === "week" ? "Week" : "Month"}
             </span>
           </div>
@@ -588,109 +433,114 @@ export function DashboardOverview({ data, onReorder, reorderingId }: Props) {
   return (
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row gap-6 w-full">
-        <div className="w-full lg:w-7/10 space-y-6">
-          <div className="w-full border-b border-gray-200 pb-2 flex flex-col lg:flex-row lg:items-center gap-10">
-            <div className="px-4">
-              <h3 className="text-[14px] font-medium">Track Order</h3>
-              <p className="text-[12px] text-green-500">
-                {orderTrackingData.orderNumber}
-              </p>
+        <div className="w-full lg:w-7/10 space-y-0">
+          {/* Order Tracking */}
+          
+          <div className="lg:flex md:block justify-between w-full bg-white rounded-lg shadow-md p-3 sm:p-4 border border-gray-100 mb-4">
+            <></>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h2 className="text-base sm:text-lg font-semibold text-gray-800">
+                  Track Order
+                </h2>
+                <p className="text-xs sm:text-sm text-green-600">
+                  #{orderTrackingData.orderNumber}
+                </p>
+              </div>
             </div>
-            <div className="px-4">
-              {isFailedOrder ? (
-                <div className="">
-                  <h4 className="text-[14px] text-red-700 ">Order Failed</h4>
-                  <p className="text-[12px] text-gray-600 ">
-                    This order failed, please Reorder.
-                  </p>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 overflow-x-auto">
-                  {orderTrackingData.steps.map((step, index) => {
-                    const Icon = step.icon;
-                    const isCompleted = step.completed;
-                    const isCurrent = index === orderTrackingData.currentStep;
+            {loading ? (
+              <div className="flex items-center justify-center">
+                <Spinner />
+              </div>
+            ) : ( isFailedOrder ? (
+              <div className="flex items-center justify-between gap-1 xs:gap-2 sm:gap-3 md:gap-6 py-2 lg:py-4 text-center">
+                <p className="text-[12px] text-red-700">
+                  Your order has failed. Please reorder.
+                </p>
+                <button
+                  onClick={() => {
+                    if (onReorder && orderToTrack) {
+                      const orderId = (orderToTrack as any).originalData?.id || orderToTrack.id;
+                      onReorder(orderId);
+                    }
+                  }}
+                  disabled={!onReorder || !orderToTrack || (reorderingId === ((orderToTrack as any)?.originalData?.id || orderToTrack?.id))}
+                  className={`flex items-center gap-1 text-[14px] px-3  border border-green-500 rounded-full transition-all ${
+                    reorderingId === ((orderToTrack as any)?.originalData?.id || orderToTrack?.id)
+                      ? "bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed"
+                      : "text-green-500 hover:bg-green-500 hover:text-white hover:shadow-md cursor-pointer"
+                  }`}
+                >
+                  {reorderingId === ((orderToTrack as any)?.originalData?.id || orderToTrack?.id) ? (
+                    <>
+                      <Spinner />
+                    </>
+                  ) : (
+                    "Reorder"
+                  )}
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-1 xs:gap-2 sm:gap-3 md:gap-6 py-2 w-full">
+                {orderTrackingData.steps.map((step, index) => {
+                  const Icon = step.icon;
+                  const isCompleted = step.completed;
+                  const isCurrent = index === orderTrackingData.currentStep;
+                  const isNext = index === orderTrackingData.currentStep + 1;
 
-                    return (
-                      <div
-                        key={index}
-                        className="flex flex-col items-center relative z-10"
-                      >
-                        <div className="relative">
+                  return (
+                    <div
+                      key={index}
+                      className="flex flex-col items-center flex-1"
+                    >
+                      <div className="relative flex items-center justify-center">
+                        {isNext ? (
+                          <MovingBorderCircle
+                            duration={2000}
+                            borderClassName="h-1.5 w-1.5 bg-gradient-to-r from-green-400 to-green-600"
+                          >
+                            <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center bg-white text-green-400 border-2 border-green-300 transition-all">
+                              <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                            </div>
+                          </MovingBorderCircle>
+                        ) : (
                           <div
-                            className={`w-12 h-12 rounded-full flex items-center justify-center relative z-10 transition-all duration-300 ${
+                            className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all ${
                               isCompleted
-                                ? "border-2 border-green-500 bg-green-700 text-white shadow-md"
+                                ? "bg-green-500 text-white shadow-md border-2 border-green-600"
                                 : isCurrent
-                                ? "border-2 border-green-500 bg-white text-green-600 animate-pulse shadow-md"
-                                : "border-2 border-gray-200 bg-white text-gray-400 shadow-md"
+                                ? "bg-green-100 text-green-600 border-2 border-green-500"
+                                : "bg-gray-100 text-gray-400 border-2 border-gray-300"
                             }`}
                           >
-                            <Icon className="w-6 h-6" />
+                            <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                           </div>
-                        </div>
-
-                        <div
-                          className={`text-center mt-3 px-3 rounded-full border transition-all duration-300 ${
-                            isCompleted
-                              ? "border-2 border-green-500 shadow-md bg-white"
-                              : isCurrent
-                              ? "border-2 border-green-500 bg-white animate-pulse shadow-md"
-                              : "border-2 border-gray-200 bg-white shadow-md"
-                          }`}
-                        >
-                          <p
-                            className={`text-[13px] font-medium ${
-                              isCompleted
-                                ? "text-green-600"
-                                : isCurrent
-                                ? "text-green-600"
-                                : "text-gray-400"
-                            }`}
-                          >
-                            {step.label}
-                          </p>
-                        </div>
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                      <p
+                        className={`text-[9px] xs:text-[10px] sm:text-xs mt-1 sm:mt-2 font-medium text-center leading-tight ${
+                          isCompleted || isCurrent
+                            ? "text-green-600"
+                            : isNext
+                            ? "text-green-400"
+                            : "text-gray-400"
+                        }`}
+                      >
+                        {step.label}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
           </div>
 
-          <Card className="w-full border-none shadow-none">
-            <CardHeader className="flex flex-row items-center justify-between">
+          <Card className="w-full border shadow-none">
+            <CardHeader className="flex  flex-row items-center justify-between">
               <div className="flex items-center space-x-3">
                 <CardTitle className="text-[14px] font-medium">
-                  Products Sold by Restaurant
+                  Chart Orders
                 </CardTitle>
-                <div className="flex items-center space-x-2 bg-white shadow rounded p-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setChartType("line")}
-                    className={`px-3 text-xs transition-all ${
-                      chartType === "line"
-                        ? "bg-white text-green-600 shadow-sm hover:bg-white"
-                        : "text-gray-600 hover:text-gray-800 hover:bg-gray-50"
-                    }`}
-                  >
-                    <TrendingUp className="h-2 w-2 mr-1" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setChartType("bar")}
-                    className={`px-3 text-xs transition-all ${
-                      chartType === "bar"
-                        ? "bg-white text-green-600 shadow-sm hover:bg-white"
-                        : "text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    <BarChart3 className="h-2 w-2 mr-1" />
-                  </Button>
-                </div>
               </div>
               <Select
                 value={chartPeriod}
@@ -712,21 +562,7 @@ export function DashboardOverview({ data, onReorder, reorderingId }: Props) {
               </Select>
             </CardHeader>
             <CardContent>
-              {chartType === "line" ? <LineChart /> : <BarChart />}
-              <div className="flex justify-between text-sm text-gray-900 mt-6 pt-5">
-                <span>
-                  Min Products Sold:{" "}
-                  <strong>{data.salesChart.stats.min} units</strong>
-                </span>
-                <span>
-                  Avg Products Sold:{" "}
-                  <strong>{data.salesChart.stats.avg} units</strong>
-                </span>
-                <span>
-                  Max Products Sold:{" "}
-                  <strong>{data.salesChart.stats.max} units</strong>
-                </span>
-              </div>
+              <LineChart />
             </CardContent>
           </Card>
         </div>
@@ -735,31 +571,39 @@ export function DashboardOverview({ data, onReorder, reorderingId }: Props) {
 
         <div className="w-full lg:w-3/10 space-y-6">
           <div className="px-2 w-full">
-            <div>
-              <div className="flex space-y-6">
-                <div className="flex-1">
-                  <p className="text-[14px] text-gray-600">Total Orders</p>
-                  <p className="text-[14px] font-bold text-gray-900">
-                    {data.metrics.totalOrders.current}
-                  </p>
-                </div>
-                <div className="flex-1">
-                  <p className="text-[12px] text-gray-600">
-                    Amount you would have paid in fees
-                  </p>
-                  <p className="text-[12px] font-bold text-green-600">
-                    RWF 2,000
-                  </p>
-                </div>
+            {/* Top metrics row */}
+            <div className="flex gap-4">
+              {/* Total Orders card */}
+              <div className="flex-1 border border-orange-200 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
+                <p className="text-[13px] text-gray-600 font-medium">
+                  Total Orders
+                </p>
+                <p className="text-lg font-semibold text-yellow-500 mt-1">
+                  {data.metrics.totalOrders.current}
+                </p>
+              </div>
+
+              {/* Amount you would have paid in fees card */}
+              <div className="flex-1 border border-green-500 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
+                <p className="text-[13px] text-gray-600 font-medium">
+                  Amount you would have paid in fees
+                </p>
+                <p className="text-lg font-semibold text-green-600 mt-1">
+                  RWF 2,000
+                </p>
               </div>
             </div>
-            <p className="text-[12px] text-gray-900 mt-1">
-              Compared to{" "}
-              <span className="font-bold text-green-500">
-                {data.metrics.totalOrders.previous}
-              </span>{" "}
-              {data.metrics.totalOrders.period}
-            </p>
+
+            {/* Comparison section */}
+            <div className="mt-3  pt-2 text-center">
+              <p className="text-sm text-gray-800">
+                Compared to{" "}
+                <span className="font-bold text-green-500">
+                  {data.metrics.totalOrders.previous}
+                </span>{" "}
+                {data.metrics.totalOrders.period}
+              </p>
+            </div>
           </div>
 
           <div className="w-full px-2">
@@ -782,7 +626,7 @@ export function DashboardOverview({ data, onReorder, reorderingId }: Props) {
                     onClick={() => {
                       setSelectedOrderId(originalOrderId || order.id);
                     }}
-                    className={`flex items-start space-x-3 p-4 rounded cursor-pointer transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg ${
+                    className={`flex items-start space-x-3 p-4 rounded cursor-pointer transition-all duration-300 transform hover:scale-[1.01] hover:shadow-md ${
                       isSelected
                         ? "border-2 border-green-500 bg-green-50 shadow-md"
                         : "border border-gray-200 hover:border-green-300 bg-white"
@@ -848,9 +692,11 @@ export function DashboardOverview({ data, onReorder, reorderingId }: Props) {
                           }`}
                           title={isReordering ? "Reordering..." : "Reorder"}
                         >
-                          <p className="text-[10px] font-medium">
-                            {isReordering ? "..." : "Reorder"}
-                          </p>
+                          {isReordering ? (
+                            <Spinner variant="circle" size={10} />
+                          ) : (
+                            <p className="text-[10px] font-medium">Reorder</p>
+                          )}
                         </button>
                       </div>
 
@@ -865,7 +711,7 @@ export function DashboardOverview({ data, onReorder, reorderingId }: Props) {
                           RWF {order.total.toFixed(2)}
                         </p>
                         <p className="text-[10px] text-gray-900">
-                          {order.timeAgo}
+                          {order.time}
                         </p>
                       </div>
                     </div>

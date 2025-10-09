@@ -4,7 +4,6 @@
 
 import { useOrders } from "@/app/contexts/orderContext";
 import { useEffect, useState, useCallback } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { DashboardOverview } from "./_components/dashboard-overview";
 import { toast } from "sonner";
 
@@ -12,11 +11,10 @@ export default function RestaurantDashboard() {
   const {
     orders,
     statistics,
-    loading,
-    statsLoading,
     refreshOrders,
     refreshStatistics,
     reorderOrder,
+    loading,
   } = useOrders();
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [reorderingId, setReorderingId] = useState<string | null>(null);
@@ -36,39 +34,31 @@ export default function RestaurantDashboard() {
   console.log("[Dashboard] Orders:", orders);
   console.log("[Dashboard] Statistics |||:", statistics);
 
-  const handleReorder = useCallback(async (orderId: string) => {
-    try {
-      console.log("[Dashboard] Reorder clicked for:", orderId);
-      setReorderingId(orderId);
-      const response = await reorderOrder(orderId);
+  const handleReorder = useCallback(
+    async (orderId: string) => {
+      try {
+        console.log("[Dashboard] Reorder clicked for:", orderId);
+        setReorderingId(orderId);
+        const response = await reorderOrder(orderId);
 
-      if (response.success) {
-        toast.success("Order reordered successfully!");
-      } else {
-        toast.error(response.message || "Failed to reorder");
+        if (response.success) {
+          toast.success("Order reordered successfully!");
+        } else {
+          toast.error(response.message || "Failed to reorder");
+        }
+      } catch (err: any) {
+        console.error("[Dashboard] Reorder error:", err);
+        toast.error(err.response?.data?.message || "Failed to reorder order");
+      } finally {
+        setTimeout(() => {
+          setReorderingId(null);
+        }, 500);
       }
-    } catch (err: any) {
-      console.error("[Dashboard] Reorder error:", err);
-      toast.error(err.response?.data?.message || "Failed to reorder order");
-    } finally {
-      setTimeout(() => {
-        setReorderingId(null);
-      }, 500);
-    }
-  }, [reorderOrder]);
+    },
+    [reorderOrder]
+  );
 
-  if (loading || statsLoading) {
-    return (
-      <div className="min-h-screen bg-white">
-        <main className="container mx-auto px-6 py-8">
-          <div className="space-y-6">
-            <Skeleton className="h-48 w-full" />
-            <Skeleton className="h-64 w-full" />
-          </div>
-        </main>
-      </div>
-    );
-  }
+
 
   const dashboardData = {
     date: new Date().toLocaleDateString("en-US", {
@@ -170,7 +160,16 @@ export default function RestaurantDashboard() {
           [],
         total: order.totalAmount || 0,
         status: statusMap[order.status] || order.status,
-        timeAgo: new Date(order.createdAt).toLocaleDateString(),
+        time: new Date(order.createdAt).toLocaleString("en-US", {
+          weekday: "short",
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        }),
+
         originalData: order,
       };
     }),
@@ -187,6 +186,7 @@ export default function RestaurantDashboard() {
           data={dashboardData}
           onReorder={handleReorder}
           reorderingId={reorderingId}
+          loading={loading}
         />
       </main>
     </div>
