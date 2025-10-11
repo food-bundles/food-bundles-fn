@@ -79,6 +79,7 @@ export function Header() {
 
   const navigationItems = [
     { label: "Home", href: "#home", id: "home" },
+    { label: "Showcase", href: "#showcase", id: "showcase" },
     { label: "Ask help", href: "#ask-help", id: "ask-help" },
   ];
 
