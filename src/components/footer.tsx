@@ -1,9 +1,9 @@
 import Link from "next/link";
-import {  Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
+import { Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="bg-green-700 text-white py-12 pt-2  ">
+    <footer className="bg-green-700 text-white py-6">
       <div className="max-w-7xl mx-auto px-4 ">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* FoodBundle */}
@@ -19,9 +19,10 @@ export function Footer() {
             </p>
           </div>
 
-          {/* Quick Links */}
           <div className="space-y-4 pt-0">
-            <h3 className="text-[14px] font-semibold text-white">Quick Links</h3>
+            <h3 className="text-[14px] font-semibold text-white">
+              Quick Links
+            </h3>
             <div className="space-y-2">
               <Link
                 href="/farmer"
@@ -38,7 +39,6 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Support */}
           <div className="space-y-4">
             <h3 className="text-[14px] font-semibold text-white">Support</h3>
             <div className="space-y-2">
@@ -57,7 +57,6 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Contact Us */}
           <div className="space-y-4">
             <h3 className="text-[14px] font-semibold text-white">Contact Us</h3>
             <div className="space-y-2 text-[13px] text-green-200">
@@ -67,7 +66,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-green-600 mt-4 pt-4 md:pt-0 flex flex-col md:flex-row justify-between items-center">
+        <div className="border-t border-green-600 mt-2 pt-3  flex flex-col md:flex-row justify-between items-center">
           <p className="text-green-200 text-[13px] ">
             © 2025 FoodBundle. All rights reserved.
           </p>

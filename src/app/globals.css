@@ -126,31 +126,36 @@
   .nav-link ul {
     font-family: "Courier New", Courier, monospace;
   }
-  
+
   @layer utilities {
-  .scrollbar-hide {
-    -ms-overflow-style: none;  
-    scrollbar-width: none;  
-  }
-  .scrollbar-hide::-webkit-scrollbar { 
-    display: none;  
-  }
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
   }
 
   @keyframes slide-x {
-  0%, 100% { transform: translateX(0); }
-  50% { transform: translateX(10px); } /* adjust distance */
-}
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    50% {
+      transform: translateX(10px);
+    } /* adjust distance */
+  }
 
-.animate-slide-x {
-  animation: slide-x 1s ease-in-out infinite; /* fast and smooth */
-}
+  .animate-slide-x {
+    animation: slide-x 1s ease-in-out infinite; /* fast and smooth */
+  }
 }
 
 .toast-guest {
-  background-color: #fef9c3; 
+  background-color: #fef9c3;
   border-left: 6px solid #facc15;
-  color: #1f2937; 
+  color: #1f2937;
   font-size: 14px;
   font-weight: 500;
   padding: 12px;
@@ -161,6 +166,80 @@
 }
 
 .toast-guest svg {
-  color: #ca8a04; 
+  color: #ca8a04;
   flex-shrink: 0;
+}
+
+/* === Animated Dots Background === */
+.dots-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Small Dots Layer */
+.dots-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.25;
+  background-image: radial-gradient(
+    circle,
+    rgba(21, 128, 61, 0.9) 1.2px,
+    transparent 1.2px
+  );
+  background-size: 30px 30px;
+  animation: dotsMoveSmall 12s ease-in-out infinite;
+}
+
+/* Large Dots Layer */
+.dots-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.15;
+  background-image: radial-gradient(
+    circle,
+    rgba(248, 129, 2, 0.7) 2.5px,
+    transparent 2.5px
+  );
+  background-size: 100px 100px;
+  background-position: 25px 25px;
+  animation: dotsMoveBig 18s linear infinite reverse;
+}
+
+@keyframes dotsMoveSmall {
+  0%,
+  100% {
+    background-position: 0 0;
+  }
+  25% {
+    background-position: 10px 0;
+  }
+  50% {
+    background-position: 10px 10px;
+  }
+  75% {
+    background-position: 0 10px;
+  }
+}
+
+@keyframes dotsMoveBig {
+  0% {
+    background-position: 25px 25px;
+  }
+  25% {
+    background-position: 45px 25px;
+  }
+  50% {
+    background-position: 45px 45px;
+  }
+  75% {
+    background-position: 25px 45px;
+  }
+  100% {
+    background-position: 25px 25px;
+  }
 }

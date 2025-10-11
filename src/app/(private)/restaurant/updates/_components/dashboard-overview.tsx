@@ -287,148 +287,194 @@ export function DashboardOverview({ data, onReorder, reorderingId, loading }: Pr
     };
   }, [orderToTrack]);
 
-  const LineChart = () => {
-    const maxValue = Math.max(
-      ...data.salesChart.currentPeriod.map((d) => d.sales),
-      ...data.salesChart.previousPeriod.map((d) => d.sales)
-    );
+const LineChart = () => {
+  const maxValue = Math.max(
+    ...data.salesChart.currentPeriod.map((d) => d.sales),
+    ...data.salesChart.previousPeriod.map((d) => d.sales)
+  );
 
-    const chartWidth = 800;
-    const chartHeight = 240;
-    const padding = 50;
+  const chartWidth = 800;
+  const chartHeight = 240;
+  const padding = 50;
 
-    const getX = (index: number) =>
-      padding +
-      (index * (chartWidth - 2 * padding)) /
-        (data.salesChart.currentPeriod.length - 1);
-    const getY = (value: number) =>
-      chartHeight - padding - (value / maxValue) * (chartHeight - 2 * padding);
+  const getX = (index: number) =>
+    padding +
+    (index * (chartWidth - 2 * padding)) /
+      (data.salesChart.currentPeriod.length - 1);
+  const getY = (value: number) =>
+    chartHeight - padding - (value / maxValue) * (chartHeight - 2 * padding);
 
-    return (
-      <div className="w-full relative">
-        <svg
-          width="100%"
-          height="100%"
-          viewBox={`0 0 ${chartWidth} ${chartHeight + 60}`}
-          className="overflow-visible"
-          preserveAspectRatio="xMidYMid meet"
-        >
-          <defs>
-            <pattern
-              id="grid"
-              width="100"
-              height="40"
-              patternUnits="userSpaceOnUse"
-            >
-              <path
-                d="M 100 0 L 0 0 0 40"
-                fill="none"
-                stroke="#f3f4f6"
-                strokeWidth="1"
-                strokeDasharray="2,2"
-              />
-            </pattern>
-          </defs>
-          <rect width="100%" height={chartHeight} fill="url(#grid)" />
-
-          {[0, 9, 18, 27, 36].map((value) => (
-            <g key={value}>
-              <text
-                x="20"
-                y={getY(value) + 5}
-                className="text-xs fill-gray-500"
-                textAnchor="end"
-              >
-                {value}
-              </text>
-              <line
-                x1={padding}
-                y1={getY(value)}
-                x2={chartWidth - padding}
-                y2={getY(value)}
-                stroke="#f3f4f6"
-                strokeWidth="1"
-                strokeDasharray="2,2"
-              />
-            </g>
-          ))}
-
-          <polyline
-            fill="none"
-            stroke="#1e40af"
-            strokeWidth="2"
-            points={data.salesChart.currentPeriod
-              .map((d, i) => `${getX(i)},${getY(d.sales)}`)
-              .join(" ")}
-          />
-
-          {data.salesChart.currentPeriod.map((d, i) => (
-            <circle
-              key={`current-${i}`}
-              cx={getX(i)}
-              cy={getY(d.sales)}
-              r="4"
-              fill="#1e40af"
-              stroke="white"
-              strokeWidth="2"
+  return (
+    <div className="w-full relative">
+      <svg
+        width="100%"
+        height="100%"
+        viewBox={`0 0 ${chartWidth} ${chartHeight + 60}`}
+        className="overflow-visible"
+        preserveAspectRatio="xMidYMid meet"
+      >
+        <defs>
+          <pattern
+            id="grid"
+            width="100"
+            height="40"
+            patternUnits="userSpaceOnUse"
+          >
+            <path
+              d="M 100 0 L 0 0 0 40"
+              fill="none"
+              stroke="#f3f4f6"
+              strokeWidth="1"
+              strokeDasharray="2,2"
             />
-          ))}
-
-          <polyline
-            fill="none"
-            stroke="#93c5fd"
-            strokeWidth="2"
-            points={data.salesChart.previousPeriod
-              .map((d, i) => `${getX(i)},${getY(d.sales)}`)
-              .join(" ")}
-          />
-
-          {data.salesChart.previousPeriod.map((d, i) => (
-            <circle
-              key={`previous-${i}`}
-              cx={getX(i)}
-              cy={getY(d.sales)}
-              r="4"
-              fill="#93c5fd"
-              stroke="white"
-              strokeWidth="2"
+          </pattern>
+          <linearGradient id="orangeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop
+              offset="0%"
+              style={{ stopColor: "#fb923c", stopOpacity: 0.3 }}
             />
-          ))}
+            <stop
+              offset="100%"
+              style={{ stopColor: "#fb923c", stopOpacity: 0.05 }}
+            />
+          </linearGradient>
+          <linearGradient id="redGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop
+              offset="0%"
+              style={{ stopColor: "#ef4444", stopOpacity: 0.3 }}
+            />
+            <stop
+              offset="100%"
+              style={{ stopColor: "#ef4444", stopOpacity: 0.05 }}
+            />
+          </linearGradient>
+        </defs>
+        <rect width="100%" height={chartHeight} fill="url(#grid)" />
 
-          {data.salesChart.currentPeriod.map((d, i) => (
+        {[0, 9, 18, 27, 36].map((value) => (
+          <g key={value}>
             <text
-              key={d.day}
-              x={getX(i)}
-              y={chartHeight + 20}
-              className="text-xs fill-gray-600"
-              textAnchor="middle"
+              x="20"
+              y={getY(value) + 5}
+              className="text-xs fill-gray-500"
+              textAnchor="end"
             >
-              {d.day}
+              {value}
             </text>
-          ))}
-        </svg>
+            <line
+              x1={padding}
+              y1={getY(value)}
+              x2={chartWidth - padding}
+              y2={getY(value)}
+              stroke="#f3f4f6"
+              strokeWidth="1"
+              strokeDasharray="2,2"
+            />
+          </g>
+        ))}
 
-        <div className="absolute left-2 top-1/2 transform -rotate-90 -translate-y-1/2 text-xs text-gray-500">
-          Items
+        {/* Area fill for successful orders (orange) */}
+        <path
+          d={`M ${getX(0)},${
+            chartHeight - padding
+          } ${data.salesChart.currentPeriod
+            .map((d, i) => `L ${getX(i)},${getY(d.sales)}`)
+            .join(" ")} L ${getX(data.salesChart.currentPeriod.length - 1)},${
+            chartHeight - padding
+          } Z`}
+          fill="url(#orangeGradient)"
+        />
+
+        {/* Area fill for failed orders (red) */}
+        <path
+          d={`M ${getX(0)},${
+            chartHeight - padding
+          } ${data.salesChart.previousPeriod
+            .map((d, i) => `L ${getX(i)},${getY(d.sales)}`)
+            .join(" ")} L ${getX(data.salesChart.previousPeriod.length - 1)},${
+            chartHeight - padding
+          } Z`}
+          fill="url(#redGradient)"
+        />
+
+        {/* Successful orders line (orange) */}
+        <polyline
+          fill="none"
+          stroke="#fb923c"
+          strokeWidth="3"
+          points={data.salesChart.currentPeriod
+            .map((d, i) => `${getX(i)},${getY(d.sales)}`)
+            .join(" ")}
+        />
+
+        {data.salesChart.currentPeriod.map((d, i) => (
+          <circle
+            key={`current-${i}`}
+            cx={getX(i)}
+            cy={getY(d.sales)}
+            r="5"
+            fill="#fb923c"
+            stroke="white"
+            strokeWidth="2"
+          />
+        ))}
+
+        {/* Failed/Cancelled orders line (red) */}
+        <polyline
+          fill="none"
+          stroke="#ef4444"
+          strokeWidth="3"
+          points={data.salesChart.previousPeriod
+            .map((d, i) => `${getX(i)},${getY(d.sales)}`)
+            .join(" ")}
+        />
+
+        {data.salesChart.previousPeriod.map((d, i) => (
+          <circle
+            key={`previous-${i}`}
+            cx={getX(i)}
+            cy={getY(d.sales)}
+            r="5"
+            fill="#ef4444"
+            stroke="white"
+            strokeWidth="2"
+          />
+        ))}
+
+        {data.salesChart.currentPeriod.map((d, i) => (
+          <text
+            key={d.day}
+            x={getX(i)}
+            y={chartHeight + 20}
+            className="text-xs fill-gray-600"
+            textAnchor="middle"
+          >
+            {d.day}
+          </text>
+        ))}
+      </svg>
+
+      <div className="absolute left-2 top-1/2 transform -rotate-90 -translate-y-1/2 text-xs text-gray-500">
+        Orders
+      </div>
+
+      <div className="flex items-center justify-center flex-wrap space-x-4 sm:space-x-6 mt-2 gap-y-2">
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-1 bg-orange-400 rounded"></div>
+          <span className="text-xs sm:text-sm text-gray-700">
+            Successful Orders
+          </span>
         </div>
-
-        <div className="flex items-center justify-center flex-wrap space-x-4 sm:space-x-6 mt-2 gap-y-2">
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-0.5 bg-blue-600"></div>
-            <span className="text-xs sm:text-sm text-gray-700">
-              Current {chartPeriod === "week" ? "Week" : "Month"}
-            </span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-0.5 bg-blue-300"></div>
-            <span className="text-xs sm:text-sm text-gray-400">
-              Previous {chartPeriod === "week" ? "Week" : "Month"}
-            </span>
-          </div>
+        <div className="flex items-center space-x-2">
+          <div className="w-4 h-1 bg-red-500 rounded"></div>
+          <span className="text-xs sm:text-sm text-gray-700">
+            Failed Orders
+          </span>
         </div>
       </div>
-    );
-  };
+    </div>
+  );
+};
 
   return (
     <div className="space-y-6">
