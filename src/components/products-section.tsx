@@ -55,7 +55,6 @@ function ProductCard({
   const { addToCart, cartItems, updateCartItem } = useCart();
 
 
-
   const cartItem = cartItems.find((item) => item.productId === id);
   const isInCart = !!cartItem;
   const cartQuantity = cartItem?.quantity || 0;
@@ -243,14 +242,14 @@ function ProductCard({
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="font-bold text-gray-900 text-base text-[16px] ">
-                {price.toFixed(2)} Rwf
-              </span>
               {originalPrice && (
-                <span className="text-gray-400 line-through text-[12px] ">
-                  {originalPrice.toFixed(2)}Rwf
+                <span className="font-bold text-gray-900 text-base text-[16px]">
+                  {originalPrice.toFixed(2)} Rwf
                 </span>
               )}
+              <span className="text-gray-400 line-through text-[12px] ">
+                {price.toFixed(2)} Rwf
+              </span>
             </div>
           </div>
         </Card>
@@ -607,10 +606,10 @@ export function ProductsSection({
                         />
                       </svg>
                     </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    <h3 className="text-[14px] font-medium text-gray-900 mb-2">
                       No products found
                     </h3>
-                    <p className="text-gray-500 text-center max-w-md">
+                    <p className="text-gray-800 text-[13px] text-center max-w-md">
                       {searchQuery
                         ? `No products found matching "${searchQuery}".`
                         : selectedCategory === "All Categories"
@@ -631,14 +630,6 @@ export function ProductsSection({
                       >
                         Clear Search
                       </Button>
-                    )}
-                    {selectedCategory !== "All Categories" && !searchQuery && (
-                      <button
-                        onClick={() => setSelectedCategory("All Categories")}
-                        className="mt-4 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-                      >
-                        View All Products
-                      </button>
                     )}
                   </div>
                 )}

@@ -34,6 +34,7 @@ interface ValidationErrors {
   phone?: string;
   location?: string;
   password?: string;
+  tin?: string;
 }
 
 interface LocationState {
@@ -637,6 +638,14 @@ function SignupForm() {
       if (emailError) errors.email = emailError;
     }
 
+    if (selectedRole === UserRole.RESTAURANT) {
+      const tin = formData.get("tin") as string;
+      if (!tin || !/^[0-9]{9}$/.test(tin) || /^0+$/.test(tin)) {
+        errors.tin = "TIN must be a valid 9-digit number (not all zeros)";
+      }
+    }
+
+
     const phoneError = validatePhone(phone);
     if (phoneError) errors.phone = phoneError;
 
@@ -690,6 +699,7 @@ function SignupForm() {
         const farmerData: ICreateFarmerData = {
           email: email || undefined,
           password,
+          tin: formData.get("tin") as string,
           location: locationToSave,
           phone,
         };
@@ -699,6 +709,7 @@ function SignupForm() {
           name,
           email,
           password,
+          tin: (formData.get("tin") as string) || "",
           location: locationToSave,
           phone,
         };
@@ -725,7 +736,9 @@ function SignupForm() {
 
       {/* Left side: role selection */}
       <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col justify-center bg-white">
-        <h2 className="text-[16px] font-medium text-black mb-4">Choose Your Role</h2>
+        <h2 className="text-[16px] font-medium text-black mb-4">
+          Choose Your Role
+        </h2>
 
         <div className="flex flex-col space-y-4">
           <button
@@ -785,7 +798,8 @@ function SignupForm() {
 
         <div>
           <h2 className="text-[18px] font-bold text-gray-900 mb-4">
-            Create {selectedRole === UserRole.FARMER ? "Farmer" : "Restaurant"} Account
+            Create {selectedRole === UserRole.FARMER ? "Farmer" : "Restaurant"}{" "}
+            Account
           </h2>
           <p className="text-gray-900 text-[14px] mb-6">
             Thank you for choosing Food Bundles.
@@ -808,7 +822,9 @@ function SignupForm() {
                   onChange={() => handleInputChange("name")}
                 />
                 {validationErrors.name && (
-                  <p className="text-red-600 text-xs mt-1">{validationErrors.name}</p>
+                  <p className="text-red-600 text-xs mt-1">
+                    {validationErrors.name}
+                  </p>
                 )}
               </div>
             )}
@@ -830,9 +846,34 @@ function SignupForm() {
                 onChange={() => handleInputChange("email")}
               />
               {validationErrors.email && (
-                <p className="text-red-600 text-xs mt-1">{validationErrors.email}</p>
+                <p className="text-red-600 text-xs mt-1">
+                  {validationErrors.email}
+                </p>
               )}
             </div>
+
+            {selectedRole === UserRole.RESTAURANT && (
+              <div className="relative">
+                <Building2 className="absolute left-3 top-3 h-4 w-4 text-gray-900" />
+                <Input
+                  type="text"
+                  name="tin"
+                  placeholder="TIN Number"
+                  className={`pl-10 h-10 border-gray-300 text-gray-900 focus:border-green-500 focus:ring-green-500 rounded-none ${
+                    validationErrors.tin
+                      ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                      : ""
+                  }`}
+                  disabled={!isBackendAvailable || isLoading}
+                  onChange={() => handleInputChange("tin")}
+                />
+                {validationErrors.tin && (
+                  <p className="text-red-600 text-xs mt-1">
+                    {validationErrors.tin}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="relative">
               <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-900" />
@@ -849,7 +890,9 @@ function SignupForm() {
                 onChange={() => handleInputChange("phone")}
               />
               {validationErrors.phone && (
-                <p className="text-red-600 text-xs mt-1">{validationErrors.phone}</p>
+                <p className="text-red-600 text-xs mt-1">
+                  {validationErrors.phone}
+                </p>
               )}
             </div>
 
@@ -872,7 +915,9 @@ function SignupForm() {
                     disabled={!isBackendAvailable || isLoading}
                   />
                   {validationErrors.location && (
-                    <p className="text-red-600 text-xs mt-1">{validationErrors.location}</p>
+                    <p className="text-red-600 text-xs mt-1">
+                      {validationErrors.location}
+                    </p>
                   )}
                 </div>
 
@@ -906,7 +951,9 @@ function SignupForm() {
                   disabled={!isBackendAvailable || isLoading}
                 />
                 {validationErrors.location && (
-                  <p className="text-red-600 text-xs mt-1">{validationErrors.location}</p>
+                  <p className="text-red-600 text-xs mt-1">
+                    {validationErrors.location}
+                  </p>
                 )}
               </div>
             )}
@@ -930,10 +977,16 @@ function SignupForm() {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-3 text-gray-900 hover:text-gray-800 cursor-pointer"
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
               </button>
               {validationErrors.password && (
-                <p className="text-red-600 text-xs mt-1">{validationErrors.password}</p>
+                <p className="text-red-600 text-xs mt-1">
+                  {validationErrors.password}
+                </p>
               )}
             </div>
 
@@ -972,7 +1025,7 @@ function SignupForm() {
 
 export default function SignupPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center pt-4 px-6 lg:px-8">
       <Suspense
         fallback={
           <div className="flex items-center w-full max-w-3xl">

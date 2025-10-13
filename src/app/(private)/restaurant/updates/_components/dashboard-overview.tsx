@@ -635,7 +635,7 @@ const LineChart = () => {
                   Amount you would have paid in fees
                 </p>
                 <p className="text-lg font-semibold text-green-600 mt-1">
-                  RWF 2,000
+                  RWF 0
                 </p>
               </div>
             </div>
