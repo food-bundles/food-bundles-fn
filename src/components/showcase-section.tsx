@@ -8,7 +8,7 @@ export function FoodBundlesShowcase() {
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center max-w-7xl mx-auto">
-          <div className="space-y-3 lg:space-y-5">
+          <div className="space-y-3 lg:space-y-5 mt-4">
             <div className="space-y-2">
               <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-green-700">
                 Showcase

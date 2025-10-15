@@ -6,7 +6,7 @@ import { ProductsSection } from "@/components/products-section";
 import { Suspense, useState, useEffect, useCallback } from "react";
 import { categoryService } from "@/app/services/categoryService";
 import { productService } from "@/app/services/productService";
-import { QuickTalkWrapper } from "@/components/quck-talk-section";
+import  QuickTalkSection from "@/components/quck-talk-section";
 import { Footer } from "@/components/footer";
 import { useProductSection } from "@/hooks/useProductSection";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
@@ -191,7 +191,7 @@ export default function RestaurantPage() {
             }}
           />
         </div>
-        <QuickTalkWrapper />
+        <QuickTalkSection/>
         <Footer />
       </div>
     </Suspense>

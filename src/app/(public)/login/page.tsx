@@ -79,15 +79,27 @@ function LoginForm() {
     const identifier = formData.get("identifier") as string;
     const password = formData.get("password") as string;
 
-    if (!identifier.includes("@") && !isValidPhone(identifier)) {
-      setError("Invalid phone number. Must be 10–15 digits or start with '+'.");
+    function isValidTIN(tin: string) {
+      return /^[0-9]{9}$/.test(tin); // adjust length if needed
+    }
+
+    if (
+      !identifier.includes("@") &&
+      !isValidPhone(identifier) &&
+      !isValidTIN(identifier)
+    ) {
+      setError(
+        "Invalid identifier. Must be email, phone (10–15 digits), or 9-digit TIN."
+      );
       setIsLoading(false);
       return;
     }
 
     const loginPayload: ILoginData = identifier.includes("@")
       ? { email: identifier.toLowerCase(), password }
-      : { phone: identifier, password };
+      : isValidPhone(identifier)
+      ? { phone: identifier, password }
+      : { tin: identifier, password };
 
     try {
       const response = await authService.login(loginPayload);
@@ -116,7 +128,6 @@ function LoginForm() {
 
   return (
     <div className="w-full max-w-3xl flex">
-      {/* Left image / info section (optional) */}
       <div className="hidden lg:flex w-1/2 bg-white p-8 flex-col justify-center rounded-none shadow">
         <h2 className="text-[16px] font-medium text-gray-900 mb-4">
           Welcome Back!
@@ -147,7 +158,7 @@ function LoginForm() {
             <Input
               type="text"
               name="identifier"
-              placeholder="Email or Phone"
+              placeholder="Email/Tin number/Phone"
               className="pl-10 h-10 text-[13px] border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-none text-gray-900"
               disabled={!isBackendAvailable || isLoading}
             />

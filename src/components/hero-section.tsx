@@ -198,9 +198,9 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
         <div className="absolute inset-0">
           <div className="container mx-auto px-4 h-full flex items-center">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full h-full">
-              <div className="lg:col-span-4 space-y-6 z-10 text-center lg:text-left flex flex-col justify-start pt-2 lg:pt-4 pl-3 lg:pl-5">
+              <div className="lg:col-span-4 space-y-0 z-10 text-center lg:text-left flex flex-col justify-start pt-4 lg:pt-6 pl-3 lg:pl-5">
                 <div className="space-y-4 max-w-lg mx-auto lg:mx-0">
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-tight text-white">
+                  <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-bold leading-tight text-white">
                     <span className="block">Connect Your</span>
                     <span className="block text-green-400 bg-clip-text">
                       Restaurant
@@ -247,7 +247,7 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
                   <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gray-800 to-black border-2 border-orange-400/50 flex items-center justify-center shadow-xl">
                     <div className="text-center">
                       <div className="text-orange-400 text-lg font-bold">
-                        {restaurants.slice(0, 10).length}+
+                        50 +
                       </div>
                       <div className="text-gray-300 text-xs font-medium">
                         Restaurants

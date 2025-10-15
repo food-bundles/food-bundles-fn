@@ -1,4 +1,3 @@
-import { exportTraceState } from "next/dist/trace";
 
 export interface IUssdRequest {
   sessionId: string;
@@ -22,6 +21,7 @@ export interface ICreateFarmerData {
   phone?: string;
   email?: string;
   password?: string;
+  tin: string;
 }
 
 export interface ICreateRestaurantData {
@@ -30,6 +30,7 @@ export interface ICreateRestaurantData {
   phone?: string;
   location: string;
   password: string;
+  tin: string;
 }
 export interface ICreateAdministratorsData {
   username: string;
@@ -63,6 +64,7 @@ export interface ILoginData {
   phone?: string;
   email?: string;
   password: string;
+  tin?: string;
 }
 
 export interface IPaginationResult<T> {

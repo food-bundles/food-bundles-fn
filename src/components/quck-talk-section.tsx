@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 import Image from "next/image";
+import { Textarea } from "./ui/textarea";
 
 const farmers = [
   {
@@ -209,7 +210,7 @@ function FarmCarousel() {
   return (
     <div className="space-y-4">
       <div className="bg-transparent px-4 py-2">
-        <h3 className="font-bold text-gray-900 text-sm">Our Farms</h3>
+        <h3 className="font-bold text-gray-900">Our Farms</h3>
       </div>
 
       <Carousel
@@ -298,18 +299,18 @@ function ChatWindow({ isOpen, onClose }: ChatWindowProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 w-[calc(100vw-2rem)] max-w-md sm:w-96 h-[75vh] max-h-[600px] bg-white border rounded-xl shadow-2xl z-50 flex flex-col">
-      <div className="flex items-center justify-between p-4 bg-green-600 text-white rounded-t-xl">
+    <div className="fixed bottom-4 right-4 w-[calc(100vw-2rem)] max-w-md sm:w-96 h-[75vh] max-h-[600px] bg-white border rounded shadow-2xl z-50 flex flex-col">
+      <div className="flex items-center justify-between p-2 bg-green-600 text-white rounded">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-              <span className="text-green-600 font-bold">F</span>
+            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+              <span className="text-green-600 text-[14px] font-bold">F</span>
             </div>
             <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-green-600" />
           </div>
           <div>
-            <h4 className="font-semibold text-sm">Food Bundle Support</h4>
-            <p className="text-green-100 text-xs">Online</p>
+            <h4 className="font-semibold text-[14px]">Food Bundle Support</h4>
+            <p className="text-green-100 text-[12px]">Online</p>
           </div>
         </div>
         <Button
@@ -331,7 +332,7 @@ function ChatWindow({ isOpen, onClose }: ChatWindowProps) {
             }`}
           >
             <div
-              className={`max-w-[80%] px-4 py-2 rounded-2xl text-sm ${
+              className={`max-w-[80%] px-4 py-2 rounded-2xl text-[12px] ${
                 msg.sender === "user"
                   ? "bg-green-600 text-white rounded-br-none"
                   : "bg-white text-gray-800 rounded-bl-none shadow"
@@ -352,13 +353,19 @@ function ChatWindow({ isOpen, onClose }: ChatWindowProps) {
 
       <div className="p-4 border-t bg-white rounded-b-xl">
         <div className="flex gap-2">
-          <Input
+          <Textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSend(e)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSend(e);
+              }
+            }}
             placeholder="Type your message..."
-            className="flex-1 text-sm rounded-full"
+            className="flex-1 text-sm rounded placeholder:text-[12px] resize-none h-[60px] overflow-y-auto scrollbar-hide"
           />
+
           <Button
             onClick={handleSend}
             size="sm"
