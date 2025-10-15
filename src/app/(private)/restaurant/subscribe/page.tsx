@@ -6,11 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import PaymentModal from "./_components/PaySubscribtionModel";
 
 export default function SubscribePage() {
-    const [openModal, setOpenModal] = useState(false);
-    const [selectedPlan, setSelectedPlan] = useState<{
-      plan: string;
-      price: string;
-    } | null>(null);
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<{
+    plan: string;
+    price: string;
+  } | null>(null);
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
@@ -85,13 +85,13 @@ export default function SubscribePage() {
               <div className="flex items-start space-x-2">
                 <p className="text-green-500 text-[16px] mr-2">🗸</p>
                 <span className="text-gray-800 text-[13px]">
-                  Advertising Showcase your products to reach more guests.
+                  Advertising Connect your products to reach more guests.
                 </span>
               </div>
               <div className="flex items-start space-x-2">
                 <p className="text-green-500 text-[16px] mr-2">🗸</p>
                 <span className="text-gray-800 text-[13px]">
-                Make Orders on Credit,
+                  Make Orders on Credit,
                 </span>
               </div>
             </div>

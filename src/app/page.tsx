@@ -3,7 +3,7 @@ import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { HeroWithRestaurants } from "@/components/hero-section";
 import QuickTalkSection from "@/components/quck-talk-section";
-import { FoodBundlesShowcase } from "@/components/showcase-section";
+import { FoodBundlesConnect } from "@/components/showcase-section";
 
 export default async function HomePage() {
   const restaurants = [
@@ -96,13 +96,13 @@ export default async function HomePage() {
         <div id="home">
           <HeroWithRestaurants restaurants={restaurants} />
         </div>
-        <div id="showcase">
-          <FoodBundlesShowcase />
+        <div id="connect">
+          <FoodBundlesConnect />
         </div>
 
         <div id="ask-help">
           <AnimatedDotsBackground className="">
-          <QuickTalkSection />
+            <QuickTalkSection />
           </AnimatedDotsBackground>
         </div>
         <Footer />
