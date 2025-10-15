@@ -79,7 +79,7 @@ export function Header() {
 
   const navigationItems = [
     { label: "Home", href: "#home", id: "home" },
-    { label: "Showcase", href: "#showcase", id: "showcase" },
+    { label: "Connect", href: "#connect", id: "connect" },
     { label: "Ask help", href: "#ask-help", id: "ask-help" },
   ];
 
@@ -281,9 +281,7 @@ export function Header() {
 
                 {/* Enhanced Subscribe Button */}
                 <div
-                  className={`relative ${
-                    hasAnimated ? "" : ""
-                  }`}
+                  className={`relative ${hasAnimated ? "" : ""}`}
                   onMouseEnter={handleShopMouseEnter}
                   onMouseLeave={handleShopMouseLeave}
                 >
@@ -345,11 +343,7 @@ export function Header() {
 
               {/* Mobile Subscribe Button - Visible on Mobile */}
               <div className="md:hidden flex items-center">
-                <div
-                  className={`relative ${
-                    hasAnimated ? "" : ""
-                  }`}
-                >
+                <div className={`relative ${hasAnimated ? "" : ""}`}>
                   <button
                     className="subscribe-button  bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 rounded-full text-sm font-bold hover:from-yellow-300 hover:to-orange-300 py-[7px] px-3 transition-all duration-300 text-[13px] whitespace-nowrap flex items-center gap-2 hover:scale-105 mr-2"
                     onClick={(e) => {
@@ -511,8 +505,6 @@ export function Header() {
                       <span>{item.label}</span>
                     </a>
                   ))}
-
-
 
                   {/* Mobile Login/Profile */}
                   {isAuthenticated ? (

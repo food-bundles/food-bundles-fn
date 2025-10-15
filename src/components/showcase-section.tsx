@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-export function FoodBundlesShowcase() {
+export function FoodBundlesConnect() {
   return (
     <section className="relative py-2 bg-white overflow-hidden">
       {/* === Green Circular Gradient === */}
@@ -11,7 +11,7 @@ export function FoodBundlesShowcase() {
           <div className="space-y-3 lg:space-y-5 mt-4">
             <div className="space-y-2">
               <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-green-700">
-                Showcase
+                Connect
               </h2>
             </div>
 
