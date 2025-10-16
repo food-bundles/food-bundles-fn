@@ -242,14 +242,14 @@ function ProductCard({
             </div>
 
             <div className="flex items-center gap-2">
-              {originalPrice && (
-                <span className="font-bold text-gray-900 text-base text-[16px]">
-                  {originalPrice.toFixed(2)} Rwf
-                </span>
-              )}
-              <span className="text-gray-400 line-through text-[12px] ">
+              <span className="font-bold text-gray-900 text-base text-[16px] ">
                 {price.toFixed(2)} Rwf
               </span>
+              {originalPrice && (
+                <span className="text-gray-400 line-through text-[12px] ">
+                  {originalPrice.toFixed(2)}Rwf
+                </span>
+              )}
             </div>
           </div>
         </Card>
