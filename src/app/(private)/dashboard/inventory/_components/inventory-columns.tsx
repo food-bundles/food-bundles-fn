@@ -54,7 +54,9 @@ export const getInventoryColumns = (
             <span className="font-medium text-gray-900">
               {product.productName}
             </span>
-            <span className="text-sm text-gray-500">SKU: {product.sku}</span>
+            <span className=" text-[12px] text-gray-600">
+              SKU: {product.sku}
+            </span>
           </div>
         </div>
       );
@@ -76,7 +78,7 @@ export const getInventoryColumns = (
     },
     cell: ({ row }) => {
       const category = row.getValue("category") as any;
-      let categoryName = "Unknown";
+      let categoryName = "Unknown e";
 
       if (category) {
         if (typeof category === "string") {
@@ -125,7 +127,7 @@ export const getInventoryColumns = (
           <span className="font-medium">
             {quantity} {unit}
           </span>
-          <span className={`text-sm font-medium ${statusClasses}`}>
+          <span className={`text-[12px] font-medium ${statusClasses}`}>
             {status}
           </span>
         </div>
@@ -155,7 +157,7 @@ export const getInventoryColumns = (
           <span className="font-medium">
             {purchasePrice.toLocaleString()} RWF
           </span>
-          <span className="text-sm text-gray-500">per {unit}</span>
+          <span className="text-sm  text-[12px] text-gray-600">per {unit}</span>
         </div>
       );
     },
@@ -180,7 +182,7 @@ export const getInventoryColumns = (
       return (
         <div className="flex flex-col">
           <span className="font-medium">{price.toLocaleString()} RWF</span>
-          <span className="text-sm text-gray-500">per {unit}</span>
+          <span className="  text-[12px] text-gray-600">per {unit}</span>
         </div>
       );
     },
@@ -201,7 +203,8 @@ export const getInventoryColumns = (
     },
     cell: ({ row }) => {
       const expiryDate = row.getValue("expiryDate") as Date | null;
-      if (!expiryDate) return <span className="text-gray-400">No expiry</span>;
+      if (!expiryDate)
+        return <span className=" text-[12px] text-gray-600">No expiry</span>;
 
       const isExpiringSoon =
         new Date(expiryDate).getTime() - new Date().getTime() <

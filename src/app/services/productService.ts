@@ -6,8 +6,8 @@ import createAxiosClient from "../hooks/axiosClient";
 export interface CreateProductData {
   productName: string;
   unitPrice: number;
-  purchasePrice: number; // Added missing purchasePrice field
-  categoryId: string; // Changed from category to categoryId to match backend expectation
+  purchasePrice: number; 
+  categoryId: string; 
   bonus: number;
   sku: string;
   quantity: number;

@@ -14,7 +14,13 @@ import {
   useReactTable,
   type VisibilityState,
 } from "@tanstack/react-table";
-import { ChevronDown, ChevronsLeft, ChevronsRight, Download, Plus } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronsLeft,
+  ChevronsRight,
+  Download,
+  Plus,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -80,7 +86,9 @@ export type FilterConfig =
       width?: string;
       value?: { from?: Date; to?: Date };
       onChange?: (value: { from?: Date; to?: Date }) => void;
-    };
+  };
+    
+
 
 interface DataTableProps<TData, TValue> {
   // Core table props
@@ -89,7 +97,7 @@ interface DataTableProps<TData, TValue> {
 
   // Header configuration
   title?: string;
-  descrption?: string;
+  description?: string;
   showExport?: boolean;
   onExport?: () => void;
   showAddButton?: boolean;
@@ -117,7 +125,7 @@ export function DataTable<TData, TValue>({
   columns,
   data,
   title,
-  descrption,
+  description,
   showExport = false,
   onExport,
   showAddButton = false,
@@ -147,7 +155,7 @@ export function DataTable<TData, TValue>({
     initialState: {
       pagination: {
         pageIndex: 0,
-        pageSize: 5, 
+        pageSize: 5,
       },
     },
     getSortedRowModel: getSortedRowModel(),
@@ -180,37 +188,37 @@ export function DataTable<TData, TValue>({
   };
 
   return (
-    <div className="space-y-6 h-full overflow-auto">
+    <div className="space-y-2 h-full overflow-auto">
       {(title || showAddButton || showExport) && (
         <div className="flex items-center justify-between">
           {title && (
             <>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-                <p className="text-gray-600 text-sm">{descrption}</p>
+                <h1 className="text-[16px] font-medium text-gray-800">{title}</h1>
+                <p className="text-gray-600 text-sm">{description}</p>
               </div>
             </>
           )}
           <div className="flex items-center gap-4">
             {/* Add button - completely optional */}
             {showAddButton && addButtonLabel && onAddButton && (
-              <Button
+              <button
                 onClick={onAddButton}
-                className="bg-green-500 hover:bg-green-600 flex-shrink-0"
+                className="bg-green-700 hover:bg-green-600 text-[13px] p-1 text-white rounded cursor-pointer flex flex-shrink-0"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 {addButtonLabel}
-              </Button>
+              </button>
             )}
             {/* Export button */}
             {showExport && (
-              <Button
+              <button
                 onClick={onExport}
-                className="bg-green-500 hover:bg-green-600 flex-shrink-0"
+                className="flex items-center bg-green-700 hover:bg-green-600 text-[13px] cursor-pointer p-1 text-white rounded gap-2 min-w-[100px] flex-shrink-0"
               >
-                <Download className="mr-2 h-4 w-4" />
+                <Download className=" h-4 w-4" />
                 Export
-              </Button>
+              </button>
             )}
           </div>
         </div>
@@ -218,13 +226,10 @@ export function DataTable<TData, TValue>({
 
       {(customFilters || filters.length > 0 || showColumnVisibility) && (
         <div className="flex items-center gap-4 py-2 flex-wrap">
-          {/* Custom filters (passed from parent) */}
           {customFilters}
 
-          {/* Dynamic filters */}
           {filters.map(renderFilter)}
 
-          {/* Column visibility - always at the end */}
           {showColumnVisibility && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -321,7 +326,7 @@ export function DataTable<TData, TValue>({
       {(showPagination || showRowSelection) && (
         <div className="flex items-center justify-between py-4">
           {showRowSelection && (
-            <div className="text-sm text-gray-700 text-[13px]">
+            <div className="hidden md:flex text-sm text-gray-700 text-[13px]">
               {table.getFilteredSelectedRowModel().rows.length} of{" "}
               {table.getFilteredRowModel().rows.length} row(s) selected.
             </div>

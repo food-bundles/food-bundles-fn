@@ -147,17 +147,24 @@ export const orderService = {
     return response.data;
   },
 
-  getAllOrders: async (params?: {
+  // admins only
+  getAllOrdersByAdmin: async (params?: {
     page?: number;
     limit?: number;
     status?: string;
+    paymentStatus?: string;
     restaurantId?: string;
-    startDate?: string;
-    endDate?: string;
+    dateFrom?: string;
+    dateTo?: string;
   }): Promise<OrdersResponse> => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.get("/orders", { params });
-    return response.data;
+    return {
+      success: true,
+      data: response.data.data,
+      pagination: response.data.pagination,
+      message: response.data.message,
+    };
   },
 
   getMyOrders: async (params?: {
@@ -179,16 +186,16 @@ export const orderService = {
 
   updateOrder: async (
     orderId: string,
-    updateData: UpdateOrderData
+    updateData: any
   ): Promise<OrderResponse> => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.patch(`/orders/${orderId}`, updateData);
     return response.data;
   },
 
-  cancelOrder: async (orderId: string): Promise<OrderResponse> => {
+  cancelOrder: async (orderId: string, data?: { reason?: string }): Promise<OrderResponse> => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.post(`/orders/${orderId}/cancel`);
+    const response = await axiosClient.post(`/orders/${orderId}/cancel`, data);
     return response.data;
   },
 

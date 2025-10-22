@@ -379,6 +379,7 @@ export default function FarmerSubmissionsPage() {
       value: selectedProvince,
       onChange: setSelectedProvince,
       options: provinceOptions,
+      className: "text-[10px]",
     },
     // RESTORED: Date range filter for submission date
     {
@@ -417,7 +418,7 @@ export default function FarmerSubmissionsPage() {
           columns={columns}
           data={filteredData}
           title="All Farmer Submissions"
-          descrption={`Manage all farmer submissions across the platform (${pagination.totalCount} total records)`}
+          descrption={""}
           showExport={true}
           onExport={handleExport}
           showAddButton={true}
@@ -436,7 +437,7 @@ export default function FarmerSubmissionsPage() {
             </div>
           }
           showSearch={false}
-          showColumnVisibility={true}
+          showColumnVisibility={false}
           showPagination={true}
         />
 
