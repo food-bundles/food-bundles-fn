@@ -35,7 +35,11 @@ export interface Product {
   images: string[];
   quantity: number;
   sku: string;
-  category: Category | null; 
+  category: {
+    id: string;
+    name: string;
+    description?: string;
+  };
   rating?: number;
   soldCount?: number;
   status: string;

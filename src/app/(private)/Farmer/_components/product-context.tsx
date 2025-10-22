@@ -4,19 +4,23 @@ import { createContext, useContext, useState, type ReactNode } from "react"
 
 export interface Product {
   id: string
-  submissionId?: string // ID of the submission this product belongs to
+  submissionId?: string 
   name: string
-  category: string
+  category: {
+    id: string
+    name: string
+    description?: string
+  }
   quantity: string 
-  unit?: string // Optional unit of measurement
+  unit?: string 
   submittedDate: string
   price: string
   status: string
   statusColor: string
   image: string
   location: string
-  priceValue: number // For calculations
-  paidDate?: string // When the product was paid for
+  priceValue: number 
+  paidDate?: string 
 }
 
 interface ProductContextType {

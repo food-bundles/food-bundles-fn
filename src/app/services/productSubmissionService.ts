@@ -60,7 +60,11 @@ export interface ProductSuggestionResponse {
 export interface Product {
   id: string
   productName: string
-  category: string
+  category: {
+    id: string
+    name: string
+    description?: string
+  }
   unitPrice: number
   unit: string
 }

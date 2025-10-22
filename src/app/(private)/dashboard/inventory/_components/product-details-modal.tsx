@@ -73,12 +73,8 @@ export function ProductDetailsModal({
                   <div className="flex justify-between">
                     <span className="text-gray-600">Category:</span>
                     <Badge variant="outline" className="capitalize">
-                      {typeof product.category === "string"
-                        ? product.category.toLowerCase().replace(/_/g, " ")
-                        : (product.category as { name: string })?.name
-                        ? (product.category as { name: string })?.name
-                            .toLowerCase()
-                            .replace(/_/g, " ")
+                      {product.category?.name
+                        ? product.category.name.toLowerCase().replace(/_/g, " ")
                         : "Unknown"}
                     </Badge>
                   </div>

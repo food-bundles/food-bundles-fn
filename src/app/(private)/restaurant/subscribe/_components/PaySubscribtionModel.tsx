@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useState } from "react";
@@ -9,25 +10,64 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { subscriptionService, SubscriptionPlan } from "@/app/services/subscriptionService";
+import { toast } from "sonner";
 
 type PaymentMethod = "wallet" | "momo" | "card";
 
 interface PaymentModalProps {
   open: boolean;
   onClose: () => void;
-  plan: string;
-  price: string;
+  plan: SubscriptionPlan | null;
 }
 
 export default function PaymentModal({
   open,
   onClose,
   plan,
-  price,
 }: PaymentModalProps) {
   const [method, setMethod] = useState<PaymentMethod>("momo");
+  const [loading, setLoading] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
+  const [cvv, setCvv] = useState("");
+
+  const handlePayment = async () => {
+    if (!plan) return;
+    
+    try {
+      setLoading(true);
+      
+      const paymentMethodMap = {
+        wallet: "CASH" as const,
+        momo: "MOBILE_MONEY" as const,
+        card: "CARD" as const,
+      };
+
+      const subscriptionData = {
+        planId: plan.id,
+        autoRenew: true,
+        paymentMethod: paymentMethodMap[method],
+      };
+
+      const response = await subscriptionService.createRestaurantSubscription(subscriptionData);
+      
+      if (response.success) {
+        toast.success("Subscription created successfully!");
+        onClose();
+      }
+    } catch (error: any) {
+      console.error("Payment error:", error);
+      toast.error(error.response?.data?.message || "Payment failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const renderForm = () => {
+    const price = plan ? `${plan.price.toLocaleString()} Rwf` : "";
+    
     switch (method) {
       case "wallet":
         return (
@@ -35,28 +75,64 @@ export default function PaymentModal({
             <p className="text-gray-900 text-[13px] text-center">
               Pay using your wallet balance.
             </p>
-            <Button className="w-full bg-green-600 text-white hover:bg-green-700 rounded-none text-[13px] font-normal">
-              Pay {price}
+            <Button 
+              onClick={handlePayment}
+              disabled={loading}
+              className="w-full bg-green-600 text-white hover:bg-green-700 rounded-none text-[13px] font-normal"
+            >
+              {loading ? "Processing..." : `Pay ${price}`}
             </Button>
           </div>
         );
       case "momo":
         return (
           <div className="space-y-3">
-            <Input placeholder="Enter MoMo Phone Number" type="tel" className="text-[13px] text-gray-900 rounded"/>
-            <Button className="w-full bg-green-600 text-white hover:bg-green-700 rounded-none text-[13px] font-normal">
-              Pay {price}
+            <Input 
+              placeholder="Enter MoMo Phone Number" 
+              type="tel" 
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              className="text-[13px] text-gray-900 rounded"
+            />
+            <Button 
+              onClick={handlePayment}
+              disabled={loading || !phoneNumber}
+              className="w-full bg-green-600 text-white hover:bg-green-700 rounded-none text-[13px] font-normal"
+            >
+              {loading ? "Processing..." : `Pay ${price}`}
             </Button>
           </div>
         );
       case "card":
         return (
           <div className="space-y-3">
-            <Input placeholder="Card Number" type="text" className="text-[13px] text-gray-900 rounded"/>
-            <Input placeholder="Expiry Date (MM/YY)" type="text" className="text-[13px] text-gray-900 rounded" />
-            <Input placeholder="CVV" type="password" className="text-[13px] text-gray-900 rounded"/>
-            <Button className="w-full bg-green-600 text-white hover:bg-green-700 rounded-none text-[13px] font-normal">
-              Pay {price}
+            <Input 
+              placeholder="Card Number" 
+              type="text" 
+              value={cardNumber}
+              onChange={(e) => setCardNumber(e.target.value)}
+              className="text-[13px] text-gray-900 rounded"
+            />
+            <Input 
+              placeholder="Expiry Date (MM/YY)" 
+              type="text" 
+              value={expiryDate}
+              onChange={(e) => setExpiryDate(e.target.value)}
+              className="text-[13px] text-gray-900 rounded" 
+            />
+            <Input 
+              placeholder="CVV" 
+              type="password" 
+              value={cvv}
+              onChange={(e) => setCvv(e.target.value)}
+              className="text-[13px] text-gray-900 rounded"
+            />
+            <Button 
+              onClick={handlePayment}
+              disabled={loading || !cardNumber || !expiryDate || !cvv}
+              className="w-full bg-green-600 text-white hover:bg-green-700 rounded-none text-[13px] font-normal"
+            >
+              {loading ? "Processing..." : `Pay ${price}`}
             </Button>
           </div>
         );
@@ -70,7 +146,7 @@ export default function PaymentModal({
       <DialogContent className="sm:max-w-md rounded-none">
         <DialogHeader>
           <DialogTitle className="text-[14px] font-normal">
-            Pay for {plan}
+            Pay for {plan?.name || ""}
           </DialogTitle>
         </DialogHeader>
 

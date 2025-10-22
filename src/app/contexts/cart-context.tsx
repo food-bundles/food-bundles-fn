@@ -201,7 +201,6 @@ export function CartProvider({ children }: CartProviderProps) {
     if (wasAuthenticated !== isNowAuthenticated) {
       if (!wasAuthenticated && isNowAuthenticated) {
         // User just logged in
-        console.log("User authenticated, refreshing cart...");
         refreshCart();
       } else if (wasAuthenticated && !isNowAuthenticated) {
         // User logged out

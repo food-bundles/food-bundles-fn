@@ -265,7 +265,11 @@ interface Product {
   price: number;
   originalPrice?: number;
   image: string;
-  category: string;
+  category: {
+    id: string;
+    name: string;
+    description?: string;
+  }
   inStock: boolean;
   rating: number;
   isNew?: boolean;
@@ -430,6 +434,7 @@ export function ProductsSection({
                       <span>🗸 Free Delivery</span>
                       <span>🗸 EBM Orders</span>
                       <span>🗸 Advertisement</span>
+                      <span className="">🗸 ... more</span>
                     </div>
 
                     {/* Subscribe Button */}
@@ -490,8 +495,7 @@ export function ProductsSection({
               </div>
             )}
 
-            {/* Header with Search and Sort */}
-            <div className="bg-transparent px-4 sm:px-8">
+            <div className="bg-transparent ">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-4">
                 {/* Category Filter Buttons */}
                 <div className="px-4 sm:px-8 pb-4">
@@ -584,7 +588,7 @@ export function ProductsSection({
                         originalPrice={product.originalPrice}
                         image={product.image}
                         rating={product.rating}
-                        category={product.category}
+                        category={product.category.name}
                         discountPercent={product.discountPercent}
                       />
                     ))}

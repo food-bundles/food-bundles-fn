@@ -64,14 +64,11 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
       setIsLoading(true);
       setError(null);
 
-      console.log("Fetching all categories...");
       const response = await categoryService.getAllCategories();
-      console.log("All categories response:", response);
 
       if (response.success && response.data) {
         setCategories(response.data);
       } else if (response.data) {
-        // Handle case where success might not be present but data exists
         setCategories(response.data);
       } else {
         setCategories([]);

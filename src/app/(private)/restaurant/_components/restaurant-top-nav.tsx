@@ -87,11 +87,6 @@ export function TopResNav() {
   const unreadCount = sampleNotifications.filter((n) => !n.isRead).length;
   const pathname = usePathname();
 
-  const navLinks = [
-    { href: "/restaurant/updates", label: "Updates" },
-    { href: "/restaurant/orders", label: "Orders" },
-    { href: "/restaurant/help", label: "Help & Support" },
-  ];
 
   const handleCategorySelect = (categoryName: string) => {
     // Navigate to restaurant page with category
@@ -190,99 +185,9 @@ export function TopResNav() {
               </div>
             </Link>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center gap-4 xl:gap-8">
-              {/* Shop with Categories Dropdown */}
-              <div
-                className="relative shop-dropdown"
-                onMouseEnter={handleShopMouseEnter}
-                onMouseLeave={handleShopMouseLeave}
-              >
-                <Link
-                  href="/restaurant"
-                  className={`flex items-center gap-2 transition-colors text-[13px] ${
-                    pathname === "/restaurant"
-                      ? "text-secondary"
-                      : "text-primary-foreground hover:text-secondary"
-                  }`}
-                >
-                  <div
-                    className={`w-2 h-2 xl:w-3 xl:h-3 rounded-full ${
-                      pathname === "/restaurant" ? "bg-orange-400" : ""
-                    }`}
-                  ></div>
-                  Shop
-                </Link>
-
-                <div
-                  className={`absolute top-4 left-0 mt-2 w-46 bg-white shadow-lg border border-gray-200 py-2 z-50 max-h-80 overflow-y-auto transition-all duration-200 ${
-                    isCategoryDropdownOpen
-                      ? "opacity-100 visible transform translate-y-0"
-                      : "opacity-0 invisible transform -translate-y-2"
-                  }`}
-                  onMouseEnter={handleShopMouseEnter}
-                  onMouseLeave={handleShopMouseLeave}
-                >
-                  <button
-                    onClick={() => handleCategorySelect("All Categories")}
-                    className="w-full text-left px-4 py-2 text-[13px] text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors"
-                  >
-                    All Categories
-                  </button>
-
-                  <div className="border-t border-gray-100 my-1"></div>
-
-                  {categoriesLoading ? (
-                    <div className="px-4 py-2">
-                      {[...Array(5)].map((_, index) => (
-                        <Skeleton key={index} className="h-8 w-full mb-2" />
-                      ))}
-                    </div>
-                  ) : activeCategories.length > 0 ? (
-                    activeCategories.map((category) => (
-                      <button
-                        key={category.id}
-                        onClick={() => handleCategorySelect(category.name)}
-                        className="w-full text-left px-4 py-2 text-[13px] text-gray-900 hover:bg-green-50 hover:text-green-700 transition-colors"
-                      >
-                        {category.name.replace(/_/g, " ")}
-                      </button>
-                    ))
-                  ) : (
-                    <div className="px-4 py-2 text-[12px] text-gray-500">
-                      No categories available
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Other Navigation Links */}
-              {navLinks.map((link) => {
-                const isActive = pathname === link.href;
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`flex items-center gap-2 transition-colors text-[13px] ${
-                      isActive
-                        ? "text-secondary"
-                        : "text-primary-foreground hover:text-secondary"
-                    }`}
-                  >
-                    <div
-                      className={`w-2 h-2 xl:w-3 xl:h-3 rounded-full ${
-                        isActive ? "bg-orange-400" : ""
-                      }`}
-                    ></div>
-                    {link.label}
-                  </Link>
-                );
-              })}
-            </nav>
-
             <div className="flex items-center gap-2 sm:gap-4">
               {/* Notifications */}
-              {/* <Button
+              <Button
                 variant="ghost"
                 size="icon"
                 className="relative hover:bg-green-600 cursor-pointer text-primary-foreground hover:text-primary-foreground h-8 w-8 sm:h-10 sm:w-10"
@@ -292,7 +197,7 @@ export function TopResNav() {
                 <Badge className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 flex items-center justify-center bg-red-500 text-white text-xs">
                   {unreadCount}
                 </Badge>
-              </Button> */}
+              </Button>
               {/* Desktop User Menu - Custom Dropdown */}
               <div className="hidden sm:block relative profile-dropdown">
                 <button
@@ -365,143 +270,9 @@ export function TopResNav() {
                 )}
               </div>
 
-              {/* Mobile menu button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="lg:hidden hover:bg-green-600 cursor-pointer text-primary-foreground hover:text-primary-foreground h-8 w-8 sm:h-10 sm:w-10"
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              >
-                {isMobileMenuOpen ? (
-                  <X className="h-4 w-4 sm:h-5 sm:w-5" />
-                ) : (
-                  <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
-                )}
-              </Button>
             </div>
           </div>
 
-          {/* Mobile Navigation Menu */}
-          {isMobileMenuOpen && (
-            <div className="flex justify-between lg:hidden border-t border-green-600 bg-green-700">
-              <div className="px-2 py-4 space-y-1 flex-1">
-                {/* Mobile Shop Link with Categories */}
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <Link
-                      href="/restaurant"
-                      onClick={closeMobileMenu}
-                      className={`flex items-center gap-3 px-1 py-2.5 rounded-md text-[13px] transition-colors flex-1 ${
-                        pathname === "/restaurant"
-                          ? "text-secondary bg-green-600"
-                          : "text-primary-foreground hover:text-secondary hover:bg-green-600"
-                      }`}
-                    >
-                     
-                      Shop
-                    </Link>
-                    <button
-                      onClick={() =>
-                        setIsMobileCategoriesOpen(!isMobileCategoriesOpen)
-                      }
-                      className="p-2 text-primary-foreground hover:text-secondary"
-                    >
-                      <ChevronDown
-                        className={`w-4 h-4 transform transition-transform duration-200 ${
-                          isMobileCategoriesOpen ? "rotate-180" : "rotate-0"
-                        }`}
-                      />
-                    </button>
-                  </div>
-
-                  {isMobileCategoriesOpen && (
-                    <>
-                      <button
-                        onClick={() => handleCategorySelect("All Categories")}
-                        className="w-full text-left pl-9 pr-3 py-2 text-[13px] text-green-200 hover:text-secondary hover:bg-green-600 rounded-md transition-colors"
-                      >
-                        All Categories
-                      </button>
-
-                      {/* Category List */}
-                      {categoriesLoading ? (
-                        <div className="pl-9 pr-3">
-                          {[...Array(3)].map((_, index) => (
-                            <Skeleton
-                              key={index}
-                              className="h-6 w-full mb-2 bg-green-600/60"
-                            />
-                          ))}
-                        </div>
-                      ) : (
-                        activeCategories.map((category) => (
-                          <button
-                            key={category.id}
-                            onClick={() => handleCategorySelect(category.name)}
-                            className="w-full text-left pl-9 pr-3 py-2 text-[13px] text-green-200 hover:text-secondary hover:bg-green-600 rounded-md transition-colors"
-                          >
-                            {category.name.replace(/_/g, " ")}
-                          </button>
-                        ))
-                      )}
-                    </>
-                  )}
-                </div>
-
-                {/* Other Mobile Navigation Links */}
-                {navLinks.map((link) => {
-                  const isActive = pathname === link.href;
-                  return (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      onClick={closeMobileMenu}
-                      className={`flex items-center gap-3 px-1  py-1 rounded-md text-[13px] transition-colors ${
-                        isActive
-                          ? "text-secondary bg-green-600"
-                          : "text-primary-foreground hover:text-secondary hover:bg-green-600"
-                      }`}
-                    >
-                     
-                      {link.label}
-                    </Link>
-                  );
-                })}
-
-                {/* Mobile Profile Section */}
-              </div>
-              <div className="px-2 py-4">
-                <div className="flex items-center gap-3 px-3 py-2">
-                  <span className="text-[13px] text-primary-foreground">
-                    {userName}
-                  </span>
-                </div>
-
-                <Link
-                  href="#"
-                  onClick={closeMobileMenu}
-                  className="flex items-center px-3 py-2.5 text-[13px] text-primary-foreground hover:text-secondary hover:bg-green-600 rounded-md transition-colors"
-                >
-                  Profile
-                </Link>
-
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    closeMobileMenu();
-                  }}
-                  disabled={isLoggingOut}
-                  className={cn(
-                    "w-full flex items-center px-3 py-2.5 text-left rounded-md text-[13px] transition-colors",
-                    "text-red-300 hover:text-red-200 hover:bg-green-600",
-                    isLoggingOut && "opacity-50 cursor-not-allowed"
-                  )}
-                >
-                  {isLoggingOut ? "Logging out..." : "Logout"}
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </header>
 
