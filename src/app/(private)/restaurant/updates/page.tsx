@@ -93,49 +93,30 @@ export default function RestaurantDashboard() {
     },
     salesChart: {
       currentPeriod: [
-        { day: "Mon", sales: 27 },
-        { day: "Tue", sales: 25 },
-        { day: "Wed", sales: 36 },
-        { day: "Thu", sales: 30 },
-        { day: "Fri", sales: 24 },
-        { day: "Sat", sales: 33 },
-        { day: "Sun", sales: 28 },
+        { day: "Mon", sales: statistics?.totalOrders || 0 },
+        { day: "Tue", sales: 0 },
+        { day: "Wed", sales: 0 },
+        { day: "Thu", sales: 0 },
+        { day: "Fri", sales: 0 },
+        { day: "Sat", sales: 0 },
+        { day: "Sun", sales: 0 },
       ],
       previousPeriod: [
-        { day: "Mon", sales: 24 },
-        { day: "Tue", sales: 23 },
-        { day: "Wed", sales: 32 },
-        { day: "Thu", sales: 28 },
-        { day: "Fri", sales: 22 },
-        { day: "Sat", sales: 29 },
-        { day: "Sun", sales: 26 },
+        { day: "Mon", sales: 0 },
+        { day: "Tue", sales: 0 },
+        { day: "Wed", sales: 0 },
+        { day: "Thu", sales: 0 },
+        { day: "Fri", sales: 0 },
+        { day: "Sat", sales: 0 },
+        { day: "Sun", sales: 0 },
       ],
       stats: {
-        min: 25,
-        avg: 29.5,
-        max: 35,
+        min: 0,
+        avg: statistics?.totalOrders || 0,
+        max: statistics?.totalOrders || 0,
       },
     },
-    topProducts: [
-      {
-        id: "1",
-        name: "Organic Mixed Greens",
-        unitsSold: 250,
-        image: "/imgs/eggs.svg",
-      },
-      {
-        id: "2",
-        name: "Premium Beef Sirloin",
-        unitsSold: 185,
-        image: "/imgs/eggs.svg",
-      },
-      {
-        id: "3",
-        name: "Artisanal Bread",
-        unitsSold: 142,
-        image: "/imgs/eggs.svg",
-      },
-    ],
+    topProducts: [],
     recentOrders: orders.slice(0, 3).map((order) => {
       const statusMap: Record<string, any> = {
         PROCESSING: "PREPARING",
@@ -180,7 +161,7 @@ export default function RestaurantDashboard() {
   console.log("[Dashboard] dashboardData prepared:", dashboardData);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-100">
       <main className="container mx-auto px-6 py-8">
         <DashboardOverview
           data={dashboardData}

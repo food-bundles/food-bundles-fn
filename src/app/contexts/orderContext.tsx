@@ -123,7 +123,7 @@ export function OrderProvider({ children }: OrderProviderProps) {
   const getAllOrders = useCallback(async (params?: any) => {
     try {
       setLoading(true);
-      const response = await orderService.getAllOrders(params);
+      const response = await orderService.getAllOrdersByAdmin(params);
       if (response.success) {
         setOrders(response.data || []);
       }

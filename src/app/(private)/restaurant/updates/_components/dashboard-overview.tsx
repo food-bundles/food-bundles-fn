@@ -2,24 +2,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { Key, useState, useMemo, useEffect } from "react";
-import {
-  Truck,
-  Home,
-  ShoppingBag,
-  ChefHat,
-  Package,
-} from "lucide-react";
+import { type Key, useState, useMemo, useEffect } from "react";
+import { Truck, Home, ShoppingBag, ChefHat, Package } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import Image from "next/image";
-import { Order } from "@/lib/types";
+import type { Order } from "@/lib/types";
 import { MovingBorderCircle } from "@/components/ui/moving-border-circle";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 
@@ -75,10 +62,20 @@ type Props = {
   loading?: boolean;
 };
 
-export function DashboardOverview({ data, onReorder, reorderingId, loading }: Props) {
-  const [chartPeriod, setChartPeriod] = useState<"week" | "month">("week");
+export function DashboardOverview({
+  data,
+  onReorder,
+  reorderingId,
+  loading,
+}: Props) {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [orderToTrack, setOrderToTrack] = useState<any>(null);
+  const [hoveredPoint, setHoveredPoint] = useState<{
+    x: number;
+    y: number;
+    value: number;
+    day: string;
+  } | null>(null);
 
   // Initialize with the first order or selected order
   useEffect(() => {
@@ -95,7 +92,7 @@ export function DashboardOverview({ data, onReorder, reorderingId, loading }: Pr
       setSelectedOrderId(firstOrderId);
       setOrderToTrack(firstOrder);
     }
-  }, [data.selectedOrderForTracking, data.recentOrders.length]);
+  }, [data.selectedOrderForTracking, data.recentOrders]);
 
   // Update orderToTrack whenever selectedOrderId changes
   useEffect(() => {
@@ -242,16 +239,13 @@ export function DashboardOverview({ data, onReorder, reorderingId, loading }: Pr
         isLoading: true,
       };
     }
-    
+
     if (!orderToTrack) {
       return {
-        currentStep: 0,
-        steps: allOrderSteps.map((step) => ({
-          ...step,
-          completed: false,
-          time: "",
-        })),
+        currentStep: -1,
+        steps: [],
         orderNumber: "No orders",
+        isEmpty: true,
       };
     }
 
@@ -287,203 +281,242 @@ export function DashboardOverview({ data, onReorder, reorderingId, loading }: Pr
     };
   }, [orderToTrack]);
 
-const LineChart = () => {
-  const maxValue = Math.max(
-    ...data.salesChart.currentPeriod.map((d) => d.sales),
-    ...data.salesChart.previousPeriod.map((d) => d.sales)
-  );
+  const LineChart = () => {
+    const maxValue = Math.max(
+      ...data.salesChart.currentPeriod.map((d) => d.sales),
+      ...data.salesChart.previousPeriod.map((d) => d.sales)
+    );
 
-  const chartWidth = 800;
-  const chartHeight = 240;
-  const padding = 50;
+    const chartWidth = 800;
+    const chartHeight = 240;
+    const padding = 50;
 
-  const getX = (index: number) =>
-    padding +
-    (index * (chartWidth - 2 * padding)) /
-      (data.salesChart.currentPeriod.length - 1);
-  const getY = (value: number) =>
-    chartHeight - padding - (value / maxValue) * (chartHeight - 2 * padding);
+    const getX = (index: number) =>
+      padding +
+      (index * (chartWidth - 2 * padding)) /
+        (data.salesChart.currentPeriod.length - 1);
+    const getY = (value: number) =>
+      chartHeight - padding - (value / maxValue) * (chartHeight - 2 * padding);
 
-  return (
-    <div className="w-full relative">
-      <svg
-        width="100%"
-        height="100%"
-        viewBox={`0 0 ${chartWidth} ${chartHeight + 60}`}
-        className="overflow-visible"
-        preserveAspectRatio="xMidYMid meet"
-      >
-        <defs>
-          <pattern
-            id="grid"
-            width="100"
-            height="40"
-            patternUnits="userSpaceOnUse"
-          >
-            <path
-              d="M 100 0 L 0 0 0 40"
-              fill="none"
-              stroke="#f3f4f6"
-              strokeWidth="1"
-              strokeDasharray="2,2"
-            />
-          </pattern>
-          <linearGradient id="orangeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop
-              offset="0%"
-              style={{ stopColor: "#fb923c", stopOpacity: 0.3 }}
-            />
-            <stop
-              offset="100%"
-              style={{ stopColor: "#fb923c", stopOpacity: 0.05 }}
-            />
-          </linearGradient>
-          <linearGradient id="redGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop
-              offset="0%"
-              style={{ stopColor: "#ef4444", stopOpacity: 0.3 }}
-            />
-            <stop
-              offset="100%"
-              style={{ stopColor: "#ef4444", stopOpacity: 0.05 }}
-            />
-          </linearGradient>
-        </defs>
-        <rect width="100%" height={chartHeight} fill="url(#grid)" />
-
-        {[0, 9, 18, 27, 36].map((value) => (
-          <g key={value}>
-            <text
-              x="20"
-              y={getY(value) + 5}
-              className="text-xs fill-gray-500"
-              textAnchor="end"
+    return (
+      <div className="w-full relative">
+        <svg
+          width="100%"
+          height="100%"
+          viewBox={`0 0 ${chartWidth} ${chartHeight + 60}`}
+          className="overflow-visible"
+          preserveAspectRatio="xMidYMid meet"
+        >
+          <defs>
+            <pattern
+              id="grid"
+              width="100"
+              height="40"
+              patternUnits="userSpaceOnUse"
             >
-              {value}
-            </text>
-            <line
-              x1={padding}
-              y1={getY(value)}
-              x2={chartWidth - padding}
-              y2={getY(value)}
-              stroke="#f3f4f6"
-              strokeWidth="1"
-              strokeDasharray="2,2"
+              <path
+                d="M 100 0 L 0 0 0 40"
+                fill="none"
+                stroke="#f3f4f6"
+                strokeWidth="1"
+                strokeDasharray="2,2"
+              />
+            </pattern>
+            <linearGradient
+              id="orangeGradient"
+              x1="0%"
+              y1="0%"
+              x2="0%"
+              y2="100%"
+            >
+              <stop
+                offset="0%"
+                style={{ stopColor: "#fb923c", stopOpacity: 0.3 }}
+              />
+              <stop
+                offset="100%"
+                style={{ stopColor: "#fb923c", stopOpacity: 0.05 }}
+              />
+            </linearGradient>
+            <linearGradient id="redGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop
+                offset="0%"
+                style={{ stopColor: "#ef4444", stopOpacity: 0.3 }}
+              />
+              <stop
+                offset="100%"
+                style={{ stopColor: "#ef4444", stopOpacity: 0.05 }}
+              />
+            </linearGradient>
+          </defs>
+          <rect width="100%" height={chartHeight} fill="url(#grid)" />
+
+          {[0, 9, 18, 27, 36].map((value) => (
+            <g key={value}>
+              <text
+                x="20"
+                y={getY(value) + 5}
+                className="text-xs fill-gray-500"
+                textAnchor="end"
+              >
+                {value}
+              </text>
+              <line
+                x1={padding}
+                y1={getY(value)}
+                x2={chartWidth - padding}
+                y2={getY(value)}
+                stroke="#f3f4f6"
+                strokeWidth="1"
+                strokeDasharray="2,2"
+              />
+            </g>
+          ))}
+
+          {/* Area fill for successful orders (orange) */}
+          <path
+            d={`M ${getX(0)},${
+              chartHeight - padding
+            } ${data.salesChart.currentPeriod
+              .map((d, i) => `L ${getX(i)},${getY(d.sales)}`)
+              .join(" ")} L ${getX(data.salesChart.currentPeriod.length - 1)},${
+              chartHeight - padding
+            } Z`}
+            fill="url(#orangeGradient)"
+          />
+
+          {/* Area fill for failed orders (red) */}
+          <path
+            d={`M ${getX(0)},${
+              chartHeight - padding
+            } ${data.salesChart.previousPeriod
+              .map((d, i) => `L ${getX(i)},${getY(d.sales)}`)
+              .join(" ")} L ${getX(
+              data.salesChart.previousPeriod.length - 1
+            )},${chartHeight - padding} Z`}
+            fill="url(#redGradient)"
+          />
+
+          {/* Successful orders line (orange) */}
+          <polyline
+            fill="none"
+            stroke="#fb923c"
+            strokeWidth="3"
+            points={data.salesChart.currentPeriod
+              .map((d, i) => `${getX(i)},${getY(d.sales)}`)
+              .join(" ")}
+          />
+
+          {data.salesChart.currentPeriod.map((d, i) => (
+            <circle
+              key={`current-${i}`}
+              cx={getX(i)}
+              cy={getY(d.sales)}
+              r="5"
+              fill="#fb923c"
+              stroke="white"
+              strokeWidth="2"
+              className="cursor-pointer hover:r-7 transition-all"
+              onMouseEnter={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setHoveredPoint({
+                  x: rect.left,
+                  y: rect.top,
+                  value: d.sales,
+                  day: d.day,
+                });
+              }}
+              onMouseLeave={() => setHoveredPoint(null)}
             />
-          </g>
-        ))}
+          ))}
 
-        {/* Area fill for successful orders (orange) */}
-        <path
-          d={`M ${getX(0)},${
-            chartHeight - padding
-          } ${data.salesChart.currentPeriod
-            .map((d, i) => `L ${getX(i)},${getY(d.sales)}`)
-            .join(" ")} L ${getX(data.salesChart.currentPeriod.length - 1)},${
-            chartHeight - padding
-          } Z`}
-          fill="url(#orangeGradient)"
-        />
-
-        {/* Area fill for failed orders (red) */}
-        <path
-          d={`M ${getX(0)},${
-            chartHeight - padding
-          } ${data.salesChart.previousPeriod
-            .map((d, i) => `L ${getX(i)},${getY(d.sales)}`)
-            .join(" ")} L ${getX(data.salesChart.previousPeriod.length - 1)},${
-            chartHeight - padding
-          } Z`}
-          fill="url(#redGradient)"
-        />
-
-        {/* Successful orders line (orange) */}
-        <polyline
-          fill="none"
-          stroke="#fb923c"
-          strokeWidth="3"
-          points={data.salesChart.currentPeriod
-            .map((d, i) => `${getX(i)},${getY(d.sales)}`)
-            .join(" ")}
-        />
-
-        {data.salesChart.currentPeriod.map((d, i) => (
-          <circle
-            key={`current-${i}`}
-            cx={getX(i)}
-            cy={getY(d.sales)}
-            r="5"
-            fill="#fb923c"
-            stroke="white"
-            strokeWidth="2"
+          {/* Failed/Cancelled orders line (red) */}
+          <polyline
+            fill="none"
+            stroke="#ef4444"
+            strokeWidth="3"
+            points={data.salesChart.previousPeriod
+              .map((d, i) => `${getX(i)},${getY(d.sales)}`)
+              .join(" ")}
           />
-        ))}
 
-        {/* Failed/Cancelled orders line (red) */}
-        <polyline
-          fill="none"
-          stroke="#ef4444"
-          strokeWidth="3"
-          points={data.salesChart.previousPeriod
-            .map((d, i) => `${getX(i)},${getY(d.sales)}`)
-            .join(" ")}
-        />
+          {data.salesChart.previousPeriod.map((d, i) => (
+            <circle
+              key={`previous-${i}`}
+              cx={getX(i)}
+              cy={getY(d.sales)}
+              r="5"
+              fill="#ef4444"
+              stroke="white"
+              strokeWidth="2"
+              className="cursor-pointer hover:r-7 transition-all"
+              onMouseEnter={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setHoveredPoint({
+                  x: rect.left,
+                  y: rect.top,
+                  value: d.sales,
+                  day: d.day,
+                });
+              }}
+              onMouseLeave={() => setHoveredPoint(null)}
+            />
+          ))}
 
-        {data.salesChart.previousPeriod.map((d, i) => (
-          <circle
-            key={`previous-${i}`}
-            cx={getX(i)}
-            cy={getY(d.sales)}
-            r="5"
-            fill="#ef4444"
-            stroke="white"
-            strokeWidth="2"
-          />
-        ))}
+          {data.salesChart.currentPeriod.map((d, i) => (
+            <text
+              key={d.day}
+              x={getX(i)}
+              y={chartHeight + 20}
+              className="text-[16px] fill-white"
+              textAnchor="middle"
+            >
+              {d.day}
+            </text>
+          ))}
+        </svg>
 
-        {data.salesChart.currentPeriod.map((d, i) => (
-          <text
-            key={d.day}
-            x={getX(i)}
-            y={chartHeight + 20}
-            className="text-xs fill-gray-600"
-            textAnchor="middle"
+        <div className="absolute -left-8 top-1/2 transform -rotate-90 -translate-y-1/2 text-xs text-white">
+          Orders
+        </div>
+
+        <div className="flex items-center justify-center flex-wrap space-x-4 sm:space-x-6 mt-2 gap-y-2">
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-1 bg-orange-400 rounded"></div>
+            <span className="text-xs sm:text-sm text-white">
+              Successful Orders
+            </span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-1 bg-red-500 rounded"></div>
+            <span className="text-xs sm:text-sm text-white">
+              Failed Orders
+            </span>
+          </div>
+        </div>
+        {/* Tooltip */}
+        {hoveredPoint && (
+          <div
+            className="absolute bg-gray-900 text-white px-2 py-1 rounded text-xs pointer-events-none z-10"
+            style={{
+              left: hoveredPoint.x - 30,
+              top: hoveredPoint.y - 40,
+            }}
           >
-            {d.day}
-          </text>
-        ))}
-      </svg>
-
-      <div className="absolute left-2 top-1/2 transform -rotate-90 -translate-y-1/2 text-xs text-gray-500">
-        Orders
+            {hoveredPoint.day}: {hoveredPoint.value} orders
+          </div>
+        )}
       </div>
-
-      <div className="flex items-center justify-center flex-wrap space-x-4 sm:space-x-6 mt-2 gap-y-2">
-        <div className="flex items-center space-x-2">
-          <div className="w-4 h-1 bg-orange-400 rounded"></div>
-          <span className="text-xs sm:text-sm text-gray-700">
-            Successful Orders
-          </span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-4 h-1 bg-red-500 rounded"></div>
-          <span className="text-xs sm:text-sm text-gray-700">
-            Failed Orders
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-};
+    );
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row gap-6 w-full">
-        <div className="w-full lg:w-7/10 space-y-0">
+        <div className="w-full lg:w-1/2 space-y-0">
           {/* Order Tracking */}
-          
-          <div className="lg:flex md:block justify-between w-full bg-white rounded-lg shadow-md p-3 sm:p-4 border border-gray-100 mb-4">
-            <></>
+
+          <div className="lg:flex md:block justify-between w-full bg-white rounded-xl shadow-lg p-3 sm:p-4 border border-gray-100 mb-4">
             <div className="flex items-center justify-between mb-3">
               <div>
                 <h2 className="text-base sm:text-lg font-semibold text-gray-800">
@@ -495,10 +528,17 @@ const LineChart = () => {
               </div>
             </div>
             {loading ? (
-              <div className="flex items-center justify-center">
-                <Spinner />
+              <div className="flex items-center justify-center py-8">
+                <Spinner variant="circle" size={20} />
+                <p className="text-sm text-gray-600 ml-2">
+                  Loading order status...
+                </p>
               </div>
-            ) : ( isFailedOrder ? (
+            ) : orderTrackingData.isEmpty ? (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-sm text-gray-500">No orders to track</p>
+              </div>
+            ) : isFailedOrder ? (
               <div className="flex items-center justify-between gap-1 xs:gap-2 sm:gap-3 md:gap-6 py-2 lg:py-4 text-center">
                 <p className="text-[12px] text-red-700">
                   Your order has failed. Please reorder.
@@ -506,18 +546,30 @@ const LineChart = () => {
                 <button
                   onClick={() => {
                     if (onReorder && orderToTrack) {
-                      const orderId = (orderToTrack as any).originalData?.id || orderToTrack.id;
+                      const orderId =
+                        (orderToTrack as any).originalData?.id ||
+                        orderToTrack.id;
                       onReorder(orderId);
                     }
                   }}
-                  disabled={!onReorder || !orderToTrack || (reorderingId === ((orderToTrack as any)?.originalData?.id || orderToTrack?.id))}
+                  disabled={
+                    !onReorder ||
+                    !orderToTrack ||
+                    reorderingId ===
+                      ((orderToTrack as any)?.originalData?.id ||
+                        orderToTrack?.id)
+                  }
                   className={`flex items-center gap-1 text-[14px] px-3  border border-green-500 rounded-full transition-all ${
-                    reorderingId === ((orderToTrack as any)?.originalData?.id || orderToTrack?.id)
+                    reorderingId ===
+                    ((orderToTrack as any)?.originalData?.id ||
+                      orderToTrack?.id)
                       ? "bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed"
                       : "text-green-500 hover:bg-green-500 hover:text-white hover:shadow-md cursor-pointer"
                   }`}
                 >
-                  {reorderingId === ((orderToTrack as any)?.originalData?.id || orderToTrack?.id) ? (
+                  {reorderingId ===
+                  ((orderToTrack as any)?.originalData?.id ||
+                    orderToTrack?.id) ? (
                     <>
                       <Spinner />
                     </>
@@ -578,80 +630,8 @@ const LineChart = () => {
                   );
                 })}
               </div>
-            ))}
+            )}
           </div>
-
-          <Card className="w-full border shadow-none">
-            <CardHeader className="flex  flex-row items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <CardTitle className="text-[14px] font-medium">
-                  Chart Orders
-                </CardTitle>
-              </div>
-              <Select
-                value={chartPeriod}
-                onValueChange={(value: "week" | "month") =>
-                  setChartPeriod(value)
-                }
-              >
-                <SelectTrigger className="w-24">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="week" className="text-[12px]">
-                    Week
-                  </SelectItem>
-                  <SelectItem value="month" className="text-[12px]">
-                    Month
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </CardHeader>
-            <CardContent>
-              <LineChart />
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="hidden lg:block w-[0.5px] bg-gray-300" />
-
-        <div className="w-full lg:w-3/10 space-y-6">
-          <div className="px-2 w-full">
-            {/* Top metrics row */}
-            <div className="flex gap-4">
-              {/* Total Orders card */}
-              <div className="flex-1 border border-orange-200 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
-                <p className="text-[13px] text-gray-600 font-medium">
-                  Total Orders
-                </p>
-                <p className="text-lg font-semibold text-yellow-500 mt-1">
-                  {data.metrics.totalOrders.current}
-                </p>
-              </div>
-
-              {/* Amount you would have paid in fees card */}
-              <div className="flex-1 border border-green-500 rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition-shadow">
-                <p className="text-[13px] text-gray-600 font-medium">
-                  Amount you would have paid in fees
-                </p>
-                <p className="text-lg font-semibold text-green-600 mt-1">
-                  RWF 0
-                </p>
-              </div>
-            </div>
-
-            {/* Comparison section */}
-            <div className="mt-3  pt-2 text-center">
-              <p className="text-sm text-gray-800">
-                Compared to{" "}
-                <span className="font-bold text-green-500">
-                  {data.metrics.totalOrders.previous}
-                </span>{" "}
-                {data.metrics.totalOrders.period}
-              </p>
-            </div>
-          </div>
-
           <div className="w-full px-2">
             <h3 className="text-[14px] font-semibold text-green-500 pb-2">
               Latest Orders
@@ -672,10 +652,10 @@ const LineChart = () => {
                     onClick={() => {
                       setSelectedOrderId(originalOrderId || order.id);
                     }}
-                    className={`flex items-start space-x-3 p-4 rounded cursor-pointer transition-all duration-300 transform hover:scale-[1.01] hover:shadow-md ${
+                    className={`flex items-start space-x-3 p-4 rounded-xl cursor-pointer transition-all duration-300 transform hover:scale-[1.01] hover:shadow-lg ${
                       isSelected
-                        ? "border-2 border-green-500 bg-green-50 shadow-md"
-                        : "border border-gray-200 hover:border-green-300 bg-white"
+                        ? "border-2 border-green-500 bg-green-50 shadow-lg"
+                        : "border border-gray-200 hover:border-green-300 bg-white shadow-md"
                     }`}
                   >
                     <div className="flex -space-x-2">
@@ -766,6 +746,91 @@ const LineChart = () => {
               })}
             </div>
           </div>
+        </div>
+        <div className="w-full lg:w-1/2 space-y-6">
+          <div className="px-2 w-full">
+            <div className="flex gap-6">
+              {/* Total Orders card - Orange theme */}
+              <div className="flex-1 relative pt-6">
+                {/* Floating icon box */}
+                <div className="absolute top-0 left-4 bg-gradient-to-br from-orange-400 to-orange-500 rounded py-4 px-6 shadow-xl z-10">
+                  <Package className="w-10 h-10 text-white" />
+                </div>
+
+                {/* White card */}
+                <div className="bg-white rounded shadow-lg hover:shadow-xl transition-shadow pt-6 pb-6 px-6">
+                  <div className="text-right">
+                    <p className="text-[13px] text-gray-500 font-medium">
+                      Total Orders
+                    </p>
+                  </div>
+                  <div className="text-end space-y-3">
+                    <p className="text-5xl font-bold text-gray-900">
+                      {data.metrics.totalOrders.current}
+                    </p>
+                  </div>
+                  <div className="mt-6 pt-0 border-t border-gray-100">
+                    <p className="text-xs text-orange-500 flex items-center gap-2">
+                      <span className="text-lg">⚠</span>
+                      View Details...
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Fees Saved card - Green theme */}
+              <div className="flex-1 relative pt-6">
+                {/* Floating icon box */}
+                <div className="absolute top-0 left-4 bg-gradient-to-br from-green-400 to-green-500 rounded py-4 px-6 shadow-xl z-10">
+                  <ShoppingBag className="w-10 h-10 text-white" />
+                </div>
+
+                {/* White card */}
+                <div className="bg-white rounded shadow-lg hover:shadow-xl transition-shadow pt-6 pb-6 px-6">
+                  <div className="text-right">
+                    <p className="text-sm text-gray-500 font-medium">
+                      Fees Saved
+                    </p>
+                  </div>
+                  <div className="text-end space-y-3">
+                    <p className="text-5xl font-bold text-gray-900">
+                      0 <span className="text-[12px] font-normal text-gray-500">RWF</span>
+                    </p>
+                  </div>
+                  <div className="mt-6 pt-3 border-t border-gray-100">
+                    <p className="text-xs text-gray-400 flex items-center gap-2">
+                      <span className="text-base"></span>
+                      Last 24 Hours
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Comparison section */}
+            <div className="mt-4 text-center">
+              <p className="text-sm text-gray-600">
+                Compared to{" "}
+                <span className="font-bold text-green-600">
+                  {data.metrics.totalOrders.previous}
+                </span>{" "}
+                {data.metrics.totalOrders.period}
+              </p>
+            </div>
+          </div>
+
+          <Card className="w-full border-0 shadow rounded py-0 overflow-hidden">
+            <CardContent className="bg-gradient-to-br from-green-500 to-green-600 p-6">
+              <LineChart />
+            </CardContent>
+            <CardHeader className="bg-white pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-[14px] font-normal text-gray-900">
+                  Chart Orders
+                </CardTitle>
+              </div>
+            </CardHeader>
+          </Card>
         </div>
       </div>
     </div>

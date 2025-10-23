@@ -128,8 +128,8 @@ function CircularRestaurantAnimation({
                   </div>
                 </div>
                 <div className="absolute top-24 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                    {restaurant.name.slice(0, 5)}
+                  <div className="text-green-400 font-medium text-xs px-2 py-1 rounded whitespace-nowrap">
+                    {restaurant.name}
                   </div>
                 </div>
               </div>

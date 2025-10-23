@@ -127,8 +127,8 @@ export function InventoryManagement({
         const matchesSearch =
           product.productName.toLowerCase().includes(searchLower) ||
           product.sku.toLowerCase().includes(searchLower) ||
-          (typeof product.category === "string" &&
-            product.category.toLowerCase().includes(searchLower));
+          (product.category &&
+            product.category.name.toLowerCase().includes(searchLower));
 
         if (!matchesSearch) return false;
       }
@@ -146,7 +146,7 @@ export function InventoryManagement({
       }
 
       // Category filter
-      if (categoryValue !== "all" && product.category !== categoryValue) {
+      if (categoryValue !== "all" && product.category?.name !== categoryValue) {
         return false;
       }
 
@@ -204,7 +204,7 @@ export function InventoryManagement({
         columns={columns}
         data={filteredData}
         title="Inventory Management"
-        descrption={`Manage your product inventory (${products.length} total products)`}
+        descrption={""}
         showExport={true}
         onExport={handleExport}
         showAddButton={true}

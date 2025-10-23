@@ -17,6 +17,7 @@ import {
   UserCheck,
   UserCog,
   Soup,
+  Crown,
 } from "lucide-react";
 import { usePathname} from "next/navigation";
 import Link from "next/link";
@@ -44,6 +45,11 @@ const menuItems = [
   },
   { icon: TrendingUp, label: "Sales", href: "/dashboard/sales" },
   {
+    icon: Crown,
+    label: "Subscriptions",
+    href: "/dashboard/subscriptions",
+  },
+  {
     icon: Users,
     label: "Users",
     href: "/dashboard/users",
@@ -67,7 +73,12 @@ const menuItems = [
   },
 ];
 
-export function AdminSidebar() {
+interface AdminSidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState(new Set());
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -109,22 +120,28 @@ export function AdminSidebar() {
   };
 
   return (
-    <div className="w-64 min-w-64 h-screen border-r border-gray-200 bg-gray-50 flex flex-col flex-shrink-0">
+    <div className={`
+      fixed md:relative
+      ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      z-50 md:z-auto
+      w-60 min-w-60 h-screen border-r border-gray-200 bg-gray-50 flex flex-col flex-shrink-0 
+      transition-transform duration-300 ease-in-out
+    `}>
       {/* Logo */}
-      <div className="p-4 flex items-center gap-2 flex-shrink-0">
+      <div className="p-3 md:p-4 flex items-center gap-2 flex-shrink-0">
         <Image
           src="/imgs/Food_bundle_logo.png"
           alt="Logo"
           width={40}
           height={40}
-          className="w-8 h-8 rounded-full object-cover"
+          className="w-7 h-7 md:w-8 md:h-8 rounded-full object-cover"
         />
-        <h1 className="text-xl font-bold text-black">Food Bundle</h1>
+        <h1 className="text-lg md:text-xl font-bold text-black">Food Bundle</h1>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-4 overflow-auto scrollbar-hide">
-        <ul className="space-y-1 px-3 pb-4">
+      <nav className="flex-1 py-2 md:py-4 overflow-auto scrollbar-hide">
+        <ul className="space-y-1 px-2 md:px-3 pb-4">
           {menuItems.map((item, index) => {
             const isActive = isItemActive(item);
             const isExpanded = expandedItems.has(index);
@@ -144,7 +161,7 @@ export function AdminSidebar() {
                       )}
                     >
                       <div className="flex items-center">
-                        <item.icon className="mr-3 h-5 w-5" />
+                        <item.icon className="mr-3 h-5 w-5 text-orange-400" />
                         {item.label}
                       </div>
                       {isExpanded ? (
@@ -161,15 +178,16 @@ export function AdminSidebar() {
                             <li key={subIndex}>
                               <Link
                                 href={subItem.href}
+                                onClick={() => onClose()}
                                 className={cn(
-                                  "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap",
+                                  "flex items-center px-2 md:px-3 py-2 rounded text-xs md:text-sm font-medium transition-colors whitespace-nowrap",
                                   isSubActive
-                                    ? "bg-trsansparent text-green-600 hover:text-green-700"
-                                    : "text-gray-600 "
+                                    ? "bg-transparent text-green-700 hover:text-green-800"
+                                    : "text-gray-600 hover:bg-green-50"
                                 )}
                               >
-                                <subItem.icon className="mr-3 h-4 w-4" />
-                                {subItem.label}
+                                <subItem.icon className="mr-2 md:mr-3 h-3 w-3 md:h-4 md:w-4 text-green-500" />
+                                <span className="truncate">{subItem.label}</span>
                               </Link>
                             </li>
                           );
@@ -180,15 +198,16 @@ export function AdminSidebar() {
                 ) : (
                   <Link
                     href={item.href}
+                    onClick={() => onClose()}
                     className={cn(
-                      "flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap",
+                      "flex items-center px-2 md:px-3 py-2 text-xs md:text-sm font-medium transition-colors whitespace-nowrap rounded-md",
                       isActive
-                        ? "bg-green-500 hover:bg-green-600 text-white"
+                        ? "bg-green-700 hover:bg-green-600 text-white"
                         : "text-gray-800 hover:bg-green-100"
                     )}
                   >
-                    <item.icon className="mr-3 h-5 w-5" />
-                    {item.label}
+                    <item.icon className="mr-2 md:mr-3 h-4 w-4 md:h-5 md:w-5 text-orange-400" />
+                    <span className="truncate">{item.label}</span>
                   </Link>
                 )}
               </li>
@@ -206,7 +225,7 @@ export function AdminSidebar() {
                 isLoggingOut && "opacity-50 cursor-not-allowed"
               )}
             >
-              <LogOut className="mr-3 h-5 w-5" />
+              <LogOut className="mr-3 h-5 w-5 text-orange-400" />
               {isLoggingOut ? "Logging out..." : "Logout"}
             </button>
           </li>
