@@ -1,3 +1,4 @@
+import { PaymentMethod } from "@/app/services/subscriptionService";
 
 export interface IUssdRequest {
   sessionId: string;
@@ -122,6 +123,7 @@ export enum OrderStatus {
 
 export type Order = {
   id: string
+  orderNumber: string
   customer: string
   items: Array<{
     name: string

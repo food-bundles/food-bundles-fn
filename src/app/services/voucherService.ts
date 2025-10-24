@@ -79,7 +79,7 @@ export const voucherService = {
 
   updateVoucher: async (id: string, updateData: Partial<IVoucherData>) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.patch(`/vouchers/${id}`, updateData);
+    const response = await axiosClient.put(`/vouchers/${id}`, updateData);
     return response.data;
   },
 
@@ -134,7 +134,7 @@ export const voucherService = {
 
   rejectLoan: async (id: string, reason?: string) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.patch(`/vouchers/loans/${id}/reject`, { reason });
+    const response = await axiosClient.put(`/vouchers/loans/${id}/reject`, { reason });
     return response.data;
   },
 

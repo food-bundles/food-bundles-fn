@@ -797,7 +797,7 @@ function SignupForm() {
         )}
 
         <div>
-          <h2 className="text-[18px] font-bold text-gray-900 mb-4">
+          <h2 className="text-[18px] font-bold text-gray-900 mt-6 mb-4">
             Create {selectedRole === UserRole.FARMER ? "Farmer" : "Restaurant"}{" "}
             Account
           </h2>

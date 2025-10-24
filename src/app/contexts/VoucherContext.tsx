@@ -79,7 +79,7 @@ export const VoucherProvider: React.FC<VoucherProviderProps> = ({ children }) =>
       setLoading(true);
       clearError();
       // Get current user's restaurant ID from context or auth
-      const response = await voucherService.getRestaurantVouchers("current"); // Backend will use authenticated user's ID
+      const response = await voucherService.getRestaurantVouchers("current"); 
       setVouchers(response.data || []);
     } catch (error) {
       handleError(error, "Failed to fetch vouchers");

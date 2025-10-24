@@ -4,7 +4,7 @@
 
 import { type Key, useState, useMemo, useEffect } from "react";
 import { Truck, Home, ShoppingBag, ChefHat, Package } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import Image from "next/image";
 import type { Order } from "@/lib/types";
 import { MovingBorderCircle } from "@/components/ui/moving-border-circle";
@@ -88,7 +88,7 @@ export function DashboardOverview({
     } else if (data.recentOrders.length > 0 && !selectedOrderId) {
       const firstOrder = data.recentOrders[0];
       const firstOrderId =
-        (firstOrder as any).originalData?.id || firstOrder.id;
+        (firstOrder as any).originalData?.id || firstOrder.orderNumber;
       setSelectedOrderId(firstOrderId);
       setOrderToTrack(firstOrder);
     }
@@ -489,9 +489,7 @@ export function DashboardOverview({
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-4 h-1 bg-red-500 rounded"></div>
-            <span className="text-xs sm:text-sm text-white">
-              Failed Orders
-            </span>
+            <span className="text-xs sm:text-sm text-white">Failed Orders</span>
           </div>
         </div>
         {/* Tooltip */}
@@ -516,123 +514,125 @@ export function DashboardOverview({
         <div className="w-full lg:w-1/2 space-y-0">
           {/* Order Tracking */}
 
-          <div className="lg:flex md:block justify-between w-full bg-white rounded-xl shadow-lg p-3 sm:p-4 border border-gray-100 mb-4">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <h2 className="text-base sm:text-lg font-semibold text-gray-800">
-                  Track Order
-                </h2>
-                <p className="text-xs sm:text-sm text-green-600">
-                  #{orderTrackingData.orderNumber}
-                </p>
-              </div>
+          <div className=" relative  bg-white rounded shadow-lg hover:shadow-xl transition-shadow mt-6 pt-8 pb-4 px-6">
+            {/* Header absolute block */}
+            <div className="absolute -top-6 left-4 right-4 rounded  bg-gradient-to-tr from-green-400 to-green-600 px-6  py-2 flex items-center justify-between">
+              <h2 className="text-sm sm:text-base font-semibold text-white">
+                Track Order
+              </h2>
+              <p className="text-xs sm:text-sm text-white font-medium">
+                {orderTrackingData.orderNumber}
+              </p>
             </div>
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Spinner variant="circle" size={20} />
-                <p className="text-sm text-gray-600 ml-2">
-                  Loading order status...
-                </p>
-              </div>
-            ) : orderTrackingData.isEmpty ? (
-              <div className="flex items-center justify-center py-8">
-                <p className="text-sm text-gray-500">No orders to track</p>
-              </div>
-            ) : isFailedOrder ? (
-              <div className="flex items-center justify-between gap-1 xs:gap-2 sm:gap-3 md:gap-6 py-2 lg:py-4 text-center">
-                <p className="text-[12px] text-red-700">
-                  Your order has failed. Please reorder.
-                </p>
-                <button
-                  onClick={() => {
-                    if (onReorder && orderToTrack) {
-                      const orderId =
-                        (orderToTrack as any).originalData?.id ||
-                        orderToTrack.id;
-                      onReorder(orderId);
+
+            {/* Order tracking content */}
+            <div className="">
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Spinner variant="ring" />
+                  <p className="text-sm text-gray-600 ml-2">
+                    Loading order status...
+                  </p>
+                </div>
+              ) : orderTrackingData.isEmpty ? (
+                <div className="flex items-center justify-center py-8">
+                  <p className="text-sm text-gray-500">No orders to track</p>
+                </div>
+              ) : isFailedOrder ? (
+                <div className="flex gap-4 items-center justify-center py-6">
+                  <p className="text-[13px] text-red-700 font-medium">
+                    Your order has failed. Please reorder.
+                  </p>
+                  <button
+                    onClick={() => {
+                      if (onReorder && orderToTrack) {
+                        const orderId =
+                          (orderToTrack as any).originalData?.id ||
+                          orderToTrack.id;
+                        onReorder(orderId);
+                      }
+                    }}
+                    disabled={
+                      !onReorder ||
+                      !orderToTrack ||
+                      reorderingId ===
+                        ((orderToTrack as any)?.originalData?.id ||
+                          orderToTrack?.id)
                     }
-                  }}
-                  disabled={
-                    !onReorder ||
-                    !orderToTrack ||
-                    reorderingId ===
+                    className={`flex items-center gap-1 text-[13px] px-4 border border-green-500 rounded-full transition-all ${
+                      reorderingId ===
                       ((orderToTrack as any)?.originalData?.id ||
                         orderToTrack?.id)
-                  }
-                  className={`flex items-center gap-1 text-[14px] px-3  border border-green-500 rounded-full transition-all ${
-                    reorderingId ===
+                        ? "bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed"
+                        : "text-green-500 hover:bg-green-500 hover:text-white hover:shadow-md cursor-pointer"
+                    }`}
+                  >
+                    {reorderingId ===
                     ((orderToTrack as any)?.originalData?.id ||
-                      orderToTrack?.id)
-                      ? "bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed"
-                      : "text-green-500 hover:bg-green-500 hover:text-white hover:shadow-md cursor-pointer"
-                  }`}
-                >
-                  {reorderingId ===
-                  ((orderToTrack as any)?.originalData?.id ||
-                    orderToTrack?.id) ? (
-                    <>
-                      <Spinner />
-                    </>
-                  ) : (
-                    "Reorder"
-                  )}
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between gap-1 xs:gap-2 sm:gap-3 md:gap-6 py-2 w-full">
-                {orderTrackingData.steps.map((step, index) => {
-                  const Icon = step.icon;
-                  const isCompleted = step.completed;
-                  const isCurrent = index === orderTrackingData.currentStep;
-                  const isNext = index === orderTrackingData.currentStep + 1;
+                      orderToTrack?.id) ? (
+                      <Spinner variant="ring" />
+                    ) : (
+                      "Reorder"
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between gap-1 xs:gap-2 sm:gap-3 md:gap-6 py-4 w-full">
+                  {orderTrackingData.steps.map((step, index) => {
+                    const Icon = step.icon;
+                    const isCompleted = step.completed;
+                    const isCurrent = index === orderTrackingData.currentStep;
+                    const isNext = index === orderTrackingData.currentStep + 1;
 
-                  return (
-                    <div
-                      key={index}
-                      className="flex flex-col items-center flex-1"
-                    >
-                      <div className="relative flex items-center justify-center">
-                        {isNext ? (
-                          <MovingBorderCircle
-                            duration={2000}
-                            borderClassName="h-1.5 w-1.5 bg-gradient-to-r from-green-400 to-green-600"
-                          >
-                            <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center bg-white text-green-400 border-2 border-green-300 transition-all">
+                    return (
+                      <div
+                        key={index}
+                        className="flex flex-col items-center flex-1"
+                      >
+                        <div className="relative flex items-center justify-center">
+                          {isNext ? (
+                            <MovingBorderCircle
+                              duration={1000}
+                              borderClassName="h-1.5 w-1.5 bg-gradient-to-r from-green-400 to-green-600"
+                            >
+                              <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center bg-white text-green-400 border-2 border-green-300 transition-all">
+                                <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                              </div>
+                            </MovingBorderCircle>
+                          ) : (
+                            <div
+                              className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all ${
+                                isCompleted
+                                  ? "bg-green-500 text-white shadow-md border-2 border-green-600"
+                                  : isCurrent
+                                  ? "bg-green-100 text-green-600 border-2 border-green-500"
+                                  : "bg-gray-100 text-gray-400 border-2 border-gray-300"
+                              }`}
+                            >
                               <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                             </div>
-                          </MovingBorderCircle>
-                        ) : (
-                          <div
-                            className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all ${
-                              isCompleted
-                                ? "bg-green-500 text-white shadow-md border-2 border-green-600"
-                                : isCurrent
-                                ? "bg-green-100 text-green-600 border-2 border-green-500"
-                                : "bg-gray-100 text-gray-400 border-2 border-gray-300"
-                            }`}
-                          >
-                            <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-                          </div>
-                        )}
+                          )}
+                        </div>
+                        <p
+                          className={`text-[9px] xs:text-[10px] sm:text-xs mt-2 font-medium text-center leading-tight ${
+                            isCompleted || isCurrent
+                              ? "text-green-600"
+                              : isNext
+                              ? "text-green-400"
+                              : "text-gray-400"
+                          }`}
+                        >
+                          {step.label}
+                        </p>
                       </div>
-                      <p
-                        className={`text-[9px] xs:text-[10px] sm:text-xs mt-1 sm:mt-2 font-medium text-center leading-tight ${
-                          isCompleted || isCurrent
-                            ? "text-green-600"
-                            : isNext
-                            ? "text-green-400"
-                            : "text-gray-400"
-                        }`}
-                      >
-                        {step.label}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
-          <div className="w-full px-2">
+
+          <div className="w-full mt-10 bg-white rounded p-4">
             <h3 className="text-[14px] font-semibold text-green-500 pb-2">
               Latest Orders
             </h3>
@@ -652,9 +652,9 @@ export function DashboardOverview({
                     onClick={() => {
                       setSelectedOrderId(originalOrderId || order.id);
                     }}
-                    className={`flex items-start space-x-3 p-4 rounded-xl cursor-pointer transition-all duration-300 transform hover:scale-[1.01] hover:shadow-lg ${
+                    className={`flex items-start space-x-3 py-2 px-4 rounded cursor-pointer hover:shadow-lg ${
                       isSelected
-                        ? "border-2 border-green-500 bg-green-50 shadow-lg"
+                        ? "border border-green-500 bg-green-50 shadow-lg"
                         : "border border-gray-200 hover:border-green-300 bg-white shadow-md"
                     }`}
                   >
@@ -690,40 +690,37 @@ export function DashboardOverview({
                         <p className="font-medium text-gray-900 text-sm truncate">
                           {order.id}
                         </p>
-                        <div
-                          className={`px-2 py-0.5 rounded-full ${statusConfig.bg} ${statusConfig.border} border transition-all duration-300`}
-                        >
-                          <p
-                            className={`text-[10px] font-medium lowercase ${statusConfig.text}`}
+                        <div className="flex gap-4">
+                          <div
+                            className={`px-2 py-0.5 rounded-full ${statusConfig.bg} ${statusConfig.border} border transition-all duration-300`}
                           >
-                            {statusConfig.label}
-                          </p>
+                            <p
+                              className={`text-[10px] font-medium lowercase ${statusConfig.text}`}
+                            >
+                              {statusConfig.label}
+                            </p>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onReorder) {
+                                onReorder(originalOrderId);
+                              }
+                            }}
+                            disabled={isReordering || !onReorder}
+                            className={`flex items-center gap-1 transition-all duration-200 ${
+                              isReordering
+                                ? "text-gray-400 cursor-not-allowed"
+                                : "text-green-500 hover:text-green-600 cursor-pointer"
+                            }`}
+                          >
+                            {isReordering ? (
+                              <Spinner variant="ring" />
+                            ) : (
+                              <p className="text-[13px] font-medium">Reorder</p>
+                            )}
+                          </button>
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (onReorder) {
-                              console.log(
-                                "Reorder clicked for:",
-                                originalOrderId
-                              );
-                              onReorder(originalOrderId);
-                            }
-                          }}
-                          disabled={isReordering || !onReorder}
-                          className={`flex items-center gap-1 transition-all duration-200 ${
-                            isReordering
-                              ? "text-gray-400 cursor-not-allowed"
-                              : "text-green-500 hover:text-green-600 hover:scale-110 cursor-pointer"
-                          }`}
-                          title={isReordering ? "Reordering..." : "Reorder"}
-                        >
-                          {isReordering ? (
-                            <Spinner variant="circle" size={10} />
-                          ) : (
-                            <p className="text-[10px] font-medium">Reorder</p>
-                          )}
-                        </button>
                       </div>
 
                       <p className="text-xs text-gray-900 mb-1 line-clamp-1">
@@ -750,29 +747,28 @@ export function DashboardOverview({
         <div className="w-full lg:w-1/2 space-y-6">
           <div className="px-2 w-full">
             <div className="flex gap-6">
-              {/* Total Orders card - Orange theme */}
               <div className="flex-1 relative pt-6">
-                {/* Floating icon box */}
-                <div className="absolute top-0 left-4 bg-gradient-to-br from-orange-400 to-orange-500 rounded py-4 px-6 shadow-xl z-10">
+                <div className="absolute top-0 left-4 bg-gradient-to-tr from-orange-300 to-orange-400 rounded py-4 px-6 shadow-xl z-10">
                   <Package className="w-10 h-10 text-white" />
                 </div>
 
-                {/* White card */}
-                <div className="bg-white rounded shadow-lg hover:shadow-xl transition-shadow pt-6 pb-6 px-6">
-                  <div className="text-right">
-                    <p className="text-[13px] text-gray-500 font-medium">
-                      Total Orders
-                    </p>
+                <div className="bg-white rounded shadow-lg hover:shadow-xl transition-shadow pt-6 pb-2 sm-pb-6 px-6">
+                  <div className="mt-8 sm:mt-0">
+                    <div className="text-right">
+                      <p className="text-[13px] text-gray-500 font-medium">
+                        Total Orders
+                      </p>
+                    </div>
+                    <div className="text-end space-y-3">
+                      <p className="text-4xl sm:text-2xl font-bold text-gray-900">
+                        {data.metrics.totalOrders.current}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-end space-y-3">
-                    <p className="text-5xl font-bold text-gray-900">
-                      {data.metrics.totalOrders.current}
-                    </p>
-                  </div>
-                  <div className="mt-6 pt-0 border-t border-gray-100">
+                  <div className="mt-2 lg:mt-4 pt-0 border-t border-gray-100">
                     <p className="text-xs text-orange-500 flex items-center gap-2">
                       <span className="text-lg">⚠</span>
-                      View Details...
+                      View more..
                     </p>
                   </div>
                 </div>
@@ -781,26 +777,31 @@ export function DashboardOverview({
               {/* Fees Saved card - Green theme */}
               <div className="flex-1 relative pt-6">
                 {/* Floating icon box */}
-                <div className="absolute top-0 left-4 bg-gradient-to-br from-green-400 to-green-500 rounded py-4 px-6 shadow-xl z-10">
+                <div className="absolute top-0 left-4 bg-gradient-to-tr from-green-400 to-green-600 rounded py-4 px-6 shadow-xl z-10">
                   <ShoppingBag className="w-10 h-10 text-white" />
                 </div>
 
                 {/* White card */}
-                <div className="bg-white rounded shadow-lg hover:shadow-xl transition-shadow pt-6 pb-6 px-6">
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500 font-medium">
-                      Fees Saved
-                    </p>
+                <div className="bg-white rounded shadow-lg hover:shadow-xl transition-shadow pt-6 pb-2 sm-pb-6 px-6">
+                  <div className="mt-8 sm:mt-0">
+                    <div className="text-right">
+                      <p className="text-sm text-gray-500 font-medium">
+                        Saved Fees
+                      </p>
+                    </div>
+                    <div className="text-end space-y-3">
+                      <p className="text-4xl sm:text-2xl font-bold text-gray-900">
+                        0{" "}
+                        <span className="text-[12px] font-normal text-gray-500">
+                          RWF
+                        </span>
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-end space-y-3">
-                    <p className="text-5xl font-bold text-gray-900">
-                      0 <span className="text-[12px] font-normal text-gray-500">RWF</span>
-                    </p>
-                  </div>
-                  <div className="mt-6 pt-3 border-t border-gray-100">
+                  <div className="mt-2 lg:mt-4 pt-3 border-t border-gray-100">
                     <p className="text-xs text-gray-400 flex items-center gap-2">
                       <span className="text-base"></span>
-                      Last 24 Hours
+                      2025 year
                     </p>
                   </div>
                 </div>
@@ -808,28 +809,25 @@ export function DashboardOverview({
             </div>
 
             {/* Comparison section */}
-            <div className="mt-4 text-center">
-              <p className="text-sm text-gray-600">
-                Compared to{" "}
-                <span className="font-bold text-green-600">
-                  {data.metrics.totalOrders.previous}
-                </span>{" "}
-                {data.metrics.totalOrders.period}
-              </p>
-            </div>
           </div>
 
           <Card className="w-full border-0 shadow rounded py-0 overflow-hidden">
-            <CardContent className="bg-gradient-to-br from-green-500 to-green-600 p-6">
-              <LineChart />
-            </CardContent>
-            <CardHeader className="bg-white pb-2">
+            <CardHeader className="bg-white ">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-[14px] font-normal text-gray-900">
-                  Chart Orders
-                </CardTitle>
+                <div className="mt-4 text-center">
+                  <p className="text-sm text-gray-600">
+                    Compared to{" "}
+                    <span className="font-bold text-green-600">
+                      {data.metrics.totalOrders.previous}
+                    </span>{" "}
+                    {data.metrics.totalOrders.period}
+                  </p>
+                </div>
               </div>
             </CardHeader>
+            <CardContent className="bg-gradient-to-br from-green-500 to-green-800 p-6">
+              <LineChart />
+            </CardContent>
           </Card>
         </div>
       </div>

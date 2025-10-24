@@ -105,10 +105,9 @@ export default async function GuestPage() {
 
   return (
     <div className="">
-
       {isLoading ? (
         <div className="flex items-center justify-center min-h-screen">
-          <Spinner />
+          <Spinner variant="ring" />
         </div>
       ) : (
         <>

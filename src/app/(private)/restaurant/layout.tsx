@@ -47,7 +47,7 @@ export default function RestaurantLayout({ children }: LayoutProps) {
             {/* Mobile overlay */}
             {sidebarOpen && (
               <div
-                className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+                className="fixed inset-0 z-40 md:hidden"
                 onClick={() => setSidebarOpen(false)}
               />
             )}
@@ -61,7 +61,7 @@ export default function RestaurantLayout({ children }: LayoutProps) {
               </div>
 
               <main className="flex-grow min-h-0">
-                <div className="container mx-auto max-w-full">{children}</div>
+                <div className="container mx-auto max-w-full ">{children}</div>
               </main>
             </div>
           </div>

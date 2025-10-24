@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useCallback } from "react";
 import { voucherService } from "@/app/services/voucherService";
-import { IVoucher, ILoanApplication, VoucherType, LoanStatus } from "@/lib/types";
+import { IVoucher, ILoanApplication, VoucherType, LoanStatus, VoucherStatus } from "@/lib/types";
 
 export const useVoucherOperations = () => {
   const [loading, setLoading] = useState(false);
@@ -51,6 +52,21 @@ export const useVoucherOperations = () => {
       return response.data || [];
     } catch (error) {
       handleError(error, "Failed to get available vouchers");
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  }, [clearError, handleError]);
+
+  const getRestaurantVouchers = useCallback(async (): Promise<IVoucher[]> => {
+    try {
+      setLoading(true);
+      clearError();
+      // Use "current" as restaurantId - backend will get it from token
+      const response = await voucherService.getRestaurantVouchers("current");
+      return response.data || [];
+    } catch (error) {
+      handleError(error, "Failed to get restaurant vouchers");
       return [];
     } finally {
       setLoading(false);
@@ -178,6 +194,7 @@ export const useVoucherOperations = () => {
     getVoucherById,
     getVoucherByCode,
     getAvailableVouchers,
+    getRestaurantVouchers,
     processVoucherPayment,
     getVoucherTransactions,
     
@@ -245,10 +262,8 @@ export const useVoucherUtils = () => {
         return "Rejected";
       case LoanStatus.DISBURSED:
         return "Disbursed";
-      case LoanStatus.REPAID:
+      case LoanStatus.SETTLED:
         return "Fully Repaid";
-      case LoanStatus.DEFAULTED:
-        return "Defaulted";
       default:
         return status;
     }

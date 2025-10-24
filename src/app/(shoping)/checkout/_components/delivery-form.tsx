@@ -346,7 +346,7 @@ export function Checkout() {
   if (isLoading) {
     return (
       <div className="min-h-[400px] flex items-center justify-center">
-        <Spinner />
+        <Spinner variant="ring" />
       </div>
     );
   }
