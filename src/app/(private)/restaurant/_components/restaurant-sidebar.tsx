@@ -96,7 +96,7 @@ export function RestaurantSidebar({ isOpen, onClose }: RestaurantSidebarProps) {
                       "flex items-center gap-3 px-4 py-2 rounded text-[15px] font-medium transition-all duration-200",
                       isActive
                         ? "bg-green-600 text-white shadow-lg shadow-green-600/30"
-                        : "text-white hover:bg-[#212121]"
+                        : "text-white"
                     )}
                   >
                     <item.icon className="w-5 h-5 flex-shrink-0" />
@@ -113,7 +113,7 @@ export function RestaurantSidebar({ isOpen, onClose }: RestaurantSidebarProps) {
                 disabled={isLoggingOut}
                 className={cn(
                   "w-full flex items-center gap-3 px-4 py-3 rounded text-[15px] font-medium transition-all duration-200",
-                  "text-white hover:bg-[#212121]",
+                  "text-white",
                   isLoggingOut && "opacity-50 cursor-not-allowed"
                 )}
               >

@@ -18,6 +18,7 @@ import {
   UserCog,
   Soup,
   Crown,
+  Ticket,
 } from "lucide-react";
 import { usePathname} from "next/navigation";
 import Link from "next/link";
@@ -48,6 +49,11 @@ const menuItems = [
     icon: Crown,
     label: "Subscriptions",
     href: "/dashboard/subscriptions",
+  },
+  {
+    icon: Ticket,
+    label: "Voucher Management",
+    href: "/dashboard/vouchers",
   },
   {
     icon: Users,

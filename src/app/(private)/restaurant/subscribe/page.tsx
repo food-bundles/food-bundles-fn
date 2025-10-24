@@ -48,14 +48,14 @@ export default function SubscribePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-xl font-bold text-center mb-8">
           Choose Your Subscription Plan
         </h1>
         <div className="flex items-center justify-center gap-4 flex-wrap">
           {plans.map((plan) => {
-            const isPopular = plan.name.toLowerCase().includes("premium"); // ✅ Premium only
+            const isPopular = plan.name.toLowerCase().includes("premium"); 
             const borderColor = isPopular
               ? "border-yellow-300 hover:border-yellow-400"
               : "border-green-200 hover:border-green-400";

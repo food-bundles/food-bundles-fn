@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useCallback } from "react";
 import { voucherService } from "@/app/services/voucherService";
-import { IVoucher, ILoanApplication, VoucherType, LoanStatus } from "@/lib/types";
+import { IVoucher, ILoanApplication, VoucherType, LoanStatus, VoucherStatus } from "@/lib/types";
 
 export const useVoucherOperations = () => {
   const [loading, setLoading] = useState(false);
@@ -245,10 +246,8 @@ export const useVoucherUtils = () => {
         return "Rejected";
       case LoanStatus.DISBURSED:
         return "Disbursed";
-      case LoanStatus.REPAID:
+      case LoanStatus.SETTLED:
         return "Fully Repaid";
-      case LoanStatus.DEFAULTED:
-        return "Defaulted";
       default:
         return status;
     }
