@@ -93,7 +93,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
           <div className="space-y-0">
             {isLoading && cartItems.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 space-y-3">
-                <Spinner />
+                <Spinner variant="ring" />
               </div>
             ) : cartItems.length === 0 ? (
               <Card className="border-0 shadow-none">
@@ -283,10 +283,10 @@ function CartItem({
 
             <button
               onClick={handleDelete}
-              disabled={isDeleting} 
+              disabled={isDeleting}
               className="text-green-500 hover:text-green-400 transition-colors hover:rotate-90 transform duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-                <X className="w-8 sm:w-6 h-8 sm:h-6" />
+              <X className="w-8 sm:w-6 h-8 sm:h-6" />
             </button>
           </div>
         </div>

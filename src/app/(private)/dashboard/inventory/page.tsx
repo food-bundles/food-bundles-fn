@@ -22,33 +22,33 @@ export default function InventoryPage() {
       if (response?.success && Array.isArray(response?.data)) {
         console.log("✅ Products fetched based on role:", response.data);
 
-   const mappedProducts = response.data.map((product: Product) => ({
-     id: product.id,
-     productName: product.productName,
-     unitPrice: product.unitPrice,
-     purchasePrice: product.purchasePrice,
-     category: {
-       id: product.category?.id || "",
-       name: product.category?.name ,
-       description: product.category?.description || undefined,
-     },
-     sku: product.sku,
-     quantity: product.quantity,
-     images: product.images || [],
-     unit: product.unit,
-     status: product.status,
-     expiryDate: product.expiryDate,
-     createdAt: product.createdAt,
-     updatedAt: product.updatedAt,
-     createdBy: product.updatedAt,
-     admin: {
-       id: product.admin?.id || "",
-       username: product.admin?.username || "",
-       email: product.admin?.email || "",
-     },
-     bonus: product.bonus || 0,
-     discountedPrice: product.bonus || 0,
-   }));
+        const mappedProducts = response.data.map((product: Product) => ({
+          id: product.id,
+          productName: product.productName,
+          unitPrice: product.unitPrice,
+          purchasePrice: product.purchasePrice,
+          category: {
+            id: product.category?.id || "",
+            name: product.category?.name,
+            description: product.category?.description || undefined,
+          },
+          sku: product.sku,
+          quantity: product.quantity,
+          images: product.images || [],
+          unit: product.unit,
+          status: product.status,
+          expiryDate: product.expiryDate,
+          createdAt: product.createdAt,
+          updatedAt: product.updatedAt,
+          createdBy: product.updatedAt,
+          admin: {
+            id: product.admin?.id || "",
+            username: product.admin?.username || "",
+            email: product.admin?.email || "",
+          },
+          bonus: product.bonus || 0,
+          discountedPrice: product.bonus || 0,
+        }));
 
         setProducts(mappedProducts);
       } else {
@@ -66,12 +66,12 @@ export default function InventoryPage() {
     fetchProducts();
   }, []);
 
-  if (loading) 
+  if (loading)
     return (
       <div className="h-screen flex items-center justify-center">
-      <Spinner className="text-green-700 font-bold" />
-    </div>
-  )
+        <Spinner variant="ring" />
+      </div>
+    );
   return (
     <div className="p-6">
       <InventoryManagement products={products} onRefresh={fetchProducts} />

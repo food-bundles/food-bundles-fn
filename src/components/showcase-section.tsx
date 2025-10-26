@@ -1,4 +1,6 @@
 import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 export function FoodBundlesConnect() {
   return (
@@ -10,9 +12,15 @@ export function FoodBundlesConnect() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center max-w-7xl mx-auto">
           <div className="space-y-3 lg:space-y-5 mt-4">
             <div className="space-y-2">
-              <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-green-700">
-                Connect
-              </h2>
+              <Link
+                href="/signup"
+                className="inline-flex items-center gap-2 group text-green-700 group-hover:text-green-800 hover:text-blue-400 hover:border-b-2 border-blue-400 transition-colors"
+              >
+                <h2 className="text-xl md:text-2xl lg:text-3xl font-bold transition-colors">
+                  Connect
+                </h2>
+                <ArrowRight className="h-6 w-6  group-hover:translate-x-1 transition-all" />
+              </Link>
             </div>
 
             <p className="text-[12px] lg:text-[14px] text-[#0A3B1B] leading-relaxed max-w-lg">

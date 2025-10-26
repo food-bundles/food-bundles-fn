@@ -1,6 +1,6 @@
 import React from "react";
 // import { Header } from "@/components/header";
-import { TopResNav } from "../(private)/restaurant/_components/restaurant-top-nav";
+import { Header } from "@/components/header";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -8,9 +8,9 @@ interface LayoutProps {
 
 export default async function RestaurantLayout({ children }: LayoutProps) {
   return (
-      <div className="flex flex-col min-h-screen">
-          {/* <Header /> */}
-          <TopResNav />
+    <div className="flex flex-col min-h-screen">
+      {/* <Header /> */}
+      <Header />
       <main className="flex-grow container mx-auto">{children}</main>
     </div>
   );

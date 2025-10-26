@@ -166,7 +166,7 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
 
               {/* Custom Dropdown Menu */}
               {isProfileDropdownOpen && (
-                <div className="absolute right-0 top-17 w-32 bg-white shadow-lg border border-gray-200 py-1 z-50">
+                <div className="absolute -right-4 top-9 w-32 bg-white shadow-lg border border-gray-200 py-1 z-50">
                   <Link href="#" className="block">
                     <div className="flex items-center gap-1 px-4 py-2 text-[13px] text-gray-700 hover:bg-gray-100 cursor-pointer transition-colors">
                       <UserPlus className="w-4 h-4" />

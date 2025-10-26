@@ -142,7 +142,7 @@ function ProductCard({
             )}
             {isInCart && isHovered && (
               <a href="/checkout" className="absolute inset-0">
-                <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-lg flex items-center cursor-pointer hover:bg-green-600 transition-colors">
+                <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-lg flex items-center cursor-pointer hover:bg-green-600 transition-colors">
                   <Check className="w-3 h-3 mr-1" /> Buy Now
                 </div>
               </a>
@@ -595,21 +595,6 @@ export function ProductsSection({
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-16">
-                    <div className="text-gray-400 mb-4">
-                      <svg
-                        className="w-16 h-16"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1}
-                          d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m13-8h.01M6 4h.01"
-                        />
-                      </svg>
-                    </div>
                     <h3 className="text-[14px] font-medium text-gray-900 mb-2">
                       No products found
                     </h3>

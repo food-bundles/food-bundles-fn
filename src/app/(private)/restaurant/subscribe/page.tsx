@@ -4,7 +4,10 @@ import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import PaymentModal from "./_components/PaySubscribtionModel";
-import { subscriptionService, SubscriptionPlan } from "@/app/services/subscriptionService";
+import {
+  subscriptionService,
+  SubscriptionPlan,
+} from "@/app/services/subscriptionService";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 
@@ -23,9 +26,9 @@ export default function SubscribePage() {
       });
       console.log("response+++++++++++++", response);
       if (response.data && Array.isArray(response.data)) {
-         const orderedPlans = [...response.data].sort(
-           (a, b) => a.price - b.price
-         );
+        const orderedPlans = [...response.data].sort(
+          (a, b) => a.price - b.price
+        );
         setPlans(orderedPlans);
       }
     } catch (error) {
@@ -42,20 +45,20 @@ export default function SubscribePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Spinner />
+        <Spinner variant="ring" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-xl font-bold text-center mb-8">
           Choose Your Subscription Plan
         </h1>
         <div className="flex items-center justify-center gap-4 flex-wrap">
           {plans.map((plan) => {
-            const isPopular = plan.name.toLowerCase().includes("premium"); // ✅ Premium only
+            const isPopular = plan.name.toLowerCase().includes("premium");
             const borderColor = isPopular
               ? "border-yellow-300 hover:border-yellow-400"
               : "border-green-200 hover:border-green-400";

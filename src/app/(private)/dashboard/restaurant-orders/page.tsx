@@ -40,12 +40,12 @@ export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalOrders, setTotalOrders] = useState(0);
-  
+
   // Modal states
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  
+
   // Filter states
   const [searchValue, setSearchValue] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -53,24 +53,24 @@ export default function AdminOrdersPage() {
   const [selectedRestaurantId, setSelectedRestaurantId] = useState("");
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
-  
 
   // Fetch orders with filters
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      
+
       const params: any = {};
 
       // Add filters only if they have values
       if (selectedStatus !== "all") params.status = selectedStatus;
-      if (selectedPaymentStatus !== "all") params.paymentStatus = selectedPaymentStatus;
+      if (selectedPaymentStatus !== "all")
+        params.paymentStatus = selectedPaymentStatus;
       if (selectedRestaurantId) params.restaurantId = selectedRestaurantId;
-      if (dateFrom) params.dateFrom = dateFrom.toISOString().split('T')[0];
-      if (dateTo) params.dateTo = dateTo.toISOString().split('T')[0];
+      if (dateFrom) params.dateFrom = dateFrom.toISOString().split("T")[0];
+      if (dateTo) params.dateTo = dateTo.toISOString().split("T")[0];
 
       const response = await orderService.getAllOrdersByAdmin(params);
-      
+
       if (response.success) {
         // Map API response to match Order interface
         const mappedOrders = response.data.map((order: any) => ({
@@ -110,15 +110,22 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     fetchOrders();
-  }, [ selectedStatus, selectedPaymentStatus, selectedRestaurantId, dateFrom, dateTo]);
+  }, [
+    selectedStatus,
+    selectedPaymentStatus,
+    selectedRestaurantId,
+    dateFrom,
+    dateTo,
+  ]);
 
   const filteredOrders = useMemo(() => {
     if (!searchValue) return orders;
-    
-    return orders.filter(order => 
-      order.orderNumber.toLowerCase().includes(searchValue.toLowerCase()) ||
-      order.billingName.toLowerCase().includes(searchValue.toLowerCase()) ||
-      order.billingEmail.toLowerCase().includes(searchValue.toLowerCase())
+
+    return orders.filter(
+      (order) =>
+        order.orderNumber.toLowerCase().includes(searchValue.toLowerCase()) ||
+        order.billingName.toLowerCase().includes(searchValue.toLowerCase()) ||
+        order.billingEmail.toLowerCase().includes(searchValue.toLowerCase())
     );
   }, [orders, searchValue]);
 
@@ -128,10 +135,10 @@ export default function AdminOrdersPage() {
     setViewModalOpen(true);
   };
 
-const handleDownloadPDF = (order: Order) => {
-  try {
-    // Create HTML content for PDF
-    const htmlContent = `
+  const handleDownloadPDF = (order: Order) => {
+    try {
+      // Create HTML content for PDF
+      const htmlContent = `
             <!DOCTYPE html>
         <html>
         <head>
@@ -400,23 +407,23 @@ const handleDownloadPDF = (order: Order) => {
         </html>
       `;
 
-    // Create blob and download
-    const blob = new Blob([htmlContent], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `order-${order.orderNumber}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+      // Create blob and download
+      const blob = new Blob([htmlContent], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `order-${order.orderNumber}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
 
-    toast.success(`Downloaded order ${order.orderNumber} as HTML`);
-  } catch (error) {
-    console.error("Error generating PDF:", error);
-    toast.error("Failed to download order");
-  }
-};
+      toast.success(`Downloaded order ${order.orderNumber} as HTML`);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast.error("Failed to download order");
+    }
+  };
 
   const handleCancelOrder = (order: Order) => {
     setSelectedOrder(order);
@@ -446,7 +453,10 @@ const handleDownloadPDF = (order: Order) => {
     }
   };
 
-  const handlePaymentStatusUpdate = async (orderId: string, paymentStatus: string) => {
+  const handlePaymentStatusUpdate = async (
+    orderId: string,
+    paymentStatus: string
+  ) => {
     try {
       await orderService.updateOrder(orderId, { paymentStatus });
       toast.success("Payment status updated successfully");
@@ -485,7 +495,7 @@ const handleDownloadPDF = (order: Order) => {
       onChange: setSelectedPaymentStatus,
       width: "min-w-[160px]",
     },
-  
+
     createCommonFilters.dateRange(
       { from: dateFrom, to: dateTo },
       ({ from, to }) => {
@@ -508,7 +518,7 @@ const handleDownloadPDF = (order: Order) => {
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <Spinner />
+          <Spinner variant="ring" />
         </div>
       ) : (
         <DataTable

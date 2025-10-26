@@ -1,3 +1,4 @@
+import { PaymentMethod } from "@/app/services/subscriptionService";
 
 export interface IUssdRequest {
   sessionId: string;
@@ -122,6 +123,7 @@ export enum OrderStatus {
 
 export type Order = {
   id: string
+  orderNumber: string
   customer: string
   items: Array<{
     name: string
@@ -133,5 +135,130 @@ export type Order = {
   deliveryPerson?: string
   time: string
   estimatedTime?: string
+}
+
+// Voucher Types (matching Prisma schema)
+export enum VoucherStatus {
+  ACTIVE = "ACTIVE",
+  USED = "USED",
+  EXPIRED = "EXPIRED",
+  SUSPENDED = "SUSPENDED",
+  SETTLED = "SETTLED",
+}
+
+export enum VoucherType {
+  DISCOUNT_10 = "DISCOUNT_10",
+  DISCOUNT_20 = "DISCOUNT_20",
+  DISCOUNT_50 = "DISCOUNT_50",
+  DISCOUNT_80 = "DISCOUNT_80",
+  DISCOUNT_100 = "DISCOUNT_100",
+}
+
+export enum LoanStatus {
+  PENDING = "PENDING",
+  APPROVED = "APPROVED",
+  DISBURSED = "DISBURSED",
+  REJECTED = "REJECTED",
+  SETTLED = "SETTLED",
+}
+
+export enum PenaltyStatus {
+  PENDING = "PENDING",
+  PAID = "PAID",
+  WAIVED = "WAIVED",
+}
+
+export interface IVoucher {
+  id: string;
+  voucherCode: string;
+  voucherType: VoucherType;
+  discountPercentage: number;
+  creditLimit: number;
+  minTransactionAmount: number;
+  maxTransactionAmount?: number;
+  totalCredit: number;
+  usedCredit: number;
+  remainingCredit: number;
+  status: VoucherStatus;
+  expiryDate?: Date;
+  issuedDate: Date;
+  restaurantId: string;
+  loanId?: string;
+  serviceFeeRate: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ILoanApplication {
+  id: string;
+  restaurantId: string;
+  requestedAmount: number;
+  purpose?: string;
+  status: LoanStatus;
+  approvedAmount?: number;
+  approvedBy?: string;
+  disbursementDate?: Date;
+  repaymentDueDate?: Date;
+  terms?: string;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  approvedAt?: Date;
+}
+
+export interface IVoucherTransaction {
+  id: string;
+  voucherId: string;
+  orderId: string;
+  restaurantId: string;
+  originalAmount: number;
+  discountPercentage: number;
+  discountAmount: number;
+  amountCharged: number;
+  serviceFee: number;
+  totalDeducted: number;
+  transactionDate: Date;
+  createdAt: Date;
+}
+
+export interface IVoucherRepayment {
+  id: string;
+  voucherId?: string;
+  restaurantId: string;
+  loanId: string;
+  amount: number;
+  paymentMethod: PaymentMethod;
+  paymentReference?: string;
+  allocatedToPrincipal: number;
+  allocatedToServiceFee: number;
+  allocatedToPenalty: number;
+  paymentDate: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IVoucherPenalty {
+  id: string;
+  voucherId: string;
+  restaurantId: string;
+  penaltyAmount: number;
+  daysOverdue: number;
+  penaltyRate: number;
+  reason?: string;
+  status: PenaltyStatus;
+  appliedDate: Date;
+  paidDate?: Date;
+  createdAt: Date;
+}
+
+export interface ICreditSummary {
+  restaurantId: string;
+  totalCreditLimit: number;
+  totalUsedCredit: number;
+  totalRemainingCredit: number;
+  activeVouchers: number;
+  pendingLoans: number;
+  outstandingBalance: number;
+  totalPenalties: number;
 }
 
