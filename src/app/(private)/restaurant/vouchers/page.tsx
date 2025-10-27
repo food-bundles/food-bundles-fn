@@ -16,13 +16,15 @@ export default function VouchersPage() {
     <div className="p-6 max-w-7xl mx-auto bg-gray-100">
       <div className="mb-8">
         <h1 className="text-xl font-bold text-gray-900 mb-2">Voucher System</h1>
-        <p className="text-gray-700 text-[14px]">Manage loans, vouchers, and credit payments</p>
+        <p className="text-gray-700 text-[14px]">
+          Manage loans, vouchers, and credit payments
+        </p>
       </div>
       <div className="grid grid-cols-3 gap-4 ">
-      <LoanApplicationForm onSuccess={handleLoanSuccess} />
-      <LoanApplicationsList key={refreshKey} />
-      <VouchersList key={refreshKey} />
-    </div>
+        <LoanApplicationForm onSuccess={handleLoanSuccess} />
+        <LoanApplicationsList key={`loans-${refreshKey}`} />
+        <VouchersList key={refreshKey} />
+      </div>
     </div>
   );
 }

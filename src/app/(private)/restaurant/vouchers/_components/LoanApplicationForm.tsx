@@ -60,6 +60,7 @@ export default function LoanApplicationForm({ onSuccess }: LoanApplicationFormPr
                 }
                 placeholder="Enter amount"
                 className="w-full"
+                suppressHydrationWarning
               />
             </div>
             <div>

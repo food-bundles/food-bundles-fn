@@ -34,7 +34,8 @@ export default function VouchersList() {
       }
       
       const response = await voucherService.getRestaurantVouchers(restaurantId, { activeOnly: false });
-      setVouchers(response.data || []);
+      console.log("response ======", response.data.vouchers);
+      setVouchers(Array.isArray(response.data.vouchers) ? response.data.vouchers : []);
       setHasLoaded(true);
     } catch (err: any) {
       setError(err.message || "Failed to load vouchers");
@@ -118,7 +119,7 @@ export default function VouchersList() {
         </div>
       ) : (
         <div className="flex justify-center">
-          {vouchers.slice(0, 1).map((voucher) => {
+          {Array.isArray(vouchers) && vouchers.slice(0, 1).map((voucher) => {
             const statusConfig = getStatusConfig(voucher.status);
             const isActive = voucher.status === VoucherStatus.ACTIVE;
             

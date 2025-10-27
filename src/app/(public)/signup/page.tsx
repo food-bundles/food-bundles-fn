@@ -18,6 +18,7 @@ import {
   UserRoundCheck,
   ChevronDown,
 } from "lucide-react";
+import { OTPInput } from "@/components/ui/otp-input";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -511,6 +512,11 @@ function SignupForm() {
   const [isBackendAvailable, setIsBackendAvailable] = useState(true);
   const [backendMessage, setBackendMessage] = useState("");
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [showOTPModal, setShowOTPModal] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
+  const [registeredPhone, setRegisteredPhone] = useState("");
+  const [otpError, setOtpError] = useState("");
 
   const [locationData, setLocationData] = useState<LocationState>({
     province: "",
@@ -704,6 +710,10 @@ function SignupForm() {
           phone,
         };
         await authService.registerFarmer(farmerData);
+        setSuccess("Account created successfully! Redirecting to login...");
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 2000);
       } else if (selectedRole === UserRole.RESTAURANT) {
         const restaurantData: ICreateRestaurantData = {
           name,
@@ -713,13 +723,14 @@ function SignupForm() {
           location: locationToSave,
           phone,
         };
-        await authService.registerRestaurant(restaurantData);
+        const response = await authService.registerRestaurant(restaurantData);
+        
+        if (response.success) {
+          setRegisteredPhone(phone);
+          setShowOTPModal(true);
+          setSuccess("Registration successful! Please verify your phone number with the OTP sent to you.");
+        }
       }
-
-      setSuccess("Account created successfully! Redirecting to login...");
-      setTimeout(() => {
-        window.location.href = "/login";
-      }, 2000);
     } catch (error: any) {
       console.error("Registration error:", error);
       setError(error.response?.data?.message || error.message || "Registration failed");
@@ -727,6 +738,48 @@ function SignupForm() {
       setIsLoading(false);
     }
   }
+
+  const handleVerifyOTP = async () => {
+    if (!otpCode.trim()) {
+      setOtpError("Please enter the OTP code");
+      return;
+    }
+
+    setIsVerifyingOTP(true);
+    setOtpError("");
+
+    try {
+      const response = await authService.verifyRestaurant(registeredPhone, otpCode);
+      
+      if (response.success) {
+        setShowOTPModal(false);
+        setSuccess("Phone number verified successfully! Redirecting to login...");
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 2000);
+      } else {
+        setOtpError(response.message || "OTP verification failed");
+      }
+    } catch (error: any) {
+      setOtpError(error.response?.data?.message || "OTP verification failed");
+    } finally {
+      setIsVerifyingOTP(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    try {
+      const response = await authService.resendOTP(registeredPhone);
+      if (response.success) {
+        setSuccess("OTP resent successfully!");
+        setOtpError("");
+      } else {
+        setOtpError(response.message || "Failed to resend OTP");
+      }
+    } catch (error: any) {
+      setOtpError(error.response?.data?.message || "Failed to resend OTP");
+    }
+  };
 
   return (
     <div className="flex flex-col md:flex-row items-center w-full max-w-3xl">
@@ -1019,6 +1072,60 @@ function SignupForm() {
           </div>
         </div>
       </div>
+
+      {/* OTP Verification Modal */}
+      {showOTPModal && (
+        <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-md w-full max-w-md flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Verify Phone Number
+              </h3>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-gray-600">
+                We've sent a verification code to {registeredPhone}. Please enter it below.
+              </p>
+
+              {otpError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+                  {otpError}
+                </div>
+              )}
+
+              <div className="flex justify-center">
+                <OTPInput
+                  value={otpCode}
+                  onChange={(value) => {
+                    setOtpCode(value);
+                    if (otpError) setOtpError("");
+                  }}
+                  disabled={isVerifyingOTP}
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleResendOTP}
+                  className="flex-1 h-10 border border-gray-300 hover:border-green-500 text-gray-900 hover:text-green-600 text-sm font-medium transition-colors cursor-pointer"
+                  disabled={isVerifyingOTP}
+                >
+                  Resend OTP
+                </button>
+                <button
+                  onClick={handleVerifyOTP}
+                  className="flex-1 h-10 bg-green-700 hover:bg-green-800 text-white text-sm font-medium cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  disabled={isVerifyingOTP || !otpCode.trim()}
+                >
+                  {isVerifyingOTP && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {isVerifyingOTP ? "Verifying..." : "Verify"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

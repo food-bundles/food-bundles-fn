@@ -130,6 +130,7 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
               <button
                 onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
                 className="flex items-center gap-2 hover:bg-transparent  cursor-pointer text-primary-foreground hover:text-primary-foreground"
+                suppressHydrationWarning
               >
                 {user ? (
                   <>
