@@ -33,6 +33,18 @@ export const authService = {
     return response.data;
   },
 
+  verifyRestaurant: async (phone: string, otp: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/restaurants/verify", { phone, otp });
+    return response.data;
+  },
+
+  resendOTP: async (phone: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/restaurants/resend-otp", { phone });
+    return response.data;
+  },
+
   getCurrentUser: async () => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.get("/me");

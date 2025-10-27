@@ -22,6 +22,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
+import { OTPInput } from "@/components/ui/otp-input";
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -59,7 +60,7 @@ const getUserFullAddress = (user: any): string => {
   return addressParts.join(", ");
 };
 
-type PaymentMethod = "wallet" | "momo" | "card";
+type PaymentMethod = "wallet" | "momo" | "card" | "voucher";
 
 export function Checkout() {
   const { cart, totalItems, totalQuantity, totalAmount, isLoading } = useCart();
@@ -82,6 +83,7 @@ export function Checkout() {
     cardCvv: "",
     cardExpiryMonth: "",
     cardExpiryYear: "",
+    voucherCode: "",
   });
 
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
@@ -90,6 +92,11 @@ export function Checkout() {
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showVoucherOTPModal, setShowVoucherOTPModal] = useState(false);
+  const [voucherOTP, setVoucherOTP] = useState("");
+  const [isVerifyingVoucherOTP, setIsVerifyingVoucherOTP] = useState(false);
+  const [checkoutSessionId, setCheckoutSessionId] = useState("");
+  const [voucherOTPError, setVoucherOTPError] = useState("");
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -253,6 +260,13 @@ export function Checkout() {
       }
     }
 
+    // Voucher validation
+    if (method === "voucher") {
+      if (!formData.voucherCode.trim()) {
+        newErrors.voucherCode = "Voucher code is required";
+      }
+    }
+
     if (!cart?.id) {
       newErrors.cart = "No cart found. Please add items to cart first.";
     }
@@ -271,6 +285,7 @@ export function Checkout() {
         wallet: "CASH" as const,
         momo: "MOBILE_MONEY" as const,
         card: "CARD" as const,
+        voucher: "VOUCHER" as const,
       };
 
       const checkoutPayload: CheckoutRequest = {
@@ -298,10 +313,21 @@ export function Checkout() {
         };
       }
 
+      if (method === "voucher") {
+        checkoutPayload.voucherCode = formData.voucherCode;
+      }
+
       const response = await checkoutService.createCheckout(checkoutPayload);
 
       if (response.success) {
         localStorage.setItem("selectedPaymentMethod", paymentMethodMap[method]);
+
+        // Handle voucher OTP requirement
+        if (method === "voucher" && response.requiresOTP) {
+          setCheckoutSessionId(response.checkoutSessionId || "");
+          setShowVoucherOTPModal(true);
+          return;
+        }
 
         if (method === "momo") {
           const responseData = response.data as any;
@@ -340,6 +366,31 @@ export function Checkout() {
   const handleFlutterwaveRedirect = () => {
     if (flutterwaveRedirectUrl) {
       window.location.href = flutterwaveRedirectUrl;
+    }
+  };
+
+  const handleVerifyVoucherOTP = async () => {
+    if (!voucherOTP.trim()) {
+      setVoucherOTPError("Please enter the OTP code");
+      return;
+    }
+
+    setIsVerifyingVoucherOTP(true);
+    setVoucherOTPError("");
+
+    try {
+      const response = await checkoutService.verifyVoucherOTP(voucherOTP, checkoutSessionId);
+      
+      if (response.success) {
+        setShowVoucherOTPModal(false);
+        window.location.href = "/restaurant/updates";
+      } else {
+        setVoucherOTPError(response.message || "OTP verification failed");
+      }
+    } catch (error: any) {
+      setVoucherOTPError("OTP verification failed. Please try again.");
+    } finally {
+      setIsVerifyingVoucherOTP(false);
     }
   };
 
@@ -520,6 +571,18 @@ export function Checkout() {
                     >
                       Card
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setMethod("voucher")}
+                      className={`rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal px-4 border transition-colors cursor-pointer ${
+                        method === "voucher"
+                          ? "bg-green-700 text-white border-green-700"
+                          : "bg-white text-gray-900 border-gray-300 hover:border-green-500"
+                      }`}
+                      disabled={isSubmitting}
+                    >
+                      Voucher
+                    </button>
                   </div>
                 </div>
               </div>
@@ -639,6 +702,26 @@ export function Checkout() {
                 </div>
               )}
 
+              {method === "voucher" && (
+                <div className="space-y-2 mt-3">
+                  <input
+                    type="text"
+                    placeholder="Enter Voucher Code"
+                    value={formData.voucherCode}
+                    onChange={(e) =>
+                      handleInputChange("voucherCode", e.target.value)
+                    }
+                    className={`w-full h-10 px-3 border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none text-[14px] ${
+                      errors.voucherCode ? "border-red-500" : "border-gray-300"
+                    }`}
+                    disabled={isSubmitting}
+                  />
+                  {errors.voucherCode && (
+                    <p className="text-red-600 text-xs">{errors.voucherCode}</p>
+                  )}
+                </div>
+              )}
+
               <button
                 type="button"
                 onClick={handleCheckout}
@@ -721,6 +804,64 @@ export function Checkout() {
           </div>
         </div>
       </div>
+
+      {/* Voucher OTP Verification Modal */}
+      {showVoucherOTPModal && (
+        <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-md w-full max-w-md flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 className="text-[16px] font-medium text-gray-900 flex items-center gap-2">
+                Verify Voucher Payment
+              </h3>
+            </div>
+
+            <div className="p-4 space-y-4">
+              <p className="text-sm text-gray-600">
+                We&apos;ve sent a verification code to your phone
+                number.
+              </p>
+
+              {voucherOTPError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+                  {voucherOTPError}
+                </div>
+              )}
+
+              <div className="flex justify-center">
+                <OTPInput
+                  value={voucherOTP}
+                  onChange={(value) => {
+                    setVoucherOTP(value);
+                    if (voucherOTPError) setVoucherOTPError("");
+                  }}
+                  disabled={isVerifyingVoucherOTP}
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowVoucherOTPModal(false)}
+                  className="flex-1 h-10 border border-gray-300 hover:border-gray-400 text-gray-900 text-sm font-medium transition-colors cursor-pointer"
+                  disabled={isVerifyingVoucherOTP}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleVerifyVoucherOTP}
+                  className="flex-1 h-10 bg-green-600 hover:bg-green-700 text-white text-sm font-medium cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  disabled={isVerifyingVoucherOTP || !voucherOTP.trim()}
+                >
+                  {isVerifyingVoucherOTP && (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  )}
+                  {isVerifyingVoucherOTP ? "Verifying..." : "Verify & Pay"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showFlutterwaveInfo && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-md w-full max-w-md flex flex-col">

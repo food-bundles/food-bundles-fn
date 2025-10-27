@@ -3,7 +3,7 @@ import createAxiosClient from "../hooks/axiosClient";
 
 export interface CheckoutRequest {
   cartId: string;
-  paymentMethod: "CASH" | "MOBILE_MONEY" | "BANK_TRANSFER" | "CARD";
+  paymentMethod: "CASH" | "MOBILE_MONEY" | "BANK_TRANSFER" | "CARD" | "VOUCHER";
   billingName?: string;
   billingEmail?: string;
   billingPhone?: string;
@@ -14,6 +14,7 @@ export interface CheckoutRequest {
   deviceFingerprint?: string;
   narration?: string;
   currency?: string;
+  voucherCode?: string;
   cardDetails?: {
     cardNumber: string;
     expiryMonth: string;
@@ -46,6 +47,8 @@ export interface ApiResponse<T = any> {
   success: boolean;
   message: string;
   data?: T;
+  requiresOTP?: boolean;
+  checkoutSessionId?: string;
 }
 
 // --------------------
@@ -57,13 +60,15 @@ class CheckoutService {
   // Create a checkout from a cart
   async createCheckout(
     payload: CheckoutRequest
-  ): Promise<ApiResponse<Checkout>> {
+  ): Promise<ApiResponse<any>> {
     try {
       const response = await this.axiosClient.post("/checkouts", payload);
       return {
         success: true,
-        message: "Checkout created successfully",
+        message: response.data.message || "Checkout created successfully",
         data: response.data.data,
+        requiresOTP: response.data.requiresOTP,
+        checkoutSessionId: response.data.checkoutSessionId,
       };
     } catch (error: any) {
       return {
@@ -191,6 +196,29 @@ class CheckoutService {
       return {
         success: false,
         message: error.response?.data?.message || "Failed to cancel checkout",
+      };
+    }
+  }
+
+  // Verify voucher OTP and create order
+  async verifyVoucherOTP(
+    otp: string,
+    checkoutSessionId: string
+  ): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.axiosClient.post(
+        "/checkouts/verify-voucher-otp",
+        { otp, checkoutSessionId }
+      );
+      return {
+        success: true,
+        message: "Voucher OTP verified successfully",
+        data: response.data.data,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Failed to verify OTP",
       };
     }
   }
