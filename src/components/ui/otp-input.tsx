@@ -92,8 +92,15 @@ export function OTPInput({
           onKeyDown={(e) => handleKeyDown(e, index)}
           onPaste={handlePaste}
           disabled={disabled}
-          className="w-12 h-12 text-center text-lg font-semibold border border-gray-300 rounded focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+           className={[
+            "w-12 h-12 text-center text-base font-semibold text-foreground border rounded-md bg-background transition-colors outline-none",
+            "placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground",
+            "focus-visible:border-ring focus-visible:ring-ring/30 focus-visible:ring-[2px]",
+            "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+            "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
+          ].join(" ")}
         />
+        // />
       ))}
     </div>
   );

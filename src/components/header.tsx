@@ -286,13 +286,13 @@ export function Header() {
                   onMouseLeave={handleShopMouseLeave}
                 >
                   <button
-                    className="py-1 rounded-full text-orange-400 transition-all duration-300 text-[14px] whitespace-nowrap flex items-center gap-2 hover:scale-105"
+                    className="bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 px-4 sm:px-6 py-1 rounded-full text-sm font-bold hover:from-yellow-300 hover:to-orange-300 transition-all duration-200 shadow-md transform hover:scale-105"
                     onClick={(e) => {
                       e.preventDefault();
                       scrollToSection("subscribe");
                     }}
                   >
-                    <span className="relative z-20">Subscribe To Our Farm</span>
+                    <span className="relative z-20">Subscribe</span>
                   </button>
 
                   {/* Enhanced Dropdown */}
@@ -305,7 +305,12 @@ export function Header() {
                     onMouseEnter={handleShopMouseEnter}
                     onMouseLeave={handleShopMouseLeave}
                   >
-                    <div className="py-2">
+                    <div>
+                      <p className=" w-full ml-4 pt-2 font-medium text-gray-900 text-[14px]">
+                        Subscribe To Our Farm
+                      </p>
+                    </div>
+                    <div className="pb-0">
                       <Link href="/signup">
                         <button
                           onClick={() => {
@@ -314,13 +319,11 @@ export function Header() {
                             );
                             setIsShopDropdownOpen(false);
                           }}
-                          className="flex items-center w-full text-left px-4 py-3 text-[13px] text-gray-900 border-b  hover:text-green-500 transition-colors group"
+                          className="flex items-center w-full text-left px-4 py-1 text-[13px] text-gray-900 border-b  hover:text-green-500 transition-colors group"
                         >
                           <UserPlus className="w-4 h-4 mr-3 text-orange-400 group-hover:text-orange-600" />
                           <div>
-                            <div className="font-medium">
-                              Subscribe as Restaurant
-                            </div>
+                            <div className="">Subscribe as Restaurant</div>
                           </div>
                         </button>
                       </Link>
@@ -329,11 +332,11 @@ export function Header() {
                           setIsShopDropdownOpen(false);
                           window.location.href = "/guest";
                         }}
-                        className="flex items-center w-full text-left px-4 py-3 text-[13px] text-gray-900  hover:text-green-500 transition-colors group"
+                        className="flex items-center w-full text-left px-4 py-1 text-[13px] text-gray-900  hover:text-green-500 transition-colors group"
                       >
                         <ShoppingCart className="w-4 h-4 mr-3 text-orange-400 group-hover:text-orange-500" />
                         <div>
-                          <div className="font-medium">Shop as Guest</div>
+                          <div className="">Shop as Guest</div>
                         </div>
                       </button>
                     </div>
