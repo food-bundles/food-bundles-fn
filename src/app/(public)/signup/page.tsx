@@ -133,7 +133,11 @@ function LocationModal({
 
   useEffect(() => {
     if (locationData.sector && locationData.district && locationData.province) {
-      loadCells(locationData.province, locationData.district, locationData.sector);
+      loadCells(
+        locationData.province,
+        locationData.district,
+        locationData.sector
+      );
     } else {
       setCells([]);
       setVillages([]);
@@ -156,13 +160,20 @@ function LocationModal({
     } else {
       setVillages([]);
     }
-  }, [locationData.cell, locationData.sector, locationData.district, locationData.province]);
+  }, [
+    locationData.cell,
+    locationData.sector,
+    locationData.district,
+    locationData.province,
+  ]);
 
   const loadProvinces = async () => {
     setLoading((prev) => ({ ...prev, provinces: true }));
     setLocationError("");
     try {
-      const locationHierarchy = await locationService.fetchLocationHierarchy([]);
+      const locationHierarchy = await locationService.fetchLocationHierarchy(
+        []
+      );
       const provinceNames = Array.isArray(locationHierarchy)
         ? locationHierarchy.map((prov: any) => prov.name || prov)
         : locationHierarchy.provinces
@@ -175,7 +186,9 @@ function LocationModal({
       setProvinces(provinceNames);
     } catch (error) {
       console.error("Failed to load provinces:", error);
-      setLocationError("Failed to load provinces. Please check your connection.");
+      setLocationError(
+        "Failed to load provinces. Please check your connection."
+      );
       setProvinces([]);
     } finally {
       setLoading((prev) => ({ ...prev, provinces: false }));
@@ -204,7 +217,10 @@ function LocationModal({
     setLoading((prev) => ({ ...prev, sectors: true }));
     setLocationError("");
     try {
-      const sectors = await locationService.getSectorsByDistrict(province, district);
+      const sectors = await locationService.getSectorsByDistrict(
+        province,
+        district
+      );
       setSectors(sectors);
       if (sectors.length === 0) {
         setLocationError("No sectors found for this district.");
@@ -218,11 +234,19 @@ function LocationModal({
     }
   };
 
-  const loadCells = async (province: string, district: string, sector: string) => {
+  const loadCells = async (
+    province: string,
+    district: string,
+    sector: string
+  ) => {
     setLoading((prev) => ({ ...prev, cells: true }));
     setLocationError("");
     try {
-      const cells = await locationService.getCellsBySector(province, district, sector);
+      const cells = await locationService.getCellsBySector(
+        province,
+        district,
+        sector
+      );
       setCells(cells);
       if (cells.length === 0) {
         setLocationError("No cells found for this sector.");
@@ -358,7 +382,9 @@ function LocationModal({
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center gap-2">
             <MapPin className="h-5 w-5 text-green-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Select Your Location</h2>
+            <h2 className="text-lg font-semibold text-gray-900">
+              Select Your Location
+            </h2>
           </div>
           <button
             onClick={onClose}
@@ -429,7 +455,13 @@ function LocationModal({
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Cell
                 </label>
-                {renderDropdown(cells, locationData.cell, "Cell", "cell", loading.cells)}
+                {renderDropdown(
+                  cells,
+                  locationData.cell,
+                  "Cell",
+                  "cell",
+                  loading.cells
+                )}
               </div>
             )}
 
@@ -508,7 +540,9 @@ function SignupForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>(
+    {}
+  );
   const [isBackendAvailable, setIsBackendAvailable] = useState(true);
   const [backendMessage, setBackendMessage] = useState("");
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
@@ -560,11 +594,15 @@ function SignupForm() {
         setIsBackendAvailable(true);
       } else {
         setIsBackendAvailable(false);
-        setBackendMessage("Service temporarily unavailable. Please try again later.");
+        setBackendMessage(
+          "Service temporarily unavailable. Please try again later."
+        );
       }
     } catch (error) {
       setIsBackendAvailable(false);
-      setBackendMessage("Service temporarily unavailable. Please try again later.");
+      setBackendMessage(
+        "Service temporarily unavailable. Please try again later."
+      );
     }
   }
 
@@ -587,12 +625,14 @@ function SignupForm() {
 
   function validatePassword(password: string): string | null {
     if (!password) return "Password is required";
-    if (password.length < 8) return "Password must be at least 8 characters long";
+    if (password.length < 8)
+      return "Password must be at least 8 characters long";
     if (!/(?=.*[a-z])/.test(password))
       return "Password must contain at least one lowercase letter";
     if (!/(?=.*[A-Z])/.test(password))
       return "Password must contain at least one uppercase letter";
-    if (!/(?=.*\d)/.test(password)) return "Password must contain at least one number";
+    if (!/(?=.*\d)/.test(password))
+      return "Password must contain at least one number";
     if (!/(?=.*[@$!%*?&])/.test(password))
       return "Password must contain at least one special character (@$!%*?&)";
     return null;
@@ -600,7 +640,8 @@ function SignupForm() {
 
   function validateRestaurantName(name: string): string | null {
     if (!name.trim()) return "Restaurant name is required";
-    if (name.trim().length < 2) return "Restaurant name must be at least 2 characters";
+    if (name.trim().length < 2)
+      return "Restaurant name must be at least 2 characters";
     if (name.trim().length > 100)
       return "Restaurant name is too long (max 100 characters)";
     if (!/^[a-zA-Z0-9\s\-'&.]+$/.test(name.trim())) {
@@ -621,7 +662,8 @@ function SignupForm() {
 
     const location = locationState.textAddress;
     if (!location.trim()) return "Location is required";
-    if (location.trim().length < 3) return "Please provide a more specific location";
+    if (location.trim().length < 3)
+      return "Please provide a more specific location";
     if (location.trim().length > 255) return "Location is too long";
     return null;
   }
@@ -650,7 +692,6 @@ function SignupForm() {
         errors.tin = "TIN must be a valid 9-digit number (not all zeros)";
       }
     }
-
 
     const phoneError = validatePhone(phone);
     if (phoneError) errors.phone = phoneError;
@@ -724,16 +765,20 @@ function SignupForm() {
           phone,
         };
         const response = await authService.registerRestaurant(restaurantData);
-        
+
         if (response.success) {
           setRegisteredPhone(phone);
           setShowOTPModal(true);
-          setSuccess("Registration successful! Please verify your phone number with the OTP sent to you.");
+          setSuccess(
+            "Registration successful! Please verify your phone number with the OTP sent to you."
+          );
         }
       }
     } catch (error: any) {
       console.error("Registration error:", error);
-      setError(error.response?.data?.message || error.message || "Registration failed");
+      setError(
+        error.response?.data?.message || error.message || "Registration failed"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -749,11 +794,16 @@ function SignupForm() {
     setOtpError("");
 
     try {
-      const response = await authService.verifyRestaurant(registeredPhone, otpCode);
-      
+      const response = await authService.verifyRestaurant(
+        registeredPhone,
+        otpCode
+      );
+
       if (response.success) {
         setShowOTPModal(false);
-        setSuccess("Phone number verified successfully! Redirecting to login...");
+        setSuccess(
+          "Phone number verified successfully! Redirecting to login..."
+        );
         setTimeout(() => {
           window.location.href = "/login";
         }, 2000);
@@ -1076,16 +1126,17 @@ function SignupForm() {
       {/* OTP Verification Modal */}
       {showOTPModal && (
         <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-md w-full max-w-md flex flex-col">
+          <div className="bg-white rounded w-full max-w-md flex flex-col">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Verify Phone Number
+              <h3 className="text-[16px] font-medium text-gray-900">
+                Verify Account
               </h3>
             </div>
 
             <div className="p-6 space-y-4">
-              <p className="text-sm text-gray-600">
-                We've sent a verification code to {registeredPhone}. Please enter it below.
+              <p className="text-[14px] text-gray-700">
+                We've sent a verification code to {registeredPhone}. Please
+                enter it below.
               </p>
 
               {otpError && (
@@ -1118,7 +1169,9 @@ function SignupForm() {
                   className="flex-1 h-10 bg-green-700 hover:bg-green-800 text-white text-sm font-medium cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   disabled={isVerifyingOTP || !otpCode.trim()}
                 >
-                  {isVerifyingOTP && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {isVerifyingOTP && (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  )}
                   {isVerifyingOTP ? "Verifying..." : "Verify"}
                 </button>
               </div>
