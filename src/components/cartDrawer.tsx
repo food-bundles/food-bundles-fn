@@ -188,7 +188,7 @@ function CartItem({
       <CardContent className="p-0">
         <div className="flex items-start gap-2">
           {/* Product Image */}
-          <div className="w-16 h-20 sm:w-12 sm:h-16 p-1 rounded-lg overflow-hidden border flex-shrink-0">
+          <div className="w-16 h-20 sm:w-12 sm:h-16 p-1 rounded-lg overflow-hidden border shrink-0">
             <Image
               src={
                 item.product?.images?.[0] ||

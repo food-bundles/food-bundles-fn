@@ -204,55 +204,24 @@ export function CartProvider({ children }: CartProviderProps) {
         refreshCart();
       } else if (wasAuthenticated && !isNowAuthenticated) {
         // User logged out
-        console.log("User logged out, clearing cart...");
         setCart(null);
         setError(null);
         setIsLoading(false);
       }
-
       lastAuthState.current = isNowAuthenticated;
     }
-    // Only refresh cart if user is authenticated but we don't have cart data yet
-    else if (
-      isNowAuthenticated &&
-      !cart &&
-      !isLoading &&
-      !refreshingRef.current &&
-      !authLoading
-    ) {
-      console.log("User authenticated but cart not loaded, refreshing...");
-      refreshCart();
-    }
-  }, [isAuthenticated, user, authLoading]); // Removed cart and isLoading from dependencies to prevent loops
+  }, [isAuthenticated, user, authLoading, refreshCart]); // Fixed dependencies
 
-  // Listen for login success events - but only trigger once
+  // Listen for login success events - simplified
   useEffect(() => {
-    let hasHandledLogin = false;
-
-    const handleLoginSuccess = () => {
-      if (hasHandledLogin) return;
-      console.log(
-        "Login success event received, will refresh cart when auth updates..."
-      );
-      hasHandledLogin = true;
-    };
-
     const handleUserDataLoaded = () => {
-      if (hasHandledLogin) return;
-      console.log("User data loaded event received, refreshing cart...");
-      if (isAuthenticated && user) {
+      if (isAuthenticated && user && !refreshingRef.current) {
         refreshCart();
-        hasHandledLogin = true;
       }
     };
 
-    window.addEventListener("loginSuccess", handleLoginSuccess);
     window.addEventListener("userDataLoaded", handleUserDataLoaded);
-
-    return () => {
-      window.removeEventListener("loginSuccess", handleLoginSuccess);
-      window.removeEventListener("userDataLoaded", handleUserDataLoaded);
-    };
+    return () => window.removeEventListener("userDataLoaded", handleUserDataLoaded);
   }, [isAuthenticated, user, refreshCart]);
 
   // Calculate derived values from cart data

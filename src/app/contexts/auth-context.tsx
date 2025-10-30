@@ -154,57 +154,47 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Initial auth check on mount - only if token exists
   useEffect(() => {
-    if (!isInitialCheckDone && hasTokenInStorage()) {
-      checkAuth();
-    } else if (!hasTokenInStorage()) {
-      // No token found, set initial state without API call
-      setUser(null);
-      setIsAuthenticated(false);
-      setIsLoading(false);
-      setIsInitialCheckDone(true);
+    if (!isInitialCheckDone) {
+      if (hasTokenInStorage()) {
+        checkAuth();
+      } else {
+        // No token found, set initial state without API call
+        setUser(null);
+        setIsAuthenticated(false);
+        setIsLoading(false);
+        setIsInitialCheckDone(true);
+      }
     }
-  }, [checkAuth, isInitialCheckDone, hasTokenInStorage]);
+  }, [isInitialCheckDone]); // Removed dependencies to prevent loops
 
-  // Listen for storage events (for multi-tab support)
+  // Listen for storage events (for multi-tab support) - debounced
   useEffect(() => {
+    let debounceTimer: NodeJS.Timeout;
+    
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "auth-token") {
-        if (e.newValue) {
-          // Token added, check auth
-          checkAuth();
-        } else {
-          // Token removed, logout
-          setUser(null);
-          setIsAuthenticated(false);
-        }
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          if (e.newValue && !isAuthenticated) {
+            // Token added, check auth only if not already authenticated
+            checkAuth();
+          } else if (!e.newValue && isAuthenticated) {
+            // Token removed, logout only if currently authenticated
+            setUser(null);
+            setIsAuthenticated(false);
+          }
+        }, 100);
       }
     };
 
     window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, [checkAuth]);
-
-  // Listen for focus events to refresh auth state - but only occasionally
-  useEffect(() => {
-    let lastFocusCheck = 0;
-    const FOCUS_CHECK_INTERVAL = 30000; // Only check every 30 seconds
-
-    const handleFocus = () => {
-      const now = Date.now();
-      // Only check if we think we're authenticated, have a token, and enough time has passed
-      if (
-        isAuthenticated &&
-        hasTokenInStorage() &&
-        now - lastFocusCheck > FOCUS_CHECK_INTERVAL
-      ) {
-        lastFocusCheck = now;
-        checkAuth();
-      }
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      clearTimeout(debounceTimer);
     };
+  }, [isAuthenticated]); // Only depend on auth state
 
-    window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
-  }, [checkAuth, isAuthenticated, hasTokenInStorage]);
+  // Removed focus event listener to reduce API calls
 
   const value: AuthContextType = {
     user,

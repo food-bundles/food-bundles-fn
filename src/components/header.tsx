@@ -63,16 +63,15 @@ function SearchParamsHandler() {
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("home");
   const [isShopDropdownOpen, setIsShopDropdownOpen] = useState(false);
   const [isAuthTransitioning, setIsAuthTransitioning] = useState(false);
-  const [hasAnimated, setHasAnimated] = useState(false);
 
   const lastScrollY = useRef(0);
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
   const dropdownTimeout = useRef<NodeJS.Timeout | null>(null);
+  const [isVisible, setIsVisible] = useState(false);
 
   const { user, isAuthenticated, logout, getUserProfileImage, isLoading } =
     useAuth();
@@ -212,16 +211,7 @@ export function Header() {
     }, 100);
   }, [detectActiveSection]);
 
-  // Animation effect for subscribe button
-  useEffect(() => {
-    if (!hasAnimated) {
-      const timer = setTimeout(() => {
-        setHasAnimated(true);
-      }, 500); // Start animation after 500ms
-
-      return () => clearTimeout(timer);
-    }
-  }, [hasAnimated]);
+  // Removed animation effect to improve performance
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -247,12 +237,12 @@ export function Header() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 ">
+      <header className="fixed top-0 left-0 right-0 z-50" suppressHydrationWarning>
         <div className="bg-green-700 border-b border-green-600 shadow-lg">
           <div className="container mx-auto px-4 sm:px-6">
             <div className="flex items-center justify-between h-13">
               <Link href="/">
-                <div className="flex items-center gap-2 bg-green-50 px-2 sm:px-3 py-1 rounded-full border-2 border-primary flex-shrink-0 cursor-pointer">
+                <div className="flex items-center gap-2 bg-green-50 px-2 sm:px-3 py-1 rounded-full border-2 border-primary cursor-pointer">
                   <Image
                     src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WhatsApp%20Image%202025-08-26%20at%2017.19.27_37ef906c.jpg-5w6VIINuFETMhj8U6ktDEnUViMPQod.jpeg"
                     alt="FoodBundle Logo"
@@ -281,16 +271,17 @@ export function Header() {
 
                 {/* Enhanced Subscribe Button */}
                 <div
-                  className={`relative ${hasAnimated ? "" : ""}`}
+                  className="relative"
                   onMouseEnter={handleShopMouseEnter}
                   onMouseLeave={handleShopMouseLeave}
                 >
                   <button
-                    className="bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 px-4 sm:px-6 py-1 rounded-full text-sm font-bold hover:from-yellow-300 hover:to-orange-300 transition-all duration-200 shadow-md transform hover:scale-105"
+                    className="bg-linear-to-r from-yellow-400 to-orange-400 text-gray-900 px-4 sm:px-6 py-1 rounded-full text-sm font-bold hover:from-yellow-300 hover:to-orange-300 transition-all duration-200 shadow-md transform hover:scale-105"
                     onClick={(e) => {
                       e.preventDefault();
                       scrollToSection("subscribe");
                     }}
+                    suppressHydrationWarning
                   >
                     <span className="relative z-20">Subscribe</span>
                   </button>
@@ -346,13 +337,14 @@ export function Header() {
 
               {/* Mobile Subscribe Button - Visible on Mobile */}
               <div className="md:hidden flex items-center">
-                <div className={`relative ${hasAnimated ? "" : ""}`}>
+                <div className="relative">
                   <button
-                    className="subscribe-button  bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 rounded-full text-sm font-bold hover:from-yellow-300 hover:to-orange-300 py-[7px] px-3 transition-all duration-300 text-[13px] whitespace-nowrap flex items-center gap-2 hover:scale-105 mr-2"
+                    className="subscribe-button  bg-linear-to-r from-yellow-400 to-orange-400 text-gray-900 rounded-full text-sm font-bold hover:from-yellow-300 hover:to-orange-300 py-[7px] px-3 transition-all duration-300 text-[13px] whitespace-nowrap flex items-center gap-2 hover:scale-105 mr-2"
                     onClick={(e) => {
                       e.preventDefault();
                       setIsShopDropdownOpen(!isShopDropdownOpen);
                     }}
+                    suppressHydrationWarning
                   >
                     <span className="relative z-10">Subscribe</span>
                   </button>
@@ -424,6 +416,8 @@ export function Header() {
                               width={24}
                               height={24}
                               className="rounded-full object-cover"
+                              loading="lazy"
+                              sizes="24px"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.src = "/placeholder.svg";
@@ -521,6 +515,8 @@ export function Header() {
                               width={20}
                               height={20}
                               className="rounded-full object-cover p-[15px]"
+                              loading="lazy"
+                              sizes="20px"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.src = "/placeholder.svg";

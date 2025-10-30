@@ -2,7 +2,7 @@
 "use client";
 
 import type React from "react";
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, memo } from "react";
 import { Card } from "@/components/ui/card";
 import CartDrawer from "@/components/cartDrawer";
 import { useCartSummary } from "@/app/contexts/cart-context";
@@ -39,7 +39,7 @@ interface ProductCardProps {
   discountPercent?: number;
 }
 
-function ProductCard({
+const ProductCard = memo(function ProductCard({
   id,
   name,
   price,
@@ -118,8 +118,7 @@ function ProductCard({
   };
 
   return (
-    <>
-      <div
+    <div
         className={
           "w-full bg-white transition-all duration-300 max-w-[200px] sm:max-w-[220px]"
         }
@@ -127,13 +126,15 @@ function ProductCard({
         onMouseLeave={() => setIsHovered(false)}
       >
         <Card className="border border-gray-200 shadow hover:shadow-lg rounded-md hover:rounded hover:border-green-500 overflow-hidden transition-all duration-300 p-0 pb-2 h-full">
-          <div className="relative w-full  flex items-center justify-center group overflow-hidden h-[160px] sm:h-[180px] ">
+          <div className="relative w-full  flex items-center justify-center group overflow-hidden h-40 sm:h-[180px] ">
             <Image
               src={image || "/placeholder.svg"}
               alt={name}
               width={200}
               height={200}
               className="object-contain w-full max-h-full transition-transform duration-300 group-hover:scale-105"
+              loading="lazy"
+              sizes="(max-width: 640px) 200px, (max-width: 768px) 220px, 200px"
             />
             {discountPercent && (
               <div className="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">
@@ -230,7 +231,7 @@ function ProductCard({
           </div>
 
           <div className="px-3 sm:px-4">
-            <h3 className="font-semibold text-gray-800 leading-tight line-clamp-2 min-h-[1.5rem] text-sm ">
+            <h3 className="font-semibold text-gray-800 leading-tight line-clamp-2 min-h-6 text-sm ">
               {name}
             </h3>
 
@@ -253,10 +254,9 @@ function ProductCard({
             </div>
           </div>
         </Card>
-      </div>
-    </>
+    </div>
   );
-}
+});
 
 // Main Products Section Component
 interface Product {
@@ -346,27 +346,28 @@ export function ProductsSection({
     setLocalSearchQuery(searchQuery);
   }, [searchQuery]);
 
-  // Apply client-side sorting
+  // Apply client-side sorting with better performance
   const sortedProducts = useMemo(() => {
     if (!sorting?.sortBy || sorting.sortBy === "random") return products;
     
-    const sorted = [...products];
-    switch (sorting.sortBy) {
-      case "price_asc":
-        return sorted.sort((a, b) => a.price - b.price);
-      case "price_desc":
-        return sorted.sort((a, b) => b.price - a.price);
-      case "name_asc":
-        return sorted.sort((a, b) => a.name.localeCompare(b.name));
-      case "name_desc":
-        return sorted.sort((a, b) => b.name.localeCompare(a.name));
-      case "newest":
-        return sorted.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-      case "rating":
-        return sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-      default:
-        return sorted;
-    }
+    return [...products].sort((a, b) => {
+      switch (sorting.sortBy) {
+        case "price_asc":
+          return a.price - b.price;
+        case "price_desc":
+          return b.price - a.price;
+        case "name_asc":
+          return a.name.localeCompare(b.name);
+        case "name_desc":
+          return b.name.localeCompare(a.name);
+        case "newest":
+          return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+        case "rating":
+          return (b.rating || 0) - (a.rating || 0);
+        default:
+          return 0;
+      }
+    });
   }, [products, sorting?.sortBy]);
 
   // Show all categories (backend handles filtering)
@@ -412,7 +413,7 @@ export function ProductsSection({
                       ].map((src, i) => (
                         <div
                           key={i}
-                          className="w-10 h-10 bg-gradient-to-br from-orange-400 to-red-500 rounded-full border-2 border-gray-800 flex items-center justify-center overflow-hidden"
+                          className="w-10 h-10 bg-linear-to-br from-orange-400 to-red-500 rounded-full border-2 border-gray-800 flex items-center justify-center overflow-hidden"
                         >
                           <Image
                             src={src}
@@ -420,6 +421,8 @@ export function ProductsSection({
                             height={32}
                             alt="avatar"
                             className="rounded-full w-full h-full object-cover"
+                            loading="lazy"
+                            sizes="32px"
                           />
                         </div>
                       ))}{" "}
@@ -439,7 +442,7 @@ export function ProductsSection({
 
                     {/* Subscribe Button */}
                     <Link href="/restaurant/subscribe" className="shrink-0">
-                      <button className="bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 px-4 sm:px-6 py-2 rounded-full text-sm font-bold hover:from-yellow-300 hover:to-orange-300 transition-all duration-200 shadow-md transform hover:scale-105">
+                      <button className="bg-linear-to-r from-yellow-400 to-orange-400 text-gray-900 px-4 sm:px-6 py-2 rounded-full text-sm font-bold hover:from-yellow-300 hover:to-orange-300 transition-all duration-200 shadow-md transform hover:scale-105">
                         Subscribe
                       </button>
                     </Link>
