@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -7,43 +6,17 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, CheckCircle, XCircle, Clock, AlertCircle, Copy, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useVoucherUtils } from "@/hooks/useVoucher";
-import { voucherService } from "@/app/services/voucherService";
-import { getRestaurantIdFromToken } from "@/lib/jwt";
-import { IVoucher, VoucherStatus } from "@/lib/types";
+import {  VoucherStatus } from "@/lib/types";
+import { useVouchers } from "@/app/contexts/VoucherContext";
 
 export default function VouchersList() {
   const { formatVoucherType, getDiscountPercentage } = useVoucherUtils();
-  const [vouchers, setVouchers] = useState<IVoucher[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [hasLoaded, setHasLoaded] = useState(false);
+  const { myVouchers, getMyVouchers, loading, error } = useVouchers();
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    loadVouchers();
-  }, []);
-
-  const loadVouchers = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const restaurantId = getRestaurantIdFromToken();
-      if (!restaurantId) {
-        throw new Error("Restaurant ID not found in token");
-      }
-      
-      const response = await voucherService.getRestaurantVouchers(restaurantId, { activeOnly: false });
-      console.log("response ======", response.data.vouchers);
-      setVouchers(Array.isArray(response.data.vouchers) ? response.data.vouchers : []);
-      setHasLoaded(true);
-    } catch (err: any) {
-      setError(err.message || "Failed to load vouchers");
-      setHasLoaded(true);
-    } finally {
-      setLoading(false);
-    }
-  };
+    getMyVouchers();
+  }, [getMyVouchers]);
 
   const getStatusConfig = (status: VoucherStatus) => {
     switch (status) {
@@ -112,14 +85,14 @@ export default function VouchersList() {
   return (
     <div className="mb-8">
       <h2 className="text-[16px] font-medium text-center mb-4">My Voucher</h2>
-      {!loading && hasLoaded && vouchers.length === 0 ? (
+      {!loading && myVouchers.length === 0 ? (
         <div className="text-center py-8">
           <p className="text-gray-700">No vouchers available</p>
           <p className="text-gray-600 text-sm">Apply for a loan to get vouchers</p>
         </div>
       ) : (
         <div className="flex justify-center">
-          {Array.isArray(vouchers) && vouchers.slice(0, 1).map((voucher) => {
+          {myVouchers.slice(0, 1).map((voucher) => {
             const statusConfig = getStatusConfig(voucher.status);
             const isActive = voucher.status === VoucherStatus.ACTIVE;
             
@@ -240,7 +213,7 @@ export default function VouchersList() {
                         : "bg-gray-50 text-gray-700"
                     }`}
                   >
-                    Service Fee: {voucher.serviceFeeRate}%
+                    Service Fee: {0}%
                   </div>
                 </div>
               </Card>

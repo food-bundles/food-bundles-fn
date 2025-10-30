@@ -204,7 +204,7 @@ export function DataTable<TData, TValue>({
             {showAddButton && addButtonLabel && onAddButton && (
               <button
                 onClick={onAddButton}
-                className="bg-green-700 hover:bg-green-600 text-[13px] p-1 text-white rounded cursor-pointer flex flex-shrink-0"
+                className="bg-green-700 hover:bg-green-600 text-[13px] p-1 text-white rounded cursor-pointer flex shrink-0"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 {addButtonLabel}
@@ -214,7 +214,7 @@ export function DataTable<TData, TValue>({
             {showExport && (
               <button
                 onClick={onExport}
-                className="flex items-center bg-green-700 hover:bg-green-600 text-[13px] cursor-pointer p-1 text-white rounded gap-2 min-w-[100px] flex-shrink-0"
+                className="flex items-center bg-green-700 hover:bg-green-600 text-[13px] cursor-pointer p-1 text-white rounded gap-2 min-w-[100px] shrink-0"
               >
                 <Download className=" h-4 w-4" />
                 Export

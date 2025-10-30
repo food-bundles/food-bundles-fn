@@ -516,7 +516,7 @@ export function DashboardOverview({
 
           <div className=" relative  bg-white rounded shadow-lg hover:shadow-xl transition-shadow mt-6 pt-8 pb-4 px-6">
             {/* Header absolute block */}
-            <div className="absolute -top-6 left-4 right-4 rounded  bg-gradient-to-tr from-green-400 to-green-600 px-6  py-2 flex items-center justify-between">
+            <div className="absolute -top-6 left-4 right-4 rounded  bg-linear-to-tr from-green-400 to-green-600 px-6  py-2 flex items-center justify-between">
               <h2 className="text-sm sm:text-base font-semibold text-white">
                 Track Order
               </h2>
@@ -748,7 +748,7 @@ export function DashboardOverview({
           <div className="px-2 w-full">
             <div className="flex gap-6">
               <div className="flex-1 relative pt-6">
-                <div className="absolute top-0 left-4 bg-gradient-to-tr from-orange-300 to-orange-400 rounded py-4 px-6 shadow-xl z-10">
+                <div className="absolute top-0 left-4 bg-linear-to-tr from-orange-300 to-orange-400 rounded py-4 px-6 shadow-xl z-10">
                   <Package className="w-10 h-10 text-white" />
                 </div>
 
@@ -777,7 +777,7 @@ export function DashboardOverview({
               {/* Fees Saved card - Green theme */}
               <div className="flex-1 relative pt-6">
                 {/* Floating icon box */}
-                <div className="absolute top-0 left-4 bg-gradient-to-tr from-green-400 to-green-600 rounded py-4 px-6 shadow-xl z-10">
+                <div className="absolute top-0 left-4 bg-linear-to-tr from-green-400 to-green-600 rounded py-4 px-6 shadow-xl z-10">
                   <ShoppingBag className="w-10 h-10 text-white" />
                 </div>
 
@@ -825,7 +825,7 @@ export function DashboardOverview({
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="bg-gradient-to-br from-green-500 to-green-800 p-6">
+            <CardContent className="bg-linear-to-br from-green-500 to-green-800 p-6">
               <LineChart />
             </CardContent>
           </Card>

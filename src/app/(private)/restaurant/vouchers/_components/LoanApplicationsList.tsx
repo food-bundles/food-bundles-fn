@@ -1,28 +1,19 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import { useState, useEffect } from "react";
+import {  useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, CheckCircle, XCircle, DollarSign, Calendar } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useVoucherOperations} from "@/hooks/useVoucher";
-import { ILoanApplication, LoanStatus } from "@/lib/types";
+import { LoanStatus } from "@/lib/types";
+import { useVouchers } from "@/app/contexts/VoucherContext";
 
 export default function LoanApplicationsList() {
-  const { getLoanApplications, loading, error } = useVoucherOperations();
-  const [applications, setApplications] = useState<ILoanApplication[]>([]);
-  const [hasLoaded, setHasLoaded] = useState(false);
+  const { myLoanApplications, getMyLoanApplications, loading, error } = useVouchers();
 
   useEffect(() => {
-    loadApplications();
-  }, []);
-
-  const loadApplications = async () => {
-    const apps = await getLoanApplications();
-    setApplications(apps);
-    setHasLoaded(true);
-  };
+    getMyLoanApplications();
+  }, [getMyLoanApplications]);
 
   const getStatusConfig = (status: LoanStatus) => {
     switch (status) {
@@ -72,14 +63,14 @@ export default function LoanApplicationsList() {
   return (
     <div className="mb-8">
       <h2 className="text-[16px] text-center font-medium mb-4">My Loan Application</h2>
-      {!loading && hasLoaded && applications.length === 0 ? (
+      {!loading && myLoanApplications.length === 0 ? (
         <div className="text-center py-8">
           <p className="text-gray-600">No loan applications yet</p>
           <p className="text-gray-500 text-sm">Apply for your first loan</p>
         </div>
       ) : (
         <div className="flex justify-center">
-          {applications.slice(0, 1).map((application) => {
+          {myLoanApplications.slice(0, 1).map((application) => {
             const statusConfig = getStatusConfig(application.status);
             
             return (

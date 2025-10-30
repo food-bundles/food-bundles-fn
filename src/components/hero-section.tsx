@@ -116,7 +116,7 @@ function CircularRestaurantAnimation({
               onMouseLeave={handleMouseLeave}
             >
               <div className="relative">
-                <div className="w-24 h-24 rounded-full p-0.5 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center  shadow-md shadow-green-400/50">
+                <div className="w-24 h-24 rounded-full p-0.5 bg-linear-to-br from-green-400 to-green-600 flex items-center justify-center  shadow-md shadow-green-400/50">
                   <div className="relative w-full h-full bg-gray-900 rounded-full overflow-hidden flex items-center justify-center">
                     <Image
                       src={restaurant.image || "/placeholder.svg"}
@@ -194,7 +194,7 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
     "
       >
         <HeroImageCarousel />
-        <div className="absolute inset-0 bg-gradient-to-br from-black/50 via-black/30 to-black/50"></div>
+        <div className="absolute inset-0 bg-linear-to-br from-black/50 via-black/30 to-black/50"></div>
         <div className="absolute inset-0">
           <div className="container mx-auto px-4 h-full flex items-center">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full h-full">
@@ -207,7 +207,7 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
                     </span>
                     <span className="block text-green-400">To Our Farm</span>
                   </h1>
-                  <p className="hidden lg:block text-sm sm:text-base text-gray-300 leading-relaxed">
+                  <p className="hidden lg:block text-sm sm:text-base text-white leading-relaxed">
                     Get fresh, quality, and reliable ingredients for your
                     restaurant directly from farm to table with our premium
                     delivery service.
@@ -244,7 +244,7 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
                    xl:top-85 
                  "
                 >
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-gray-800 to-black border-2 border-orange-400/50 flex items-center justify-center shadow-xl">
+                  <div className="w-24 h-24 rounded-full bg-linear-to-br from-gray-800 to-black border-2 border-orange-400/50 flex items-center justify-center shadow-xl">
                     <div className="text-center">
                       <div className="text-orange-400 text-lg font-bold">
                         50 +

@@ -8,6 +8,7 @@ import {
   useCallback,
   useState,
   useEffect,
+  useMemo,
 } from "react";
 import { productService } from "@/app/services/productService";
 import { categoryService } from "@/app/services/categoryService";
@@ -83,7 +84,7 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     refreshCategories();
-  }, [refreshCategories]);
+  }, []); // Remove dependency to prevent loops
 
   const getAllProducts = useCallback(async (): Promise<ProductsResponse> => {
     try {
@@ -172,14 +173,14 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
     return await productService.getProductById(productId);
   }, []);
 
-  const contextValue: ProductContextType = {
+  const contextValue: ProductContextType = useMemo(() => ({
     categories,
     getAllProducts,
     getAllProductsRoleBased,
     getAllProductsByCategoryId,
     getProductById,
     refreshCategories,
-  };
+  }), [categories, getAllProducts, getAllProductsRoleBased, getAllProductsByCategoryId, getProductById, refreshCategories]);
 
   return (
     <ProductContext.Provider value={contextValue}>

@@ -237,37 +237,7 @@ export const subscriptionService = {
     return response.data;
   },
 
-  /**
-   * Update subscription plan (Admin only)
-   */
-  //   updateSubscriptionPlan: async (
-  //     planId: string,
-  //     data: UpdateSubscriptionPlanData
-  //   ): Promise<SubscriptionPlanResponse> => {
-  //     const axiosClient = createAxiosClient();
-  //     const response = await axiosClient.patch(
-  //       `/subscriptions/plans/${planId}`,
-  //       data
-  //     );
-  //     return response.data;
-  //   },
 
-  /**
-   * Delete subscription plan (Admin only)
-   */
-  //   deleteSubscriptionPlan: async (
-  //     planId: string
-  //   ): Promise<{ success: boolean; message?: string }> => {
-  //     const axiosClient = createAxiosClient();
-  //     const response = await axiosClient.delete(`/subscriptions/plans/${planId}`);
-  //     return response.data;
-  //   },
-
-  // ==================== RESTAURANT SUBSCRIPTION SERVICES ====================
-
-  /**
-   * Create restaurant subscription
-   */
   createRestaurantSubscription: async (
     data: CreateRestaurantSubscriptionData
   ): Promise<SubscriptionResponse> => {
@@ -308,11 +278,7 @@ export const subscriptionService = {
 
   updateSubscription: async (
     subscriptionId: string,
-    payload: {
-      status: string;
-      autoRenew: boolean;
-      endDate: string;
-    }
+    payload: UpdateRestaurantSubscriptionData
   ) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.patch(
@@ -324,14 +290,7 @@ export const subscriptionService = {
 
   updateSubscriptionPlan: async (
     planId: string,
-    payload: {
-      name: string;
-      description: string;
-      price: number;
-      duration: number;
-      features: string[];
-      isActive: boolean;
-    }
+    payload: UpdateSubscriptionPlanData
   ) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.patch(

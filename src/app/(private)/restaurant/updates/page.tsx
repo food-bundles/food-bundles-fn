@@ -125,7 +125,8 @@ export default function RestaurantDashboard() {
       };
 
       return {
-        id: order.orderNumber,
+        id: order.id,
+        orderNumber: order.orderNumber,
         customer: order.billingName || "Unknown",
         items:
           order.orderItems?.map((item: any) => ({
@@ -150,9 +151,7 @@ export default function RestaurantDashboard() {
           minute: "2-digit",
           hour12: true,
         }),
-
-        originalData: order,
-      };
+      } as any;
     }),
     selectedOrderForTracking: selectedOrder,
     ordersByStatus: statistics?.ordersByStatus || {},

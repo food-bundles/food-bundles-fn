@@ -180,13 +180,23 @@ export interface IVoucher {
   usedCredit: number;
   remainingCredit: number;
   status: VoucherStatus;
+  transactions: {
+    id: string;
+    voucherId: string;
+    restaurantId: number;
+    originalAmount: number;
+    discountPercentage: number;
+    discountAmount: number;
+    amountCharged: number;
+    serviceFee: number;
+    totalDeducted: number;
+    transactionDate: Date;
+    createdAt: Date;
+  };
   expiryDate?: Date;
   issuedDate: Date;
-  restaurantId: string;
   loanId?: string;
-  serviceFeeRate: number;
-  createdAt: Date;
-  updatedAt: Date;
+ 
 }
 
 export interface ILoanApplication {

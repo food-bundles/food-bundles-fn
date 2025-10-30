@@ -91,7 +91,7 @@ export function PaymentModal({
           <div className="space-y-3">
             {content.instructions.map((instruction, index) => (
               <div key={index} className="flex items-start space-x-3">
-                <div className="flex-shrink-0 w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm font-medium">
+                <div className="shrink-0 w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm font-medium">
                   {index + 1}
                 </div>
                 <p className="text-sm text-gray-700">{instruction}</p>

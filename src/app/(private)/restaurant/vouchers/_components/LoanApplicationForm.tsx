@@ -42,7 +42,7 @@ export default function LoanApplicationForm({ onSuccess }: LoanApplicationFormPr
             <CardHeader className="">
               <CardTitle className="flex items-start gap-2 font-medium text-[14px]">
                 <LuTicketCheck className="h-5 w-5 text-orange-400" />
-                Apply for Loan
+                Purchase Voucher
               </CardTitle>
             </CardHeader>
             <div>
