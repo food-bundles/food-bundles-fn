@@ -272,156 +272,106 @@ export default function AdminOrdersPage() {
               color: #22c55e;
             }
             .footer {
-              margin-top: 40px;
               text-align: center;
-              font-size: 10px;
-              color: #94a3b8;
+              margin-top: 30px;
               padding-top: 20px;
-              border-top: 1px solid #e2e8f0;
+              border-top: 1px solid #e5e7eb;
+              color: #64748b;
+              font-size: 12px;
             }
           </style>
         </head>
         <body>
-          <div class="header">
-            <img src="https://res.cloudinary.com/dzxyelclu/image/upload/v1760111270/Food_bundle_logo_cfsnsw.png" alt="Logo">
-            <h1>Order Invoice</h1>
-            <h2>Order #${order.orderNumber}</h2>
-          </div>
-          
-          <div class="info-container">
-            <div class="info-section">
-              <h3>Restaurant Information</h3>
-              <div class="info-row">
-                <span class="label">Name:</span>
-                <span class="value">${order.restaurant.name}</span>
+          <div class="receipt-container">
+            <div class="header">
+              <div class="logo">FB</div>
+              <img src="https://res.cloudinary.com/dzxyelclu/image/upload/v1760111270/Food_bundle_logo_cfsnsw.png" alt="Logo">
+              <h1>Food Bundle</h1>
+              <p>Order Receipt</p>
+            </div>
+            
+            <div class="order-info">
+              <h2>Order Information</h2>
+              <div class="info-grid">
+                <div class="info-item">
+                  <div class="info-label">Order Number</div>
+                  <div class="info-value">${order.orderNumber}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Order Date</div>
+                  <div class="info-value">${new Date(order.createdAt).toLocaleDateString()}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Customer Name</div>
+                  <div class="info-value">${order.billingName}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Phone Number</div>
+                  <div class="info-value">${order.billingPhone}</div>
+                </div>
               </div>
-              <div class="info-row">
-                <span class="label">Email:</span>
-                <span class="value">${order.restaurant.email}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Order Date:</span>
-                <span class="value">${new Date(
-                  order.createdAt
-                ).toLocaleDateString()}</span>
+              <div class="info-item">
+                <div class="info-label">Delivery Address</div>
+                <div class="info-value">${order.billingAddress}</div>
               </div>
             </div>
             
-            <div class="info-section">
-              <h3>Customer Information</h3>
-              <div class="info-row">
-                <span class="label">Name:</span>
-                <span class="value">${order.billingName}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Phone:</span>
-                <span class="value">${order.billingPhone}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Email:</span>
-                <span class="value">${order.billingEmail}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Address:</span>
-                <span class="value">${order.billingAddress}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="info-container">
-            <div class="info-section">
-              <h3>Order Status</h3>
-              <div class="info-row">
-                <span class="label">Status:</span>
-                <span class="value">${order.status}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Payment Status:</span>
-                <span class="value">${order.paymentStatus}</span>
+            <div class="items-section">
+              <h3>Order Items</h3>
+              <div class="items-container">
+                ${order.orderItems.map(item => `
+                  <div class="item">
+                    <span class="item-name">${item.quantity}x ${item.productName}</span>
+                    <span class="item-price">$${item.subtotal.toFixed(2)}</span>
+                  </div>
+                `).join('')}
+                <div class="item" style="background: #f0fdf4; font-weight: bold;">
+                  <span class="item-name">Total</span>
+                  <span class="item-price" style="color: #22c55e; font-size: 16px;">$${order.totalAmount.toFixed(2)}</span>
+                </div>
               </div>
             </div>
             
-            <div class="info-section">
-              <h3>Payment Information</h3>
-              <div class="info-row">
-                <span class="label">Method:</span>
-                <span class="value">${order.paymentMethod}</span>
+            <div class="delivery-payment">
+              <div class="delivery-info">
+                <div class="section-title">Delivery Information</div>
+                <div class="section-content">
+                  <strong>Status:</strong> ${order.status}<br>
+                  <strong>Estimated Delivery:</strong> ${order.estimatedDelivery ? new Date(order.estimatedDelivery).toLocaleString() : 'TBD'}
+                </div>
               </div>
-              ${
-                order.notes
-                  ? `
-              <div class="info-row">
-                <span class="label">Notes:</span>
-                <span class="value">${order.notes}</span>
+              <div class="payment-info">
+                <div class="section-title">Payment Information</div>
+                <div class="section-content">
+                  <strong>Method:</strong> ${order.paymentMethod}<br>
+                  <strong>Status:</strong> ${order.paymentStatus}
+                </div>
               </div>
-              `
-                  : ""
-              }
             </div>
-          </div>
-          
-          <div class="items-section">
-            <h3>Order Items</h3>
-            <table class="items">
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th style="text-align: center;">Quantity</th>
-                  <th style="text-align: right;">Unit Price</th>
-                  <th style="text-align: right;">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${order.orderItems
-                  .map(
-                    (item) => `
-                  <tr>
-                    <td>
-                      <div class="product-cell">
-                        <img class="product-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'%3E%3Crect width='50' height='50' fill='%23e0e7ff'/%3E%3Ctext x='25' y='32' font-size='20' text-anchor='middle'%3E🍽️%3C/text%3E%3C/svg%3E" alt="Product">
-                        <span>${item.productName}</span>
-                      </div>
-                    </td>
-                    <td style="text-align: center;">${item.quantity} ${
-                      item.unit
-                    }</td>
-                    <td style="text-align: right;">${item.unitPrice.toLocaleString()} RWF</td>
-                    <td style="text-align: right; font-weight: 600;">${item.subtotal.toLocaleString()} RWF</td>
-                  </tr>
-                `
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-          </div>
-          
-          <div class="total-section">
-            <div class="total-label">Total Amount</div>
-            <div class="total-amount">${order.totalAmount.toLocaleString()} RWF</div>
-          </div>
-
-          <div class="footer">
-            <p>Thank you for your order! • Generated on ${new Date().toLocaleString()}</p>
+            
+            <div class="footer">
+              <p>Thank you for choosing Food Bundle!</p>
+              <p>Generated on ${new Date().toLocaleString()}</p>
+            </div>
           </div>
         </body>
         </html>
       `;
 
-      // Create blob and download
-      const blob = new Blob([htmlContent], { type: "text/html" });
+      const blob = new Blob([htmlContent], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `order-${order.orderNumber}.html`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `order-${order.orderNumber}-receipt.html`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       URL.revokeObjectURL(url);
-
-      toast.success(`Downloaded order ${order.orderNumber} as HTML`);
+      
+      toast.success('Receipt downloaded successfully!');
     } catch (error) {
-      console.error("Error generating PDF:", error);
-      toast.error("Failed to download order");
+      console.error('Failed to download receipt:', error);
+      toast.error('Failed to download receipt');
     }
   };
 

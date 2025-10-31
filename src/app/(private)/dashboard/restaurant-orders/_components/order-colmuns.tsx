@@ -46,6 +46,10 @@ export interface Order {
     unit: string;
     images: string[];
     category: string;
+    price: number;
+    menuItem?: {
+      name: string;
+    };
   }>;
   _count: {
     orderItems: number;
