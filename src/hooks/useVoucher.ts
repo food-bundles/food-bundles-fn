@@ -10,7 +10,6 @@ export const useVoucherOperations = () => {
   const handleError = useCallback((error: any, defaultMessage: string) => {
     const message = error?.response?.data?.message || error?.message || defaultMessage;
     setError(message);
-    console.error(defaultMessage, error);
   }, []);
 
   const clearError = useCallback(() => setError(null), []);
@@ -95,7 +94,7 @@ export const useVoucherOperations = () => {
   const applyForLoan = useCallback(async (loanData: {
     requestedAmount: number;
     purpose?: string;
-    terms?: string;
+    voucherDays?: number;
   }): Promise<ILoanApplication | null> => {
     try {
       setLoading(true);

@@ -11,7 +11,7 @@ export default async function RestaurantLayout({ children }: LayoutProps) {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <main className="flex-grow container mx-auto">{children}</main>
+      <main className="grow container mx-auto">{children}</main>
       <div id="ask-help">
         <QuickTalkSection />
       </div>

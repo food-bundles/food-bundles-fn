@@ -143,35 +143,30 @@ export default function VouchersList() {
                 </div>
 
                 <div className="space-y-4 ">
-                  <div className="grid grid-cols-2 gap-4 text-center">
-                    <div>
-                      <p className="text-xs text-gray-700">Credit</p>
-                      <p className="font-semibold text-sm">
-                        {voucher.creditLimit.toLocaleString()} RWF
-                      </p>
-                    </div>
+                  <div className="flex justify-center text-center">
                     <div className="">
-                      <p className="text-xs text-gray-700">
-                        Pay
-                        <span className="font-semibold pl-1 text-blue-600 text-sm">
+                      <p className="text-xs text-gray-500">FoodBundle Credit</p>
+                      <p className="flex items-center text-xs text-gray-500">
+                        <span className="font-semibold text-blue-600 text-sm pr-1">
                           {getDiscountPercentage(voucher.voucherType)}%
+                        </span>{" "}
+                        of
+                        <span className="px-2 font-semibold text-green-600 text-sm">
+                          {voucher.creditLimit.toLocaleString()}
                         </span>
+                        RWF
                       </p>
-                      <p className="text-xs text-gray-700">now, rest later</p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 text-center">
+                  <div className="flex justify-center text-center">
                     <div>
                       <p className="text-xs text-gray-700">Used Credit</p>
                       <p className="font-semibold text-orange-600 text-sm">
-                        {voucher.usedCredit.toLocaleString()} RWF
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-700">Remaining</p>
-                      <p className="font-semibold text-green-600 text-sm">
-                        {voucher.remainingCredit.toLocaleString()} RWF
+                        {voucher.transactions && Array.isArray(voucher.transactions) && voucher.transactions.length > 0 
+                          ? voucher.transactions[0].originalAmount.toLocaleString()
+                          : voucher.usedCredit.toLocaleString()
+                        } RWF
                       </p>
                     </div>
                   </div>

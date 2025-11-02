@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 
 export default function FarmerProfile() {
   const [isEditing, setIsEditing] = useState(false);
@@ -35,10 +36,8 @@ export default function FarmerProfile() {
   };
 
   const handleSaveProfile = () => {
-    // Here you would typically send the data to your backend
     setIsEditing(false);
-    // Show success message
-    console.log('Profile saved:', profile);
+    toast.success('Profile saved:');
   };
 
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {

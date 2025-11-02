@@ -54,10 +54,6 @@ export default function DashboardHeader() {
   const email = user?.email || ""
   const profileImage = getUserProfileImage()
 
-  console.log("TopResNav - Current user:", user);
-  console.log("TopResNav - Profile image:", profileImage);
-  console.log("TopResNav - User name:", displayName);
-
   const handleProfileClick = () => {
     setIsProfileOpen(true)
     setIsMobileMenuOpen(false)

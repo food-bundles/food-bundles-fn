@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { toast } from "sonner";
 import type { ProductFormData } from "../(private)/dashboard/inventory/_components/create-product-modal";
 import createAxiosClient from "../hooks/axiosClient";
 
@@ -41,10 +42,6 @@ export const productService = {
       formData.append("images", image);
     });
 
-    console.log("[v0] FormData contents:"); // Debug logging
-    for (const [key, value] of formData.entries()) {
-      console.log(`[v0] ${key}:`, value);
-    }
 
     const response = await axiosClient.post("/products", formData, {
       headers: {
@@ -74,7 +71,7 @@ export const productService = {
       const response = await axiosClient.get("/products/role-based");
       return response.data;
     } catch (error: any) {
-      console.error("Error fetching role-based products:", error);
+      toast.error("Error fetching role-based products:", error);
       return {
         success: false,
         data: [],
@@ -88,7 +85,7 @@ export const productService = {
       const response = await axiosClient.get(`/category/${categoryId}`);
       return response.data;
     } catch (error: any) {
-      console.error("Error fetching role-based products:", error);
+      toast.error("Error fetching role-based products:", error);
       return {
         success: false,
         data: [],

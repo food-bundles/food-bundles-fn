@@ -1,40 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect } from "react";
+import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Eye, Trash2, Edit, Calendar, CreditCard } from "lucide-react";
-import { voucherService } from "@/app/services/voucherService";
+import { DataTable } from "@/components/data-table";
+import { useVouchers } from "@/app/contexts/VoucherContext";
 import { IVoucher, VoucherStatus, VoucherType } from "@/lib/types";
 
 export default function VouchersTable() {
-  const [vouchers, setVouchers] = useState<IVoucher[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { allVouchers, loading, getAllVouchers } = useVouchers();
 
   useEffect(() => {
-    loadVouchers();
-  }, []);
-
-  const loadVouchers = async () => {
-    setLoading(true);
-    try {
-      const response = await voucherService.getAllVouchers();
-      setVouchers(response.data || []);
-    } catch (error) {
-      console.error("Failed to load vouchers:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    getAllVouchers();
+  }, [getAllVouchers]);
 
   const handleDeactivate = async (id: string) => {
-    try {
-      await voucherService.deactivateVoucher(id, "Deactivated by admin");
-      loadVouchers();
-    } catch (error) {
-      console.error("Failed to deactivate voucher:", error);
-    }
+    console.log("Deactivate voucher:", id);
   };
 
   const getStatusBadge = (status: VoucherStatus) => {
@@ -71,83 +54,94 @@ export default function VouchersTable() {
     }
   };
 
+  const columns: ColumnDef<IVoucher>[] = [
+    {
+      accessorKey: "voucherCode",
+      header: "Code",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <CreditCard className="h-4 w-4 text-blue-600" />
+          <span className="font-mono text-sm">{row.original.voucherCode}</span>
+        </div>
+      )
+    },
+    {
+      accessorKey: "voucherType",
+      header: "Type",
+      cell: ({ row }) => (
+        <Badge variant="outline">{getVoucherTypeLabel(row.original.voucherType)}</Badge>
+      )
+    },
+    {
+      accessorKey: "creditLimit",
+      header: "Credit Limit",
+      cell: ({ row }) => `${row.original.creditLimit.toLocaleString()} RWF`
+    },
+    {
+      id: "usage",
+      header: "Used/Remaining",
+      cell: ({ row }) => (
+        <div className="text-sm">
+          <div className="text-orange-600">Used: {row.original.usedCredit.toLocaleString()} RWF</div>
+          <div className="text-green-600">Remaining: {row.original.remainingCredit.toLocaleString()} RWF</div>
+        </div>
+      )
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => getStatusBadge(row.original.status)
+    },
+    {
+      accessorKey: "issuedDate",
+      header: "Issued",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1 text-sm text-gray-500">
+          <Calendar className="h-3 w-3" />
+          {new Date(row.original.issuedDate).toLocaleDateString()}
+        </div>
+      )
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        const voucher = row.original;
+        return (
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline">
+              <Eye className="h-4 w-4 mr-1" />
+              View
+            </Button>
+            <Button size="sm" variant="outline">
+              <Edit className="h-4 w-4 mr-1" />
+              Edit
+            </Button>
+            {voucher.status === VoucherStatus.ACTIVE && (
+              <Button 
+                size="sm" 
+                variant="destructive"
+                onClick={() => handleDeactivate(voucher.id)}
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Deactivate
+              </Button>
+            )}
+          </div>
+        );
+      }
+    }
+  ];
+
   if (loading) return <div className="p-6">Loading...</div>;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>All Vouchers</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left p-3">Code</th>
-                <th className="text-left p-3">Restaurant</th>
-                <th className="text-left p-3">Type</th>
-                <th className="text-left p-3">Credit Limit</th>
-                <th className="text-left p-3">Used/Remaining</th>
-                <th className="text-left p-3">Status</th>
-                <th className="text-left p-3">Issued</th>
-                <th className="text-left p-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {vouchers.map((voucher) => (
-                <tr key={voucher.id} className="border-b hover:bg-gray-50">
-                  <td className="p-3">
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4 text-blue-600" />
-                      <span className="font-mono text-sm">{voucher.voucherCode}</span>
-                    </div>
-                  </td>
-                  <td className="p-3">{voucher.restaurantId}</td>
-                  <td className="p-3">
-                    <Badge variant="outline">{getVoucherTypeLabel(voucher.voucherType)}</Badge>
-                  </td>
-                  <td className="p-3">{voucher.creditLimit.toLocaleString()} RWF</td>
-                  <td className="p-3">
-                    <div className="text-sm">
-                      <div className="text-orange-600">Used: {voucher.usedCredit.toLocaleString()} RWF</div>
-                      <div className="text-green-600">Remaining: {voucher.remainingCredit.toLocaleString()} RWF</div>
-                    </div>
-                  </td>
-                  <td className="p-3">{getStatusBadge(voucher.status)}</td>
-                  <td className="p-3">
-                    <div className="flex items-center gap-1 text-sm text-gray-500">
-                      <Calendar className="h-3 w-3" />
-                      {new Date(voucher.issuedDate).toLocaleDateString()}
-                    </div>
-                  </td>
-                  <td className="p-3">
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline">
-                        <Eye className="h-4 w-4 mr-1" />
-                        View
-                      </Button>
-                      <Button size="sm" variant="outline">
-                        <Edit className="h-4 w-4 mr-1" />
-                        Edit
-                      </Button>
-                      {voucher.status === VoucherStatus.ACTIVE && (
-                        <Button 
-                          size="sm" 
-                          variant="destructive"
-                          onClick={() => handleDeactivate(voucher.id)}
-                        >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Deactivate
-                        </Button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </CardContent>
-    </Card>
+    <DataTable
+      columns={columns}
+      data={allVouchers}
+      title="All Vouchers"
+      showColumnVisibility={true}
+      showPagination={true}
+    />
   );
 }

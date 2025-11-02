@@ -35,7 +35,6 @@ export const categoryService = {
   getActiveCategories: async () => {
     const axiosClient = createAxiosClient();
       const response = await axiosClient.get("/category/active");
-    //   console.log("????? ",response.data.data);
       return response.data;
   },
 

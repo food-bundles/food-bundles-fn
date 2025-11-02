@@ -133,6 +133,7 @@ export type Order = {
   total: number
   status: OrderStatus
   deliveryPerson?: string
+  createdAt: string
   time: string
   estimatedTime?: string
 }
@@ -202,6 +203,7 @@ export interface IVoucher {
 export interface ILoanApplication {
   id: string;
   restaurantId: string;
+  restaurantName: string;
   requestedAmount: number;
   purpose?: string;
   status: LoanStatus;
@@ -209,7 +211,7 @@ export interface ILoanApplication {
   approvedBy?: string;
   disbursementDate?: Date;
   repaymentDueDate?: Date;
-  terms?: string;
+  voucherDays?: number;
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -270,5 +272,74 @@ export interface ICreditSummary {
   pendingLoans: number;
   outstandingBalance: number;
   totalPenalties: number;
+}
+
+// Wallet Types
+export enum TransactionType {
+  TOP_UP = "TOP_UP",
+  PAYMENT = "PAYMENT",
+  REFUND = "REFUND",
+  ADJUSTMENT = "ADJUSTMENT",
+}
+
+export enum TransactionStatus {
+  PENDING = "PENDING",
+  PROCESSING = "PROCESSING",
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED",
+  CANCELLED = "CANCELLED",
+}
+
+export enum WalletPaymentMethod {
+  MOBILE_MONEY = "MOBILE_MONEY",
+  CARD = "CARD",
+}
+
+export interface IWallet {
+  id: string;
+  restaurantId: string;
+  balance: number;
+  currency: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  restaurant: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+  };
+  _count: {
+    transactions: number;
+  };
+}
+
+export interface IWalletTransaction {
+  id: string;
+  walletId: string;
+  type: TransactionType;
+  amount: number;
+  previousBalance: number;
+  newBalance: number;
+  description: string;
+  reference?: string;
+  flwTxRef?: string;
+  flwRef?: string;
+  flwStatus?: string;
+  flwMessage?: string;
+  paymentMethod?: WalletPaymentMethod;
+  externalTxId?: string;
+  status: TransactionStatus;
+  metadata?: any;
+  createdAt: Date;
+  updatedAt: Date;
+  wallet: {
+    id: string;
+    currency: string;
+    restaurant: {
+      id: string;
+      name: string;
+    };
+  };
 }
 

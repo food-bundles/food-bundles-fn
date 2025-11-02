@@ -248,14 +248,12 @@ export const ordersColumns = (
     header: "Actions",
     cell: ({ row }) => {
       const order = row.original;
-      console.log("Rendering actions for order:", order.id); // Debug log
 
       return (
         <div className="flex items-center gap-2">
           <button
             className=" p-0 cursor-pointer "
             onClick={() => {
-              console.log("Reorder clicked for:", order.id);
               onReorder(order.id);
             }}
             title="Reorder"

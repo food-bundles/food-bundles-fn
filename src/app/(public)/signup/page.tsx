@@ -800,12 +800,18 @@ function SignupForm() {
       );
 
       if (response.success) {
+        // Store user data for terms agreement
+        const formData = new FormData(document.querySelector('form') as HTMLFormElement);
+        const email = formData.get("email") as string;
+        localStorage.setItem("pending_agreement_email", email);
+        localStorage.setItem("pending_agreement_phone", registeredPhone);
+        
         setShowOTPModal(false);
         setSuccess(
-          "Phone number verified successfully! Redirecting to login..."
+          "Phone number verified successfully! Redirecting to terms agreement..."
         );
         setTimeout(() => {
-          window.location.href = "/login";
+          window.location.href = "/terms-agreement";
         }, 2000);
       } else {
         setOtpError(response.message || "OTP verification failed");

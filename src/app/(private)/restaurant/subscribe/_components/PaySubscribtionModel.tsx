@@ -45,11 +45,25 @@ export default function PaymentModal({
         card: "CARD" as const,
       };
 
-      const subscriptionData = {
+      const subscriptionData: any = {
         planId: plan.id,
         autoRenew: true,
         paymentMethod: paymentMethodMap[method],
       };
+
+      // Add phone number for mobile money payment
+      if (method === "momo" && phoneNumber) {
+        subscriptionData.phoneNumber = phoneNumber;
+      }
+
+      // Add card details for card payment
+      if (method === "card" && cardNumber && expiryDate && cvv) {
+        subscriptionData.cardDetails = {
+          cardNumber,
+          expiryDate,
+          cvv
+        };
+      }
 
       const response = await subscriptionService.createRestaurantSubscription(subscriptionData);
       
@@ -154,7 +168,7 @@ export default function PaymentModal({
           <Button
             variant={method === "wallet" ? "default" : "outline"}
             onClick={() => setMethod("wallet")}
-            className="rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal"
+            className="hidden rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal"
           >
             Wallet
           </Button>

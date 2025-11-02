@@ -7,6 +7,7 @@ import { CartProvider } from "./cart-context";
 import { CategoryProvider } from "./category-context";
 import { PerformanceMonitor } from "@/components/performance-monitor";
 import { VoucherProvider } from "./VoucherContext";
+import { WalletProvider } from "./WalletContext";
 
 interface CombinedProviderProps {
   children: React.ReactNode;
@@ -20,7 +21,9 @@ export function CombinedProvider({ children }: CombinedProviderProps) {
         <ProductProvider>
           <CartProvider>
             <CategoryProvider>
-              <VoucherProvider>{children}</VoucherProvider>
+              <VoucherProvider>
+                <WalletProvider>{children}</WalletProvider>
+              </VoucherProvider>
             </CategoryProvider>
           </CartProvider>
         </ProductProvider>

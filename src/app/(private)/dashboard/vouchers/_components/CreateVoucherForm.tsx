@@ -1,60 +1,93 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus } from "lucide-react";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Plus, Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { voucherService } from "@/app/services/voucherService";
+import { useVouchers } from "@/app/contexts/VoucherContext";
+import { useRestaurants } from "@/app/contexts/RestaurantContext";
 import { VoucherType } from "@/lib/types";
 
 interface CreateVoucherFormProps {
   onSuccess: () => void;
 }
 
+interface Restaurant {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+}
+
 export default function CreateVoucherForm({ onSuccess }: CreateVoucherFormProps) {
+  const { getAllVouchers } = useVouchers();
+  const { restaurants, getAllRestaurants } = useRestaurants();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
+  const [comboboxOpen, setComboboxOpen] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [formData, setFormData] = useState({
-    restaurantId: "",
     voucherType: "",
     creditLimit: "",
     minTransactionAmount: "",
     maxTransactionAmount: "",
-    expiryDate: "",
-    loanId: ""
+    expiryDate: ""
   });
 
+  useEffect(() => {
+    if (open && restaurants.length === 0) {
+      getAllRestaurants();
+    }
+  }, [open, restaurants.length, getAllRestaurants]);
+
+
+
+
+
   const handleSubmit = async () => {
-    if (!formData.restaurantId || !formData.voucherType || !formData.creditLimit) return;
+    if (!selectedRestaurant || !formData.voucherType || !formData.creditLimit) {
+      setError("Please fill all required fields");
+      return;
+    }
 
     setLoading(true);
+    setError("");
     try {
       await voucherService.createVoucher({
-        restaurantId: formData.restaurantId,
+        restaurantId: selectedRestaurant.id,
         voucherType: formData.voucherType as VoucherType,
         creditLimit: parseFloat(formData.creditLimit),
         minTransactionAmount: formData.minTransactionAmount ? parseFloat(formData.minTransactionAmount) : undefined,
         maxTransactionAmount: formData.maxTransactionAmount ? parseFloat(formData.maxTransactionAmount) : undefined,
-        expiryDate: formData.expiryDate || undefined,
-        loanId: formData.loanId || undefined
+        expiryDate: formData.expiryDate || undefined
       });
 
-      setFormData({
-        restaurantId: "",
-        voucherType: "",
-        creditLimit: "",
-        minTransactionAmount: "",
-        maxTransactionAmount: "",
-        expiryDate: "",
-        loanId: ""
-      });
-      setOpen(false);
-      onSuccess();
-    } catch (error) {
-      console.error("Failed to create voucher:", error);
+      setSuccess("Voucher created successfully!");
+      setTimeout(() => {
+        setFormData({
+          voucherType: "",
+          creditLimit: "",
+          minTransactionAmount: "",
+          maxTransactionAmount: "",
+          expiryDate: ""
+        });
+        setSelectedRestaurant(null);
+        setSuccess("");
+        setOpen(false);
+        getAllVouchers();
+        onSuccess();
+      }, 1500);
+    } catch (error: any) {
+      setError(error.response?.data?.message || "Failed to create voucher");
     } finally {
       setLoading(false);
     }
@@ -73,13 +106,66 @@ export default function CreateVoucherForm({ onSuccess }: CreateVoucherFormProps)
           <DialogTitle>Create New Voucher</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded text-sm">
+              {success}
+            </div>
+          )}
+          
           <div>
-            <label className="block text-sm font-medium mb-2">Restaurant ID *</label>
-            <Input
-              value={formData.restaurantId}
-              onChange={(e) => setFormData(prev => ({ ...prev, restaurantId: e.target.value }))}
-              placeholder="Enter restaurant ID"
-            />
+            <label className="block text-sm font-medium mb-2">Select Restaurant * ({restaurants.length} available)</label>
+            <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={comboboxOpen}
+                  className="w-full justify-between"
+                >
+                  {selectedRestaurant
+                    ? `${selectedRestaurant.name} (${selectedRestaurant.phone})`
+                    : "Select restaurant..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0">
+                <Command>
+                  <CommandInput placeholder="Search restaurants..." />
+                  <CommandList>
+                    <CommandEmpty>No restaurant found.</CommandEmpty>
+                    <CommandGroup>
+                      {restaurants.map((restaurant) => (
+                        <CommandItem
+                          key={restaurant.id}
+                          value={`${restaurant.name} ${restaurant.phone} ${restaurant.email}`}
+                          onSelect={() => {
+                            setSelectedRestaurant(restaurant);
+                            setComboboxOpen(false);
+                            setError("");
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedRestaurant?.id === restaurant.id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <div>
+                            <div className="font-medium">{restaurant.name}</div>
+                            <div className="text-sm text-gray-500">{restaurant.phone} • {restaurant.email}</div>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div>
@@ -138,18 +224,9 @@ export default function CreateVoucherForm({ onSuccess }: CreateVoucherFormProps)
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2">Loan ID (Optional)</label>
-            <Input
-              value={formData.loanId}
-              onChange={(e) => setFormData(prev => ({ ...prev, loanId: e.target.value }))}
-              placeholder="Associated loan ID"
-            />
-          </div>
-
           <Button 
             onClick={handleSubmit} 
-            disabled={loading || !formData.restaurantId || !formData.voucherType || !formData.creditLimit}
+            disabled={loading || !selectedRestaurant || !formData.voucherType || !formData.creditLimit}
             className="w-full"
           >
             {loading ? "Creating..." : "Create Voucher"}

@@ -136,7 +136,6 @@ export default function PaymentsPage() {
 
   const handleExport = () => {
     console.log("Exporting payments data...");
-    // Export functionality would be implemented here
   };
 
   return (

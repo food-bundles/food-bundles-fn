@@ -80,10 +80,7 @@ export default function FarmerSettings() {
   };
 
   const handleSaveSettings = () => {
-    // Here you would typically send the data to your backend
-    console.log('Settings saved:', settings);
     setShowSuccessAlert(true);
-    // Hide alert after 3 seconds
     setTimeout(() => {
       setShowSuccessAlert(false);
     }, 3000);
@@ -95,7 +92,6 @@ export default function FarmerSettings() {
       return;
     }
     // Handle password change logic
-    console.log('Password change requested');
     setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
     setShowPasswordChange(false);
   };

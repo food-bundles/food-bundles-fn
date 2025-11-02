@@ -22,7 +22,6 @@ export default function RestaurantDashboard() {
   useEffect(() => {
     refreshOrders();
     refreshStatistics();
-    console.log("[Dashboard] Refreshing orders & statistics...");
   }, []);
 
   useEffect(() => {
@@ -31,13 +30,10 @@ export default function RestaurantDashboard() {
     }
   }, [orders, selectedOrder]);
 
-  console.log("[Dashboard] Orders:", orders);
-  console.log("[Dashboard] Statistics |||:", statistics);
 
   const handleReorder = useCallback(
     async (orderId: string) => {
       try {
-        console.log("[Dashboard] Reorder clicked for:", orderId);
         setReorderingId(orderId);
         const response = await reorderOrder(orderId);
 
@@ -47,7 +43,6 @@ export default function RestaurantDashboard() {
           toast.error(response.message || "Failed to reorder");
         }
       } catch (err: any) {
-        console.error("[Dashboard] Reorder error:", err);
         toast.error(err.response?.data?.message || "Failed to reorder order");
       } finally {
         setTimeout(() => {
@@ -117,7 +112,7 @@ export default function RestaurantDashboard() {
       },
     },
     topProducts: [],
-    recentOrders: orders.slice(0, 3).map((order) => {
+    recentOrders: orders.map((order) => {
       const statusMap: Record<string, any> = {
         PROCESSING: "PREPARING",
         SHIPPED: "IN_TRANSIT",
@@ -157,7 +152,6 @@ export default function RestaurantDashboard() {
     ordersByStatus: statistics?.ordersByStatus || {},
   };
 
-  console.log("[Dashboard] dashboardData prepared:", dashboardData);
 
   return (
     <div className="min-h-screen bg-gray-100">

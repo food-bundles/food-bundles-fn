@@ -9,6 +9,12 @@ export interface SubscriptionPlan {
   description?: string;
   price: number;
   duration: number; // in days
+  voucherAccess: boolean;
+  voucherPaymentDays?: number;
+  freeDelivery: boolean;
+  stablePricing: boolean;
+  receiveEBM: boolean;
+  advertisingAccess: boolean;
   features?: any;
   isActive: boolean;
   createdAt: string;
@@ -63,6 +69,7 @@ export interface RestaurantSubscription {
   amountPaid?: number;
   createdAt: string;
   updatedAt: string;
+  daysRemaining?: number;
 
   // Relations
   plan: SubscriptionPlan;
@@ -126,7 +133,14 @@ export interface CreateRestaurantSubscriptionData {
   planId: string;
   autoRenew?: boolean;
   paymentMethod?: PaymentMethod;
-  restaurantId?: string; 
+  restaurantId?: string;
+  phoneNumber?: string;
+  cardDetails?: {
+    cardNumber: string;
+    expiryDate: string;
+    cvv: string;
+  };
+  bankDetails?: any;
 }
 
 export interface UpdateRestaurantSubscriptionData {

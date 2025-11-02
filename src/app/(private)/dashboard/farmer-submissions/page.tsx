@@ -393,9 +393,7 @@ export default function FarmerSubmissionsPage() {
 
   const handleExport = async () => {
     try {
-      console.log("Exporting data...");
 
-      // Here you would typically call an export API
       toast.success(`Exporting ${filteredData.length} records...`);
     } catch (error) {
       console.error("Export failed:", error);
@@ -418,7 +416,6 @@ export default function FarmerSubmissionsPage() {
           columns={columns}
           data={filteredData}
           title="All Farmer Submissions"
-          descrption={""}
           showExport={true}
           onExport={handleExport}
           showAddButton={true}
