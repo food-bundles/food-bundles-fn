@@ -3,7 +3,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
+import { OptimizedImage } from "@/components/OptimizedImage";
 import { Menu, X, UserPlus, User, ShoppingCart, BrickWall } from "lucide-react";
 import { useState, useCallback, useRef, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
@@ -243,12 +243,15 @@ export function Header() {
             <div className="flex items-center justify-between h-13">
               <Link href="/">
                 <div className="flex items-center gap-2 bg-green-50 px-2 sm:px-3 py-1 rounded-full border-2 border-primary cursor-pointer">
-                  <Image
-                    src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WhatsApp%20Image%202025-08-26%20at%2017.19.27_37ef906c.jpg-5w6VIINuFETMhj8U6ktDEnUViMPQod.jpeg"
+                  <OptimizedImage
+                    src="/imgs/Food_bundle_logo.png"
                     alt="FoodBundle Logo"
                     width={32}
                     height={32}
                     className="rounded-full object-cover w-5 h-5"
+                    transformation={[
+                      { width: 64, height: 64, crop: "fill", quality: "85" }
+                    ]}
                   />
                   <span className="text-2sm font-bold text-black whitespace-nowrap">
                     FoodBundles
@@ -410,18 +413,15 @@ export function Header() {
                         </span>
                         <div className="rounded-full flex items-center justify-center">
                           {profileImage ? (
-                            <Image
+                            <OptimizedImage
                               src={profileImage}
                               alt={`${userName}'s profile`}
                               width={24}
                               height={24}
                               className="rounded-full object-cover"
-                              loading="lazy"
-                              sizes="24px"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.src = "/placeholder.svg";
-                              }}
+                              transformation={[
+                                { width: 48, height: 48, crop: "fill", quality: "80" }
+                              ]}
                             />
                           ) : (
                             <div className="rounded-full bg-green-600 text-white flex items-center justify-center w-6 h-6 text-xs font-bold">
@@ -509,18 +509,15 @@ export function Header() {
                       <div className="flex items-center gap-2 px-2 py-1 text-primary-foreground">
                         <div className="rounded-full flex items-center justify-center">
                           {profileImage ? (
-                            <Image
+                            <OptimizedImage
                               src={profileImage}
                               alt={`${userName}'s profile`}
                               width={20}
                               height={20}
                               className="rounded-full object-cover p-[15px]"
-                              loading="lazy"
-                              sizes="20px"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.src = "/placeholder.svg";
-                              }}
+                              transformation={[
+                                { width: 40, height: 40, crop: "fill", quality: "80" }
+                              ]}
                             />
                           ) : (
                             <div className="rounded-full p-[15px] bg-green-600 text-white flex items-center justify-center w-5 h-5 text-xs font-bold">

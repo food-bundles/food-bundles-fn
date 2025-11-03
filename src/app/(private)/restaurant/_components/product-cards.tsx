@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useState, useRef } from "react";
-import Image from "next/image";
+import { OptimizedImage } from "@/components/OptimizedImage";
 import { Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -120,12 +120,15 @@ export function ProductCard({ product }: Props) {
     <Card className="w-full max-w-sm bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden py-0">
       <CardContent className="p-0">
         <div className="relative">
-          <Image
+          <OptimizedImage
             src={product.images[0] || "/placeholder.svg"}
             alt={product.productName}
             width={300}
             height={200}
             className="w-full h-48 object-cover"
+            transformation={[
+              { width: 600, height: 400, crop: "fill", quality: "80" }
+            ]}
           />
           {product.bonus > 0 && (
             <div className="absolute top-3 right-3 bg-red-500 text-white text-sm font-semibold px-2 py-1 rounded">

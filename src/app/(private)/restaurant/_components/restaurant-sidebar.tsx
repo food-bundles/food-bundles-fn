@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Bell, HelpCircle, Crown, Ticket, Home, ShoppingCart} from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
+import { OptimizedImage } from "@/components/OptimizedImage";
 
 const menuItems = [
   { icon: Home, label: "Shop", href: "/restaurant" },
@@ -40,12 +40,15 @@ export function RestaurantSidebar({ isOpen, onClose }: RestaurantSidebarProps) {
       )}
     >
       <div className="absolute inset-0 z-0">
-        <Image
+        <OptimizedImage
           src="/imgs/sidebarImg.jpg"
           alt="Sidebar Background"
           fill
           className="object-cover"
           priority
+          transformation={[
+            { quality: "85", format: "webp" }
+          ]}
         />
         <div className="absolute inset-0 bg-green-900/90" />
       </div>
@@ -56,12 +59,15 @@ export function RestaurantSidebar({ isOpen, onClose }: RestaurantSidebarProps) {
           <Link href="/">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center border border-green-500/30">
-                <Image
-                  src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WhatsApp%20Image%202025-08-26%20at%2017.19.27_37ef906c.jpg-5w6VIINuFETMhj8U6ktDEnUViMPQod.jpeg"
+                <OptimizedImage
+                  src="/imgs/Food_bundle_logo.png"
                   alt="FoodBundle Logo"
                   width={24}
                   height={24}
                   className="rounded object-cover"
+                  transformation={[
+                    { width: 48, height: 48, crop: "fill", quality: "85" }
+                  ]}
                 />
               </div>
               <h1 className="text-white text-lg font-semibold tracking-wide">
