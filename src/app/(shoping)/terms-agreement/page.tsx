@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef } from "react";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
+import { OptimizedImage } from "@/components/OptimizedImage";
 import { restaurantService } from "@/app/services/restaurantService";
 
 export default function TermsAgreementPage() {
@@ -68,12 +68,15 @@ export default function TermsAgreementPage() {
       <div className="w-1/3 bg-linear-to-br from-green-600 to-green-900 flex flex-col justify-center items-center p-8">
         <div className="text-center">
           <div className="mb-8">
-            <Image
+            <OptimizedImage
               src="/imgs/Food_bundle_logo.png"
               alt="Food Bundles"
               width={120}
               height={120}
               className="mx-auto rounded-full"
+              transformation={[
+                { width: 240, height: 240, crop: "fill", quality: "85" }
+              ]}
             />
           </div>
 

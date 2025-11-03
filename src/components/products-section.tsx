@@ -8,7 +8,7 @@ import CartDrawer from "@/components/cartDrawer";
 import { useCartSummary } from "@/app/contexts/cart-context";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
+import { OptimizedImage } from "@/components/OptimizedImage";
 import {
   Star,
   Heart,
@@ -126,14 +126,15 @@ const ProductCard = memo(function ProductCard({
       >
         <Card className="border border-gray-200 shadow hover:shadow-lg rounded-md hover:rounded hover:border-green-500 overflow-hidden transition-all duration-300 p-0 pb-2 h-full">
           <div className="relative w-full  flex items-center justify-center group overflow-hidden h-40 sm:h-[180px] ">
-            <Image
+            <OptimizedImage
               src={image || "/placeholder.svg"}
               alt={name}
               width={200}
               height={200}
               className="object-contain w-full max-h-full transition-transform duration-300 group-hover:scale-105"
-              loading="lazy"
-              sizes="(max-width: 640px) 200px, (max-width: 768px) 220px, 200px"
+              transformation={[
+                { width: 400, height: 400, crop: "pad", quality: "80" }
+              ]}
             />
             {discountPercent && (
               <div className="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">
@@ -414,14 +415,15 @@ export function ProductsSection({
                           key={i}
                           className="w-10 h-10 bg-linear-to-br from-orange-400 to-red-500 rounded-full border-2 border-gray-800 flex items-center justify-center overflow-hidden"
                         >
-                          <Image
+                          <OptimizedImage
                             src={src}
                             width={32}
                             height={32}
                             alt="avatar"
                             className="rounded-full w-full h-full object-cover"
-                            loading="lazy"
-                            sizes="32px"
+                            transformation={[
+                              { width: 64, height: 64, crop: "fill", quality: "80" }
+                            ]}
                           />
                         </div>
                       ))}{" "}

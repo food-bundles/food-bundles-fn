@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { OptimizedImage } from "@/components/OptimizedImage";
 import { Bike, Star } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -118,12 +118,15 @@ function CircularRestaurantAnimation({
               <div className="relative">
                 <div className="w-24 h-24 rounded-full p-0.5 bg-linear-to-br from-green-400 to-green-600 flex items-center justify-center  shadow-md shadow-green-400/50">
                   <div className="relative w-full h-full bg-gray-900 rounded-full overflow-hidden flex items-center justify-center">
-                    <Image
+                    <OptimizedImage
                       src={restaurant.image || "/placeholder.svg"}
                       alt={restaurant.name}
                       width={60}
                       height={60}
                       className="w-full h-full object-cover absolute inset-0"
+                      transformation={[
+                        { width: 120, height: 120, crop: "fill", quality: "80" }
+                      ]}
                     />
                   </div>
                 </div>
@@ -166,12 +169,15 @@ function HeroImageCarousel() {
             index === currentImageIndex ? "opacity-100" : "opacity-0"
           }`}
         >
-          <Image
+          <OptimizedImage
             src={image}
             alt="Professional chef preparing fresh ingredients"
             fill
             className="object-cover"
             priority={index === 0}
+            transformation={[
+              { quality: "85", format: "webp" }
+            ]}
           />
         </div>
       ))}
@@ -260,22 +266,7 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
               <div className="lg:col-span-4 space-y-6 z-10 pt-2 lg:pt-4 pr-3 lg:pr-5">
                 <div className="flex flex-col items-end w-full">
                   <div className="rounded-xl p-4 text-center">
-                    <div className="flex justify-center -space-x-2 mb-3">
-                      <Image
-                        src="/products/fresh-organic-roma-tomatoes.png"
-                        alt="Product"
-                        width={40}
-                        height={40}
-                        className="w-10 h-10 rounded-full border-2 border-orange-400 shadow-lg"
-                      />
-                      <Image
-                        src="/products/fresh-atlantic-salmon-fillet.png"
-                        alt="Product"
-                        width={40}
-                        height={40}
-                        className="w-10 h-10 rounded-full border-2 border-orange-400 shadow-lg"
-                      />
-                    </div>
+                 
                     <div className="text-orange-400 font-bold text-2xl mb-1">
                       99+
                     </div>
