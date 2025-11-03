@@ -19,18 +19,14 @@ import {
   checkoutService,
   CheckoutRequest,
 } from "@/app/services/checkoutService";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import dynamic from "next/dynamic";
 import "leaflet/dist/leaflet.css";
-import L from "leaflet";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import { OTPInput } from "@/components/ui/otp-input";
 
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+const MapComponent = dynamic(() => import('./MapComponent'), {
+  ssr: false,
+  loading: () => <div className="flex-1 rounded border border-gray-300 bg-gray-100 flex items-center justify-center"><Spinner variant="ring" /></div>
 });
 
 interface LocationData {
@@ -166,16 +162,7 @@ export function Checkout() {
     }
   };
 
-  const LocationMarker = () => {
-    useMapEvents({
-      click(e) {
-        setTempLocation({ lat: e.latlng.lat, lng: e.latlng.lng });
-      },
-    });
-    return tempLocation ? (
-      <Marker position={[tempLocation.lat, tempLocation.lng]} />
-    ) : null;
-  };
+
 
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
@@ -539,7 +526,7 @@ export function Checkout() {
                     <button
                       type="button"
                       onClick={() => setMethod("wallet")}
-                      className={`rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal px-4 border transition-colors cursor-pointer ${
+                      className={`hidden rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal px-4 border transition-colors cursor-pointer ${
                         method === "wallet"
                           ? "bg-green-700 text-white border-green-700"
                           : "bg-white text-gray-900 border-gray-300 hover:border-green-500"
@@ -764,19 +751,10 @@ export function Checkout() {
                       </div>
                     </div>
 
-                    <div className="flex-1 rounded border border-gray-300 overflow-hidden">
-                      <MapContainer
-                        center={[
-                          tempLocation?.lat || -1.9577,
-                          tempLocation?.lng || 30.0619,
-                        ]}
-                        zoom={15}
-                        style={{ height: "100%", width: "100%" }}
-                      >
-                        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                        <LocationMarker />
-                      </MapContainer>
-                    </div>
+                    <MapComponent
+                      tempLocation={tempLocation}
+                      onLocationSelect={(location) => setTempLocation(location)}
+                    />
 
                     <div className="flex justify-between items-center pt-2 border-t border-gray-200">
                       <div className="text-[13px] text-gray-600">

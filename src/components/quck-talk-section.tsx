@@ -146,7 +146,7 @@ function ContactForm({
 
   const handleSubmit = (e: any) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
+    // console.log("Form submitted:", formData);
     setFormData({ name: "", email: "", message: "" });
   };
 

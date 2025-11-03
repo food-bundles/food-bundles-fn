@@ -230,7 +230,7 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <div className=" bg-white">
-      <div className="md:h-[8rem] h-[5rem] mt-12 w-full flex items-center justify-center bg-gray-100">
+      <div className="md:h-32 h-20 mt-12 w-full flex items-center justify-center bg-gray-100">
         <h1 className="text-2xl font-bold text-black">My Account</h1>
       </div>
       <div className="flex items-center justify-center py-6  px-6 lg:px-8">

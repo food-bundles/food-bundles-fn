@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Bell, HelpCircle, Crown, Ticket, Home, ShoppingCart } from "lucide-react";
+import { Bell, HelpCircle, Crown, Ticket, Home, ShoppingCart} from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -34,7 +34,7 @@ export function RestaurantSidebar({ isOpen, onClose }: RestaurantSidebarProps) {
         "fixed md:relative",
         isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         "z-50 md:z-auto",
-        "w-60 min-w-60 h-screen flex flex-col flex-shrink-0",
+        "w-60 min-w-60 h-screen flex flex-col shrink-0",
         "transition-transform duration-300 ease-in-out",
         "relative overflow-hidden"
       )}
@@ -88,7 +88,7 @@ export function RestaurantSidebar({ isOpen, onClose }: RestaurantSidebarProps) {
                         : "text-white"
                     )}
                   >
-                    <item.icon className="w-5 h-5 flex-shrink-0" />
+                    <item.icon className="w-5 h-5 shrink-0" />
                     <span>{item.label}</span>
                   </Link>
                 </li>

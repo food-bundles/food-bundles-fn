@@ -35,13 +35,26 @@ export const authService = {
 
   verifyRestaurant: async (phone: string, otp: string) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.post("/restaurants/verify", { phone, otp });
+    const response = await axiosClient.post("/restaurants/verify", {
+      phone,
+      otp,
+    });
+    return response.data;
+  },
+
+  acceptAgreement: async (identifier: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/restaurants/accept", {
+      identifier,
+    });
     return response.data;
   },
 
   resendOTP: async (phone: string) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.post("/restaurants/resend-otp", { phone });
+    const response = await axiosClient.post("/restaurants/resend-otp", {
+      phone,
+    });
     return response.data;
   },
 

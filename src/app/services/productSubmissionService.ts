@@ -362,7 +362,6 @@ export const productSubmissionService = {
     for (const endpoint of endpointsToTest) {
       try {
         const response = await axiosClient.get(endpoint)
-        console.log(`${endpoint} - Status: ${response.status}`)
           } catch (error) {
       if (error instanceof Error) {
         console.error("Error message:", error.message)
@@ -382,7 +381,6 @@ export const productSubmissionService = {
     if (farmerId && farmerId !== "null" && farmerId !== "undefined") {
       try {
         const response = await axiosClient.get(`/farmers/${farmerId}`)
-        console.log(`/farmers/${farmerId} - Status: ${response.status}`)
         console.log("Farmer profile data:", response.data)
           } catch (error) {
       if (error instanceof Error) {

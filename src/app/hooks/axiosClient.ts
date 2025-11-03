@@ -32,7 +32,7 @@ const removeToken = (): void => {
 const createAxiosClient = (): AxiosInstance => {
   const axiosClient = axios.create({
     baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000",
-    timeout: 10000,
+    timeout: 30000,
     headers: {
       "Content-Type": "application/json",
     },

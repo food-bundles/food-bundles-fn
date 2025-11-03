@@ -61,8 +61,8 @@ export function ConfirmationContent({ orderData }: Props) {
       >
         <div className="text-center">
           <div className="relative mb-6">
-            <div className="w-28 h-28 mx-auto bg-gradient-to-r from-green-200 via-green-300 to-green-400 rounded-full flex items-center justify-center shadow-xl">
-              <div className="w-20 h-20 bg-gradient-to-r from-green-300 via-green-400 to-green-500 rounded-full flex items-center justify-center">
+            <div className="w-28 h-28 mx-auto bg-linear-to-r from-green-200 via-green-300 to-green-400 rounded-full flex items-center justify-center shadow-xl">
+              <div className="w-20 h-20 bg-linear-to-r from-green-300 via-green-400 to-green-500 rounded-full flex items-center justify-center">
                 <div className="w-14 h-14 bg-green-500 rounded-full flex items-center justify-center">
                   <Check className="h-7 w-7 text-white" strokeWidth={3} />
                 </div>
@@ -203,27 +203,27 @@ export function ConfirmationContent({ orderData }: Props) {
               {/* Delivery & Payment Info */}
               <div className="flex items-center justify-center gap-4 sm:gap-6 mb-6 sm:mb-8">
                 <div className="flex items-start gap-3">
-                  <div className="bg-green-100 p-2 rounded-full flex-shrink-0">
+                  <div className="bg-green-100 p-2 rounded-full shrink-0">
                     <Clock className="h-4 w-4 text-green-600" />
                   </div>
                   <div className="min-w-0">
                     <p className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">
                       Estimated Delivery Time
                     </p>
-                    <p className="text-xs sm:text-sm text-gray-600 break-words">
+                    <p className="text-xs sm:text-sm text-gray-600 wrap-break-word">
                       {orderData.estimatedDelivery}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className="bg-green-100 p-2 rounded-full flex-shrink-0">
+                  <div className="bg-green-100 p-2 rounded-full shrink-0">
                     <CreditCard className="h-4 w-4 text-green-600" />
                   </div>
                   <div className="min-w-0">
                     <p className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">
                       Payment Method
                     </p>
-                    <p className="text-xs sm:text-sm text-gray-600 break-words">
+                    <p className="text-xs sm:text-sm text-gray-600 wrap-break-word">
                       {orderData.paymentMethod}
                     </p>
                   </div>

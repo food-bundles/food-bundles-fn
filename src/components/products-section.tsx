@@ -27,6 +27,7 @@ import { useAuth } from "@/app/contexts/auth-context";
 import { useCart } from "@/app/contexts/cart-context";
 import { useProductSection } from "@/hooks/useProductSection";
 import Link from "next/link";
+import { toast } from "sonner";
 
 interface ProductCardProps {
   id: string;
@@ -83,16 +84,14 @@ const ProductCard = memo(function ProductCard({
     setIsAddingToCart(true);
     try {
       if (isInCart && cartItem) {
-        // Update existing cart item
         const success = await updateCartItem(cartItem.id, quantity);
         if (success) {
-          console.log("Cart updated successfully");
+          toast.success("Cart updated successfully");
         }
       } else {
-        // Add new item to cart
         const success = await addToCart(id, quantity);
         if (success) {
-          console.log("Product added to cart successfully");
+          toast.success("Product added to cart successfully");
         }
       }
     } catch (error) {

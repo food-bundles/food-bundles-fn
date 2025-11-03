@@ -75,6 +75,8 @@ export function DashboardOverview({
     y: number;
     value: number;
     day: string;
+    type?: string;
+    orders?: any[];
   } | null>(null);
 
   // Initialize with the first order or selected order
@@ -282,10 +284,61 @@ export function DashboardOverview({
   }, [orderToTrack]);
 
   const LineChart = () => {
+    // Process real order data to create chart data
+    const processOrderData = () => {
+      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      
+      // Debug: Log the raw order data
+      
+      return days.map(day => {
+        // Count orders by day and status from ALL available orders
+        const ordersForDay = data.recentOrders.filter(order => {
+          const orderDate = new Date(order.createdAt || order.time);
+          const dayName = orderDate.toLocaleDateString('en-US', { weekday: 'short' });
+          return dayName === day;
+        });
+        
+        const totalForDay = ordersForDay.length;
+        const deliveredForDay = ordersForDay.filter(order => 
+          order.status === 'DELIVERED' || order.status === 'READY'
+        ).length;
+        const cancelledForDay = ordersForDay.filter(order => 
+          order.status === 'CANCELLED'
+        ).length;
+        
+        // console.log(`${day}: total=${totalForDay}, delivered=${deliveredForDay}, cancelled=${cancelledForDay}`);
+        
+        return {
+          day,
+          total: totalForDay,
+          delivered: deliveredForDay,
+          cancelled: cancelledForDay,
+          orders: ordersForDay
+        };
+      });
+    };
+
+   
+
+    const chartData = processOrderData();
+
+    
     const maxValue = Math.max(
-      ...data.salesChart.currentPeriod.map((d) => d.sales),
-      ...data.salesChart.previousPeriod.map((d) => d.sales)
+      ...chartData.map(d => Math.max(d.total, d.delivered, d.cancelled)),
+      5 
     );
+
+    const generateYAxisValues = (max: number) => {
+      if (max <= 5) return [0, 1, 2, 3, 4, 5];
+      if (max <= 10) return [0, 2, 4, 6, 8, 10];
+      if (max <= 20) return [0, 5, 10, 15, 20];
+      if (max <= 50) return [0, 10, 20, 30, 40, 50];
+      const step = Math.ceil(max / 5);
+      return Array.from({ length: 6 }, (_, i) => i * step);
+    };
+
+    const yAxisValues = generateYAxisValues(maxValue);
+    const chartMaxValue = Math.max(maxValue, yAxisValues[yAxisValues.length - 1]);
 
     const chartWidth = 800;
     const chartHeight = 240;
@@ -294,9 +347,9 @@ export function DashboardOverview({
     const getX = (index: number) =>
       padding +
       (index * (chartWidth - 2 * padding)) /
-        (data.salesChart.currentPeriod.length - 1);
+        (chartData.length - 1);
     const getY = (value: number) =>
-      chartHeight - padding - (value / maxValue) * (chartHeight - 2 * padding);
+      chartHeight - padding - (value / chartMaxValue) * (chartHeight - 2 * padding);
 
     return (
       <div className="w-full relative">
@@ -322,6 +375,16 @@ export function DashboardOverview({
                 strokeDasharray="2,2"
               />
             </pattern>
+            <linearGradient id="blueGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop
+                offset="0%"
+                style={{ stopColor: "#3b82f6", stopOpacity: 0.3 }}
+              />
+              <stop
+                offset="100%"
+                style={{ stopColor: "#3b82f6", stopOpacity: 0.05 }}
+              />
+            </linearGradient>
             <linearGradient
               id="orangeGradient"
               x1="0%"
@@ -351,12 +414,12 @@ export function DashboardOverview({
           </defs>
           <rect width="100%" height={chartHeight} fill="url(#grid)" />
 
-          {[0, 9, 18, 27, 36].map((value) => (
+          {yAxisValues.map((value) => (
             <g key={value}>
               <text
                 x="20"
                 y={getY(value) + 5}
-                className="text-xs fill-gray-500"
+                className="text-[16px] fill-white"
                 textAnchor="end"
               >
                 {value}
@@ -373,45 +436,56 @@ export function DashboardOverview({
             </g>
           ))}
 
-          {/* Area fill for successful orders (orange) */}
-          <path
-            d={`M ${getX(0)},${
-              chartHeight - padding
-            } ${data.salesChart.currentPeriod
-              .map((d, i) => `L ${getX(i)},${getY(d.sales)}`)
-              .join(" ")} L ${getX(data.salesChart.currentPeriod.length - 1)},${
-              chartHeight - padding
-            } Z`}
-            fill="url(#orangeGradient)"
+          {/* Total orders line (blue) */}
+          <polyline
+            fill="none"
+            stroke="#3b82f6"
+            strokeWidth="3"
+            points={chartData
+              .map((d, i) => `${getX(i)},${getY(d.total)}`)
+              .join(" ")}
           />
 
-          {/* Area fill for failed orders (red) */}
-          <path
-            d={`M ${getX(0)},${
-              chartHeight - padding
-            } ${data.salesChart.previousPeriod
-              .map((d, i) => `L ${getX(i)},${getY(d.sales)}`)
-              .join(" ")} L ${getX(
-              data.salesChart.previousPeriod.length - 1
-            )},${chartHeight - padding} Z`}
-            fill="url(#redGradient)"
-          />
+          {chartData.map((d, i) => (
+            <circle
+              key={`total-${i}`}
+              cx={getX(i)}
+              cy={getY(d.total)}
+              r="5"
+              fill="#3b82f6"
+              stroke="white"
+              strokeWidth="2"
+              className="cursor-pointer hover:r-7 transition-all"
+              onMouseEnter={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setHoveredPoint({
+                  x: rect.left,
+                  y: rect.top,
+                  value: d.total,
+                  day: d.day,
+                  type: "Total",
+                  orders: d.orders,
+                });
+              }}
+              onMouseLeave={() => setHoveredPoint(null)}
+            />
+          ))}
 
-          {/* Successful orders line (orange) */}
+          {/* Delivered orders line (orange) */}
           <polyline
             fill="none"
             stroke="#fb923c"
             strokeWidth="3"
-            points={data.salesChart.currentPeriod
-              .map((d, i) => `${getX(i)},${getY(d.sales)}`)
+            points={chartData
+              .map((d, i) => `${getX(i)},${getY(d.delivered)}`)
               .join(" ")}
           />
 
-          {data.salesChart.currentPeriod.map((d, i) => (
+          {chartData.map((d, i) => (
             <circle
-              key={`current-${i}`}
+              key={`delivered-${i}`}
               cx={getX(i)}
-              cy={getY(d.sales)}
+              cy={getY(d.delivered)}
               r="5"
               fill="#fb923c"
               stroke="white"
@@ -422,29 +496,33 @@ export function DashboardOverview({
                 setHoveredPoint({
                   x: rect.left,
                   y: rect.top,
-                  value: d.sales,
+                  value: d.delivered,
                   day: d.day,
+                  type: "Delivered",
+                  orders: d.orders.filter(
+                    (order) => order.status === "DELIVERED"
+                  ),
                 });
               }}
               onMouseLeave={() => setHoveredPoint(null)}
             />
           ))}
 
-          {/* Failed/Cancelled orders line (red) */}
+          {/* Cancelled orders line (red) */}
           <polyline
             fill="none"
             stroke="#ef4444"
             strokeWidth="3"
-            points={data.salesChart.previousPeriod
-              .map((d, i) => `${getX(i)},${getY(d.sales)}`)
+            points={chartData
+              .map((d, i) => `${getX(i)},${getY(d.cancelled)}`)
               .join(" ")}
           />
 
-          {data.salesChart.previousPeriod.map((d, i) => (
+          {chartData.map((d, i) => (
             <circle
-              key={`previous-${i}`}
+              key={`cancelled-${i}`}
               cx={getX(i)}
-              cy={getY(d.sales)}
+              cy={getY(d.cancelled)}
               r="5"
               fill="#ef4444"
               stroke="white"
@@ -455,15 +533,19 @@ export function DashboardOverview({
                 setHoveredPoint({
                   x: rect.left,
                   y: rect.top,
-                  value: d.sales,
+                  value: d.cancelled,
                   day: d.day,
+                  type: "Cancelled",
+                  orders: d.orders.filter(
+                    (order) => order.status === "CANCELLED"
+                  ),
                 });
               }}
               onMouseLeave={() => setHoveredPoint(null)}
             />
           ))}
 
-          {data.salesChart.currentPeriod.map((d, i) => (
+          {chartData.map((d, i) => (
             <text
               key={d.day}
               x={getX(i)}
@@ -482,26 +564,57 @@ export function DashboardOverview({
 
         <div className="flex items-center justify-center flex-wrap space-x-4 sm:space-x-6 mt-2 gap-y-2">
           <div className="flex items-center space-x-2">
+            <div className="w-4 h-1 bg-blue-500 rounded"></div>
+            <span className="text-[12px] text-white">Total Orders</span>
+          </div>
+          <div className="flex items-center space-x-2">
             <div className="w-4 h-1 bg-orange-400 rounded"></div>
-            <span className="text-xs sm:text-sm text-white">
-              Successful Orders
-            </span>
+            <span className="text-[12px] text-white">Delivered Orders</span>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-4 h-1 bg-red-500 rounded"></div>
-            <span className="text-xs sm:text-sm text-white">Failed Orders</span>
+            <span className="text-[12px] text-white">Cancelled Orders</span>
           </div>
         </div>
         {/* Tooltip */}
         {hoveredPoint && (
           <div
-            className="absolute bg-gray-900 text-white px-2 py-1 rounded text-xs pointer-events-none z-10"
+            className="absolute bg-gray-900 text-white px-3 py-2 rounded text-xs pointer-events-none z-10 shadow-lg max-w-xs"
             style={{
-              left: hoveredPoint.x - 30,
-              top: hoveredPoint.y - 40,
+              left: hoveredPoint.x - 60,
+              top: hoveredPoint.y - 80,
             }}
           >
-            {hoveredPoint.day}: {hoveredPoint.value} orders
+            <div className="font-semibold mb-1">{hoveredPoint.day}</div>
+            <div
+              className={`mb-2 ${
+                (hoveredPoint as any).type === "Total"
+                  ? "text-blue-300"
+                  : (hoveredPoint as any).type === "Delivered"
+                  ? "text-orange-300"
+                  : "text-red-300"
+              }`}
+            >
+              {(hoveredPoint as any).type}: {hoveredPoint.value} orders
+            </div>
+            {(hoveredPoint as any).orders &&
+              (hoveredPoint as any).orders.length > 0 && (
+                <div className="border-t border-gray-600 pt-1">
+                  {(hoveredPoint as any).orders
+                    .slice(0, 3)
+                    .map((order: any, index: number) => (
+                      <div key={index} className="text-xs text-gray-300">
+                        {order.orderNumber} -{" "}
+                        {order.orderItems?.[0]?.productName || "N/A"}
+                      </div>
+                    ))}
+                  {(hoveredPoint as any).orders.length > 3 && (
+                    <div className="text-xs text-gray-400">
+                      +{(hoveredPoint as any).orders.length - 3} more
+                    </div>
+                  )}
+                </div>
+              )}
           </div>
         )}
       </div>
@@ -509,7 +622,7 @@ export function DashboardOverview({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-0">
       <div className="flex flex-col lg:flex-row gap-6 w-full">
         <div className="w-full lg:w-1/2 space-y-0">
           {/* Order Tracking */}
@@ -528,18 +641,18 @@ export function DashboardOverview({
             {/* Order tracking content */}
             <div className="">
               {loading ? (
-                <div className="flex items-center justify-center py-8">
+                <div className="flex items-center justify-center py-4">
                   <Spinner variant="ring" />
                   <p className="text-sm text-gray-600 ml-2">
                     Loading order status...
                   </p>
                 </div>
               ) : orderTrackingData.isEmpty ? (
-                <div className="flex items-center justify-center py-8">
+                <div className="flex items-center justify-center py-4">
                   <p className="text-sm text-gray-500">No orders to track</p>
                 </div>
               ) : isFailedOrder ? (
-                <div className="flex gap-4 items-center justify-center py-6">
+                <div className="flex gap-4 items-center justify-center py-4">
                   <p className="text-[13px] text-red-700 font-medium">
                     Your order has failed. Please reorder.
                   </p>
@@ -577,7 +690,7 @@ export function DashboardOverview({
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center justify-between gap-1 xs:gap-2 sm:gap-3 md:gap-6 py-4 w-full">
+                <div className="flex items-center justify-between gap-1 xs:gap-2 sm:gap-3 md:gap-6 w-full">
                   {orderTrackingData.steps.map((step, index) => {
                     const Icon = step.icon;
                     const isCompleted = step.completed;
@@ -632,7 +745,7 @@ export function DashboardOverview({
             </div>
           </div>
 
-          <div className="w-full mt-10 bg-white rounded p-4">
+          <div className="w-full mt-8 bg-white rounded p-4">
             <h3 className="text-[14px] font-semibold text-green-500 pb-2">
               Latest Orders
             </h3>
@@ -688,7 +801,7 @@ export function DashboardOverview({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <p className="font-medium text-gray-900 text-sm truncate">
-                          {order.id}
+                          {order.orderNumber} 
                         </p>
                         <div className="flex gap-4">
                           <div
@@ -811,24 +924,16 @@ export function DashboardOverview({
             {/* Comparison section */}
           </div>
 
-          <Card className="w-full border-0 shadow rounded py-0 overflow-hidden">
-            <CardHeader className="bg-white ">
-              <div className="flex items-center justify-between">
-                <div className="mt-4 text-center">
-                  <p className="text-sm text-gray-600">
-                    Compared to{" "}
-                    <span className="font-bold text-green-600">
-                      {data.metrics.totalOrders.previous}
-                    </span>{" "}
-                    {data.metrics.totalOrders.period}
-                  </p>
+          <div className="w-full border-0 shadow rounded py-0  overflow-hidden">
+            <CardHeader className="bg-white pt-2">
+                <div className="text-[14px]">
+                 <p>Weekly Report</p>
                 </div>
-              </div>
             </CardHeader>
             <CardContent className="bg-linear-to-br from-green-500 to-green-800 p-6">
               <LineChart />
             </CardContent>
-          </Card>
+          </div>
         </div>
       </div>
     </div>

@@ -141,7 +141,6 @@ export default function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps)
         <div className="fixed bottom-0 right-0 w-full sm:w-96 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 p-4">
           <button
             onClick={() => {
-              console.log("Settings saved:", settings)
               onClose()
             }}
             className="w-full bg-green-700 hover:bg-green-800 text-white font-medium py-2.5 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-green-700 text-sm"

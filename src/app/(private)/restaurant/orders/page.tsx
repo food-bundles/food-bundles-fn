@@ -40,11 +40,6 @@ export default function RestaurantOrdersPage() {
     user?.restaurantId || "" // Restaurant ID from auth
   );
 
-  console.log("Backend orders:", backendOrders);
-  console.log("Loading:", loading);
-  console.log("Error:", error);
-  console.log("WebSocket connected:", isConnected);
-  console.log("Order updates:", orderUpdates);
 
   // Format backend orders to frontend format
   useEffect(() => {
@@ -76,10 +71,6 @@ export default function RestaurantOrdersPage() {
   useEffect(() => {
     if (orderUpdates.length > 0) {
       const latestUpdate = orderUpdates[orderUpdates.length - 1];
-
-      console.log("Processing WebSocket order update:", latestUpdate);
-
-      // Show notification for order status changes
       toast.success(
         `Order ${latestUpdate.orderId} status: ${latestUpdate.status}`,
         {
@@ -154,7 +145,6 @@ export default function RestaurantOrdersPage() {
 
 
   const handleViewOrder = (order: any) => {
-    console.log("View order:", order);
     toast.info(`Viewing order: ${order.orderId}`);
   };
 
@@ -271,7 +261,6 @@ export default function RestaurantOrdersPage() {
             columns={ordersColumns(handleViewOrder, handleReorder)}
             data={filteredData}
             title=""
-            descrption=""
             showExport={false}
             onExport={handleExport}
             customFilters={<TableFilters filters={filters} />}

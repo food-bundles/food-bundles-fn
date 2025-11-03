@@ -140,7 +140,6 @@ export function SettingsContent({ settings: initialSettings }: Props) {
       }));
     }
 
-    console.log(`Saving ${section}:`, settings[section]);
     toggleEdit(section);
   };
 

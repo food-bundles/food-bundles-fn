@@ -20,7 +20,6 @@ export default function InventoryPage() {
 
       // Check if API returned data correctly
       if (response?.success && Array.isArray(response?.data)) {
-        console.log("✅ Products fetched based on role:", response.data);
 
         const mappedProducts = response.data.map((product: Product) => ({
           id: product.id,

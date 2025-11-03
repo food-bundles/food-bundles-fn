@@ -226,17 +226,14 @@ export function OrderProvider({ children }: OrderProviderProps) {
       setStatsLoading(true);
       setStatsError(null);
       const response = await orderService.getOrderStatistics(params);
-      console.log("[OrderContext] Statistics response:", response);
       if (response.success && response.data) {
         setStatistics(response.data);
-        console.log("[OrderContext] Statistics set:", response.data);
       }
       return response;
     } catch (err: any) {
       const errorMsg =
         err.response?.data?.message || "Failed to fetch statistics";
       setStatsError(errorMsg);
-      console.error("[OrderContext] Statistics error:", errorMsg);
       throw err;
     } finally {
       setStatsLoading(false);

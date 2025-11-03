@@ -50,28 +50,26 @@ export default function VouchersPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto bg-gray-100">
-      <div className="mb-8 flex justify-between items-start">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 mb-2">
+    <div className="p-3 sm:p-4 lg:p-6 max-w-7xl mx-auto bg-gray-100 min-h-screen">
+      <div className="mb-4 sm:mb-6 lg:mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+        <div className="flex-1">
+          <h1 className="text-lg sm:text-xl font-bold text-gray-900 mb-1 sm:mb-2">
             Voucher System
           </h1>
-          <p className="text-gray-700 text-[14px]">
-            Manage loans, vouchers, and credit payments
+          <p className="text-gray-700 text-xs sm:text-[14px]">
+            Manage vouchers, and credit payments
           </p>
         </div>
 
         {loading ? (
-          <div className="bg-white rounded-lg shadow-sm border p-4 min-w-[280px]">
+          <div className="bg-white rounded-lg shadow-sm border p-3 w-full sm:min-w-[280px] sm:max-w-[320px]">
             <div className="animate-pulse">
               <div className="h-4 bg-gray-200 rounded mb-2"></div>
               <div className="h-3 bg-gray-200 rounded mb-1"></div>
-              <div className="h-3 bg-gray-200 rounded mb-1"></div>
-              <div className="h-3 bg-gray-200 rounded"></div>
             </div>
           </div>
         ) : activeSubscription ? (
-          <div className="relative bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow p-4 border border-gray-200">
+          <div className="relative bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow p-3 sm:p-4 border border-gray-200 w-full sm:min-w-[280px] sm:max-w-[320px]">
             {/* Status Badge - Absolute positioned */}
             {(() => {
               const plan = activeSubscription?.plan?.name
@@ -104,10 +102,10 @@ export default function VouchersPage() {
             })()}
 
             {/* Compact Info Grid */}
-            <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
               <div className="flex items-center gap-1.5">
-                <CreditCard className="w-3.5 h-3.5 text-green-500" />
-                <span className="text-gray-600">
+                <CreditCard className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-green-500 shrink-0" />
+                <span className="text-gray-600 truncate">
                   <span className="font-semibold text-gray-900">
                     {activeSubscription.plan.price}
                   </span>{" "}
@@ -116,8 +114,8 @@ export default function VouchersPage() {
               </div>
 
               <div className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-blue-500" />
-                <span className="text-gray-600">
+                <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-blue-500 shrink-0" />
+                <span className="text-gray-600 truncate">
                   <span className="font-semibold text-gray-900">
                     {formatDuration(activeSubscription.plan.duration)}
                   </span>
@@ -125,8 +123,8 @@ export default function VouchersPage() {
               </div>
 
               <div className="flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-orange-500" />
-                <span className="text-gray-600">
+                <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-orange-500 shrink-0" />
+                <span className="text-gray-600 truncate">
                   <span className="font-semibold text-blue-600">
                     {getDaysRemaining(activeSubscription.endDate)}
                   </span>{" "}
@@ -135,9 +133,9 @@ export default function VouchersPage() {
               </div>
 
               <div className="flex items-center gap-1.5">
-                <RefreshCcw className="w-3.5 h-3.5 text-purple-500" />
+                <RefreshCcw className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-purple-500 shrink-0" />
                 <span
-                  className={`font-semibold ${
+                  className={`font-semibold truncate ${
                     activeSubscription.autoRenew
                       ? "text-green-600"
                       : "text-red-600"
@@ -149,15 +147,15 @@ export default function VouchersPage() {
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-sm border p-4 min-w-[280px]">
-            <div className="text-center text-gray-500 text-sm">
+          <div className="bg-white rounded shadow-sm border p-3 sm:p-4 w-full sm:min-w-[280px] sm:max-w-[320px]">
+            <div className="text-center text-gray-500 text-xs sm:text-sm">
               No active subscription
             </div>
           </div>
         )}
       </div>
-      <div className="space-y-8">
-        <div className="grid grid-cols-3 gap-4">
+      <div className="space-y-6 lg:space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
           <LoanApplicationForm onSuccess={handleLoanSuccess} />
           <LoanApplicationsList key={`loans-${refreshKey}`} />
           <VouchersList key={refreshKey} />

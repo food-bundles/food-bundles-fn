@@ -3,7 +3,7 @@
 import {  useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, CheckCircle, XCircle, DollarSign, Calendar } from "lucide-react";
+import { Clock, CheckCircle, XCircle, DollarSign } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LoanStatus } from "@/lib/types";
 import { useVouchers } from "@/app/contexts/VoucherContext";
@@ -34,7 +34,7 @@ export default function LoanApplicationsList() {
 
   if (loading) return (
     <div className="mb-8 ">
-      <h2 className="text-[16px] text-center font-medium mb-4">My Loan Application</h2>
+      <h2 className="text-[16px] text-center font-medium mb-4">My Voucher Application</h2>
       <div className="flex justify-center">
         <div className="w-[300px] h-[400px] flex flex-col p-6 border rounded relative">
           <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
@@ -62,11 +62,11 @@ export default function LoanApplicationsList() {
 
   return (
     <div className="mb-8">
-      <h2 className="text-[16px] text-center font-medium mb-4">My Loan Application</h2>
+      <h2 className="text-[16px] text-center font-medium mb-4">My Voucher Application</h2>
       {!loading && myLoanApplications.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-gray-600">No loan applications yet</p>
-          <p className="text-gray-500 text-sm">Apply for your first loan</p>
+          <p className="text-gray-600">No voucher applications yet</p>
+          <p className="text-gray-500 text-sm">Apply for your first voucher</p>
         </div>
       ) : (
         <div className="flex justify-center">
@@ -88,17 +88,11 @@ export default function LoanApplicationsList() {
 
                 <div className="text-center mt-4">
                   <Badge className="bg-green-100 text-green-800 mb-2 rounded">
-                    Loan Application
+                    Voucher Application
                   </Badge>
                   <div className="text-xl font-bold text-black">
                     {application.requestedAmount.toLocaleString()} RWF
                   </div>
-                  {application.approvedAmount && (
-                    <div className="text-green-600 text-sm">
-                      Approved: {application.approvedAmount.toLocaleString()}{" "}
-                      RWF
-                    </div>
-                  )}
                 </div>
 
                 <div className="space-y-3 mb-4 flex-1 mt-4">
@@ -110,10 +104,10 @@ export default function LoanApplicationsList() {
                     </div>
                   )}
 
-                  {application.terms && (
+                  {application.voucherDays && (
                     <div className="text-center">
                       <p className="text-gray-500 text-xs">
-                        Terms: {application.terms}
+                        Voucher Days: {application.voucherDays} days
                       </p>
                     </div>
                   )}
@@ -128,35 +122,24 @@ export default function LoanApplicationsList() {
 
                   <div className="space-y-2 text-xs text-gray-500 text-center">
                     <div className="flex items-center justify-center gap-1">
-                      <Calendar className="h-3 w-3" />
                       Applied:{" "}
                       {new Date(application.createdAt).toLocaleDateString()}
                     </div>
                     {application.approvedAt && (
                       <div className="flex items-center justify-center gap-1">
-                        <Calendar className="h-3 w-3" />
                         Approved:{" "}
                         {new Date(application.approvedAt).toLocaleDateString()}
                       </div>
                     )}
                     {application.disbursementDate && (
                       <div className="flex items-center justify-center gap-1">
-                        <Calendar className="h-3 w-3" />
                         Disbursed:{" "}
                         {new Date(
                           application.disbursementDate
                         ).toLocaleDateString()}
                       </div>
                     )}
-                    {application.repaymentDueDate && (
-                      <div className="flex items-center justify-center gap-1 text-orange-600">
-                        <Calendar className="h-3 w-3" />
-                        Due:{" "}
-                        {new Date(
-                          application.repaymentDueDate
-                        ).toLocaleDateString()}
-                      </div>
-                    )}
+          
                   </div>
                 </div>
               </Card>

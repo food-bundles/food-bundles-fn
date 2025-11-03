@@ -86,7 +86,6 @@ export default function ProfileDrawer({
   const handleSaveAll = async () => {
     try {
      
-      console.log("Profile updated:", { name, email, phone, location, profilePhoto })
       setIsEditing(false)
       setOriginalName(name)
       setOriginalEmail(email)

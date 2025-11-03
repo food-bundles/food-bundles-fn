@@ -74,7 +74,12 @@ export default function AdminSubscriptionsPage() {
     description: "",
     price: "",
     duration: "",
-    features: [] as string[],
+    voucherAccess: false,
+    voucherPaymentDays: 0,
+    freeDelivery: false,
+    stablePricing: false,
+    receiveEBM: false,
+    advertisingAccess: false,
   });
   const [currentFeature, setCurrentFeature] = useState("");
 
@@ -177,7 +182,12 @@ export default function AdminSubscriptionsPage() {
         description: newPlan.description,
         price: Number.parseFloat(newPlan.price),
         duration: Number.parseInt(newPlan.duration),
-        features: newPlan.features,
+        voucherAccess: newPlan.voucherAccess,
+        voucherPaymentDays: newPlan.voucherPaymentDays,
+        freeDelivery: newPlan.freeDelivery,
+        stablePricing: newPlan.stablePricing,
+        receiveEBM: newPlan.receiveEBM,
+        advertisingAccess: newPlan.advertisingAccess,
       };
 
       const response = await subscriptionService.createSubscriptionPlan(
@@ -192,7 +202,12 @@ export default function AdminSubscriptionsPage() {
           description: "",
           price: "",
           duration: "",
-          features: [],
+          voucherAccess: false,
+          voucherPaymentDays: 0,
+          freeDelivery: false,
+          stablePricing: false,
+          receiveEBM: false,
+          advertisingAccess: false,
         });
         setCurrentFeature("");
         await loadSubscriptionPlans();
@@ -205,22 +220,7 @@ export default function AdminSubscriptionsPage() {
     }
   };
 
-  const addFeature = () => {
-    if (currentFeature.trim()) {
-      setNewPlan((prev) => ({
-        ...prev,
-        features: [...prev.features, currentFeature.trim()],
-      }));
-      setCurrentFeature("");
-    }
-  };
 
-  const removeFeature = (index: number) => {
-    setNewPlan((prev) => ({
-      ...prev,
-      features: prev.features.filter((_, i) => i !== index),
-    }));
-  };
 
   const handleExport = async () => {
     try {
@@ -354,15 +354,10 @@ export default function AdminSubscriptionsPage() {
                     </div>
                     <div>
                       <Label htmlFor="duration">
-                        Duration{" "}
-                        <span className="text-[12px] text-gray-600">
-                          / days
-                        </span>
-                        *
+                        Duration *
                       </Label>
-                      <Input
+                      <select
                         id="duration"
-                        type="number"
                         value={newPlan.duration}
                         onChange={(e) =>
                           setNewPlan((prev) => ({
@@ -370,53 +365,127 @@ export default function AdminSubscriptionsPage() {
                             duration: e.target.value,
                           }))
                         }
-                        placeholder="30"
-                      />
+                        className="w-full h-10 px-3 border border-gray-300 rounded-md text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                      >
+                        <option value="">Select duration</option>
+                        <option value="30">1 Month (30 days)</option>
+                        <option value="365">1 Year (365 days)</option>
+                      </select>
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor="features">Features</Label>
-                    <div className="space-y-2">
-                      <div className="flex gap-2">
-                        <Input
-                          value={currentFeature}
-                          onChange={(e) => setCurrentFeature(e.target.value)}
-                          placeholder="Add a feature..."
-                          onKeyPress={(e) => e.key === "Enter" && addFeature()}
-                        />
-                        <Button
-                          variant="green"
-                          type="button"
-                          onClick={addFeature}
-                          size="sm"
-                        >
-                          Add
-                        </Button>
-                      </div>
-                      <div className="space-y-1">
-                        {newPlan.features.map((feature, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center justify-between bg-gray-50 px-3 rounded "
-                          >
-                            <span className="text-[12px]">
-                              {" "}
-                              <span className="font-medium">
-                                {index + 1}.
-                              </span>{" "}
-                              {feature}
-                            </span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeFeature(index)}
-                              className="text-green-700 text-[12px]"
+                    <Label>Plan Features</Label>
+                    <div className="space-y-3 mt-2">
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="voucherAccess"
+                            checked={newPlan.voucherAccess}
+                            onChange={(e) =>
+                              setNewPlan((prev) => ({
+                                ...prev,
+                                voucherAccess: e.target.checked,
+                              }))
+                            }
+                            className="rounded border-gray-300"
+                          />
+                          <Label htmlFor="voucherAccess" className="text-sm">
+                            Access loan as a voucher
+                          </Label>
+                        </div>
+                        {newPlan.voucherAccess && (
+                          <div className="ml-6">
+                            <Label htmlFor="voucherPaymentDays" className="text-xs text-gray-600">
+                              Voucher Payment Days *
+                            </Label>
+                            <select
+                              id="voucherPaymentDays"
+                              value={newPlan.voucherPaymentDays || ""}
+                              onChange={(e) =>
+                                setNewPlan((prev) => ({
+                                  ...prev,
+                                  voucherPaymentDays: parseInt(e.target.value) || 0,
+                                }))
+                              }
+                              className="w-full h-8 px-2 border border-gray-300 rounded text-xs focus:border-green-500 focus:ring-1 focus:ring-green-500"
                             >
-                              Remove
-                            </Button>
+                              <option value="">Select days</option>
+                              <option value="7">7 days</option>
+                              <option value="15">15 days</option>
+                              <option value="30">30 days</option>
+                            </select>
                           </div>
-                        ))}
+                        )}
+
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="freeDelivery"
+                          checked={newPlan.freeDelivery}
+                          onChange={(e) =>
+                            setNewPlan((prev) => ({
+                              ...prev,
+                              freeDelivery: e.target.checked,
+                            }))
+                          }
+                          className="rounded border-gray-300"
+                        />
+                        <Label htmlFor="freeDelivery" className="text-sm">
+                          Free Delivery
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="stablePricing"
+                          checked={newPlan.stablePricing}
+                          onChange={(e) =>
+                            setNewPlan((prev) => ({
+                              ...prev,
+                              stablePricing: e.target.checked,
+                            }))
+                          }
+                          className="rounded border-gray-300"
+                        />
+                        <Label htmlFor="stablePricing" className="text-sm">
+                          Stable Price
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="receiveEBM"
+                          checked={newPlan.receiveEBM}
+                          onChange={(e) =>
+                            setNewPlan((prev) => ({
+                              ...prev,
+                              receiveEBM: e.target.checked,
+                            }))
+                          }
+                          className="rounded border-gray-300"
+                        />
+                        <Label htmlFor="receiveEBM" className="text-sm">
+                          Receive EBM Purchase Orders
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="advertisingAccess"
+                          checked={newPlan.advertisingAccess}
+                          onChange={(e) =>
+                            setNewPlan((prev) => ({
+                              ...prev,
+                              advertisingAccess: e.target.checked,
+                            }))
+                          }
+                          className="rounded border-gray-300"
+                        />
+                        <Label htmlFor="advertisingAccess" className="text-sm">
+                          Advertising - Connect your products to reach more guests
+                        </Label>
                       </div>
                     </div>
                   </div>

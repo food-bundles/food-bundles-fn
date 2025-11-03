@@ -238,7 +238,7 @@ export function Header() {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50" suppressHydrationWarning>
-        <div className="bg-green-700 border-b border-green-600 shadow-lg">
+        <div className="bg-green-700 border-b border-green-600 ">
           <div className="container mx-auto px-4 sm:px-6">
             <div className="flex items-center justify-between h-13">
               <Link href="/">

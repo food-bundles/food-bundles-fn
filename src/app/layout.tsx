@@ -11,10 +11,6 @@ const poppins = Poppins({
   variable: "--font-poppins",
 });
 
-type Author = {
-  name: string;
-  role: string;
-};
 
 // const geistSans = Geist({
 //   variable: "--font-geist-sans",
@@ -33,9 +29,7 @@ type Author = {
 // });
 
 export const metadata: Metadata = {
-  title: "Food Bundles",
-  description:
-    "Food Bundles — Developed by Sostene, Elie, Shyirambere, and Muvunyi under the leadership of Dios (Project Manager & CEO)."
+  title: "Food Bundles"
 };
 
 export default function RootLayout({

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -10,6 +11,7 @@ import {
 } from "@/app/services/subscriptionService";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
+import SubscriptionTable from "./_components/SubscriptionTable";
 
 export default function SubscribePage() {
   const [openModal, setOpenModal] = useState(false);
@@ -24,7 +26,6 @@ export default function SubscribePage() {
       const response = await subscriptionService.getAllSubscriptionPlans({
         isActive: true,
       });
-      console.log("response+++++++++++++", response);
       if (response.data && Array.isArray(response.data)) {
         const orderedPlans = [...response.data].sort(
           (a, b) => a.price - b.price
@@ -32,7 +33,6 @@ export default function SubscribePage() {
         setPlans(orderedPlans);
       }
     } catch (error) {
-      console.error("Error fetching plans:", error);
       toast.error("Failed to load subscription plans");
     } finally {
       setLoading(false);
@@ -69,7 +69,7 @@ export default function SubscribePage() {
             return (
               <Card
                 key={plan.id}
-                className={`w-[250px] h-[450px] flex flex-col items-center p-6 ${borderColor} transition-colors relative rounded shadow-none`}
+                className={`w-[250px] h-[400px] flex flex-col items-center p-6 ${borderColor} transition-colors relative rounded shadow-none`}
               >
                 {isPopular && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
@@ -94,16 +94,46 @@ export default function SubscribePage() {
                   <div className="text-gray-800">per {plan.duration} days</div>
                 </div>
                 <div className="space-y-3 mb-1 flex-1">
-                  {plan.features &&
-                    Array.isArray(plan.features) &&
-                    plan.features.map((feature: string, idx: number) => (
-                      <div key={idx} className="flex items-start space-x-2">
-                        <p className="text-green-500 text-[16px] mr-2">🗸</p>
-                        <span className="text-gray-800 text-[13px]">
-                          {feature}
-                        </span>
-                      </div>
-                    ))}
+                  {plan.voucherAccess && (
+                    <div className="flex items-start space-x-2">
+                      <p className="text-green-500 text-[16px] mr-2">🗸</p>
+                      <span className="text-gray-800 text-[13px]">
+                        Access loan as a voucher {plan.voucherPaymentDays ? `(${plan.voucherPaymentDays} days)` : ''}
+                      </span>
+                    </div>
+                  )}
+                  {plan.freeDelivery && (
+                    <div className="flex items-start space-x-2">
+                      <p className="text-green-500 text-[16px] mr-2">🗸</p>
+                      <span className="text-gray-800 text-[13px]">
+                        Free Delivery
+                      </span>
+                    </div>
+                  )}
+                  {plan.stablePricing && (
+                    <div className="flex items-start space-x-2">
+                      <p className="text-green-500 text-[16px] mr-2">🗸</p>
+                      <span className="text-gray-800 text-[13px]">
+                        Stable Price
+                      </span>
+                    </div>
+                  )}
+                  {plan.receiveEBM && (
+                    <div className="flex items-start space-x-2">
+                      <p className="text-green-500 text-[16px] mr-2">🗸</p>
+                      <span className="text-gray-800 text-[13px]">
+                        Receive EBM Purchase Orders
+                      </span>
+                    </div>
+                  )}
+                  {plan.advertisingAccess && (
+                    <div className="flex items-start space-x-2">
+                      <p className="text-green-500 text-[16px] mr-2">🗸</p>
+                      <span className="text-gray-800 text-[13px]">
+                        Advertising - Connect your products to reach more guests
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <button
                   className={`${buttonColor} text-white text-[14px] rounded py-1 px-2 mt-auto`}
@@ -118,6 +148,7 @@ export default function SubscribePage() {
             );
           })}
         </div>
+        <SubscriptionTable />
       </div>
       <PaymentModal
         open={openModal}

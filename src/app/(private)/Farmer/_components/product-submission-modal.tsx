@@ -191,9 +191,7 @@ const loadVillages = async (province: string, district: string, sector: string, 
   const loadCategories = async () => {
     setLoadingCategories(true)
     try {
-      console.log("Testing API connection...")
 
-      console.log("Loading categories...")
       const fetchedCategories = await productSubmissionService.fetchActiveCategories()
       setCategories(fetchedCategories)
 
@@ -295,7 +293,6 @@ const loadVillages = async (province: string, district: string, sector: string, 
     setIsSubmitting(true)
 
     try {
-      console.log("[v0] Submitting product:", formData)
       const response = await productSubmissionService.submitProduct(formData)
 
       // Narrow the type of response before accessing its properties

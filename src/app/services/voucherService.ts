@@ -13,7 +13,7 @@ export interface IVoucherData {
 export interface ILoanApplicationData {
   requestedAmount: number;
   purpose?: string;
-  terms?: string;
+  voucherDays?: number;
 }
 
 export interface IVoucherPaymentData {

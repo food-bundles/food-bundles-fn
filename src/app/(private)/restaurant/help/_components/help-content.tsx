@@ -181,12 +181,21 @@ export function HelpContent({ contactInfo, faqs }: Props) {
           {/* Chat Button - Responsive positioning */}
           <div className="flex flex-col items-center justify-center">
             <button onClick={() => setIsChatOpen(true)} className="">
-              <Image
-                src="/imgs/AI-icon.svg"
-                alt="whatsapp"
-                width={50}
-                height={50}
-              />
+              {/* add lucid react icon */}
+              <div className="flex items-center justify-center p-2 rounded-full bg-green-600">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="h-6 w-6 text-white"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M1.5 6a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zm0 6a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zm0 6a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
             </button>
             <p>What&apos;s Up</p>
           </div>
