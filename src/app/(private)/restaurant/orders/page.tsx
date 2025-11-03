@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, AlertCircle, Wifi, WifiOff } from "lucide-react";
 import { useWebSocket } from "@/hooks/useOrderWebSocket";
+import { useRouter } from "next/navigation";
 
 export default function RestaurantOrdersPage() {
   const [searchValue, setSearchValue] = useState("");
@@ -33,6 +34,7 @@ export default function RestaurantOrdersPage() {
 
   const [formattedOrders, setFormattedOrders] = useState<any[]>([]);
   const [reorderingId, setReorderingId] = useState<string | null>(null);
+  const router = useRouter();
 
   // WebSocket integration
   const { isConnected, orderUpdates, reconnect } = useWebSocket(
@@ -145,7 +147,106 @@ export default function RestaurantOrdersPage() {
 
 
   const handleViewOrder = (order: any) => {
-    toast.info(`Viewing order: ${order.orderId}`);
+    router.push(`/restaurant/orders/view/${order.orderId}`);
+  };
+
+  const handleDownload = (order: any) => {
+    try {
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        toast.error('Please allow popups to download PDF');
+        return;
+      }
+      
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Order Receipt - ${order.orderId}</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            .receipt { max-width: 600px; margin: 0 auto; border: 2px solid #22c55e; border-radius: 8px; padding: 20px; }
+            .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #22c55e; padding-bottom: 15px; }
+            .logo { width: 50px; height: 50px; margin: 0 auto 10px; background: #22c55e; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; }
+            .header h1 { color: #22c55e; margin-bottom: 5px; }
+            .info-section { margin: 20px 0; }
+            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+            .info-item { background: #f8fafc; padding: 10px; border-radius: 5px; border-left: 3px solid #22c55e; }
+            .info-label { font-size: 11px; color: #64748b; text-transform: uppercase; margin-bottom: 3px; }
+            .info-value { font-weight: 600; color: #1f2937; }
+            .items { margin: 20px 0; }
+            .item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #e5e7eb; }
+            .total { background: #f0fdf4; font-weight: bold; color: #22c55e; }
+            .footer { text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #e5e7eb; color: #64748b; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="receipt">
+            <div class="header">
+              <div class="logo">FB</div>
+              <h1>Food Bundle</h1>
+              <p>Order Receipt</p>
+            </div>
+            <div class="info-section">
+              <h3>Order Information</h3>
+              <div class="info-grid">
+                <div class="info-item">
+                  <div class="info-label">Order Number</div>
+                  <div class="info-value">#${order.orderId}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Order Date</div>
+                  <div class="info-value">${order.orderedDate}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Customer</div>
+                  <div class="info-value">${order.customerName}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Status</div>
+                  <div class="info-value">${order.status.charAt(0).toUpperCase() + order.status.slice(1)}</div>
+                </div>
+              </div>
+              <div class="info-item">
+                <div class="info-label">Delivery Address</div>
+                <div class="info-value">${order.deliveryAddress}</div>
+              </div>
+            </div>
+            <div class="items">
+              <h3>Order Items</h3>
+              <div class="item">
+                <span>${order.items}</span>
+                <span>${order.totalAmount} Rwf</span>
+              </div>
+              <div class="item total">
+                <span>Total</span>
+                <span>${order.totalAmount} Rwf</span>
+              </div>
+            </div>
+            <div class="footer">
+              <p>Thank you for choosing Food Bundle!</p>
+              <p>Generated on ${new Date().toLocaleString()}</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `);
+      
+      printWindow.document.close();
+      printWindow.focus();
+      
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 250);
+      
+      toast.success('PDF print dialog opened');
+    } catch (error) {
+      console.error('Failed to generate PDF:', error);
+      toast.error('Failed to generate PDF');
+    }
   };
 
   const handleReorder = async (orderId: string) => {
@@ -220,32 +321,7 @@ export default function RestaurantOrdersPage() {
               <h1 className="text-[16px] font-medium text-gray-900">
                 Orders Management
               </h1>
-              <div className="flex items-center gap-2 mt-1">
-                {/* <div
-                  className={`flex items-center gap-1 text-sm ${
-                    isConnected ? "text-green-600" : "text-red-600"
-                  }`}
-                >
-                  {isConnected ? (
-                    <Wifi className="h-4 w-4" />
-                  ) : (
-                    <WifiOff className="h-4 w-4" />
-                  )}
-                  <span>
-                    WebSocket: {isConnected ? "Connected" : "Disconnected"}
-                  </span>
-                </div> */}
-                {!isConnected && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleReconnectWebSocket}
-                    className="h-6 text-xs"
-                  >
-                    Reconnect
-                  </Button>
-                )}
-              </div>
+
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -258,7 +334,7 @@ export default function RestaurantOrdersPage() {
           </div>
 
           <DataTable
-            columns={ordersColumns(handleViewOrder, handleReorder)}
+            columns={ordersColumns(handleViewOrder, handleDownload, handleReorder)}
             data={filteredData}
             title=""
             showExport={false}

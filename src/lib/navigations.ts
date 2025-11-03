@@ -9,8 +9,9 @@ export function getRedirectPath(userRole: UserRole): string {
     case UserRole.AGGREGATOR:
       return "/aggregator";
     case UserRole.ADMIN:
-    case UserRole.LOGISTIC:
       return "/dashboard";
+    case UserRole.LOGISTICS:
+      return "/logistics";
     default:
       console.warn(`Unknown user role: ${userRole}. Redirecting to default.`);
       return "/";

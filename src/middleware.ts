@@ -68,6 +68,8 @@ export function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     "/dashboard/:path*",
+    "/aggregator/:path*",
+    "/logistics/:path*",
     "/restaurant/:path*",
     "/farmer/:path*",
     "/guest/:path*",
