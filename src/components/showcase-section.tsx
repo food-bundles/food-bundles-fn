@@ -54,7 +54,7 @@ export function FoodBundlesConnect() {
           <div className="flex justify-center lg:justify-end">
             <div className="relative w-full max-w-[600px] h-[300px] md:h-[500px]">
               <Image
-                src="/imgs/phones1.jpg"
+                src="https://ik.imagekit.io/foodbundles/imgs/phones1.jpg?updatedAt=1762176585881"
                 alt="FoodBundles app interface showing product catalog and order tracking on two mobile phones"
                 fill
                 className="object-contain"
