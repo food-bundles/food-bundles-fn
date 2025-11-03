@@ -64,16 +64,16 @@ export default function TermsAgreementPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      <div className="w-1/3 bg-linear-to-br from-green-600 to-green-900 flex flex-col justify-center items-center p-8">
+    <div className="min-h-screen flex flex-col lg:flex-row">
+      <div className="w-full lg:w-1/3 bg-gradient-to-br from-green-600 to-green-900 flex flex-col justify-center items-center p-4 sm:p-6 lg:p-8 min-h-[200px] lg:min-h-screen">
         <div className="text-center">
-          <div className="mb-8">
+          <div className="mb-4 lg:mb-8">
             <OptimizedImage
               src="/imgs/Food_bundle_logo.png"
               alt="Food Bundles"
               width={120}
               height={120}
-              className="mx-auto rounded-full"
+              className="mx-auto rounded-full w-16 h-16 sm:w-20 sm:h-20 lg:w-[120px] lg:h-[120px]"
               transformation={[
                 { width: 240, height: 240, crop: "fill", quality: "85" }
               ]}
@@ -81,10 +81,10 @@ export default function TermsAgreementPage() {
           </div>
 
           <div className="text-white">
-            <h1 className="text-3xl font-bold mb-4">
+            <h1 className="text-lg sm:text-xl lg:text-3xl font-bold mb-2 lg:mb-4">
               Terms & Conditions Agreement
             </h1>
-            <p className="text-green-100 text-[14px] leading-relaxed">
+            <p className="text-green-100 text-xs sm:text-sm lg:text-[14px] leading-relaxed px-2">
               Please review and accept our terms to continue
             </p>
           </div>
@@ -92,31 +92,31 @@ export default function TermsAgreementPage() {
         </div>
       </div>
 
-      <div className="w-2/3 bg-gray-50 overflow-hidden">
+      <div className="w-full lg:w-2/3 bg-gray-50 overflow-hidden">
         <div
           ref={rightContentRef}
-          className="h-screen overflow-y-auto scrollbar-thin"
+          className="h-[calc(100vh-200px)] lg:h-screen overflow-y-auto scrollbar-thin"
         >
-          <div className="p-8">
-            <div className="bg-white pt-8">
+          <div className="p-4 sm:p-6 lg:p-8">
+            <div className="bg-white pt-4 sm:pt-6 lg:pt-8 rounded-lg lg:rounded-none shadow-sm lg:shadow-none">
               <div className="prose prose-sm max-w-none">
-                <div className="text-center mb-8 pb-6 border-b border-gray-200">
-                  <h2 className="text-xl font-bold text-gray-900 mb-2">
+                <div className="text-center mb-6 lg:mb-8 pb-4 lg:pb-6 border-b border-gray-200">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
                     FOOD BUNDLES Limited.
                   </h2>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-xs sm:text-sm text-gray-600">
                     www.food.rw | Kigali, Rwanda KG 5Ave
                   </p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-xs sm:text-sm text-gray-600">
                     Tel: +250788963267 | Email: info@food.rw
                   </p>
                 </div>
 
-                <div className="mb-8 ">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                <div className="mb-6 lg:mb-8">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 lg:mb-3">
                     Executive Introduction
                   </h3>
-                  <p className="text-gray-900 text-[15px] leading-relaxed mb-4">
+                  <p className="text-gray-900 text-sm sm:text-[15px] leading-relaxed mb-3 lg:mb-4">
                     This User Agreement is designed to establish a clear,
                     transparent, and fair framework for all restaurants using
                     the Food Bundles platform. Its purpose is to outline the
@@ -435,24 +435,24 @@ export default function TermsAgreementPage() {
                 </div>
 
                 {/* Agreement Section */}
-                <div className="mt-12 pt-8 border-t border-gray-200">
+                <div className="mt-8 lg:mt-12 pt-6 lg:pt-8 border-t border-gray-200">
                   {error && (
-                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm mb-4">
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded-md text-xs sm:text-sm mb-3 sm:mb-4">
                       {error}
                     </div>
                   )}
-                  <div className="bg-gray-50 rounded-lg p-6">
-                    <div className="flex items-start space-x-3">
+                  <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
+                    <div className="flex items-start space-x-2 sm:space-x-3">
                       <input
                         type="checkbox"
                         id="agree-terms"
                         checked={agreed}
                         onChange={(e) => setAgreed(e.target.checked)}
-                        className="mt-1 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                        className="mt-1 h-3 w-3 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded flex-shrink-0"
                       />
                       <label
                         htmlFor="agree-terms"
-                        className="text-sm text-gray-900"
+                        className="text-xs sm:text-sm text-gray-900 leading-relaxed"
                       >
                         I have read, understood, and agree to the Terms &
                         Conditions Agreement. By checking this box, I
@@ -461,18 +461,18 @@ export default function TermsAgreementPage() {
                       </label>
                     </div>
 
-                    <div className="mt-6 flex justify-end space-x-4">
+                    <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4">
                       <Link
                         href="/signup"
-                        className="flex items-center px-6 py-3 font-medium text-gray-900 hover:bg-gray-50 transition-colors"
+                        className="flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 font-medium text-gray-900 hover:bg-gray-50 transition-colors text-sm sm:text-base order-2 sm:order-1"
                       >
-                      <ArrowLeft className="h-4 w-4 mr-2" />
-                       Back
+                        <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                        Back
                       </Link>
                       <button
                         onClick={handleAgree}
                         disabled={!agreed || isSubmitting}
-                        className={`flex items-center px-6  rounded-full font-medium transition-colors ${
+                        className={`flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 rounded-full font-medium transition-colors text-sm sm:text-base order-1 sm:order-2 ${
                           agreed && !isSubmitting
                             ? "text-white bg-blue-600 hover:bg-blue-700"
                             : "text-gray-500 bg-gray-200 cursor-not-allowed"

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { OptimizedImage } from "@/components/OptimizedImage";
@@ -80,9 +81,10 @@ function CircularRestaurantAnimation({
   };
 
   const handleRestaurantClick = (restaurantName: string) => {
-    window.location.href = `/stories?restaurant=${encodeURIComponent(
-      restaurantName
-    )}`;
+    // window.location.href = `/stories?restaurant=${encodeURIComponent(
+    //   restaurantName
+    // )}`;
+    window.location.href ="#";
   };
 
   const displayRestaurants = restaurants.slice(0, 10);
