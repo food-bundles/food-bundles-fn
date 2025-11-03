@@ -20,17 +20,27 @@ const farmers = [
   {
     name: "Kinyinya Farm",
     product: "Vegetables",
-    images: ["/farmers/farm1.jpg", "/farmers/farm3.jpeg"],
+    images: [
+      "https://res.cloudinary.com/dudyd54z9/image/upload/v1762187895/farm6_b6ss57.jpg",
+      "https://res.cloudinary.com/dudyd54z9/image/upload/v1762187865/farm2_oteohn.jpg",
+    ],
   },
   {
     name: "Musanze Farm",
-    product: "Fresh Fruits",
-    images: ["/farmers/farm4.png", "/farmers/farm5.jpg"],
+    product: "Vegetables",
+
+    images: [
+      "https://res.cloudinary.com/dudyd54z9/image/upload/v1762187825/farm3_txofwo.jpg",
+      "https://res.cloudinary.com/dudyd54z9/image/upload/v1762187841/farm4_mrbzbq.png",
+    ],
   },
   {
     name: "Ntasho Farm",
     product: "Vegetables",
-    images: ["/farmers/farm2.jpg", "/farmers/farm6.jpg"],
+    images: [
+      "https://res.cloudinary.com/dudyd54z9/image/upload/v1762187895/farm6_b6ss57.jpg",
+      "https://res.cloudinary.com/dudyd54z9/image/upload/v1762187865/farm2_oteohn.jpg",
+    ],
   },
 ];
 
@@ -39,7 +49,7 @@ function ContactInfo() {
     <div className="flex justify-center lg:justify-start">
       <div className="space-y-3  ">
         <div className="flex items-start  gap-3">
-          <Mail className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+          <Mail className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
           <div>
             <p className="font-medium text-sm">Email Support</p>
             <a
@@ -62,7 +72,7 @@ function ContactInfo() {
         </div>
 
         <div className="flex items-start gap-3">
-          <Phone className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+          <Phone className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
           <div>
             <p className="font-medium text-sm">Phone Support</p>
             <a
@@ -75,7 +85,7 @@ function ContactInfo() {
         </div>
 
         <div className="flex items-start gap-3">
-          <MapPin className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+          <MapPin className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
           <div>
             <p className="font-medium text-sm">Company Location</p>
             <p className="text-xs text-gray-600">KG 5 Ave, Kigali</p>
@@ -221,7 +231,7 @@ function FarmCarousel() {
         <CarouselContent className="-ml-2">
           {allImages.map((item, idx) => (
             <CarouselItem key={idx} className="pl-2 basis-1/2">
-              <div className="relative h-[10rem] rounded-lg overflow-hidden group">
+              <div className="relative h-40 rounded-lg overflow-hidden group">
                 <Image
                   width={40}
                   height={40}
@@ -229,7 +239,7 @@ function FarmCarousel() {
                   alt={`${item.name} - ${idx + 1}`}
                   className="w-full h-full rounded-lg object-cover transition-transform duration-300 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
                 <div className="absolute bottom-2 left-2 text-left">
                   <h4 className="font-bold text-white text-sm">{item.name}</h4>
                   <p className="text-green-300 text-xs">{item.product}</p>

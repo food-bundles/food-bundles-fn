@@ -227,4 +227,57 @@ export const orderService = {
       message: response.data.message,
     };
   },
+
+  getDeliveryOrders: async (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }): Promise<OrdersResponse> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/deliveries/orders", { params });
+    return {
+      success: true,
+      data: response.data.data,
+      pagination: response.data.pagination,
+      message: response.data.message,
+    };
+  },
+
+  updateDeliveryStatus: async (
+    orderId: string, 
+    status: 'PREPARING' | 'READY' | 'IN_TRANSIT' | 'CANCELLED'
+  ): Promise<{ success: boolean; data?: any; error?: string }> => {
+    try {
+      const axiosClient = createAxiosClient();
+      const response = await axiosClient.patch(`/deliveries/${orderId}/status`, { status });
+      return { success: true, data: response.data };
+    } catch (error: any) {
+      return { success: false, error: error.response?.data?.message || error.message };
+    }
+  },
+
+  getDeliveryOrderDetails: async (
+    orderId: string
+  ): Promise<{ success: boolean; data?: any; error?: string }> => {
+    try {
+      const axiosClient = createAxiosClient();
+      const response = await axiosClient.get(`/deliveries/${orderId}`);
+      return { success: true, data: response.data };
+    } catch (error: any) {
+      return { success: false, error: error.response?.data?.message || error.message };
+    }
+  },
+
+  verifyDeliveryOTP: async (
+    orderId: string, 
+    otp: string
+  ): Promise<{ success: boolean; data?: any; error?: string }> => {
+    try {
+      const axiosClient = createAxiosClient();
+      const response = await axiosClient.post(`/deliveries/${orderId}/otp/verify`, { otp });
+      return { success: true, data: response.data };
+    } catch (error: any) {
+      return { success: false, error: error.response?.data?.message || error.message };
+    }
+  },
 };

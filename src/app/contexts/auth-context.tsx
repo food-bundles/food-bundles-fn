@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -165,9 +166,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setIsInitialCheckDone(true);
       }
     }
-  }, [isInitialCheckDone]); // Removed dependencies to prevent loops
+  }, [isInitialCheckDone]); 
 
-  // Listen for storage events (for multi-tab support) - debounced
   useEffect(() => {
     let debounceTimer: NodeJS.Timeout;
     
@@ -192,9 +192,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       window.removeEventListener("storage", handleStorageChange);
       clearTimeout(debounceTimer);
     };
-  }, [isAuthenticated]); // Only depend on auth state
+  }, [isAuthenticated]); 
 
-  // Removed focus event listener to reduce API calls
+
 
   const value: AuthContextType = {
     user,
