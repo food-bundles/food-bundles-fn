@@ -56,6 +56,16 @@ export const useWebSocket = (userId: string, restaurantId?: string) => {
           );
         }
 
+        // Also subscribe using userId for restaurant orders
+        if (userId) {
+          ws.send(
+            JSON.stringify({
+              type: "SUBSCRIBE_ORDERS",
+              restaurantId: userId,
+            })
+          );
+        }
+
         // Subscribe to products (for admins)
         ws.send(
           JSON.stringify({

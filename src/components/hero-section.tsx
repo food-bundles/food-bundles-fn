@@ -150,9 +150,7 @@ function CircularRestaurantAnimation({
 function HeroImageCarousel() {
   const images = ["imgs/hero.jpg", "imgs/hero2.jpg", "imgs/hero3.jpg"];
 
-  const [currentImageIndex, setCurrentImageIndex] = useState(() =>
-    Math.floor(Math.random() * images.length)
-  );
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {

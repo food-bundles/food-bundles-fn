@@ -29,7 +29,7 @@ export function AdminHeader({ onMenuClick, sidebarOpen }: AdminHeaderProps) {
           <div className="flex items-center gap-2 md:gap-4">
             <h1 className="text-sm md:text-md font-semibold text-white">Dashboard</h1>
             <p className="hidden sm:block text-[13px] text-green-100">
-              Welcome back, Admin Sostene
+              Welcome back
             </p>
           </div>
         </div>

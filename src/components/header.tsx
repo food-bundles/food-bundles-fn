@@ -95,7 +95,7 @@ export function Header() {
       case UserRole.AGGREGATOR:
         return "/aggregator/settings";
       case UserRole.ADMIN:
-      case UserRole.LOGISTIC:
+      case UserRole.LOGISTICS:
         return "/dashboard/settings";
       default:
         console.warn(
@@ -237,7 +237,10 @@ export function Header() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50" suppressHydrationWarning>
+      <header
+        className="fixed top-0 left-0 right-0 z-50"
+        suppressHydrationWarning
+      >
         <div className="bg-green-700 border-b border-green-600 ">
           <div className="container mx-auto px-4 sm:px-6">
             <div className="flex items-center justify-between h-13">
@@ -250,7 +253,7 @@ export function Header() {
                     height={32}
                     className="rounded-full object-cover w-5 h-5"
                     transformation={[
-                      { width: 64, height: 64, crop: "fill", quality: "85" }
+                      { width: 64, height: 64, crop: "fill", quality: "85" },
                     ]}
                   />
                   <span className="text-2sm font-bold text-black whitespace-nowrap">
@@ -286,12 +289,12 @@ export function Header() {
                     }}
                     suppressHydrationWarning
                   >
-                    <span className="relative z-20">Subscribe</span>
+                    <span className="relative z-20">Shop Now</span>
                   </button>
 
                   {/* Enhanced Dropdown */}
                   <div
-                    className={`absolute top-full -left-1 mt-3 w-64 bg-white border border-orange-200 transition-all duration-300 ${
+                    className={`absolute top-full -left-18 mt-2 w-64 space-y-2 bg-white border border-orange-200 rounded-md transition-all duration-300 ${
                       isShopDropdownOpen
                         ? "opacity-100 visible transform translate-y-0"
                         : "opacity-0 invisible transform -translate-y-2"
@@ -305,7 +308,7 @@ export function Header() {
                       </p>
                     </div>
                     <div className="pb-0">
-                      <Link href="/signup">
+                      <Link href="/login">
                         <button
                           onClick={() => {
                             window.dispatchEvent(
@@ -313,11 +316,11 @@ export function Header() {
                             );
                             setIsShopDropdownOpen(false);
                           }}
-                          className="flex items-center w-full text-left px-4 py-1 text-[13px] text-gray-900 border-b  hover:text-green-500 transition-colors group"
+                          className="flex items-center w-full text-left px-4 py-2 text-[13px] text-gray-900 border-b  hover:text-green-500 transition-colors group"
                         >
                           <UserPlus className="w-4 h-4 mr-3 text-orange-400 group-hover:text-orange-600" />
                           <div>
-                            <div className="">Subscribe as Restaurant</div>
+                            <div className="">Shop as Restaurant</div>
                           </div>
                         </button>
                       </Link>
@@ -326,7 +329,7 @@ export function Header() {
                           setIsShopDropdownOpen(false);
                           window.location.href = "/guest";
                         }}
-                        className="flex items-center w-full text-left px-4 py-1 text-[13px] text-gray-900  hover:text-green-500 transition-colors group"
+                        className="flex items-center w-full text-left px-4 py-2 text-[13px] text-gray-900  hover:text-green-500 transition-colors group"
                       >
                         <ShoppingCart className="w-4 h-4 mr-3 text-orange-400 group-hover:text-orange-500" />
                         <div>
@@ -349,19 +352,24 @@ export function Header() {
                     }}
                     suppressHydrationWarning
                   >
-                    <span className="relative z-10">Subscribe</span>
+                    <span className="relative z-10">Shop Now</span>
                   </button>
 
                   {/* Mobile Subscribe Dropdown - Positioned appropriately */}
                   <div
-                    className={`absolute top-full right-0 mt-2 w-56 bg-white border border-orange-200 rounded-lg shadow-lg transition-all duration-300 ${
+                    className={`absolute top-full -left-20 mt-1 w-60 bg-white border border-orange-200 rounded-lg shadow-lg transition-all duration-300 ${
                       isShopDropdownOpen
                         ? "opacity-100 visible transform translate-y-0"
                         : "opacity-0 invisible transform -translate-y-2"
                     }`}
                   >
-                    <div className="py-2">
-                      <Link href="/signup">
+                    <div>
+                      <p className=" w-full ml-4 pt-2 font-medium text-gray-900 text-[14px]">
+                        Subscribe To Our Farm
+                      </p>
+                    </div>
+                    <div className="py-0">
+                      <Link href="/login">
                         <button
                           onClick={() => {
                             window.dispatchEvent(
@@ -369,12 +377,12 @@ export function Header() {
                             );
                             setIsShopDropdownOpen(false);
                           }}
-                          className="flex items-center w-full text-left px-4 py-3 text-[13px] text-gray-900 border-b hover:text-green-500 transition-colors group"
+                          className="flex items-center w-full text-left px-4 py-2 text-[13px] text-gray-900 border-b hover:text-green-500 transition-colors group"
                         >
                           <UserPlus className="w-4 h-4 mr-3 text-orange-400 group-hover:text-orange-600" />
                           <div>
                             <div className="font-medium">
-                              Subscribe as Restaurant
+                              Shop as Restaurant
                             </div>
                           </div>
                         </button>
@@ -384,7 +392,7 @@ export function Header() {
                           setIsShopDropdownOpen(false);
                           window.location.href = "/guest";
                         }}
-                        className="flex items-center w-full text-left px-4 py-3 text-[13px] text-gray-900 hover:text-green-500 transition-colors group"
+                        className="flex items-center w-full text-left px-4 py-2 text-[13px] text-gray-900 hover:text-green-500 transition-colors group"
                       >
                         <ShoppingCart className="w-4 h-4 mr-3 text-orange-400 group-hover:text-orange-500" />
                         <div>
@@ -420,7 +428,12 @@ export function Header() {
                               height={24}
                               className="rounded-full object-cover"
                               transformation={[
-                                { width: 48, height: 48, crop: "fill", quality: "80" }
+                                {
+                                  width: 48,
+                                  height: 48,
+                                  crop: "fill",
+                                  quality: "80",
+                                },
                               ]}
                             />
                           ) : (
@@ -516,7 +529,12 @@ export function Header() {
                               height={20}
                               className="rounded-full object-cover p-[15px]"
                               transformation={[
-                                { width: 40, height: 40, crop: "fill", quality: "80" }
+                                {
+                                  width: 40,
+                                  height: 40,
+                                  crop: "fill",
+                                  quality: "80",
+                                },
                               ]}
                             />
                           ) : (

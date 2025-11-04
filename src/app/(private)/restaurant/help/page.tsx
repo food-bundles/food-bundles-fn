@@ -39,7 +39,7 @@ async function getHelpData() {
       id: "2",
       question: "What payment methods do you accept?",
       answer:
-        "We accept credit cards, bank transfers, and approved business credit accounts. For qualifying businesses, we also offer net-30 payment terms.",
+        "We accept credit cards, bank transfers, and approved business credit by voucher system. For qualifying businesses, we also offer net-30 payment terms.",
       category: "payments",
     },
     {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
@@ -6,6 +7,8 @@ import { useOrders } from "@/app/contexts/orderContext";
 import { useEffect, useState, useCallback } from "react";
 import { DashboardOverview } from "./_components/dashboard-overview";
 import { toast } from "sonner";
+import { useWebSocket } from "@/hooks/useOrderWebSocket";
+import { useAuth } from "@/app/contexts/auth-context";
 
 export default function RestaurantDashboard() {
   const {
@@ -18,17 +21,58 @@ export default function RestaurantDashboard() {
   } = useOrders();
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [reorderingId, setReorderingId] = useState<string | null>(null);
+  const [localOrders, setLocalOrders] = useState<any[]>([]);
+  const [localStatistics, setLocalStatistics] = useState<any>(null);
+  const { user } = useAuth();
+
+  // WebSocket integration for real-time updates
+  const { isConnected, orderUpdates } = useWebSocket(
+    user?.id || "",
+    user?.id || ""
+  );
 
   useEffect(() => {
     refreshOrders();
     refreshStatistics();
   }, []);
 
+  // Sync local state with context data
   useEffect(() => {
-    if (orders.length > 0 && !selectedOrder) {
-      setSelectedOrder(orders[0]);
+    setLocalOrders(orders);
+  }, [orders]);
+
+  useEffect(() => {
+    setLocalStatistics(statistics);
+  }, [statistics]);
+
+  useEffect(() => {
+    if (localOrders.length > 0 && !selectedOrder) {
+      setSelectedOrder(localOrders[0]);
     }
-  }, [orders, selectedOrder]);
+  }, [localOrders, selectedOrder]);
+
+  // Handle real-time order updates from WebSocket - silent updates
+  useEffect(() => {
+    if (orderUpdates.length > 0) {
+      const latestUpdate = orderUpdates[orderUpdates.length - 1];
+      
+      // Update local orders silently
+      setLocalOrders(prevOrders => 
+        prevOrders.map(order => 
+          order.id === latestUpdate.orderId 
+            ? { ...order, status: latestUpdate.status, paymentStatus: latestUpdate.paymentStatus }
+            : order
+        )
+      );
+
+      setSelectedOrder((prevSelected: any) => 
+        prevSelected?.id === latestUpdate.orderId 
+          ? { ...prevSelected, status: latestUpdate.status, paymentStatus: latestUpdate.paymentStatus }
+          : prevSelected
+      );
+
+    }
+  }, [orderUpdates]);
 
 
   const handleReorder = useCallback(
@@ -64,19 +108,19 @@ export default function RestaurantDashboard() {
     }),
     metrics: {
       totalSales: {
-        current: statistics?.revenue?.total || 0,
+        current: localStatistics?.revenue?.total || 0,
         previous: 0,
         change: 0,
         period: "last week",
       },
       totalOrders: {
-        current: statistics?.totalOrders || 0,
+        current: localStatistics?.totalOrders || 0,
         previous: 0,
         change: 0,
         period: "last week",
       },
       averageOrderValue: {
-        current: statistics?.revenue?.average || 0,
+        current: localStatistics?.revenue?.average || 0,
         previous: 0,
         change: 0,
         period: "last week",
@@ -88,7 +132,7 @@ export default function RestaurantDashboard() {
     },
     salesChart: {
       currentPeriod: [
-        { day: "Mon", sales: statistics?.totalOrders || 0 },
+        { day: "Mon", sales: localStatistics?.totalOrders || 0 },
         { day: "Tue", sales: 0 },
         { day: "Wed", sales: 0 },
         { day: "Thu", sales: 0 },
@@ -107,12 +151,12 @@ export default function RestaurantDashboard() {
       ],
       stats: {
         min: 0,
-        avg: statistics?.totalOrders || 0,
-        max: statistics?.totalOrders || 0,
+        avg: localStatistics?.totalOrders || 0,
+        max: localStatistics?.totalOrders || 0,
       },
     },
     topProducts: [],
-    recentOrders: orders.map((order) => {
+    recentOrders: localOrders.map((order) => {
       const statusMap: Record<string, any> = {
         PROCESSING: "PREPARING",
         SHIPPED: "IN_TRANSIT",
@@ -146,10 +190,11 @@ export default function RestaurantDashboard() {
           minute: "2-digit",
           hour12: true,
         }),
+        originalData: order,
       } as any;
     }),
     selectedOrderForTracking: selectedOrder,
-    ordersByStatus: statistics?.ordersByStatus || {},
+    ordersByStatus: localStatistics?.ordersByStatus || {},
   };
 
 

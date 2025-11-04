@@ -23,8 +23,8 @@ import {
 import { usePathname} from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
-import Image from "next/image";
 import { authService } from "@/app/services/authService";
+import { OptimizedImage } from "@/components/OptimizedImage";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -130,19 +130,19 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       fixed md:relative
       ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       z-50 md:z-auto
-      w-60 min-w-60 h-screen border-r border-gray-200 bg-gray-50 flex flex-col flex-shrink-0 
+      w-60 min-w-60 h-screen border-r border-gray-200 bg-gray-50 flex flex-col shrink-0 
       transition-transform duration-300 ease-in-out
     `}>
       {/* Logo */}
-      <div className="p-3 md:p-4 flex items-center gap-2 flex-shrink-0">
-        <Image
+      <div className="p-3 md:p-4 flex items-center gap-2 shrink-0">
+        <OptimizedImage
           src="/imgs/Food_bundle_logo.png"
           alt="Logo"
           width={40}
           height={40}
           className="w-7 h-7 md:w-8 md:h-8 rounded-full object-cover"
         />
-        <h1 className="text-lg md:text-xl font-bold text-black">Food Bundle</h1>
+        <h1 className="text-lg md:text-xl font-bold text-black">FoodBundles</h1>
       </div>
 
       {/* Navigation */}
@@ -238,7 +238,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         </ul>
 
         {/* Help Center */}
-        <div className="p-4 flex-shrink-0">
+        <div className="p-4 shrink-0">
           <div className="bg-green-100 rounded-lg p-4 text-center">
             <div className="w-16 h-16 bg-green-300 rounded-full flex items-center justify-center mx-auto mb-5">
               <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
