@@ -88,7 +88,6 @@ export default function VouchersList() {
       {!loading && myVouchers.length === 0 ? (
         <div className="text-center py-8">
           <p className="text-gray-700">No vouchers available</p>
-          <p className="text-gray-600 text-sm">Apply for a loan to get vouchers</p>
         </div>
       ) : (
         <div className="flex justify-center">

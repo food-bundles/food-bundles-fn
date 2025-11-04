@@ -157,7 +157,7 @@ export const createOrdersColumns = (actions: {
 }): ColumnDef<Order>[] => [
   {
     accessorKey: "orderNumber",
-    header: "Order #",
+    header: "Order",
     cell: ({ row }) => (
       <div className="font-medium">{row.getValue("orderNumber")}</div>
     ),

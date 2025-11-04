@@ -9,6 +9,7 @@ import {
   PhoneOutgoing,
   Send,
   X,
+  CircleChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -177,42 +178,21 @@ export function HelpContent({ contactInfo, faqs }: Props) {
               <p className="text-[12px] text-gray-600">24/7 chat support</p>
             </div>
           </div>
-
-          {/* Chat Button - Responsive positioning */}
-          <div className="flex flex-col items-center justify-center">
-            <button onClick={() => setIsChatOpen(true)} className="">
-              {/* add lucid react icon */}
-              <div className="flex items-center justify-center p-2 rounded-full bg-green-600">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  className="h-6 w-6 text-white"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M1.5 6a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zm0 6a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zm0 6a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-            </button>
-            <p>What&apos;s Up</p>
-          </div>
-
+       
           {/* Live Chat */}
-          {/* <div className="flex flex-col items-center justify-center space-y-4">
-            <div className="flex flex-col itmes-center justify-center bg-purple-100 p-2 rounded-full">
-              <Users className="h-5 w-5 text-purple-600" />
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <div
+              onClick={() => setIsChatOpen(true)}
+              className="flex flex-col itmes-center justify-center bg-purple-100 p-2 rounded-full"
+            >
+              <CircleChevronRight className="h-5 w-5 text-purple-600" />
             </div>
             <div className="flex flex-col items-center">
-              <h4 className="font-semibold text-gray-900 mb-1">Live Chat</h4>
-              <p className="text-sm text-gray-600 mb-1">
-                Chat with Assistant team
-              </p>
+              <h4 className="font-semibold text-gray-900 mb-1">For More</h4>
+              <p className="text-sm text-gray-600 mb-1">Chat With Our Agent</p>
               <p className="text-xs text-gray-500">Available now</p>
             </div>
-          </div> */}
+          </div>
         </div>
       </CardContent>
 

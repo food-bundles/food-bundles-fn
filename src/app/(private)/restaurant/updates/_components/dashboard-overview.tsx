@@ -4,7 +4,7 @@
 
 import { type Key, useState, useMemo, useEffect } from "react";
 import { Truck, Home, ShoppingBag, ChefHat, Package } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {  CardContent, CardHeader } from "@/components/ui/card";
 import Image from "next/image";
 import type { Order } from "@/lib/types";
 import { MovingBorderCircle } from "@/components/ui/moving-border-circle";
@@ -213,12 +213,12 @@ export function DashboardOverview({
     {
       label: "Preparing",
       icon: ChefHat,
-      status: ["PREPARING"],
+      status: ["PREPARING", "READY"],
     },
     {
       label: "Shipped",
       icon: Truck,
-      status: ["READY", "IN_TRANSIT"],
+      status: ["IN_TRANSIT"],
     },
     {
       label: "Delivered",
@@ -813,26 +813,28 @@ export function DashboardOverview({
                               {statusConfig.label}
                             </p>
                           </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (onReorder) {
-                                onReorder(originalOrderId);
-                              }
-                            }}
-                            disabled={isReordering || !onReorder}
-                            className={`flex items-center gap-1 transition-all duration-200 ${
-                              isReordering
-                                ? "text-gray-400 cursor-not-allowed"
-                                : "text-green-500 hover:text-green-600 cursor-pointer"
-                            }`}
-                          >
-                            {isReordering ? (
-                              <Spinner variant="ring" />
-                            ) : (
-                              <p className="text-[13px] font-medium">Reorder</p>
-                            )}
-                          </button>
+                          {(order as any).originalData?.paymentMethod !== "VOUCHER" && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (onReorder) {
+                                  onReorder(originalOrderId);
+                                }
+                              }}
+                              disabled={isReordering || !onReorder}
+                              className={`flex items-center gap-1 transition-all duration-200 ${
+                                isReordering
+                                  ? "text-gray-400 cursor-not-allowed"
+                                  : "text-green-500 hover:text-green-600 cursor-pointer"
+                              }`}
+                            >
+                              {isReordering ? (
+                                <Spinner variant="ring" />
+                              ) : (
+                                <p className="text-[13px] font-medium">Reorder</p>
+                              )}
+                            </button>
+                          )}
                         </div>
                       </div>
 
@@ -926,8 +928,10 @@ export function DashboardOverview({
 
           <div className="w-full border-0 shadow rounded py-0  overflow-hidden">
             <CardHeader className="bg-white pt-2">
-                <div className="text-[14px]">
-                 <p>Weekly Report</p>
+                <div className="flex justify-between items-center">
+                  <div className="text-[14px]">
+                   <p>Weekly Report</p>
+                  </div>
                 </div>
             </CardHeader>
             <CardContent className="bg-linear-to-br from-green-500 to-green-800 p-6">

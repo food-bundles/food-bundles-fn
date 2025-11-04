@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw, AlertCircle, Wifi, WifiOff } from "lucide-react";
 import { useWebSocket } from "@/hooks/useOrderWebSocket";
 import { useRouter } from "next/navigation";
+import { Spinner } from "@/components/ui/shadcn-io/spinner";
 
 export default function RestaurantOrdersPage() {
   const [searchValue, setSearchValue] = useState("");
@@ -36,10 +37,10 @@ export default function RestaurantOrdersPage() {
   const [reorderingId, setReorderingId] = useState<string | null>(null);
   const router = useRouter();
 
-  // WebSocket integration
+  // WebSocket integration - use user.id as restaurantId for restaurant users
   const { isConnected, orderUpdates, reconnect } = useWebSocket(
     user?.id || "", // User ID from auth
-    user?.restaurantId || "" // Restaurant ID from auth
+    user?.id || "" // For restaurant users, user.id is the restaurant ID
   );
 
 
@@ -147,7 +148,7 @@ export default function RestaurantOrdersPage() {
 
 
   const handleViewOrder = (order: any) => {
-    router.push(`/restaurant/orders/view/${order.orderId}`);
+    router.push(`/restaurant/orders/${order.orderId}`);
   };
 
   const handleDownload = (order: any) => {
@@ -194,7 +195,7 @@ export default function RestaurantOrdersPage() {
               <div class="info-grid">
                 <div class="info-item">
                   <div class="info-label">Order Number</div>
-                  <div class="info-value">#${order.orderId}</div>
+                  <div class="info-value">${order.orderId}</div>
                 </div>
                 <div class="info-item">
                   <div class="info-label">Order Date</div>
@@ -272,29 +273,6 @@ export default function RestaurantOrdersPage() {
     toast.info("Attempting to reconnect WebSocket...");
   };
 
-  if (loading && formattedOrders.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <main className="container mx-auto px-6 py-8">
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <Skeleton className="h-8 w-48 mb-2" />
-                <Skeleton className="h-4 w-64" />
-              </div>
-              <Skeleton className="h-10 w-32" />
-            </div>
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -321,7 +299,6 @@ export default function RestaurantOrdersPage() {
               <h1 className="text-[16px] font-medium text-gray-900">
                 Orders Management
               </h1>
-
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -345,33 +322,6 @@ export default function RestaurantOrdersPage() {
             showPagination={true}
             showRowSelection={true}
           />
-
-          {/* Debug: Check if columns are loaded */}
-          {/* {process.env.NODE_ENV === "development" && (
-            <div className="text-xs text-gray-400 mt-2">
-              Columns count:{" "}
-              {ordersColumns(handleViewOrder, handleReorder).length} |
-              WebSocket: {isConnected ? "Connected" : "Disconnected"} | Updates
-              received: {orderUpdates.length}
-            </div>
-          )} */}
-
-          {filteredData.length === 0 && !loading && (
-            <div className="text-center py-12">
-              <p className="text-gray-500">No orders found</p>
-              <Button
-                onClick={() => {
-                  setSearchValue("");
-                  setSelectedStatus("all");
-                  setSelectedDate(undefined);
-                }}
-                variant="outline"
-                className="mt-4"
-              >
-                Clear Filters
-              </Button>
-            </div>
-          )}
         </div>
       </main>
     </div>

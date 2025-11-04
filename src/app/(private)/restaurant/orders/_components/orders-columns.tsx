@@ -289,7 +289,7 @@ const CopyButton = ({ coordinates }: { coordinates: string }) => {
     <Button
       variant="ghost"
       size="sm"
-      className="h-6 w-6 p-0 hover:bg-gray-100 flex-shrink-0"
+      className="h-6 w-6 p-0 hover:bg-gray-100 shrink-0"
       onClick={handleCopy}
     >
       {copied ? (
@@ -345,7 +345,7 @@ export const ordersColumns = (
       );
     },
     cell: ({ row }) => (
-      <div className="font-medium text-blue-600">
+      <div className="font-medium ">
         #{row.getValue("orderId")}
       </div>
     ),
@@ -476,13 +476,15 @@ export const ordersColumns = (
           >
             <Download className="h-4 w-4 text-green-600" />
           </Button>
-          <button
-            className="text-[12px] text-green-600 hover:text-green-700 cursor-pointer px-2 py-1 rounded hover:bg-green-50"
-            onClick={() => onReorder(order.id)}
-            title="Reorder"
-          >
-            Reorder
-          </button>
+          {order.originalData?.paymentMethod !== "VOUCHER" && (
+            <button
+              className="text-[12px] text-green-600 hover:text-green-700 cursor-pointer px-2 py-1 rounded hover:bg-green-50"
+              onClick={() => onReorder(order.id)}
+              title="Reorder"
+            >
+              Reorder
+            </button>
+          )}
         </div>
       );
     },

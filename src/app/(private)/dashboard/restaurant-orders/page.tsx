@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import { orderService } from "@/app/services/orderService";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import { ViewOrderModal, CancelOrderModal } from "./_components/order-modals";
+import { useWebSocket } from "@/hooks/useOrderWebSocket";
+import { useAuth } from "@/app/contexts/auth-context";
 
 const statusOptions = [
   { label: "All Status", value: "all" },
@@ -40,6 +42,13 @@ export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalOrders, setTotalOrders] = useState(0);
+  const { user } = useAuth();
+
+  // WebSocket integration for real-time updates
+  const { isConnected, orderUpdates } = useWebSocket(
+    user?.id || "",
+    "" // Admin sees all orders, no specific restaurant filter
+  );
 
   // Modal states
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -117,6 +126,22 @@ export default function AdminOrdersPage() {
     dateFrom,
     dateTo,
   ]);
+
+  // Handle real-time order updates from WebSocket
+  useEffect(() => {
+    if (orderUpdates.length > 0) {
+      const latestUpdate = orderUpdates[orderUpdates.length - 1];
+      toast.success(
+        `Order ${latestUpdate.orderId} status updated: ${latestUpdate.status}`,
+        {
+          duration: 5000,
+        }
+      );
+
+      // Refresh orders to get updated data
+      fetchOrders();
+    }
+  }, [orderUpdates]);
 
   const filteredOrders = useMemo(() => {
     if (!searchValue) return orders;
@@ -285,7 +310,7 @@ export default function AdminOrdersPage() {
           <div class="header">
             <img src="https://res.cloudinary.com/dzxyelclu/image/upload/v1760111270/Food_bundle_logo_cfsnsw.png" alt="Logo">
             <h1>Order Invoice</h1>
-            <h2>Order #${order.orderNumber}</h2>
+            <h2>Order ${order.orderNumber}</h2>
           </div>
           
           <div class="info-container">

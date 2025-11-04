@@ -13,34 +13,24 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
-import Image from "next/image";
+import { OptimizedImage } from "@/components/OptimizedImage";
 import { Textarea } from "./ui/textarea";
 
 const farmers = [
   {
     name: "Kinyinya Farm",
     product: "Vegetables",
-    images: [
-      "https://res.cloudinary.com/dudyd54z9/image/upload/v1762187895/farm6_b6ss57.jpg",
-      "https://res.cloudinary.com/dudyd54z9/image/upload/v1762187865/farm2_oteohn.jpg",
-    ],
+    images: ["/farmers/farm5.jpg", "/farmers/farm6.jpg"],
   },
   {
     name: "Musanze Farm",
-    product: "Vegetables",
-
-    images: [
-      "https://res.cloudinary.com/dudyd54z9/image/upload/v1762187825/farm3_txofwo.jpg",
-      "https://res.cloudinary.com/dudyd54z9/image/upload/v1762187841/farm4_mrbzbq.png",
-    ],
+    product: "Fresh Fruits",
+    images: ["/farmers/farm3.jpeg", "/farmers/farm4.png"],
   },
   {
     name: "Ntasho Farm",
     product: "Vegetables",
-    images: [
-      "https://res.cloudinary.com/dudyd54z9/image/upload/v1762187895/farm6_b6ss57.jpg",
-      "https://res.cloudinary.com/dudyd54z9/image/upload/v1762187865/farm2_oteohn.jpg",
-    ],
+    images: ["/farmers/farm1.jpg", "/farmers/farm2.jpg"],
   },
 ];
 
@@ -232,12 +222,15 @@ function FarmCarousel() {
           {allImages.map((item, idx) => (
             <CarouselItem key={idx} className="pl-2 basis-1/2">
               <div className="relative h-40 rounded-lg overflow-hidden group">
-                <Image
-                  width={40}
-                  height={40}
+                <OptimizedImage
+                  width={200}
+                  height={160}
                   src={item.image}
                   alt={`${item.name} - ${idx + 1}`}
                   className="w-full h-full rounded-lg object-cover transition-transform duration-300 group-hover:scale-105"
+                  transformation={[
+                    { width: 400, height: 320, crop: "fill", quality: "80" }
+                  ]}
                 />
                 <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
                 <div className="absolute bottom-2 left-2 text-left">

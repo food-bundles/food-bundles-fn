@@ -65,8 +65,8 @@ export default function TermsAgreementPage() {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
-      <div className="w-full lg:w-1/3 bg-gradient-to-br from-green-600 to-green-900 flex flex-col justify-center items-center p-4 sm:p-6 lg:p-8 min-h-[200px] lg:min-h-screen">
-        <div className="text-center">
+      <div className="w-full sm: lg:w-1/3 bg-linear-to-br from-green-600 to-green-900 flex flex-col justify-center items-center p-4 sm:p-6 lg:p-8 min-h-[200px] lg:min-h-screen">
+        <div className="text-center mt-15 lg:mt-0">
           <div className="mb-4 lg:mb-8">
             <OptimizedImage
               src="/imgs/Food_bundle_logo.png"
@@ -97,8 +97,8 @@ export default function TermsAgreementPage() {
           ref={rightContentRef}
           className="h-[calc(100vh-200px)] lg:h-screen overflow-y-auto scrollbar-thin"
         >
-          <div className="p-4 sm:p-6 lg:p-8">
-            <div className="bg-white pt-4 sm:pt-6 lg:pt-8 rounded-lg lg:rounded-none shadow-sm lg:shadow-none">
+          <div className="p-1 py-4">
+            <div className="bg-white pt-4 sm:pt-6 lg:pt-8 px-2 rounded-lg lg:rounded-none ">
               <div className="prose prose-sm max-w-none">
                 <div className="text-center mb-6 lg:mb-8 pb-4 lg:pb-6 border-b border-gray-200">
                   <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
@@ -412,7 +412,7 @@ export default function TermsAgreementPage() {
                 {/* Witness Section */}
                 <div className="mt-8 pt-6 border-t border-gray-200">
                   <p className="text-gray-900 leading-relaxed mb-6">
-                    IN WITNESS WHERE OF, by registering or signing below, the
+                    In Witnerms & Conditions Agreementess Whereof, by registering or signing below, the
                     Restaurant acknowledges acceptance of these terms and
                     conditions.
                   </p>
@@ -448,7 +448,7 @@ export default function TermsAgreementPage() {
                         id="agree-terms"
                         checked={agreed}
                         onChange={(e) => setAgreed(e.target.checked)}
-                        className="mt-1 h-3 w-3 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded flex-shrink-0"
+                        className="mt-1 h-3 w-3 sm:h-4 sm:w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded shrink-0"
                       />
                       <label
                         htmlFor="agree-terms"

@@ -14,7 +14,7 @@ export function FoodBundlesConnect() {
             <div className="space-y-2">
               <Link
                 href="/signup"
-                className="inline-flex items-center gap-2 group text-green-700 group-hover:text-green-800 hover:text-blue-400 hover:border-b-2 border-blue-400 transition-colors"
+                className="inline-flex items-center gap-2 group text-green-700 group-hover:text-green-800 coursor-pointersubs transition-colors"
               >
                 <h2 className="text-xl md:text-2xl lg:text-3xl font-bold transition-colors">
                   Connect
