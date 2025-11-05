@@ -150,6 +150,165 @@
   .animate-slide-x {
     animation: slide-x 1s ease-in-out infinite; /* fast and smooth */
   }
+
+  /* Enhanced Repeating Hero Animations */
+  @keyframes containerFloat {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+
+  @keyframes textGlow {
+    0%, 100% {
+      text-shadow: 0 0 20px rgba(251, 146, 60, 0.3), 0 0 40px rgba(251, 146, 60, 0.1);
+    }
+    50% {
+      text-shadow: 0 0 30px rgba(251, 146, 60, 0.6), 0 0 60px rgba(251, 146, 60, 0.2);
+    }
+  }
+
+  @keyframes wordSlide {
+    0%, 100% {
+      transform: translateX(0px);
+    }
+    50% {
+      transform: translateX(3px);
+    }
+  }
+
+  @keyframes wordPulse {
+    0%, 100% {
+      transform: scale(1);
+      text-shadow: 0 0 15px rgba(34, 197, 94, 0.4);
+    }
+    50% {
+      transform: scale(1.05);
+      text-shadow: 0 0 25px rgba(34, 197, 94, 0.8);
+    }
+  }
+
+  @keyframes gradientShift {
+    0% {
+      transform: translateX(-100%) rotate(0deg);
+    }
+    100% {
+      transform: translateX(100%) rotate(360deg);
+    }
+  }
+
+  @keyframes textBreathe {
+    0%, 100% {
+      opacity: 0.8;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.02);
+    }
+  }
+
+  @keyframes deliveryBounce {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    25% {
+      transform: translateY(-4px);
+    }
+    75% {
+      transform: translateY(2px);
+    }
+  }
+
+  @keyframes bikeMove {
+    0%, 100% {
+      transform: translateX(0px) rotate(0deg);
+    }
+    25% {
+      transform: translateX(2px) rotate(2deg);
+    }
+    75% {
+      transform: translateX(-2px) rotate(-2deg);
+    }
+  }
+
+  @keyframes textWave {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-2px);
+    }
+  }
+
+  /* Animation Classes */
+  .animate-container-float {
+    animation: containerFloat 6s ease-in-out infinite;
+  }
+
+  .animate-text-glow {
+    animation: textGlow 4s ease-in-out infinite;
+    color: rgba(251, 146, 60, 0.9);
+  }
+
+  .animate-word-slide-1 {
+    animation: wordSlide 3s ease-in-out infinite;
+    animation-delay: 0s;
+    display: inline-block;
+  }
+
+  .animate-word-slide-2 {
+    animation: wordSlide 3s ease-in-out infinite;
+    animation-delay: 0.2s;
+    display: inline-block;
+  }
+
+  .animate-word-slide-3 {
+    animation: wordSlide 3s ease-in-out infinite;
+    animation-delay: 0.6s;
+    display: inline-block;
+  }
+
+  .animate-word-slide-4 {
+    animation: wordSlide 3s ease-in-out infinite;
+    animation-delay: 0.8s;
+    display: inline-block;
+  }
+
+  .animate-word-pulse-1 {
+    animation: wordPulse 4s ease-in-out infinite;
+    animation-delay: 0.4s;
+    display: inline-block;
+  }
+
+  .animate-word-pulse-2 {
+    animation: wordPulse 4s ease-in-out infinite;
+    animation-delay: 1s;
+    display: inline-block;
+  }
+
+  .animate-gradient-shift {
+    animation: gradientShift 8s linear infinite;
+  }
+
+  .animate-text-breathe {
+    animation: textBreathe 5s ease-in-out infinite;
+  }
+
+  .animate-delivery-bounce {
+    animation: deliveryBounce 2s ease-in-out infinite;
+  }
+
+  .animate-bike-move {
+    animation: bikeMove 2.5s ease-in-out infinite;
+  }
+
+  .animate-text-wave {
+    animation: textWave 2s ease-in-out infinite;
+    animation-delay: 0.3s;
+  }
 }
 
 .toast-guest {

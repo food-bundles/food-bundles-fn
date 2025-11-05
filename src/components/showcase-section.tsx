@@ -1,17 +1,56 @@
+"use client";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export function FoodBundlesConnect() {
+  const [currentTextIndex, setCurrentTextIndex] = useState(0);
+
+  const dynamicTexts = [
+    "Get exclusive savings with our voucher system and enjoy premium benefits through our subscribe plans.",
+    "Use voucher codes for instant discounts and subscribe to unlock priority delivery and special pricing.",
+    "Save more with voucher rewards and subscribe for continuous benefits that grow with your business."
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log('Showcase text changing after 10 seconds');
+      setCurrentTextIndex((prev) => (prev + 1) % dynamicTexts.length);
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [dynamicTexts.length]);
+
+  const renderTextWithColors = (text: string) => {
+    return text.split(' ').map((word, index) => {
+      if (word.toLowerCase().includes('voucher')) {
+        return <span key={index} className="text-orange-400 font-semibold">{word} </span>;
+      } else if (word.toLowerCase().includes('subscribe')) {
+        return <span key={index} className="text-green-700 font-semibold">{word} </span>;
+      }
+      return word + ' ';
+    });
+  };
+
   return (
     <section className="relative py-2 bg-white overflow-hidden">
       {/* === Green Circular Gradient === */}
-      <div className="absolute top-[-120px] left-[-120px] w-[450px] h-[550px] bg-[radial-gradient(circle_at_center,rgba(187,247,208,0.1)_0%,rgba(134,239,172,0.2)_70%,transparent_100%)] rounded-full blur-2xl"></div>
+      {/* <div className="absolute top-[-120px] left-[-120px] w-[450px] h-[550px] bg-[radial-gradient(circle_at_center,rgba(187,247,208,0.1)_0%,rgba(134,239,172,0.2)_70%,transparent_100%)] rounded-full blur-2xl">test</div> */}
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center max-w-7xl mx-auto">
-          <div className="space-y-3 lg:space-y-5 mt-4">
-            <div className="space-y-2">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10 border border-green-500">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center max-w-7xl mx-auto border-green-500">
+          <div className="space-y-3 lg:space-y-5 mt-2">
+
+            <div>
+              <h2 className="text-xl md:text-2xl lg:text-3xl font-bold transition-colors text-orange-400">
+                <span className="text-orange-400">Voucher</span> & <span className="text-green-700">Subscribe</span>
+              </h2>
+              <p className="text-[13px] lg:text-[15px] text-gray-700 leading-relaxed max-w-lg mt-6 transition-all duration-500 ease-in-out">
+                {renderTextWithColors(dynamicTexts[currentTextIndex])}
+              </p>
+            </div>
+            <div className="space-y-2 mt-5">
               <Link
                 href="/signup"
                 className="inline-flex items-center gap-2 group text-green-700 group-hover:text-green-800 hover:text-blue-400 hover:border-b-2 border-blue-400 transition-colors"

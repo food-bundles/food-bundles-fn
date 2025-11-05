@@ -245,7 +245,7 @@ export const orderService = {
 
   updateDeliveryStatus: async (
     orderId: string, 
-    status: 'PREPARING' | 'READY' | 'IN_TRANSIT' | 'CANCELLED'
+    status: 'PREPARING' | 'READY' | 'IN_TRANSIT' | 'CANCELLED' | 'DELIVERED'
   ): Promise<{ success: boolean; data?: any; error?: string }> => {
     try {
       const axiosClient = createAxiosClient();

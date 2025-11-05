@@ -86,6 +86,41 @@ export default async function HomePage() {
         "Family-owned restaurant supporting local farmers for 25 years.",
       seen: true,
     },
+       {
+      name: "Imboni",
+      image: "/restaurants/rest3.png",
+      featuredPost:
+        "Just received fresh organic tomatoes for tonight's special pasta!",
+      seen: true,
+    },
+    {
+      name: "Laza",
+      image: "/restaurants/laza-girl.png",
+      featuredPost:
+        "Our new vegan menu is launching next week with locally sourced ingredients.",
+      seen: false,
+    },
+    {
+      name: "Mr Chip's",
+      image: "/restaurants/rest8.png",
+      featuredPost:
+        "Fresh catch of the day: Atlantic salmon and sea bass available now!",
+      seen: true,
+    },
+    {
+      name: "Tugende Hostel",
+      image: "/restaurants/Tugende Hostel.jpg",
+      featuredPost:
+        "Authentic spices and herbs sourced directly from India for our curry dishes.",
+      seen: false,
+    },
+    {
+      name: "Food & Stuff",
+      image: "/restaurants/rest7.png",
+      featuredPost:
+        "Farm-to-table dining with ingredients harvested this morning!",
+      seen: true,
+    }
   ];
 
   return (
