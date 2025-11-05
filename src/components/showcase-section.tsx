@@ -38,7 +38,7 @@ export function FoodBundlesConnect() {
       {/* === Green Circular Gradient === */}
       {/* <div className="absolute top-[-120px] left-[-120px] w-[450px] h-[550px] bg-[radial-gradient(circle_at_center,rgba(187,247,208,0.1)_0%,rgba(134,239,172,0.2)_70%,transparent_100%)] rounded-full blur-2xl">test</div> */}
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10 border border-green-500">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center max-w-7xl mx-auto border-green-500">
           <div className="space-y-3 lg:space-y-5 mt-2">
 
