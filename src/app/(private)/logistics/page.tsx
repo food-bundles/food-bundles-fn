@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { orderService } from "@/app/services/orderService";
 import { 
@@ -15,7 +15,6 @@ import {
   MapPin,
   User,
   ArrowRight,
-  AlertCircle,
   Eye,
   Clock,
   Truck
@@ -43,14 +42,12 @@ export default function LogisticsPage() {
   const [orders, setOrders] = useState<LogisticsOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<LogisticsOrder | null>(null);
-  const [showDeliveryModal, setShowDeliveryModal] = useState(false);
-  const [deliveryCode, setDeliveryCode] = useState('');
-
   const [selectedOrderDetails, setSelectedOrderDetails] = useState<any>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otp, setOtp] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('unfollowed');
 
   useEffect(() => {
     fetchOrders();
@@ -99,13 +96,9 @@ export default function LogisticsPage() {
     }
   };
 
-  const pendingOrders = orders.filter(order => order.status === 'PENDING');
-  const confirmedOrders = orders.filter(order => order.status === 'CONFIRMED');
-  const preparingOrders = orders.filter(order => order.status === 'PREPARING');
-  const readyOrders = orders.filter(order => order.status === 'READY');
-  const inTransitOrders = orders.filter(order => order.status === 'IN_TRANSIT');
+  const unfollowedOrders = orders.filter(order => order.status === 'CONFIRMED');
+  const followedOrders = orders.filter(order => ['PREPARING', 'READY', 'IN_TRANSIT'].includes(order.status));
   const deliveredOrders = orders.filter(order => order.status === 'DELIVERED');
-  const cancelledOrders = orders.filter(order => order.status === 'CANCELLED');
 
   const getStatusColor = (status: DeliveryStatus) => {
     switch (status) {
@@ -177,53 +170,68 @@ export default function LogisticsPage() {
     }
   };
 
-  const OrderCard = ({ order }: { order: LogisticsOrder }) => {
+  const SmallOrderCard = ({ order }: { order: LogisticsOrder }) => {
+    return (
+      <Card 
+        className="mb-2 cursor-pointer hover:shadow-md transition-shadow" 
+        onClick={() => fetchOrderDetails(order.id)}
+      >
+        <CardContent className="p-3">
+          <div className="flex justify-between items-center">
+            <div className="flex-1">
+              <h3 className="font-semibold text-sm truncate">{order.restaurantName}</h3>
+              <p className="text-xs text-gray-600">{order.orderNumber}</p>
+            </div>
+            <Badge className={`${getStatusColor(order.status)} text-xs px-2 py-1 ml-2`}>
+              {order.status.replace('_', ' ')}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const FullOrderCard = ({ order }: { order: LogisticsOrder }) => {
     const nextStatus = getNextStatus(order.status);
     
     return (
-      <Card className="mb-4">
-        <CardContent className="p-4">
-          <div className="flex justify-between items-start mb-3">
+      <Card className="mb-2">
+        <CardContent className="p-3">
+          <div className="flex justify-between items-start mb-2">
             <div>
-              <h3 className="font-semibold text-lg">{order.orderNumber}</h3>
-              <p className="text-sm text-gray-600">{order.customerName}</p>
+              <h3 className="font-semibold text-sm">{order.orderNumber}</h3>
+              <p className="text-xs text-gray-600">{order.customerName}</p>
               <p className="text-xs text-gray-500">{order.restaurantName}</p>
             </div>
-            <div className="flex flex-col gap-2 items-end">
-              <Badge className={getStatusColor(order.status)}>
+            <div className="flex flex-col gap-1 items-end">
+              <Badge className={`${getStatusColor(order.status)} text-xs px-2 py-1`}>
                 {order.status.replace('_', ' ')}
               </Badge>
-              <span className="text-sm font-semibold text-green-600">{order.totalAmount} Rwf</span>
+              <span className="text-xs font-semibold text-green-600">{order.totalAmount} Rwf</span>
             </div>
           </div>
           
-          <div className="space-y-2 text-sm mb-4">
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-gray-400" />
+          <div className="space-y-1 text-xs mb-3">
+            <div className="flex items-center gap-1">
+              <MapPin className="h-3 w-3 text-gray-400" />
               <span className="text-gray-600 truncate">{order.deliveryAddress}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Package className="h-4 w-4 text-gray-400" />
+            <div className="flex items-center gap-1">
+              <Package className="h-3 w-3 text-gray-400" />
               <span className="text-gray-600">{order.items}</span>
             </div>
-            {order.assignedPersonnel && (
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4 text-gray-400" />
-                <span className="text-blue-600">Assigned: {order.assignedPersonnel}</span>
-              </div>
-            )}
             {order.productImages && order.productImages.length > 0 && (
-              <div className="flex gap-2 mt-3">
+              <div className="flex gap-1 mt-2">
                 {order.productImages.slice(0, 3).map((image, index) => (
                   <img
                     key={index}
                     src={image}
                     alt="Product"
-                    className="w-12 h-12 object-cover rounded-md border"
+                    className="w-8 h-8 object-cover rounded border"
                   />
                 ))}
                 {order.productImages.length > 3 && (
-                  <div className="w-12 h-12 bg-gray-100 rounded-md border flex items-center justify-center text-xs text-gray-500">
+                  <div className="w-8 h-8 bg-gray-100 rounded border flex items-center justify-center text-xs text-gray-500">
                     +{order.productImages.length - 3}
                   </div>
                 )}
@@ -231,44 +239,32 @@ export default function LogisticsPage() {
             )}
           </div>
           
-          <div className="flex gap-2">
-            {['DELIVERED', 'IN_TRANSIT', 'CANCELLED', 'PREPARING'].includes(order.status) && (
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => fetchOrderDetails(order.id)}
-                className="flex-1"
-              >
-                <Eye className="h-4 w-4 mr-2" />
-                {/* View */}
-              </Button>
-            )}
-            
+          <div className="flex gap-1">
             {nextStatus && order.status !== 'DELIVERED' && order.status !== 'CANCELLED' && (
               <Button 
                 size="sm" 
                 onClick={() => updateOrderStatus(order.id, nextStatus as 'PREPARING' | 'READY' | 'IN_TRANSIT' | 'CANCELLED')}
                 disabled={updatingStatus === order.id}
-                className="flex-1"
+                className="flex-1 h-7 text-xs px-2"
               >
                 {updatingStatus === order.id ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white" />
                 ) : (
-                  <ArrowRight className="h-4 w-4 mr-2" />
+                  <ArrowRight className="h-3 w-3 mr-1" />
                 )}
-                {updatingStatus === order.id ? 'Updating...' : `Mark as ${nextStatus.replace('_', ' ')}`}
+                {updatingStatus === order.id ? 'Updating...' : `${nextStatus.replace('_', ' ')}`}
               </Button>
             )}
             
             {(order.status === 'CONFIRMED' || order.status === 'PREPARING' || order.status === 'READY') && (
               <Button 
                 size="sm" 
-                variant="default"
+                variant="destructive"
                 onClick={() => updateOrderStatus(order.id, 'CANCELLED')}
                 disabled={updatingStatus === order.id}
-                className="flex-1 bg-red-100 text-red-500"
+                className="flex-1 h-7 text-xs px-2"
               >
-              Cancel
+                Cancel
               </Button>
             )}
             
@@ -279,10 +275,10 @@ export default function LogisticsPage() {
                   setSelectedOrder(order);
                   setShowOtpModal(true);
                 }}
-                className="flex-1 bg-green-600 hover:bg-green-700"
+                className="flex-1 h-7 text-xs px-2 bg-green-600 hover:bg-green-700"
               >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Verify OTP
+                <CheckCircle className="h-3 w-3 mr-1" />
+                Delivered
               </Button>
             )}
           </div>
@@ -290,6 +286,19 @@ export default function LogisticsPage() {
       </Card>
     );
   };
+
+  const renderOrderGrid = (orderList: LogisticsOrder[], emptyMessage: string) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+      {orderList.map((order) => (
+        <SmallOrderCard key={order.id} order={order} />
+      ))}
+      {orderList.length === 0 && (
+        <div className="col-span-full text-center text-gray-500 py-8">
+          {emptyMessage}
+        </div>
+      )}
+    </div>
+  );
 
   if (loading) {
     return (
@@ -306,94 +315,99 @@ export default function LogisticsPage() {
 
   return (
     <div className="p-6">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-7 gap-2 mb-6">
-          <Card>
-            <CardContent className="p-3 text-center">
-              <div className="text-xl font-bold text-gray-600 mb-1">{pendingOrders.length}</div>
-              <div className="text-xs text-gray-500">Pending</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-3 text-center">
-              <div className="text-xl font-bold text-blue-600 mb-1">{confirmedOrders.length}</div>
-              <div className="text-xs text-gray-500">Confirmed</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-3 text-center">
-              <div className="text-xl font-bold text-orange-600 mb-1">{preparingOrders.length}</div>
-              <div className="text-xs text-gray-500">Preparing</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-3 text-center">
-              <div className="text-xl font-bold text-purple-600 mb-1">{readyOrders.length}</div>
-              <div className="text-xs text-gray-500">Ready</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-3 text-center">
-              <div className="text-xl font-bold text-yellow-600 mb-1">{inTransitOrders.length}</div>
-              <div className="text-xs text-gray-500">In Transit</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-3 text-center">
-              <div className="text-xl font-bold text-green-600 mb-1">{deliveredOrders.length}</div>
-              <div className="text-xs text-gray-500">Delivered</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-3 text-center">
-              <div className="text-xl font-bold text-red-600 mb-1">{cancelledOrders.length}</div>
-              <div className="text-xs text-gray-500">Cancelled</div>
-            </CardContent>
-          </Card>
-        </div>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-blue-600 mb-1">{unfollowedOrders.length}</div>
+            <div className="text-sm text-gray-500">Unfollowed</div>
+          </CardContent>
+        </Card>
         
-        <div className="grid grid-cols-1 gap-6">
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-orange-600 mb-1">{followedOrders.length}</div>
+            <div className="text-sm text-gray-500">Followed</div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-green-600 mb-1">{deliveredOrders.length}</div>
+            <div className="text-sm text-gray-500">Delivered</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Navigation Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="unfollowed" className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            Unfollowed ({unfollowedOrders.length})
+          </TabsTrigger>
+          <TabsTrigger value="followed" className="flex items-center gap-2">
+            <Truck className="h-4 w-4" />
+            Followed ({followedOrders.length})
+          </TabsTrigger>
+          <TabsTrigger value="delivered" className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4" />
+            Delivered ({deliveredOrders.length})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="unfollowed" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>All Orders</span>
-                <Badge variant="secondary">{orders.length}</Badge>
-              </CardTitle>
+              <CardTitle>Unfollowed Orders (CONFIRMED)</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {orders.map((order) => (
-                  <OrderCard key={order.id} order={order} />
-                ))}
-                {orders.length === 0 && (
-                  <div className="col-span-full text-center text-gray-500 py-8">
-                    No orders found
-                  </div>
-                )}
-              </div>
+              {renderOrderGrid(unfollowedOrders, "No unfollowed orders")}
             </CardContent>
           </Card>
-        </div>
+        </TabsContent>
 
-        {/* Order Details Modal */}
-        <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Order Details</DialogTitle>
-            </DialogHeader>
-            {selectedOrderDetails && selectedOrderDetails.data && (
+        <TabsContent value="followed" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Followed Orders (PREPARING, READY, IN-TRANSIT)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {renderOrderGrid(followedOrders, "No followed orders")}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="delivered" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Delivered Orders</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {renderOrderGrid(deliveredOrders, "No delivered orders")}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Order Details Modal */}
+      <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Order Details</DialogTitle>
+          </DialogHeader>
+          {selectedOrderDetails && selectedOrderDetails.data && (() => {
+            const orderData = selectedOrderDetails.data.order;
+            const currentOrder = orders.find(o => o.id === orderData.id);
+            const nextStatus = currentOrder ? getNextStatus(currentOrder.status) : null;
+            
+            return (
               <div className="space-y-6">
                 {/* Order Info */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium">Order Number</label>
-                    <p className="text-sm text-gray-600">{selectedOrderDetails.data.order.orderNumber}</p>
+                    <p className="text-sm text-gray-600">{orderData.orderNumber}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium">Status</label>
@@ -403,13 +417,63 @@ export default function LogisticsPage() {
                   </div>
                   <div>
                     <label className="text-sm font-medium">Total Amount</label>
-                    <p className="text-sm text-gray-600">{selectedOrderDetails.data.order.totalAmount} RWF</p>
+                    <p className="text-sm text-gray-600">{orderData.totalAmount} RWF</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium">Payment Status</label>
-                    <Badge variant="outline">{selectedOrderDetails.data.order.paymentStatus}</Badge>
+                    <Badge variant="outline">{orderData.paymentStatus}</Badge>
                   </div>
                 </div>
+
+                {/* Action Buttons */}
+                {currentOrder && (
+                  <div className="flex gap-2 p-4 bg-gray-50 rounded-lg">
+                    {nextStatus && currentOrder.status !== 'DELIVERED' && currentOrder.status !== 'CANCELLED' && (
+                      <Button 
+                        onClick={() => {
+                          updateOrderStatus(currentOrder.id, nextStatus as 'PREPARING' | 'READY' | 'IN_TRANSIT' | 'CANCELLED');
+                          setShowDetailsModal(false);
+                        }}
+                        disabled={updatingStatus === currentOrder.id}
+                        className="flex items-center gap-2"
+                      >
+                        {updatingStatus === currentOrder.id ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                        ) : (
+                          <ArrowRight className="h-4 w-4" />
+                        )}
+                        {updatingStatus === currentOrder.id ? 'Updating...' : `Mark as ${nextStatus.replace('_', ' ')}`}
+                      </Button>
+                    )}
+                    
+                    {(currentOrder.status === 'CONFIRMED' || currentOrder.status === 'PREPARING' || currentOrder.status === 'READY') && (
+                      <Button 
+                        variant="destructive"
+                        onClick={() => {
+                          updateOrderStatus(currentOrder.id, 'CANCELLED');
+                          setShowDetailsModal(false);
+                        }}
+                        disabled={updatingStatus === currentOrder.id}
+                      >
+                        Cancel Order
+                      </Button>
+                    )}
+                    
+                    {currentOrder.status === 'IN_TRANSIT' && (
+                      <Button 
+                        onClick={() => {
+                          setSelectedOrder(currentOrder);
+                          setShowDetailsModal(false);
+                          setShowOtpModal(true);
+                        }}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Mark as Delivered
+                      </Button>
+                    )}
+                  </div>
+                )}
 
                 {/* Customer Info */}
                 <div>
@@ -417,19 +481,19 @@ export default function LogisticsPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium">Name</label>
-                      <p className="text-sm text-gray-600">{selectedOrderDetails.data.order.billingName}</p>
+                      <p className="text-sm text-gray-600">{orderData.billingName}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium">Phone</label>
-                      <p className="text-sm text-gray-600">{selectedOrderDetails.data.order.billingPhone}</p>
+                      <p className="text-sm text-gray-600">{orderData.billingPhone}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium">Email</label>
-                      <p className="text-sm text-gray-600">{selectedOrderDetails.data.order.billingEmail}</p>
+                      <p className="text-sm text-gray-600">{orderData.billingEmail}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium">Address</label>
-                      <p className="text-sm text-gray-600">{selectedOrderDetails.data.order.billingAddress}</p>
+                      <p className="text-sm text-gray-600">{orderData.billingAddress}</p>
                     </div>
                   </div>
                 </div>
@@ -440,19 +504,19 @@ export default function LogisticsPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium">Name</label>
-                      <p className="text-sm text-gray-600">{selectedOrderDetails.data.order.restaurant.name}</p>
+                      <p className="text-sm text-gray-600">{orderData.restaurant.name}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium">Phone</label>
-                      <p className="text-sm text-gray-600">{selectedOrderDetails.data.order.restaurant.phone}</p>
+                      <p className="text-sm text-gray-600">{orderData.restaurant.phone}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium">Location</label>
-                      <p className="text-sm text-gray-600">{selectedOrderDetails.data.order.restaurant.location}</p>
+                      <p className="text-sm text-gray-600">{orderData.restaurant.location}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium">Province</label>
-                      <p className="text-sm text-gray-600">{selectedOrderDetails.data.order.restaurant.province}</p>
+                      <p className="text-sm text-gray-600">{orderData.restaurant.province}</p>
                     </div>
                   </div>
                 </div>
@@ -461,7 +525,7 @@ export default function LogisticsPage() {
                 <div>
                   <h3 className="text-lg font-semibold mb-3">Order Items</h3>
                   <div className="space-y-3">
-                    {selectedOrderDetails.data.order.orderItems.map((item: any, index: number) => (
+                    {orderData.orderItems.map((item: any, index: number) => (
                       <div key={index} className="flex items-center gap-4 p-3 border rounded-lg">
                         {item.images && item.images[0] && (
                           <img
@@ -490,21 +554,21 @@ export default function LogisticsPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium">Payment Method</label>
-                      <p className="text-sm text-gray-600">{selectedOrderDetails.data.order.paymentMethod}</p>
+                      <p className="text-sm text-gray-600">{orderData.paymentMethod}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium">Payment Provider</label>
-                      <p className="text-sm text-gray-600">{selectedOrderDetails.data.order.paymentProvider}</p>
+                      <p className="text-sm text-gray-600">{orderData.paymentProvider}</p>
                     </div>
-                    {selectedOrderDetails.data.order.voucherCode && (
+                    {orderData.voucherCode && (
                       <div>
                         <label className="text-sm font-medium">Voucher Code</label>
-                        <p className="text-sm text-gray-600">{selectedOrderDetails.data.order.voucherCode}</p>
+                        <p className="text-sm text-gray-600">{orderData.voucherCode}</p>
                       </div>
                     )}
                     <div>
                       <label className="text-sm font-medium">Transaction ID</label>
-                      <p className="text-sm text-gray-600">{selectedOrderDetails.data.order.transactionId}</p>
+                      <p className="text-sm text-gray-600">{orderData.transactionId}</p>
                     </div>
                   </div>
                 </div>
@@ -527,16 +591,17 @@ export default function LogisticsPage() {
                 )}
 
                 {/* Notes */}
-                {selectedOrderDetails.data.order.notes && (
+                {orderData.notes && (
                   <div>
                     <label className="text-sm font-medium">Notes</label>
-                    <p className="text-sm text-gray-600">{selectedOrderDetails.data.order.notes}</p>
+                    <p className="text-sm text-gray-600">{orderData.notes}</p>
                   </div>
                 )}
               </div>
-            )}
-          </DialogContent>
-        </Dialog>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
 
         {/* OTP Verification Modal */}
         <Dialog open={showOtpModal} onOpenChange={setShowOtpModal}>
