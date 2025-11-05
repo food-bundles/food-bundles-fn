@@ -34,13 +34,13 @@ function CircularRestaurantAnimation({
     // Update radius based on window size
     const updateRadius = () => {
       if (window.innerWidth < 640) {
-        setRadius(240); // sm
+        setRadius(260); // sm
       } else if (window.innerWidth < 768) {
-        setRadius(260); // md
+        setRadius(460); // md
       } else if (window.innerWidth < 1024) {
-        setRadius(280); // lg
+        setRadius(480); // lg
       } else {
-        setRadius(300); // xl
+        setRadius(500); // xl
       }
     };
 
@@ -87,10 +87,10 @@ function CircularRestaurantAnimation({
     window.location.href ="#";
   };
 
-  const displayRestaurants = restaurants.slice(0, 10);
+  const displayRestaurants = restaurants.slice(0, 16);
 
   return (
-    <div className="relative w-130 h-130 mx-auto">
+    <div className="relative w-130 h-130 mx-auto mt-30">
       <div
         className="absolute inset-0 transition-transform duration-75 ease-linear"
         style={{
@@ -133,7 +133,7 @@ function CircularRestaurantAnimation({
                   </div>
                 </div>
                 <div className="absolute top-24 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="text-green-400 font-medium text-xs px-2 py-1 rounded whitespace-nowrap">
+                  <div className="text-green-400 font-medium text-xs px-2 py-1 rounded whitespace-nowrap bg-[#000000]">
                     {restaurant.name}
                   </div>
                 </div>
@@ -147,15 +147,19 @@ function CircularRestaurantAnimation({
 }
 
 // Hero Image Carousel Component
-function HeroImageCarousel() {
+function HeroImageCarousel({ onImageChange }: { onImageChange: (index: number) => void }) {
   const images = ["imgs/hero.jpg", "imgs/hero2.jpg", "imgs/hero3.jpg"];
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
+    onImageChange(currentImageIndex);
+  }, [currentImageIndex, onImageChange]);
+
+  useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
-    }, 5000); // 3 minutes = 180000ms
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [images.length]);
@@ -165,9 +169,8 @@ function HeroImageCarousel() {
       {images.map((image, index) => (
         <div
           key={image}
-          className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-            index === currentImageIndex ? "opacity-100" : "opacity-0"
-          }`}
+          className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentImageIndex ? "opacity-100" : "opacity-0"
+            }`}
         >
           <OptimizedImage
             src={image}
@@ -186,6 +189,28 @@ function HeroImageCarousel() {
 }
 
 export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  const textContent = [
+    {
+      title: ["Connect", "Your", "Restaurant", "To", "Our", "Farm"],
+      description: "Get fresh, quality, and reliable ingredients for your restaurant directly from farm to table with our premium delivery service.",
+      delivery: "Fast Delivery"
+    },
+    {
+      title: ["Fresh", "Quality", "Ingredients", "From", "Our", "Farm"],
+      description: "Experience the difference with locally sourced, organic produce delivered straight to your kitchen every day.",
+      delivery: "Same Day Delivery"
+    },
+    {
+      title: ["Farm", "To", "Table", "Excellence", "For", "Restaurants"],
+      description: "Partner with us for sustainable, traceable ingredients that elevate your culinary creations and delight your customers.",
+      delivery: "Premium Service"
+    }
+  ];
+
+  const currentText = textContent[currentImageIndex];
+
   return (
     <section className="relative">
       <div
@@ -199,33 +224,32 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
       overflow-hidden
     "
       >
-        <HeroImageCarousel />
+        <HeroImageCarousel onImageChange={setCurrentImageIndex} />
         <div className="absolute inset-0 bg-linear-to-br from-black/50 via-black/30 to-black/50"></div>
-        <div className="absolute inset-0">
+        <div className="inset-0">
           <div className="container mx-auto px-4 h-full flex items-center">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full h-full">
-              <div className="lg:col-span-4 space-y-0 z-10 text-center lg:text-left flex flex-col justify-start pt-4 lg:pt-6 pl-3 lg:pl-5">
-                <div className="space-y-4 max-w-lg mx-auto lg:mx-0">
-                  <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-bold leading-tight text-white">
-                    <span className="block">Connect Your</span>
-                    <span className="block text-green-400 bg-clip-text">
-                      Restaurant
-                    </span>
-                    <span className="block text-green-400">To Our Farm</span>
-                  </h1>
-                  <p className="hidden lg:block text-sm sm:text-base text-white leading-relaxed">
-                    Get fresh, quality, and reliable ingredients for your
-                    restaurant directly from farm to table with our premium
-                    delivery service.
-                  </p>
+            <div className=" w-full relative h-full flex items-center justify-center">
+              <div>
+                <div className="animate-container-float borde sm:mt-10">
+                  <div className="relative">
+                    <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-bold leading-tight text-center sm:mt-10 md:mt-15 ld:mt-20 animate-text-glow">
+                      <span className="animate-word-slide-1">{currentText.title[0]}</span>{" "}
+                      <span className="animate-word-slide-2">{currentText.title[1]}</span>{" "}
+                      <span className="text-green-400 animate-word-pulse-1">{currentText.title[2]}</span>{" "}
+                      <span className="animate-word-slide-3">{currentText.title[3]}</span>{" "}
+                      <span className="animate-word-slide-4">{currentText.title[4]}</span>{" "}
+                      <span className="text-green-400 animate-word-pulse-2">{currentText.title[5]}</span>
+                    </h1>
+                    <div className="absolute -inset-2 bg-gradient-to-r from-orange-400/20 via-green-400/20 to-orange-400/20 blur-xl animate-gradient-shift opacity-50"></div>
+                    <h2 className="hidden lg:block text-sm sm:text-base text-white leading-relaxed mt-10 font-bold animate-text-breathe">
+                      {currentText.description}
+                    </h2>
+                  </div>
+                  <div className="flex items-center justify-center lg:justify-start gap-3 text-orange-400 mt-4 animate-delivery-bounce">
+                    <Bike className="w-6 h-6 animate-bike-move" />
+                    <p className="text-[20px] font-bold animate-text-wave">{currentText.delivery}</p>
+                  </div>
                 </div>
-                <div className="flex items-center justify-center lg:justify-start gap-3 text-orange-400">
-                  <Bike className="w-6 h-6 animate-pulse" />
-                  <p className="text-sm font-semibold">Fast Delivery</p>
-                </div>
-              </div>
-
-              <div className="lg:col-span-4 relative h-full flex items-end justify-center pb-0">
                 <div
                   className="
                     relative
@@ -237,60 +261,8 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
                 >
                   <CircularRestaurantAnimation restaurants={restaurants} />
                 </div>
-                <div
-                  className="
-                   absolute
-                   left-1/2
-                   transform -translate-x-1/2
-                   z-30
-                   top-60 
-                   sm:top-65
-                   md:top-70
-                   lg:top-75 
-                   xl:top-85 
-                 "
-                >
-                  <div className="w-24 h-24 rounded-full bg-linear-to-br from-gray-800 to-black border-2 border-orange-400/50 flex items-center justify-center shadow-xl">
-                    <div className="text-center">
-                      <div className="text-orange-400 text-lg font-bold">
-                        50 +
-                      </div>
-                      <div className="text-gray-300 text-xs font-medium">
-                        Restaurants
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
 
-              <div className="lg:col-span-4 space-y-6 z-10 pt-2 lg:pt-4 pr-3 lg:pr-5">
-                <div className="flex flex-col items-end w-full">
-                  <div className="rounded-xl p-4 text-center">
-                 
-                    <div className="text-orange-400 font-bold text-2xl mb-1">
-                      99+
-                    </div>
-                    <div className="text-sm text-gray-300">Products</div>
-                  </div>
-                  <div className="rounded-xl p-4 text-center">
-                    <div className="text-green-400 font-bold text-2xl mb-2">
-                      24/7
-                    </div>
-                    <div className="text-sm text-gray-300 mb-2">
-                      Customer Support
-                    </div>
-                    <div className="flex items-center justify-center gap-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className="w-4 h-4 fill-yellow-400 text-yellow-400"
-                        />
-                      ))}
-                      <span className="text-xs text-gray-400 ml-2">(4.9)</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
