@@ -225,7 +225,7 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
     "
       >
         <HeroImageCarousel onImageChange={setCurrentImageIndex} />
-        <div className="absolute inset-0 bg-linear-to-br from-black/50 via-black/30 to-black/50"></div>
+        {/* <div className="absolute inset-0 bg-linear-to-br from-black/50 via-black/30 to-black/50"></div> */}
         <div className="inset-0">
           <div className="container mx-auto px-4 h-full flex items-center">
             <div className=" w-full relative h-full flex items-center justify-center">
@@ -233,14 +233,14 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
                 <div className="animate-container-float borde sm:mt-10">
                   <div className="relative">
                     <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-bold leading-tight text-center sm:mt-10 md:mt-15 ld:mt-20 animate-text-glow">
-                      <span className="animate-word-slide-1">{currentText.title[0]}</span>{" "}
-                      <span className="animate-word-slide-2">{currentText.title[1]}</span>{" "}
+                      <span className="text-orange-400 animate-word-slide-1">{currentText.title[0]}</span>{" "}
+                      <span className="text-orange-400 animate-word-slide-2">{currentText.title[1]}</span>{" "}
                       <span className="text-green-400 animate-word-pulse-1">{currentText.title[2]}</span>{" "}
-                      <span className="animate-word-slide-3">{currentText.title[3]}</span>{" "}
-                      <span className="animate-word-slide-4">{currentText.title[4]}</span>{" "}
+                      <span className="text-orange-400 animate-word-slide-3">{currentText.title[3]}</span>{" "}
+                      <span className="text-orange-400 animate-word-slide-4">{currentText.title[4]}</span>{" "}
                       <span className="text-green-400 animate-word-pulse-2">{currentText.title[5]}</span>
                     </h1>
-                    <div className="absolute -inset-2 bg-gradient-to-r from-orange-400/20 via-green-400/20 to-orange-400/20 blur-xl animate-gradient-shift opacity-50"></div>
+                    {/* <div className="absolute -inset-2 bg-gradient-to-r from-orange-400/20 via-green-400/20 to-orange-400/20 blur-xl animate-gradient-shift opacity-50"></div> */}
                     <h2 className="hidden lg:block text-sm sm:text-base text-white leading-relaxed mt-10 font-bold animate-text-breathe">
                       {currentText.description}
                     </h2>
