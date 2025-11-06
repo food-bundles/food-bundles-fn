@@ -1,14 +1,21 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Bell, HelpCircle, Crown, Ticket, Home, ShoppingCart} from "lucide-react";
+import {
+  Bell,
+  HelpCircle,
+  Crown,
+  Ticket,
+  Home,
+  ShoppingCart,
+} from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { OptimizedImage } from "@/components/OptimizedImage";
 
 const menuItems = [
   { icon: Home, label: "Shop", href: "/restaurant" },
-  { icon: Bell, label: "Updates", href: "/restaurant/updates" },
+  { icon: Bell, label: "Updates", href: "/restaurant" },
   { icon: ShoppingCart, label: "orders", href: "/restaurant/orders" },
   { icon: Crown, label: "Subscription", href: "/restaurant/subscribe" },
   { icon: Ticket, label: "Vouchers", href: "/restaurant/vouchers" },
@@ -22,7 +29,6 @@ interface RestaurantSidebarProps {
 
 export function RestaurantSidebar({ isOpen, onClose }: RestaurantSidebarProps) {
   const pathname = usePathname();
-
 
   const isItemActive = (href: string) => {
     return pathname === href;
@@ -46,9 +52,7 @@ export function RestaurantSidebar({ isOpen, onClose }: RestaurantSidebarProps) {
           fill
           className="object-cover"
           priority
-          transformation={[
-            { quality: "85", format: "webp" }
-          ]}
+          transformation={[{ quality: "85", format: "webp" }]}
         />
         <div className="absolute inset-0 bg-green-900/90" />
       </div>
@@ -66,7 +70,7 @@ export function RestaurantSidebar({ isOpen, onClose }: RestaurantSidebarProps) {
                   height={24}
                   className="rounded object-cover"
                   transformation={[
-                    { width: 48, height: 48, crop: "fill", quality: "85" }
+                    { width: 48, height: 48, crop: "fill", quality: "85" },
                   ]}
                 />
               </div>
