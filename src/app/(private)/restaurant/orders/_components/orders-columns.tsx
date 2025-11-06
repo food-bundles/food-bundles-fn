@@ -295,7 +295,6 @@ const CopyButton = ({ coordinates }: { coordinates: string }) => {
       {copied ? (
         <div className="flex items-center ml-3">
           <Check className="h-3 w-3 text-green-600" />{" "}
-          <p className="text-[8px]">Copied</p>
         </div>
       ) : (
         <Copy className="h-3 w-3" />

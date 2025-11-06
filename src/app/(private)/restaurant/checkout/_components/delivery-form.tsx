@@ -24,9 +24,13 @@ import "leaflet/dist/leaflet.css";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import { OTPInput } from "@/components/ui/otp-input";
 
-const MapComponent = dynamic(() => import('./MapComponent'), {
+const MapComponent = dynamic(() => import("./MapComponent"), {
   ssr: false,
-  loading: () => <div className="flex-1 rounded border border-gray-300 bg-gray-100 flex items-center justify-center"><Spinner variant="ring" /></div>
+  loading: () => (
+    <div className="flex-1 rounded border border-gray-300 bg-gray-100 flex items-center justify-center">
+      <Spinner variant="ring" />
+    </div>
+  ),
 });
 
 interface LocationData {
@@ -161,8 +165,6 @@ export function Checkout() {
       setErrors((prev) => ({ ...prev, [field]: "" }));
     }
   };
-
-
 
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
@@ -324,7 +326,7 @@ export function Checkout() {
           const redirectUrl = responseData?.redirectUrl;
 
           if (paymentProvider === "PAYPACK") {
-            window.location.href = "/restaurant/updates";
+            window.location.href = "/restaurant";
           } else if (
             paymentProvider === "FLUTTERWAVE" &&
             requiresRedirect &&
@@ -333,10 +335,10 @@ export function Checkout() {
             setFlutterwaveRedirectUrl(redirectUrl);
             setShowFlutterwaveInfo(true);
           } else {
-            window.location.href = "/restaurant/updates";
+            window.location.href = "/restaurant";
           }
         } else {
-          window.location.href = "/restaurant/updates";
+          window.location.href = "/restaurant";
         }
       } else {
         setErrors({
@@ -367,11 +369,14 @@ export function Checkout() {
     setVoucherOTPError("");
 
     try {
-      const response = await checkoutService.verifyVoucherOTP(voucherOTP, checkoutSessionId);
-      
+      const response = await checkoutService.verifyVoucherOTP(
+        voucherOTP,
+        checkoutSessionId
+      );
+
       if (response.success) {
         setShowVoucherOTPModal(false);
-        window.location.href = "/restaurant/updates";
+        window.location.href = "/restaurant";
       } else {
         setVoucherOTPError(response.message || "OTP verification failed");
       }
@@ -796,8 +801,7 @@ export function Checkout() {
 
             <div className="p-4 space-y-4">
               <p className="text-sm text-gray-600">
-                We&apos;ve sent a verification code to your phone
-                number.
+                We&apos;ve sent a verification code to your phone number.
               </p>
 
               {voucherOTPError && (
@@ -871,7 +875,7 @@ export function Checkout() {
                 className="w-full h-10 bg-green-600 hover:bg-green-700 text-white text-[14px] font-medium cursor-pointer flex items-center justify-center gap-2"
               >
                 <ExternalLink className="h-4 w-4" />
-                Continue to Payment
+                Continue
               </button>
             </div>
           </div>

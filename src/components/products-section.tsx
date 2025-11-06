@@ -142,7 +142,7 @@ const ProductCard = memo(function ProductCard({
               </div>
             )}
             {isInCart && isHovered && (
-              <a href="/checkout" className="absolute inset-0">
+              <a href="/restaurant/checkout" className="absolute inset-0">
                 <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-lg flex items-center cursor-pointer hover:bg-green-600 transition-colors">
                   <Check className="w-3 h-3 mr-1" /> Buy Now
                 </div>
