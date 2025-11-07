@@ -42,13 +42,6 @@ export default function VouchersPage() {
     return `${duration} Day${duration > 1 ? 's' : ''}`;
   };
 
-  const getDaysRemaining = (endDate: string) => {
-    const end = new Date(endDate);
-    const now = new Date();
-    const diffTime = end.getTime() - now.getTime();
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  };
-
   return (
     <div className="p-3 sm:p-4 lg:p-6 max-w-7xl mx-auto bg-gray-100 min-h-screen">
       <div className="mb-4 sm:mb-6 lg:mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
@@ -126,7 +119,7 @@ export default function VouchersPage() {
                 <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-orange-500 shrink-0" />
                 <span className="text-gray-600 truncate">
                   <span className="font-semibold text-blue-600">
-                    {getDaysRemaining(activeSubscription.endDate)}
+                    {activeSubscription.daysRemaining}
                   </span>{" "}
                   days left
                 </span>
@@ -160,7 +153,7 @@ export default function VouchersPage() {
           <LoanApplicationsList key={`loans-${refreshKey}`} />
           <VouchersList key={refreshKey} />
         </div>
-        
+
         <AllVouchersList />
       </div>
     </div>

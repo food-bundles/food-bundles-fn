@@ -82,7 +82,7 @@ export default function VouchersTable() {
       header: "Used/Remaining",
       cell: ({ row }) => (
         <div className="text-sm">
-          <div className="text-orange-600">Used: {row.original.usedCredit.toLocaleString()} RWF</div>
+          <div className="text-orange-600">Used: {row.original.originalAmount.toLocaleString()} RWF</div>
           <div className="text-green-600">Remaining: {row.original.remainingCredit.toLocaleString()} RWF</div>
         </div>
       )

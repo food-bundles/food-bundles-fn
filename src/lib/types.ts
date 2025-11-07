@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { PaymentMethod } from "@/app/services/subscriptionService";
 
 export interface IUssdRequest {
@@ -179,6 +180,7 @@ export interface IVoucher {
   maxTransactionAmount?: number;
   totalCredit: number;
   usedCredit: number;
+  originalAmount: number;
   remainingCredit: number;
   status: VoucherStatus;
   transactions: {
@@ -197,7 +199,6 @@ export interface IVoucher {
   expiryDate?: Date;
   issuedDate: Date;
   loanId?: string;
- 
 }
 
 export interface ILoanApplication {

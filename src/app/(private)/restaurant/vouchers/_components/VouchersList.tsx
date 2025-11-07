@@ -162,10 +162,12 @@ export default function VouchersList() {
                     <div>
                       <p className="text-xs text-gray-700">Used Credit</p>
                       <p className="font-semibold text-orange-600 text-sm">
-                        {voucher.transactions && Array.isArray(voucher.transactions) && voucher.transactions.length > 0 
+                        {voucher.transactions &&
+                        Array.isArray(voucher.transactions) &&
+                        voucher.transactions.length > 0
                           ? voucher.transactions[0].originalAmount.toLocaleString()
-                          : voucher.usedCredit.toLocaleString()
-                        } RWF
+                          : voucher.originalAmount.toLocaleString()}{" "}
+                         RWF
                       </p>
                     </div>
                   </div>

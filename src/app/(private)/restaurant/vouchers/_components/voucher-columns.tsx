@@ -40,7 +40,7 @@ export const createVoucherColumns = ({ onPayment, payingVoucherId }: VoucherColu
         <div className="flex items-center gap-1.5">
           <div className="text-sm">
             <div className="font-semibold text-gray-900">
-              {voucher.usedCredit.toLocaleString()}
+              {(voucher.transactions as any)?.[0]?.discountAmount?.toLocaleString()}
             </div>
             <div className="text-xs text-gray-500">RWF</div>
           </div>

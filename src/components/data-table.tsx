@@ -378,23 +378,25 @@ export function DataTable<TData, TValue>({
 
           {showPagination && (
             <div className="flex items-center space-x-2">
-              <Select
-                value={`${table.getState().pagination.pageSize}`}
-                onValueChange={(value) => table.setPageSize(Number(value))}
-              >
-                <SelectTrigger className="h-8 w-[70px]">
-                  <SelectValue
-                    placeholder={table.getState().pagination.pageSize}
-                  />
-                </SelectTrigger>
-                <SelectContent side="top">
-                  {[5, 10, 20, 30, 40, 50].map((pageSize) => (
-                    <SelectItem key={pageSize} value={`${pageSize}`}>
-                      {pageSize}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div suppressHydrationWarning>
+                <Select
+                  value={`${table.getState().pagination.pageSize}`}
+                  onValueChange={(value) => table.setPageSize(Number(value))}
+                >
+                  <SelectTrigger className="h-8 w-[70px]">
+                    <SelectValue
+                      placeholder={table.getState().pagination.pageSize}
+                    />
+                  </SelectTrigger>
+                  <SelectContent side="top">
+                    {[5, 10, 20, 30, 40, 50].map((pageSize) => (
+                      <SelectItem key={pageSize} value={`${pageSize}`}>
+                        {pageSize}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <span className="text-[13px] text-gray-900">rows per page</span>
             </div>
           )}

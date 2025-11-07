@@ -105,76 +105,81 @@ export default function LoanApplicationForm({
                 <label className="block text-[14px] font-medium text-gray-700 mb-2">
                   Requested Amount *
                 </label>
-                <Input
-                  type="number"
-                  value={formData.requestedAmount}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      requestedAmount: e.target.value,
-                    }))
-                  }
-                  placeholder="Enter amount"
-                  className="w-full rounded text-sm h-10"
-                  suppressHydrationWarning
-                />
+                <div suppressHydrationWarning>
+                  <Input
+                    type="number"
+                    value={formData.requestedAmount}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        requestedAmount: e.target.value,
+                      }))
+                    }
+                    placeholder="Enter amount"
+                    className="w-full rounded text-sm h-10"
+                  />
+                </div>
               </div>
 
               <div>
                 <label className="block text-[14px] font-medium text-gray-700 mb-2">
                   Reason for Voucher
                 </label>
-                <Select
-                  value={formData.purpose}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({ ...prev, purpose: value }))
-                  }
-                >
-                  <SelectTrigger className="w-full h-10 text-sm">
-                    <SelectValue placeholder="Select reason" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {voucherReasons.map((reason) => (
-                      <SelectItem
-                        key={reason}
-                        value={reason}
-                        className="text-sm"
-                      >
-                        {reason}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div suppressHydrationWarning>
+                  <Select
+                    value={formData.purpose}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({ ...prev, purpose: value }))
+                    }
+                  >
+                    <SelectTrigger className="w-full h-10 text-sm">
+                      <SelectValue placeholder="Select reason" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {voucherReasons.map((reason) => (
+                        <SelectItem
+                          key={reason}
+                          value={reason}
+                          className="text-sm"
+                        >
+                          {reason}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div>
                 <label className="block text-[14px] font-medium text-gray-700 mb-2">
                   Days for Payment
                 </label>
-                <Select
-                  value={formData.selectedDays}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      selectedDays: value,
-                    }))
-                  }
-                >
-                  <SelectTrigger className="w-full h-10 text-sm">
-                    <SelectValue placeholder="Select days" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {paymentDays.map((option) => (
-                      <SelectItem
-                        key={option.value}
-                        value={option.value}
-                        className="text-sm"
-                      >
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div suppressHydrationWarning>
+                  <Select
+                    value={formData.selectedDays}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        selectedDays: value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="w-full h-10 text-sm">
+                      <SelectValue placeholder="Select days" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {paymentDays.map((option) => (
+                        <SelectItem
+                          key={option.value}
+                          value={option.value}
+                          className="text-sm"
+                        >
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               {error && <div className="text-red-600 text-xs">{error}</div>}
