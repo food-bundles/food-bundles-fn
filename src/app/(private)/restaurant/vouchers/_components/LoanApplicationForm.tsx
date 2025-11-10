@@ -177,7 +177,9 @@ export default function LoanApplicationForm({
                 </Select>
               </div>
 
-              {error && <div className="text-red-600 text-xs">{error}</div>}
+              {error==="No active subscription. Subscribe to create new vouchers." && <div className="text-red-600 text-xs">{error}
+              <a href="/restaurant/vouchers/subscribe" className="text-blue-600 hover:underline">Subscribe</a>
+              </div>}
             </div>
 
             <div className="mt-4">
@@ -186,7 +188,7 @@ export default function LoanApplicationForm({
                 disabled={loading || !formData.requestedAmount}
                 className="w-full bg-green-600 hover:bg-green-700 h-10 text-sm"
               >
-                {loading ? "Applying..." : "Apply Loan"}
+                {loading ? "Applying..." : "Request Postpayment"}
               </Button>
             </div>
           </CardContent>
