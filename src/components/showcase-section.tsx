@@ -3,14 +3,30 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
+import { OptimizedImage } from "./OptimizedImage";
 
 export function FoodBundlesConnect() {
   const [currentTextIndex, setCurrentTextIndex] = useState(0);
 
   const dynamicTexts = [
-    "Get exclusive savings with our voucher system and enjoy premium benefits through our subscribe plans.",
-    "Use voucher codes for instant discounts and subscribe to unlock priority delivery and special pricing.",
-    "Save more with voucher rewards and subscribe for continuous benefits that grow with your business."
+    "Track your orders in real-time with our advanced delivery tracking system and stay updated on every step.",
+    "Get exclusive voucher loans and discounts to help grow your restaurant business with flexible payment options.",
+    "Choose from our subscription plans: Basic (20k) for essential features or Premium (50k) for advanced benefits."
+  ];
+
+  const images = [
+    "/showcase/10.png",
+    "/showcase/11.png",
+    "/showcase/12.png"
+  ];
+
+  // src="/imgs/Food_bundle_logo.png"
+
+
+  const imageAlts = [
+    "Order tracking interface showing real-time delivery status and progress",
+    "Voucher system interface displaying loan options and discount codes",
+    "Subscription plans showing Basic 20k and Premium 50k options"
   ];
 
   useEffect(() => {
@@ -44,7 +60,7 @@ export function FoodBundlesConnect() {
 
             <div>
               <h2 className="text-xl md:text-2xl lg:text-3xl font-bold transition-colors text-orange-400">
-                <span className="text-orange-400">Voucher</span> & <span className="text-green-700">Subscribe</span>
+                <span className="text-orange-400">Voucher</span> & <span className="text-green-700 hover:underline"><Link href="/restaurant/subscribe">Subscribe</Link></span>
               </h2>
               <p className="text-[13px] lg:text-[15px] text-gray-700 leading-relaxed max-w-lg mt-6 transition-all duration-500 ease-in-out">
                 {renderTextWithColors(dynamicTexts[currentTextIndex])}
@@ -56,7 +72,7 @@ export function FoodBundlesConnect() {
                 className="inline-flex items-center gap-2 group text-green-700 group-hover:text-green-800 coursor-pointersubs transition-colors"
               >
                 <h2 className="text-xl md:text-2xl lg:text-3xl font-bold transition-colors">
-                  Connect
+                  Connect to our farm
                 </h2>
                 <ArrowRight className="h-6 w-6  group-hover:translate-x-1 transition-all" />
               </Link>
@@ -89,16 +105,24 @@ export function FoodBundlesConnect() {
             </div>
           </div>
 
-          {/* Right Content - Two Phones Image */}
+          {/* Right Content - Animated Feature Images */}
           <div className="flex justify-center lg:justify-end">
             <div className="relative w-full max-w-[600px] h-[300px] md:h-[500px]">
-              <Image
-                src="https://ik.imagekit.io/foodbundles/imgs/phones1.jpg?updatedAt=1762176585881"
-                alt="FoodBundles app interface showing product catalog and order tracking on two mobile phones"
-                fill
-                className="object-contain"
-                priority
-              />
+              {images.map((image, index) => (
+                <div
+                  key={image}
+                  className={`absolute inset-0 transition-opacity duration-500 ease-in-out ${index === currentTextIndex ? "opacity-100" : "opacity-0"
+                    }`}
+                > 
+                  <OptimizedImage
+                    src={image}
+                    alt={imageAlts[index]}
+                    fill
+                    className="object-contain"
+                    priority={index === 0}
+                  />
+                </div>
+              ))}
             </div>
           </div>
         </div>

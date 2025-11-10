@@ -159,7 +159,7 @@ function HeroImageCarousel({ onImageChange }: { onImageChange: (index: number) =
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
-    }, 5000);
+    }, 60000);
 
     return () => clearInterval(interval);
   }, [images.length]);
@@ -194,17 +194,26 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
   const textContent = [
     {
       title: ["Connect", "Your", "Restaurant", "To", "Our", "Farm"],
-      description: "Get fresh, quality, and reliable ingredients for your restaurant directly from farm to table with our premium delivery service.",
+      description: {
+        line1: "Get fresh, quality, and reliable ingredients for your restaurant",
+        line2: "directly from farm to table with our premium delivery service."
+      },
       delivery: "Fast Delivery"
     },
     {
       title: ["Fresh", "Quality", "Ingredients", "From", "Our", "Farm"],
-      description: "Experience the difference with locally sourced, organic produce delivered straight to your kitchen every day.",
+      description: {
+        line1: "Experience the difference with locally sourced, organic produce",
+        line2: "delivered straight to your kitchen every day."
+      },
       delivery: "Same Day Delivery"
     },
     {
       title: ["Farm", "To", "Table", "Excellence", "For", "Restaurants"],
-      description: "Partner with us for sustainable, traceable ingredients that elevate your culinary creations and delight your customers.",
+      description: {
+        line1: "Partner with us for sustainable, traceable ingredients that elevate",
+        line2: "your culinary creations and delight your customers."
+      },
       delivery: "Premium Service"
     }
   ];
@@ -225,27 +234,27 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
     "
       >
         <HeroImageCarousel onImageChange={setCurrentImageIndex} />
-        {/* <div className="absolute inset-0 bg-linear-to-br from-black/50 via-black/30 to-black/50"></div> */}
+        <div className="absolute inset-0 bg-black/40"></div>
         <div className="inset-0">
           <div className="container mx-auto px-4 h-full flex items-center">
             <div className=" w-full relative h-full flex items-center justify-center">
               <div>
-                <div className="animate-container-float borde sm:mt-10">
+                <div className="animate-container-float sm:mt-10">
                   <div className="relative">
                     <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-bold leading-tight text-center sm:mt-10 md:mt-15 ld:mt-20 animate-text-glow">
-                      <span className="text-orange-400 animate-word-slide-1">{currentText.title[0]}</span>{" "}
-                      <span className="text-orange-400 animate-word-slide-2">{currentText.title[1]}</span>{" "}
-                      <span className="text-green-400 animate-word-pulse-1">{currentText.title[2]}</span>{" "}
-                      <span className="text-orange-400 animate-word-slide-3">{currentText.title[3]}</span>{" "}
-                      <span className="text-orange-400 animate-word-slide-4">{currentText.title[4]}</span>{" "}
-                      <span className="text-green-400 animate-word-pulse-2">{currentText.title[5]}</span>
+                      <span className="text-orange-400" style={{animationDelay: '1s'}}>{currentText.title[0]}</span>{" "}
+                      <span className="text-orange-400" style={{animationDelay: '2s'}}>{currentText.title[1]}</span>{" "}
+                      <span className="text-green-700" style={{animationDelay: '3s'}}>{currentText.title[2]}</span>{" "}
+                      <span className="text-orange-400" style={{animationDelay: '4s'}}>{currentText.title[3]}</span>{" "}
+                      <span className="text-orange-400" style={{animationDelay: '5s'}}>{currentText.title[4]}</span>{" "}
+                      <span className="text-green-700" style={{animationDelay: '6s'}}>{currentText.title[5]}</span>
                     </h1>
-                    {/* <div className="absolute -inset-2 bg-gradient-to-r from-orange-400/20 via-green-400/20 to-orange-400/20 blur-xl animate-gradient-shift opacity-50"></div> */}
-                    <h2 className="hidden lg:block text-sm sm:text-base text-white leading-relaxed mt-10 font-bold animate-text-breathe">
-                      {currentText.description}
-                    </h2>
+                    <div className="text-center text-[18px] lg:text-[20px] text-white leading-relaxed mt-6 lg:mt-10 max-w-2xl mx-auto">
+                      <p className="animate-text-breathe" style={{animationDelay: '8s'}}>{currentText.description.line1}</p>
+                      <p className="animate-text-breathe" style={{animationDelay: '12s'}}>{currentText.description.line2}</p>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-center lg:justify-start gap-3 text-orange-400 mt-4 animate-delivery-bounce">
+                  <div className="flex items-center justify-center gap-3 text-orange-400 mt-6 animate-delivery-bounce">
                     <Bike className="w-6 h-6 animate-bike-move" />
                     <p className="text-[20px] font-bold animate-text-wave">{currentText.delivery}</p>
                   </div>
