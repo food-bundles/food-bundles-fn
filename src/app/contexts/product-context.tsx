@@ -88,13 +88,17 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
 
   const getAllProducts = useCallback(async (): Promise<ProductsResponse> => {
     try {
-      const response = await productService.getAllProducts();
+      // First get total count
+      const countResponse = await productService.getAllProducts({ page: 1, limit: 1 });
+      const total = countResponse.pagination?.total || 100;
+      
+      // Then fetch all products
+      const response = await productService.getAllProducts({ page: 1, limit: total });
 
       const transformedProducts = response.data.map((product: any) => ({
         ...product,
         expiryDate: product.expiryDate ? new Date(product.expiryDate) : null,
-        category:
-          categories.find((cat) => cat.id === product.categoryId) || null,
+        category: product.category || null,
         rating: product.rating || Math.random() * 2 + 3,
         soldCount: product.soldCount || Math.floor(Math.random() * 100),
       }));
@@ -117,8 +121,7 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
         const transformedProducts = response.data.map((product: any) => ({
           ...product,
           expiryDate: product.expiryDate ? new Date(product.expiryDate) : null,
-          category:
-            categories.find((cat) => cat.id === product.categoryId) || null,
+          category: product.category || null,
           rating: product.rating || Math.random() * 2 + 3,
           soldCount: product.soldCount || Math.floor(Math.random() * 100),
         }));
@@ -147,8 +150,7 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
         const transformedProducts = response.data.map((product: any) => ({
           ...product,
           expiryDate: product.expiryDate ? new Date(product.expiryDate) : null,
-          category:
-            categories.find((cat) => cat.id === product.categoryId) || null,
+          category: product.category || null,
           rating: product.rating || Math.random() * 2 + 3,
           soldCount: product.soldCount || Math.floor(Math.random() * 100),
         }));

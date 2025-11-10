@@ -68,7 +68,7 @@ export const productService = {
   getAllProductsRoleBased: async () => {
     try {
       const axiosClient = createAxiosClient();
-      const response = await axiosClient.get("/products/role-based");
+      const response = await axiosClient.get("/products/role-based?page=1&limit=100000");
       return response.data;
     } catch (error: any) {
       toast.error("Error fetching role-based products:", error);
@@ -100,38 +100,8 @@ export const productService = {
     return response.data;
   },
 
-  updateProduct: async (
-    productId: string,
-    productData: Partial<ProductFormData>
-  ) => {
+  updateProduct: async (productId: string, formData: FormData) => {
     const axiosClient = createAxiosClient();
-
-    const formData = new FormData();
-
-    // Add updated product data
-    if (productData.productName)
-      formData.append("productName", productData.productName);
-    if (productData.unitPrice)
-      formData.append("unitPrice", productData.unitPrice.toString());
-    if (productData.purchasePrice)
-      formData.append("purchasePrice", productData.purchasePrice.toString());
-    if (productData.categoryId)
-      formData.append("categoryId", productData.categoryId); // Changed from category to categoryId
-    if (productData.bonus !== undefined)
-      formData.append("bonus", productData.bonus.toString());
-    if (productData.sku) formData.append("sku", productData.sku);
-    if (productData.quantity)
-      formData.append("quantity", productData.quantity.toString());
-    if (productData.unit) formData.append("unit", productData.unit);
-    if (productData.expiryDate)
-      formData.append("expiryDate", productData.expiryDate.toISOString());
-
-    // Add new images if any
-    if (productData.images) {
-      productData.images.forEach((image) => {
-        formData.append("images", image);
-      });
-    }
 
     const response = await axiosClient.patch(
       `/products/${productId}`,

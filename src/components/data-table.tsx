@@ -191,34 +191,35 @@ export function DataTable<TData, TValue>({
   return (
     <div className="space-y-2 h-full overflow-auto">
       {(title || showAddButton || showExport) && (
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           {title && (
-            <>
-              <div>
-                <h1 className="text-[16px] font-medium text-gray-800">{title}</h1>
-                <p className="text-gray-600 text-sm">{description}</p>
-              </div>
-            </>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-sm sm:text-base md:text-lg font-medium text-gray-800 truncate">{title}</h1>
+              {description && (
+                <p className="text-gray-600 text-xs sm:text-sm mt-1 line-clamp-2">{description}</p>
+              )}
+            </div>
           )}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             {/* Add button - completely optional */}
             {showAddButton && addButtonLabel && onAddButton && (
               <button
                 onClick={onAddButton}
-                className="bg-green-700 hover:bg-green-600 text-[13px] p-1 text-white rounded cursor-pointer flex shrink-0"
+                className="bg-green-700 hover:bg-green-600 text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 text-white rounded cursor-pointer flex items-center gap-1 sm:gap-2 whitespace-nowrap"
               >
-                <Plus className="mr-2 h-4 w-4" />
-                {addButtonLabel}
+                <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">{addButtonLabel}</span>
+                <span className="sm:hidden">Add</span>
               </button>
             )}
             {/* Export button */}
             {showExport && (
               <button
                 onClick={onExport}
-                className="flex items-center bg-green-700 hover:bg-green-600 text-[13px] cursor-pointer p-1 text-white rounded gap-2 min-w-[100px] shrink-0"
+                className="flex items-center bg-green-700 hover:bg-green-600 text-xs sm:text-sm cursor-pointer px-2 sm:px-3 py-1.5 sm:py-2 text-white rounded gap-1 sm:gap-2 whitespace-nowrap"
               >
-                <Download className=" h-4 w-4" />
-                Export
+                <Download className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Export</span>
               </button>
             )}
           </div>
@@ -226,20 +227,19 @@ export function DataTable<TData, TValue>({
       )}
 
       {(customFilters || filters.length > 0 || showColumnVisibility) && (
-        <div className="flex items-center gap-4 py-2 flex-wrap">
-          {customFilters}
-
-          {filters.map(renderFilter)}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 py-2">
+          <div className="flex flex-wrap items-center gap-2 flex-1 w-full sm:w-auto">
+            {customFilters}
+            {filters.map(renderFilter)}
+          </div>
 
           {showColumnVisibility && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button
-                  // variant="outline"
-                  className="min-w-[100px] flex items-center justify-between bg-transparent ml-auto rounded border-2 border-green-500 px-3 py-1 text-[13px] text-gray-900 hover:bg-green-100"
-                >
-                  Columns
-                  <ChevronDown className="ml-2 h-4 w-4" />
+                <button className="flex items-center justify-between bg-transparent rounded border-2 border-green-500 px-2 sm:px-3 py-1 text-xs sm:text-sm text-gray-900 hover:bg-green-100 whitespace-nowrap min-w-0">
+                  <span className="hidden sm:inline">Columns</span>
+                  <span className="sm:hidden">Cols</span>
+                  <ChevronDown className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -378,6 +378,7 @@ export function DataTable<TData, TValue>({
 
           {showPagination && (
             <div className="flex items-center space-x-2">
+<<<<<<< Updated upstream
               <Select
                 value={`${table.getState().pagination.pageSize}`}
                 onValueChange={(value) => table.setPageSize(Number(value))}
@@ -396,6 +397,28 @@ export function DataTable<TData, TValue>({
                 </SelectContent>
               </Select>
               <span className="text-[13px] text-gray-900">rows per page</span>
+=======
+              <div suppressHydrationWarning>
+                <Select
+                  value={`${table.getState().pagination.pageSize}`}
+                  onValueChange={(value) => table.setPageSize(Number(value))}
+                >
+                  <SelectTrigger className="h-8 w-[70px]">
+                    <SelectValue
+                      placeholder={table.getState().pagination.pageSize}
+                    />
+                  </SelectTrigger>
+                  <SelectContent side="top">
+                    {[5, 10, 20, 30, 40, 50].map((pageSize) => (
+                      <SelectItem key={pageSize} value={`${pageSize}`}>
+                        {pageSize}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <span className="sm:hidden block text-[13px] text-gray-900">rows per page</span>
+>>>>>>> Stashed changes
             </div>
           )}
         </div>

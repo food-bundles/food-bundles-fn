@@ -98,7 +98,10 @@ export default function SubscribePage() {
                     <div className="flex items-start space-x-2">
                       <p className="text-green-500 text-[16px] mr-2">🗸</p>
                       <span className="text-gray-800 text-[13px]">
-                        Access loan as a voucher {plan.voucherPaymentDays ? `(${plan.voucherPaymentDays} days)` : ''}
+                        Apply for postpayment vouchers{" "}
+                        {plan.voucherPaymentDays
+                          ? `(${plan.voucherPaymentDays} days)`
+                          : ""}
                       </span>
                     </div>
                   )}

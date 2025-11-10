@@ -250,7 +250,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
               Help center
             </h3>
             <p className="text-xs text-gray-600 mb-3">
-              Etiam porta sem malesuada magna mollis euismod.
+              Get support for managing your food production and inventory.
             </p>
             <Button className="w-full bg-green-600 text-white text-xs py-2 px-3 rounded-md hover:bg-green-700 transition-colors">
               Go to help center

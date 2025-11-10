@@ -86,12 +86,12 @@ const ProductCard = memo(function ProductCard({
       if (isInCart && cartItem) {
         const success = await updateCartItem(cartItem.id, quantity);
         if (success) {
-          toast.success("Cart updated successfully");
+          console.log("Cart updated successfully");
         }
       } else {
         const success = await addToCart(id, quantity);
         if (success) {
-          toast.success("Product added to cart successfully");
+          console.log("Product added to cart successfully");
         }
       }
     } catch (error) {
@@ -402,7 +402,7 @@ export function ProductsSection({
                   </div>
 
                   {/* Middle: Benefits & Subscribe */}
-                  <div className="bg-gray-200 md:rounded-full rounded-md px-4 sm:px-6 py-3 shadow-lg w-full lg:w-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="bg-gray-200 md:rounded-full rounded-md px-4 sm:px-6 py-3 shadow-lg w-full lg:w-auto flex flex-col md:flex-row sm:flex-row items-center justify-between gap-3">
                     {/* Profile Images */}
                     <div className="flex items-center -space-x-6">
                       {[

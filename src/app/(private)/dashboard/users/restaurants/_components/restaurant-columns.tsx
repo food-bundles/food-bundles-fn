@@ -1,18 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  MoreHorizontal,
-  Eye,
-  Edit,
-  Trash2,
   Phone,
   Mail,
   MapPin,
@@ -33,13 +22,17 @@ export type Restaurant = {
   status: "active" | "inactive" | "suspended";
 };
 
-export const restaurantColumns: ColumnDef<Restaurant>[] = [
+export const getRestaurantColumns = (
+  onManage: (restaurant: Restaurant) => void
+): ColumnDef<Restaurant>[] => [
   {
     accessorKey: "name",
-    header: "Restaurant Name",
-    cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("name")}</div>
-    ),
+    header: "Rest Name",
+    cell: ({ row }) => {
+      const fullName = row.getValue("name") as string;
+      const shortName = fullName.split(" - ")[0];
+      return <div className="font-medium">{shortName}</div>;
+    },
   },
   {
     accessorKey: "email",
@@ -69,12 +62,24 @@ export const restaurantColumns: ColumnDef<Restaurant>[] = [
   {
     accessorKey: "location",
     header: "Location",
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2">
-        <MapPin className="h-4 w-4 text-gray-500" />
-        <span>{row.getValue("location")}</span>
-      </div>
-    ),
+    cell: ({ row }) => {
+      const location = row.getValue("location") as string;
+      const parts = location.split(", ");
+      const mainLocation = parts.slice(0, 2).join(", ");
+      const subLocations = parts.slice(2).join(", ");
+      
+      return (
+        <div className="flex items-center gap-2">
+          <MapPin className="h-4 w-4 text-gray-500" />
+          <div className="flex flex-col">
+            <span className="font-medium">{mainLocation}</span>
+            {subLocations && (
+              <span className="text-xs text-gray-500">{subLocations}</span>
+            )}
+          </div>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "ordersCount",
@@ -91,7 +96,7 @@ export const restaurantColumns: ColumnDef<Restaurant>[] = [
     header: "Total Spent",
     cell: ({ row }) => {
       const amount = row.getValue("totalSpent") as number;
-      return <div className="font-medium">KSh {amount.toLocaleString()}</div>;
+      return <div className="font-medium">RWF {amount.toLocaleString()}</div>;
     },
   },
   {
@@ -136,28 +141,14 @@ export const restaurantColumns: ColumnDef<Restaurant>[] = [
       const restaurant = row.original;
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem>
-              <Eye className="mr-2 h-4 w-4" />
-              View Details
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Edit className="mr-2 h-4 w-4" />
-              Edit Restaurant
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-red-600">
-              <Trash2 className="mr-2 h-4 w-4" />
-              Suspend Restaurant
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={() => onManage(restaurant)}
+          className="flex items-center gap-2"
+        >
+          view
+        </Button>
       );
     },
   },
