@@ -1,84 +1,104 @@
-/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { DataTable } from "@/components/data-table";
 import {
-  restaurantColumns,
+  getRestaurantColumns,
   type Restaurant,
 } from "./_components/restaurant-columns";
 import { createCommonFilters, TableFilters } from "@/components/filters";
+import { RestaurantManagementModal } from "./_components/restaurant-management-modal";
+import { restaurantService } from "@/app/services/restaurantService";
+import { toast } from "sonner";
+import { Spinner } from "@/components/ui/shadcn-io/spinner";
 
-// Mock data for restaurants
-const mockRestaurants: Restaurant[] = [
-  {
-    id: "r1a2b3c4-d5e6-7f8g-9h0i-j1k2l3m4n5o6",
-    name: "Mama Oliech Restaurant",
-    email: "info@mamaoliech.co.ke",
-    phone: "+254712345678",
-    location: "Nairobi CBD",
-    role: "RESTAURANT",
-    createdAt: "2024-01-10T08:30:00Z",
-    ordersCount: 45,
-    totalSpent: 125000,
-    status: "active",
-  },
-  {
-    id: "r2g3h4i5-j6k7-8l9m-0n1o-p2q3r4s5t6u7",
-    name: "Java House",
-    email: "orders@javahouse.co.ke",
-    phone: "+254723456789",
-    location: "Westlands",
-    role: "RESTAURANT",
-    createdAt: "2024-01-15T10:15:00Z",
-    ordersCount: 78,
-    totalSpent: 245000,
-    status: "active",
-  },
-  {
-    id: "r3h4i5j6-k7l8-9m0n-1o2p-q3r4s5t6u7v8",
-    name: "Artcaffe",
-    email: "supply@artcaffe.co.ke",
-    phone: "+254734567890",
-    location: "Karen",
-    role: "RESTAURANT",
-    createdAt: "2024-01-20T14:20:00Z",
-    ordersCount: 32,
-    totalSpent: 89000,
-    status: "active",
-  },
-  {
-    id: "r4i5j6k7-l8m9-0n1o-2p3q-r4s5t6u7v8w9",
-    name: "Carnivore Restaurant",
-    email: "procurement@carnivore.co.ke",
-    location: "Langata",
-    role: "RESTAURANT",
-    createdAt: "2024-02-01T09:45:00Z",
-    ordersCount: 12,
-    totalSpent: 67000,
-    status: "suspended",
-  },
-  {
-    id: "r5j6k7l8-m9n0-1o2p-3q4r-s5t6u7v8w9x0",
-    name: "Talisman Restaurant",
-    email: "orders@talisman.co.ke",
-    phone: "+254756789012",
-    location: "Karen",
-    role: "RESTAURANT",
-    createdAt: "2024-02-10T16:30:00Z",
-    ordersCount: 8,
-    totalSpent: 34000,
-    status: "inactive",
-  },
-];
+
 
 export default function RestaurantsPage() {
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateRange, setDateRange] = useState<Date | undefined>(undefined);
+  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
+  const [isManagementOpen, setIsManagementOpen] = useState(false);
+
+  // Fetch restaurants from API
+  const fetchRestaurants = async () => {
+    try {
+      setLoading(true);
+      const response = await restaurantService.getAllRestaurants();
+      console.log("Restaurant API Response:", response);
+      if (response.success) {
+        const restaurantsData = response.data.restaurants || response.data;
+        console.log("Restaurants Data:", restaurantsData);
+        const mappedRestaurants = restaurantsData.map((restaurant: any) => {
+          const location = [restaurant.province, restaurant.district, restaurant.sector, restaurant.cell, restaurant.village]
+            .filter(Boolean)
+            .join(", ") || "Not specified";
+          
+          const ordersCount = restaurant.orders?.length || 0;
+          const totalSpent = restaurant.orders?.reduce((sum: number, order: any) => {
+            return order.status === "DELIVERED" ? sum + order.totalAmount : sum;
+          }, 0) || 0;
+
+          return {
+            id: restaurant.id,
+            name: restaurant.name,
+            email: restaurant.email,
+            phone: restaurant.phone,
+            location: location,
+            role: restaurant.role || "RESTAURANT",
+            createdAt: restaurant.createdAt,
+            ordersCount: ordersCount,
+            totalSpent: totalSpent,
+            status: "active", // Default to active since API doesn't have verified field
+          };
+        });
+        console.log("Mapped Restaurants:", mappedRestaurants);
+        setRestaurants(mappedRestaurants);
+      }
+    } catch (error) {
+      console.error("Failed to fetch restaurants:", error);
+      toast.error("Failed to fetch restaurants");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRestaurants();
+  }, []);
+
+  // Modal handlers
+  const handleManageRestaurant = (restaurant: Restaurant) => {
+    setSelectedRestaurant(restaurant);
+    setIsManagementOpen(true);
+  };
+
+  const handleEditRestaurant = async (restaurantId: string, data: any) => {
+    try {
+      await restaurantService.updateRestaurant(restaurantId, data);
+      toast.success("Restaurant updated successfully");
+      fetchRestaurants();
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Failed to update restaurant");
+    }
+  };
+
+  const handleDeleteRestaurant = async (restaurantId: string) => {
+    try {
+      await restaurantService.deleteRestaurant(restaurantId);
+      toast.success("Restaurant deleted successfully");
+      fetchRestaurants();
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Failed to delete restaurant");
+    }
+  };
 
   const filteredData = useMemo(() => {
-    return mockRestaurants.filter((restaurant) => {
+    return restaurants.filter((restaurant) => {
       const matchesSearch =
         restaurant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         restaurant.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -93,7 +113,11 @@ export default function RestaurantsPage() {
 
       return matchesSearch && matchesStatus && matchesDate;
     });
-  }, [searchTerm, statusFilter, dateRange, mockRestaurants]);
+  }, [searchTerm, statusFilter, dateRange, restaurants]);
+
+  const columns = useMemo(() => {
+    return getRestaurantColumns(handleManageRestaurant);
+  }, []);
 
   const filters = useMemo(() => {
     return [
@@ -113,13 +137,21 @@ export default function RestaurantsPage() {
   }, [searchTerm, statusFilter, dateRange]);
 
   const handleExport = () => {
-    console.log("Exporting restaurants data...");
+    toast.info("Export functionality coming soon");
   };
+
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <Spinner variant="ring" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
       <DataTable
-        columns={restaurantColumns}
+        columns={columns}
         data={filteredData}
         title="Restaurants Management"
         showExport={true}
@@ -130,6 +162,15 @@ export default function RestaurantsPage() {
         showColumnVisibility={true}
         showPagination={true}
         showRowSelection={true}
+      />
+
+      <RestaurantManagementModal
+        restaurant={selectedRestaurant}
+        open={isManagementOpen}
+        onOpenChange={setIsManagementOpen}
+        onUpdate={fetchRestaurants}
+        onEdit={handleEditRestaurant}
+        onDelete={handleDeleteRestaurant}
       />
     </div>
   );

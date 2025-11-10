@@ -4,22 +4,19 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Edit, Trash2, ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { Eye, MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
 import type { Product } from "@/app/contexts/product-context";
 
 export const getInventoryColumns = (
-  onView: (product: Product) => void,
-  onEdit: (product: Product) => void,
-  onDelete: (productId: string) => void
+  onManage: (product: Product) => void
 ): ColumnDef<Product>[] => [
   {
     accessorKey: "productName",
@@ -31,7 +28,6 @@ export const getInventoryColumns = (
           className="h-auto p-0 font-medium"
         >
           Product Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
@@ -72,23 +68,13 @@ export const getInventoryColumns = (
           className="h-auto p-0 font-medium"
         >
           Category
-          <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
     cell: ({ row }) => {
-      const category = row.getValue("category") as any;
-      let categoryName = "Unknown e";
-
-      if (category) {
-        if (typeof category === "string") {
-          categoryName = category;
-        } else if (category.name && typeof category.name === "string") {
-          categoryName = category.name;
-        }
-      }
-
-      return <div>{categoryName.toLowerCase().replace(/_/g, " ")}</div>;
+      const product = row.original;
+      const categoryName = product.category?.name || "Unknown";
+      return <div>{categoryName}</div>;
     },
   },
   {
@@ -101,7 +87,6 @@ export const getInventoryColumns = (
           className="h-auto p-0 font-medium"
         >
           Stock
-          <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
@@ -144,8 +129,7 @@ export const getInventoryColumns = (
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium"
         >
-          Price
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          purchase Price
         </Button>
       );
     },
@@ -172,7 +156,6 @@ export const getInventoryColumns = (
           className="h-auto p-0 font-medium"
         >
           Price
-          <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
@@ -197,7 +180,6 @@ export const getInventoryColumns = (
           className="h-auto p-0 font-medium"
         >
           Expiry Date
-          <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
@@ -263,21 +245,9 @@ export const getInventoryColumns = (
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => onView(product)}>
+            <DropdownMenuItem onClick={() => onManage(product)}>
               <Eye className="mr-2 h-4 w-4" />
-              View Details
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onEdit(product)}>
-              <Edit className="mr-2 h-4 w-4" />
-              Edit Product
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => onDelete(product.id)}
-              className="text-red-600"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete Product
+              Manage Product
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

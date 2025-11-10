@@ -73,16 +73,16 @@ export function TableFilters({ filters, className }: TableFiltersProps) {
         return (
           <div
             key={filter.key}
-            className={`relative ${filter.width || "w-full max-w-sm"}`}
+            className="relative w-full sm:w-auto sm:min-w-[200px] md:min-w-[250px]"
           >
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2  text-gray-900" />
+            <Search className="absolute left-2 sm:left-3 top-1/2 h-3 w-3 sm:h-4 sm:w-4 -translate-y-1/2 text-gray-900" />
             <Input
               placeholder={
                 filter.placeholder || `Search ${filter.label.toLowerCase()}...`
               }
               value={(filter.value as string) || ""}
               onChange={(e) => filter.onChange?.(e.target.value)}
-              className="pl-10 text-xs text-gray-900 rounded border border-green-700"
+              className="pl-8 sm:pl-10 text-xs sm:text-sm text-gray-900 rounded border border-green-700 h-8 sm:h-9"
             />
           </div>
         );
@@ -93,13 +93,11 @@ export function TableFilters({ filters, className }: TableFiltersProps) {
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className={`${
-                  filter.width || "min-w-[120px]"
-                } justify-between font-normal rounded border border-green-700 bg-white hover:bg-green-100 cursor-pointer`}
+                className="min-w-[100px] sm:min-w-[120px] justify-between font-normal rounded border border-green-700 bg-white hover:bg-green-100 cursor-pointer text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3"
               >
                 {filter.options?.find((option) => option.value === filter.value)
                   ?.label || filter.label}
-                <ChevronDown className="ml-2 h-4 w-4" />
+                <ChevronDown className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
@@ -123,15 +121,14 @@ export function TableFilters({ filters, className }: TableFiltersProps) {
               <Button
                 variant="outline"
                 className={cn(
-                  filter.width || "min-w-[120px]",
-                  "justify-between text-left font-normal",
+                  "min-w-[100px] sm:min-w-[120px] justify-between text-left font-normal text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3",
                   !filter.value && "text-gray-900 rounded border border-green-700 bg-white hover:bg-green-100 cursor-pointer"
                 )}
               >
                 {filter.value
                   ? format(filter.value as Date, "PPP")
                   : filter.label}
-                <CalendarIcon className="ml-2 h-4 w-4" />
+                <CalendarIcon className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
@@ -152,8 +149,7 @@ export function TableFilters({ filters, className }: TableFiltersProps) {
               <Button
                 variant="outline"
                 className={cn(
-                  filter.width || "min-w-[200px]",
-                  "justify-between text-left font-normal",
+                  "min-w-[140px] sm:min-w-[180px] md:min-w-[200px] justify-between text-left font-normal text-xs sm:text-sm h-8 sm:h-9 px-2 sm:px-3",
                   !filter.value?.from &&
                     !filter.value?.to &&
                     "text-muted-foreground"
@@ -185,7 +181,7 @@ export function TableFilters({ filters, className }: TableFiltersProps) {
                       <X className="h-3 w-3" />
                     </Button>
                   )}
-                  <CalendarIcon className="h-4 w-4" />
+                  <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4" />
                 </div>
               </Button>
             </PopoverTrigger>
@@ -233,7 +229,7 @@ export function TableFilters({ filters, className }: TableFiltersProps) {
   };
 
   return (
-    <div className={cn("flex items-center gap-4 py-2", className)}>
+    <div className={cn("flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4 py-2", className)}>
       {filters.map(renderFilter)}
     </div>
   );

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
@@ -9,11 +10,10 @@ import {
   CreateProductModal,
   type ProductFormData,
 } from "./create-product-modal";
-import { ProductDetailsModal } from "./product-details-modal";
-import { EditProductModal } from "./edit-product-modal";
-import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
+import { ProductManagementModal } from "./product-management-modal";
 import type { Product } from "@/app/contexts/product-context";
 import { toast } from "sonner";
+import { productService } from "@/app/services/productService";
 
 interface InventoryManagementProps {
   products: Product[];
@@ -52,39 +52,32 @@ export function InventoryManagement({
   // Modal states
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  const [isManagementOpen, setIsManagementOpen] = useState(false);
 
   // Modal handlers
-  const handleViewProduct = (product: Product) => {
+  const handleManageProduct = (product: Product) => {
     setSelectedProduct(product);
-    setIsDetailsOpen(true);
+    setIsManagementOpen(true);
   };
 
-  const handleEditProduct = (product: Product) => {
-    setSelectedProduct(product);
-    setIsEditOpen(true);
-  };
-
-  const handleDeleteProduct = (productId: string) => {
-    setProductToDelete(productId);
-    setIsDeleteOpen(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (productToDelete) {
-      try {
-        // Add delete logic here when backend is ready
-        toast.success("Product deleted successfully");
-        onRefresh();
-      } catch (error) {
-        toast.error("Failed to delete product");
-      }
+  const handleEditProduct = async (productId: string, formData: FormData) => {
+    try {
+      await productService.updateProduct(productId, formData);
+      toast.success("Product updated successfully");
+      onRefresh();
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Failed to update product");
     }
-    setIsDeleteOpen(false);
-    setProductToDelete(null);
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      await productService.deleteProduct(productId);
+      toast.success("Product deleted successfully");
+      onRefresh();
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Failed to delete product");
+    }
   };
 
   const handleProductCreate = async (productData: ProductFormData) => {
@@ -98,24 +91,11 @@ export function InventoryManagement({
     }
   };
 
-  const handleProductUpdate = async (productData: ProductFormData) => {
-    try {
-      // Add update logic here when backend is ready
-      toast.success("Product updated successfully");
-      onRefresh();
-      setIsEditOpen(false);
-    } catch (error) {
-      toast.error("Failed to update product");
-    }
-  };
+
 
   // Get columns with handlers
   const columns = useMemo(() => {
-    return getInventoryColumns(
-      handleViewProduct,
-      handleEditProduct,
-      handleDeleteProduct
-    );
+    return getInventoryColumns(handleManageProduct);
   }, []);
 
   // Filter data
@@ -204,19 +184,20 @@ export function InventoryManagement({
         columns={columns}
         data={filteredData}
         title="Inventory Management"
-        descrption={""}
         showExport={true}
         onExport={handleExport}
         showAddButton={true}
         addButtonLabel="Add Product"
         onAddButton={() => setIsCreateOpen(true)}
         customFilters={
-          <div className="flex items-center gap-4 flex-wrap">
-            <TableFilters filters={filters} />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full">
+            <div className="flex flex-wrap items-center gap-2 flex-1">
+              <TableFilters filters={filters} />
+            </div>
             {(dateRange.from || dateRange.to) && (
               <button
                 onClick={clearDateRange}
-                className="text-sm text-gray-500 hover:text-gray-700 underline ml-2"
+                className="text-xs sm:text-sm text-gray-500 hover:text-gray-700 underline whitespace-nowrap"
               >
                 Clear Date Filter
               </button>
@@ -236,26 +217,13 @@ export function InventoryManagement({
         onSubmit={handleProductCreate}
       />
 
-      <ProductDetailsModal
+      <ProductManagementModal
         product={selectedProduct}
-        open={isDetailsOpen}
-        onOpenChange={setIsDetailsOpen}
-      />
-
-      <EditProductModal
-        product={selectedProduct}
-        open={isEditOpen}
-        onOpenChange={setIsEditOpen}
-        onSubmit={handleProductUpdate}
-      />
-
-      <DeleteConfirmationDialog
-        open={isDeleteOpen}
-        onOpenChange={setIsDeleteOpen}
-        onConfirm={handleConfirmDelete}
-        productName={
-          products.find((p) => p.id === productToDelete)?.productName || ""
-        }
+        open={isManagementOpen}
+        onOpenChange={setIsManagementOpen}
+        onUpdate={onRefresh}
+        onEdit={handleEditProduct}
+        onDelete={handleDeleteProduct}
       />
     </>
   );

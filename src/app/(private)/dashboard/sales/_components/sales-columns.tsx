@@ -61,7 +61,7 @@ const formatProducts = (products: Sale["products"]) => {
   }
 
   const displayProducts = products
-    .slice(0, 2)
+    .slice(0, 1)
     .map((p) => p.name)
     .join(", ");
   const remaining = products.length - 2;

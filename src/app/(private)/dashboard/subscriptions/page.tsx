@@ -391,7 +391,7 @@ export default function AdminSubscriptionsPage() {
                             className="rounded border-gray-300"
                           />
                           <Label htmlFor="voucherAccess" className="text-sm">
-                            Access loan as a voucher
+                            Apply for postpayment vouchers
                           </Label>
                         </div>
                         {newPlan.voucherAccess && (
