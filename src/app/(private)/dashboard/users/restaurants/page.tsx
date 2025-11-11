@@ -9,6 +9,7 @@ import {
 } from "./_components/restaurant-columns";
 import { createCommonFilters, TableFilters } from "@/components/filters";
 import { RestaurantManagementModal } from "./_components/restaurant-management-modal";
+import { CreateRestaurantModal } from "./_components/create-restaurant-modal";
 import { restaurantService } from "@/app/services/restaurantService";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
@@ -23,6 +24,7 @@ export default function RestaurantsPage() {
   const [dateRange, setDateRange] = useState<Date | undefined>(undefined);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [isManagementOpen, setIsManagementOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   // Fetch restaurants from API
   const fetchRestaurants = async () => {
@@ -97,6 +99,21 @@ export default function RestaurantsPage() {
     }
   };
 
+  const handleCreateRestaurant = async (data: any) => {
+    try {
+      // Use phone as password if no password provided
+      const restaurantData = {
+        ...data,
+        password: data.password || data.phone,
+      };
+      await restaurantService.createRestaurant(restaurantData);
+      toast.success("Restaurant created successfully");
+      fetchRestaurants();
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Failed to create restaurant");
+    }
+  };
+
   const filteredData = useMemo(() => {
     return restaurants.filter((restaurant) => {
       const matchesSearch =
@@ -156,7 +173,9 @@ export default function RestaurantsPage() {
         title="Restaurants Management"
         showExport={true}
         onExport={handleExport}
-        showAddButton={false}
+        showAddButton={true}
+        addButtonLabel="Add Restaurant"
+        onAddButton={() => setIsCreateOpen(true)}
         customFilters={<TableFilters filters={filters} />}
         showSearch={false}
         showColumnVisibility={true}
@@ -171,6 +190,12 @@ export default function RestaurantsPage() {
         onUpdate={fetchRestaurants}
         onEdit={handleEditRestaurant}
         onDelete={handleDeleteRestaurant}
+      />
+
+      <CreateRestaurantModal
+        open={isCreateOpen}
+        onOpenChange={setIsCreateOpen}
+        onCreate={handleCreateRestaurant}
       />
     </div>
   );

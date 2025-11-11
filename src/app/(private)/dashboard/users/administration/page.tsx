@@ -1,100 +1,51 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { DataTable } from "@/components/data-table";
-import { Admin, adminColumns } from "./_components/admintration-columns";
+import { getAdminColumns } from "./_components/admintration-columns";
 import { createCommonFilters, TableFilters } from "@/components/filters";
+import { useAdmins, type Admin } from "@/app/contexts/AdminsContext";
+import { toast } from "sonner";
+import dynamic from "next/dynamic";
+import { AdminManagementModal } from "./_components/admin-management-modal";
+import { CreateAdminModal } from "./_components/create-admin-modal";
 
-// Mock data for admin users
-const mockAdmins: Admin[] = [
-  {
-    id: "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6",
-    username: "admin_john",
-    email: "john.admin@foodbundle.co.ke",
-    role: "ADMIN",
-    phone: "+254712345678",
-    createdAt: "2024-01-01T08:00:00Z",
-    assignmentsCount: 25,
-    productsCount: 150,
-    status: "active",
-    permissions: [
-      "USER_MANAGEMENT",
-      "PRODUCT_MANAGEMENT",
-      "SYSTEM_CONFIG",
-      "REPORTS",
-    ],
-  },
-  {
-    id: "b2c3d4e5-f6g7-8h9i-0j1k-l2m3n4o5p6q7",
-    username: "admin_sarah",
-    email: "sarah.admin@foodbundle.co.ke",
-    role: "AGGREGATOR",
-    phone: "+254723456789",
-    createdAt: "2024-01-05T10:30:00Z",
-    assignmentsCount: 18,
-    productsCount: 89,
-    status: "active",
-    permissions: ["PRODUCT_MANAGEMENT", "ORDER_MANAGEMENT", "REPORTS"],
-  },
-  {
-    id: "c3d4e5f6-g7h8-9i0j-1k2l-m3n4o5p6q7r8",
-    username: "admin_mike",
-    email: "mike.admin@foodbundle.co.ke",
-    role: "AGGREGATOR",
-    createdAt: "2024-01-10T14:15:00Z",
-    assignmentsCount: 12,
-    productsCount: 45,
-    status: "active",
-    permissions: ["CONTENT_MODERATION", "USER_SUPPORT"],
-  },
-  {
-    id: "d4e5f6g7-h8i9-0j1k-2l3m-n4o5p6q7r8s9",
-    username: "admin_lisa",
-    email: "lisa.admin@foodbundle.co.ke",
-    role: "LOGISTIC_OFFICER",
-    phone: "+254745678901",
-    createdAt: "2024-01-15T09:20:00Z",
-    assignmentsCount: 8,
-    productsCount: 32,
-    status: "suspended",
-    permissions: ["ORDER_MANAGEMENT", "INVENTORY_MANAGEMENT"],
-  },
-  {
-    id: "e5f6g7h8-i9j0-1k2l-3m4n-o5p6q7r8s9t0",
-    username: "admin_david",
-    email: "david.admin@foodbundle.co.ke",
-    role: "AGGREGATOR",
-    phone: "+254756789012",
-    createdAt: "2024-02-01T11:45:00Z",
-    assignmentsCount: 5,
-    productsCount: 18,
-    status: "inactive",
-    permissions: ["CONTENT_MODERATION"],
-  },
-];
-
-export default function AdministrationPage() {
+function AdministrationPageContent() {
+  const { admins,  error, getAllAdmins, createAdmin, updateAdmin, deleteAdmin, clearError } = useAdmins();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateRange, setDateRange] = useState<Date | undefined>(undefined);
+  const [mounted, setMounted] = useState(false);
+  const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
+  // All hooks must be called before any conditional returns
   const filteredData = useMemo(() => {
-    return mockAdmins.filter((admin) => {
+    if (!mounted) return [];
+    return admins.filter((admin) => {
       const matchesSearch =
-        admin.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        admin.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        admin.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        admin.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        admin.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        admin.role?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         admin.phone?.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesStatus =
-        statusFilter === "all" || admin.status === statusFilter;
+        statusFilter === "all" || (admin.status || "active") === statusFilter;
 
       const matchesDate = !dateRange || new Date(admin.createdAt) >= dateRange;
 
       return matchesSearch && matchesStatus && matchesDate;
     });
-  }, [searchTerm, statusFilter, dateRange, mockAdmins]);
+  }, [searchTerm, statusFilter, dateRange, admins, mounted]);
+
+  const adminColumns = useMemo(() => {
+    return getAdminColumns((admin: Admin) => {
+      setSelectedAdmin(admin);
+      setIsModalOpen(true);
+    });
+  }, []);
 
   const filters = useMemo(() => {
     return [
@@ -117,6 +68,43 @@ export default function AdministrationPage() {
     console.log("Exporting administrators data...");
   };
 
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedAdmin(null);
+  };
+
+  const handleCreateModalClose = () => {
+    setIsCreateModalOpen(false);
+  };
+
+  const handleUpdate = () => {
+    getAllAdmins();
+  };
+
+  const handleCreateAdmin = () => {
+    setIsCreateModalOpen(true);
+  };
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted) {
+      getAllAdmins().catch((err) => {
+        toast.error("Failed to load admins");
+        console.error(err);
+      });
+    }
+  }, [mounted]);
+
+  useEffect(() => {
+    if (error && mounted) {
+      toast.error(error);
+      clearError();
+    }
+  }, [error, clearError, mounted]);
+
   return (
     <div className="p-6">
       <DataTable
@@ -125,13 +113,45 @@ export default function AdministrationPage() {
         title="Administration Management"
         showExport={true}
         onExport={handleExport}
-        showAddButton={false}
-        customFilters={<TableFilters filters={filters} />}
+        showAddButton={true}
+        addButtonLabel="Add Admin"
+        onAddButton={handleCreateAdmin}
+        customFilters={mounted ? <TableFilters filters={filters} /> : <div />}
         showSearch={false}
         showColumnVisibility={true}
         showPagination={true}
         showRowSelection={true}
       />
+      
+      <AdminManagementModal
+        admin={selectedAdmin}
+        open={isModalOpen}
+        onOpenChange={handleModalClose}
+        onUpdate={handleUpdate}
+        onEdit={updateAdmin}
+        onDelete={deleteAdmin}
+      />
+      
+      <CreateAdminModal
+        open={isCreateModalOpen}
+        onOpenChange={handleCreateModalClose}
+        onUpdate={handleUpdate}
+        onCreate={createAdmin}
+      />
     </div>
   );
 }
+
+const AdministrationPage = dynamic(() => Promise.resolve(AdministrationPageContent), {
+  ssr: false,
+  loading: () => (
+    <div className="p-6">
+      <div className="animate-pulse">
+        <div className="h-8 bg-gray-200 rounded mb-4"></div>
+        <div className="h-64 bg-gray-200 rounded"></div>
+      </div>
+    </div>
+  ),
+});
+
+export default AdministrationPage;

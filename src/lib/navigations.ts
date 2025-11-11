@@ -9,7 +9,7 @@ export function getRedirectPath(userRole: UserRole): string {
     case UserRole.AGGREGATOR:
       return "/aggregator";
     case UserRole.ADMIN:
-      return "/dashboard";
+      return "/dashboard/farmer-submissions";
     case UserRole.LOGISTICS:
       return "/logistics";
     default:

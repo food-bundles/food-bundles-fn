@@ -200,8 +200,7 @@ export function DataTable<TData, TValue>({
               )}
             </div>
           )}
-          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-            {/* Add button - completely optional */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {showAddButton && addButtonLabel && onAddButton && (
               <button
                 onClick={onAddButton}
