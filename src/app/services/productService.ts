@@ -65,10 +65,17 @@ export const productService = {
     return response.data;
   },
 
-  getAllProductsRoleBased: async () => {
+  getAllProductsRoleBased: async (params?: {
+    page?: number;
+    limit?: number;
+    categoryId?: string;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }) => {
     try {
       const axiosClient = createAxiosClient();
-      const response = await axiosClient.get("/products/role-based?page=1&limit=100000");
+      const response = await axiosClient.get("/products/role-based", { params });
       return response.data;
     } catch (error: any) {
       toast.error("Error fetching role-based products:", error);

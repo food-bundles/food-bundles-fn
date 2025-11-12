@@ -50,6 +50,7 @@ export function ProductManagementModal({
   const [isLoading, setIsLoading] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagesToKeep, setImagesToKeep] = useState<string[]>([]);
 
   // Edit form state
   const [editData, setEditData] = useState({
@@ -77,6 +78,7 @@ export function ProductManagementModal({
         unit: product.unit,
         expiryDate: product.expiryDate ? new Date(product.expiryDate).toISOString().split('T')[0] : "",
       });
+      setImagesToKeep(product.images || []);
     }
   }, [product]);
 
@@ -99,6 +101,7 @@ export function ProductManagementModal({
         unit: product.unit,
         expiryDate: product.expiryDate ? new Date(product.expiryDate).toISOString().split('T')[0] : "",
       });
+      setImagesToKeep(product.images || []);
     }
   };
 
@@ -116,7 +119,12 @@ export function ProductManagementModal({
         }
       });
 
-      // Add image files
+      // Add images to keep
+      imagesToKeep.forEach((imageUrl) => {
+        formData.append('keepImages', imageUrl);
+      });
+
+      // Add new image files
       imageFiles.forEach((file) => {
         formData.append('images', file);
       });
@@ -125,6 +133,7 @@ export function ProductManagementModal({
       toast.success("Product updated successfully");
       setIsEditing(false);
       setImageFiles([]);
+      setImagesToKeep([]);
       onUpdate();
     } catch (error: any) {
       console.error("Failed to update product:", error);
@@ -162,6 +171,10 @@ export function ProductManagementModal({
     if (e.target.files) {
       setImageFiles(Array.from(e.target.files));
     }
+  };
+
+  const handleRemoveImage = (imageUrl: string) => {
+    setImagesToKeep(prev => prev.filter(img => img !== imageUrl));
   };
 
   const isDeleteConfirmValid = deleteConfirmText === product?.productName;
@@ -269,6 +282,33 @@ export function ProductManagementModal({
 
               <div className="space-y-2">
                 <Label htmlFor="images" className="text-gray-900">Product Images</Label>
+                
+                {/* Current Images */}
+                {imagesToKeep.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-sm text-gray-600 mb-2">Current Images:</p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {imagesToKeep.map((image, index) => (
+                        <div key={index} className="relative aspect-square rounded-lg overflow-hidden border group">
+                          <Image
+                            src={image || "/placeholder.svg"}
+                            alt={`Current ${index + 1}`}
+                            fill
+                            className="object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(image)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
                 <Input
                   id="images"
                   type="file"
@@ -278,8 +318,9 @@ export function ProductManagementModal({
                   disabled={isLoading}
                   className="bg-white border-gray-300 text-gray-900"
                 />
+                <p className="text-xs text-gray-500">Select new images to replace current ones</p>
                 {imageFiles.length > 0 && (
-                  <p className="text-sm text-gray-600">{imageFiles.length} file(s) selected</p>
+                  <p className="text-sm text-green-600">{imageFiles.length} new file(s) selected</p>
                 )}
               </div>
             </div>
