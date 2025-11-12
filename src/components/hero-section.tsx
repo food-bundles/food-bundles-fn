@@ -90,7 +90,7 @@ function CircularRestaurantAnimation({
   const displayRestaurants = restaurants.slice(0, 16);
 
   return (
-    <div className="relative w-130 h-130 mx-auto mt-30">
+    <div className="relative w-130 h-130 mx-auto mt-20">
       <div
         className="absolute inset-0 transition-transform duration-75 ease-linear"
         style={{
@@ -159,7 +159,7 @@ function HeroImageCarousel({ onImageChange }: { onImageChange: (index: number) =
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
-    }, 60000);
+    }, 15000);
 
     return () => clearInterval(interval);
   }, [images.length]);
@@ -236,12 +236,12 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
         <HeroImageCarousel onImageChange={setCurrentImageIndex} />
         <div className="absolute inset-0 bg-black/40"></div>
         <div className="inset-0">
-          <div className="container mx-auto px-4 h-full flex items-center">
-            <div className=" w-full relative h-full flex items-center justify-center">
-              <div>
-                <div className="animate-container-float sm:mt-10">
+          <div className="container mx-auto px-4 h-full flex items-center border border-amber-400">
+            <div className=" w-full relative h-full flex items-center justify-center sm:mt-3">
+              <div className="">
+                <div className="animate-container-float sm:mt-10  ">
                   <div className="relative">
-                    <h1 className="text-xl sm:text-2xl md:text-4xl lg:text-5xl font-bold leading-tight text-center sm:mt-10 md:mt-15 ld:mt-20 animate-text-glow">
+                    <h1 className="text-base sm:text-lg md:text-4xl lg:text-5xl font-bold leading-tight text-center mt-8 sm:mt-15 md:mt-15 ld:mt-20 animate-text-glow px-4 sm:px-6 max-w-full break-words">
                       <span className="text-orange-400" style={{animationDelay: '1s'}}>{currentText.title[0]}</span>{" "}
                       <span className="text-orange-400" style={{animationDelay: '2s'}}>{currentText.title[1]}</span>{" "}
                       <span className="text-green-700" style={{animationDelay: '3s'}}>{currentText.title[2]}</span>{" "}
@@ -249,9 +249,9 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
                       <span className="text-orange-400" style={{animationDelay: '5s'}}>{currentText.title[4]}</span>{" "}
                       <span className="text-green-700" style={{animationDelay: '6s'}}>{currentText.title[5]}</span>
                     </h1>
-                    <div className="text-center text-[18px] lg:text-[20px] text-white leading-relaxed mt-6 lg:mt-10 max-w-2xl mx-auto">
-                      <p className="animate-text-breathe" style={{animationDelay: '8s'}}>{currentText.description.line1}</p>
-                      <p className="animate-text-breathe" style={{animationDelay: '12s'}}>{currentText.description.line2}</p>
+                    <div className="text-center text-sm sm:text-base lg:text-[20px] text-white leading-relaxed mt-6 lg:mt-10 max-w-xs sm:max-w-2xl mx-auto px-6 sm:px-4">
+                      <p className="animate-text-breathe break-words" style={{animationDelay: '8s'}}>{currentText.description.line1}</p>
+                      <p className="hidden lg:block animate-text-breathe break-words" style={{animationDelay: '12s'}}>{currentText.description.line2}</p>
                     </div>
                   </div>
                   <div className="flex items-center justify-center gap-3 text-orange-400 mt-6 animate-delivery-bounce">
