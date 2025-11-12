@@ -2,8 +2,6 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Phone,
-  Mail,
   MapPin,
   ShoppingCart,
 } from "lucide-react";
@@ -39,7 +37,6 @@ export const getRestaurantColumns = (
     header: "Email",
     cell: ({ row }) => (
       <div className="flex items-center gap-2">
-        <Mail className="h-4 w-4 text-gray-500" />
         <span>{row.getValue("email")}</span>
       </div>
     ),
@@ -51,7 +48,6 @@ export const getRestaurantColumns = (
       const phone = row.getValue("phone") as string;
       return phone ? (
         <div className="flex items-center gap-2">
-          <Phone className="h-4 w-4 text-gray-500" />
           <span>{phone}</span>
         </div>
       ) : (

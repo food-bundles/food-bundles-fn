@@ -1,7 +1,7 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, Eye, MoreHorizontal } from "lucide-react";
+import {  Eye, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -62,12 +62,11 @@ export const paymentColumns: ColumnDef<Payment>[] = [
           className="h-8 p-0 hover:bg-transparent"
         >
           Payment ID
-          <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
     cell: ({ row }) => (
-      <div className="font-medium text-blue-600">
+      <div className="font-medium">
         #{row.getValue("paymentId")}
       </div>
     ),
@@ -82,7 +81,6 @@ export const paymentColumns: ColumnDef<Payment>[] = [
           className="h-8 p-0 hover:bg-transparent"
         >
           Recipient
-          <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
@@ -105,7 +103,6 @@ export const paymentColumns: ColumnDef<Payment>[] = [
           className="h-8 p-0 hover:bg-transparent"
         >
           Product
-          <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
@@ -125,7 +122,6 @@ export const paymentColumns: ColumnDef<Payment>[] = [
           className="h-8 p-0 hover:bg-transparent"
         >
           Amount
-          <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
@@ -148,7 +144,6 @@ export const paymentColumns: ColumnDef<Payment>[] = [
           className="h-8 p-0 hover:bg-transparent"
         >
           Payment Method
-          <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
@@ -166,7 +161,6 @@ export const paymentColumns: ColumnDef<Payment>[] = [
           className="h-8 p-0 hover:bg-transparent"
         >
           Status
-          <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
@@ -204,7 +198,6 @@ export const paymentColumns: ColumnDef<Payment>[] = [
           className="h-8 p-0 hover:bg-transparent"
         >
           Paid Date
-          <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },

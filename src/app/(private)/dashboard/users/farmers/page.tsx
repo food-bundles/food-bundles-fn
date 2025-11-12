@@ -1,83 +1,42 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { DataTable } from "@/components/data-table";
-import { farmerColumns, type Farmer } from "./_components/farmer-columns";
+import { getFarmerColumns } from "./_components/farmer-columns";
 import { createCommonFilters, TableFilters } from "@/components/filters";
+import { useFarmers, type Farmer } from "@/app/contexts/FarmersContext";
+import { toast } from "sonner";
+import dynamic from "next/dynamic";
+import { FarmerManagementModal } from "./_components/farmer-management-modal";
 
-// Mock data for farmers
-const mockFarmers: Farmer[] = [
-  {
-    id: "1",
-    location: "Nakuru County",
-    role: "FARMER",
-    phone: "+254712345678",
-    email: "john.farmer@example.com",
-    createdAt: "2024-01-15T08:30:00Z",
-    submissionsCount: 12,
-    status: "active",
-  },
-  {
-    id: "2",
-    location: "Kiambu County",
-    role: "FARMER",
-    phone: "+254723456789",
-    email: "mary.grower@example.com",
-    createdAt: "2024-01-20T10:15:00Z",
-    submissionsCount: 8,
-    status: "active",
-  },
-  {
-    id: "3",
-    location: "Meru County",
-    role: "FARMER",
-    phone: "+254734567890",
-    createdAt: "2024-02-01T14:20:00Z",
-    submissionsCount: 5,
-    status: "pending",
-  },
-  {
-    id: "4",
-    location: "Nyeri County",
-    role: "FARMER",
-    phone: "+254745678901",
-    email: "peter.harvest@example.com",
-    createdAt: "2024-02-10T09:45:00Z",
-    submissionsCount: 15,
-    status: "active",
-  },
-  {
-    id: "5",
-    location: "Machakos County",
-    role: "FARMER",
-    phone: "+254756789012",
-    createdAt: "2024-02-15T16:30:00Z",
-    submissionsCount: 0,
-    status: "inactive",
-  },
-];
-
-export default function FarmersPage() {
+function FarmersPageContent() {
+  const { farmers,  error, getAllFarmers, updateFarmer, deleteFarmer, clearError } = useFarmers();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateRange, setDateRange] = useState<Date | undefined>(undefined);
+  const [mounted, setMounted] = useState(false);
+  const [selectedFarmer, setSelectedFarmer] = useState<Farmer | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // All hooks must be called before any conditional returns
   const filteredData = useMemo(() => {
-    return mockFarmers.filter((farmer) => {
+    if (!mounted) return [];
+    return farmers.filter((farmer) => {
       const matchesSearch =
-        farmer.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        farmer.province?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        farmer.district?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         farmer.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         farmer.email?.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesStatus =
-        statusFilter === "all" || farmer.status === statusFilter;
+        statusFilter === "all" || (farmer.status || "active") === statusFilter;
 
       const matchesDate = !dateRange || new Date(farmer.createdAt) >= dateRange;
 
       return matchesSearch && matchesStatus && matchesDate;
     });
-  }, [searchTerm, statusFilter, dateRange, mockFarmers]);
+  }, [searchTerm, statusFilter, dateRange, farmers, mounted]);
 
   const filters = useMemo(() => {
     return [
@@ -96,9 +55,45 @@ export default function FarmersPage() {
     ];
   }, [searchTerm, statusFilter, dateRange]);
 
+  const farmerColumns = useMemo(() => {
+    return getFarmerColumns((farmer: Farmer) => {
+      setSelectedFarmer(farmer);
+      setIsModalOpen(true);
+    });
+  }, []);
+
   const handleExport = () => {
     console.log("Exporting farmers data...");
   };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedFarmer(null);
+  };
+
+  const handleUpdate = () => {
+    getAllFarmers();
+  };
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted) {
+      getAllFarmers().catch((err) => {
+        toast.error("Failed to load farmers");
+        console.error(err);
+      });
+    }
+  }, [mounted]);
+
+  useEffect(() => {
+    if (error && mounted) {
+      toast.error(error);
+      clearError();
+    }
+  }, [error, clearError, mounted]);
 
   return (
     <div className="p-6">
@@ -109,12 +104,35 @@ export default function FarmersPage() {
         showExport={true}
         onExport={handleExport}
         showAddButton={false}
-        customFilters={<TableFilters filters={filters} />}
+        customFilters={mounted ? <TableFilters filters={filters} /> : <div />}
         showSearch={false}
         showColumnVisibility={true}
         showPagination={true}
         showRowSelection={true}
       />
+      
+      <FarmerManagementModal
+        farmer={selectedFarmer}
+        open={isModalOpen}
+        onOpenChange={handleModalClose}
+        onUpdate={handleUpdate}
+        onEdit={updateFarmer}
+        onDelete={deleteFarmer}
+      />
     </div>
   );
 }
+
+const FarmersPage = dynamic(() => Promise.resolve(FarmersPageContent), {
+  ssr: false,
+  loading: () => (
+    <div className="p-6">
+      <div className="animate-pulse">
+        <div className="h-8 bg-gray-200 rounded mb-4"></div>
+        <div className="h-64 bg-gray-200 rounded"></div>
+      </div>
+    </div>
+  ),
+});
+
+export default FarmersPage;

@@ -16,25 +16,25 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
-import type { Restaurant } from "./restaurant-columns";
+import type { Farmer } from "@/app/contexts/FarmersContext";
 
-interface RestaurantManagementModalProps {
-  restaurant: Restaurant | null;
+interface FarmerManagementModalProps {
+  farmer: Farmer | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdate: () => void;
-  onEdit: (restaurantId: string, data: any) => Promise<void>;
-  onDelete: (restaurantId: string) => Promise<void>;
+  onEdit: (farmerId: string, data: any) => Promise<void>;
+  onDelete: (farmerId: string) => Promise<void>;
 }
 
-export function RestaurantManagementModal({
-  restaurant,
+export function FarmerManagementModal({
+  farmer,
   open,
   onOpenChange,
   onUpdate,
   onEdit,
   onDelete,
-}: RestaurantManagementModalProps) {
+}: FarmerManagementModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,22 +42,28 @@ export function RestaurantManagementModal({
 
   // Edit form state
   const [editData, setEditData] = useState({
-    name: "",
-    email: "",
+    province: "",
+    district: "",
+    sector: "",
+    cell: "",
+    village: "",
     phone: "",
-    location: "",
+    email: "",
   });
 
   useEffect(() => {
-    if (restaurant) {
+    if (farmer) {
       setEditData({
-        name: restaurant.name,
-        email: restaurant.email,
-        phone: restaurant.phone || "",
-        location: restaurant.location,
+        province: farmer.province,
+        district: farmer.district,
+        sector: farmer.sector,
+        cell: farmer.cell,
+        village: farmer.village,
+        phone: farmer.phone || "",
+        email: farmer.email || "",
       });
     }
-  }, [restaurant]);
+  }, [farmer]);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -65,47 +71,50 @@ export function RestaurantManagementModal({
 
   const handleCancelEdit = () => {
     setIsEditing(false);
-    if (restaurant) {
+    if (farmer) {
       setEditData({
-        name: restaurant.name,
-        email: restaurant.email,
-        phone: restaurant.phone || "",
-        location: restaurant.location,
+        province: farmer.province,
+        district: farmer.district,
+        sector: farmer.sector,
+        cell: farmer.cell,
+        village: farmer.village,
+        phone: farmer.phone || "",
+        email: farmer.email || "",
       });
     }
   };
 
   const handleSaveEdit = async () => {
-    if (!restaurant) return;
+    if (!farmer) return;
     
     setIsLoading(true);
     try {
-      await onEdit(restaurant.id, editData);
-      toast.success("Restaurant updated successfully");
+      await onEdit(farmer.id, editData);
+      toast.success("Farmer updated successfully");
       setIsEditing(false);
       onUpdate();
     } catch (error: any) {
-      console.error("Failed to update restaurant:", error);
-      toast.error(error.message || "Failed to update restaurant");
+      console.error("Failed to update farmer:", error);
+      toast.error(error.message || "Failed to update farmer");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!restaurant) return;
+    if (!farmer) return;
     
     setIsLoading(true);
     try {
-      await onDelete(restaurant.id);
-      toast.success("Restaurant deleted successfully");
+      await onDelete(farmer.id);
+      toast.success("Farmer deleted successfully");
       setIsDeleting(false);
       setDeleteConfirmText("");
       onOpenChange(false);
       onUpdate();
     } catch (error: any) {
-      console.error("Failed to delete restaurant:", error);
-      toast.error(error.message || "Failed to delete restaurant");
+      console.error("Failed to delete farmer:", error);
+      toast.error(error.message || "Failed to delete farmer");
     } finally {
       setIsLoading(false);
     }
@@ -116,45 +125,80 @@ export function RestaurantManagementModal({
     setDeleteConfirmText("");
   };
 
-  const isDeleteConfirmValid = deleteConfirmText === restaurant?.name;
+  const farmerName = farmer ? `${farmer.province} - ${farmer.district}` : "";
+  const isDeleteConfirmValid = deleteConfirmText === farmerName;
 
-  if (!restaurant) return null;
+  if (!farmer) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] bg-white text-gray-900 border-gray-200 flex flex-col p-0">
         <DialogHeader className="px-6 pt-6 pb-2">
           <DialogTitle className="text-gray-900">
-            Restaurant Management
+            Farmer Management
           </DialogTitle>
           <DialogDescription className="text-gray-600">
             {isDeleting
-              ? "Confirm deletion of this restaurant"
-              : "View and manage restaurant details"}
+              ? "Confirm deletion of this farmer"
+              : "View and manage farmer details"}
           </DialogDescription>
         </DialogHeader>
 
         <div className="overflow-y-auto scrollbar-thin px-6 flex-1">
           {isEditing ? (
             <div className="py-4 space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-gray-900">Restaurant Name</Label>
-                <Input
-                  id="name"
-                  value={editData.name}
-                  onChange={(e) => setEditData(prev => ({ ...prev, name: e.target.value }))}
-                  disabled={isLoading}
-                  className="bg-white border-gray-300 text-gray-900"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="province" className="text-gray-900">Province</Label>
+                  <Input
+                    id="province"
+                    value={editData.province}
+                    onChange={(e) => setEditData(prev => ({ ...prev, province: e.target.value }))}
+                    disabled={isLoading}
+                    className="bg-white border-gray-300 text-gray-900"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="district" className="text-gray-900">District</Label>
+                  <Input
+                    id="district"
+                    value={editData.district}
+                    onChange={(e) => setEditData(prev => ({ ...prev, district: e.target.value }))}
+                    disabled={isLoading}
+                    className="bg-white border-gray-300 text-gray-900"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="sector" className="text-gray-900">Sector</Label>
+                  <Input
+                    id="sector"
+                    value={editData.sector}
+                    onChange={(e) => setEditData(prev => ({ ...prev, sector: e.target.value }))}
+                    disabled={isLoading}
+                    className="bg-white border-gray-300 text-gray-900"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cell" className="text-gray-900">Cell</Label>
+                  <Input
+                    id="cell"
+                    value={editData.cell}
+                    onChange={(e) => setEditData(prev => ({ ...prev, cell: e.target.value }))}
+                    disabled={isLoading}
+                    className="bg-white border-gray-300 text-gray-900"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-900">Email</Label>
+                <Label htmlFor="village" className="text-gray-900">Village</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  value={editData.email}
-                  onChange={(e) => setEditData(prev => ({ ...prev, email: e.target.value }))}
+                  id="village"
+                  value={editData.village}
+                  onChange={(e) => setEditData(prev => ({ ...prev, village: e.target.value }))}
                   disabled={isLoading}
                   className="bg-white border-gray-300 text-gray-900"
                 />
@@ -172,11 +216,12 @@ export function RestaurantManagementModal({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="location" className="text-gray-900">Location</Label>
+                <Label htmlFor="email" className="text-gray-900">Email</Label>
                 <Input
-                  id="location"
-                  value={editData.location}
-                  onChange={(e) => setEditData(prev => ({ ...prev, location: e.target.value }))}
+                  id="email"
+                  type="email"
+                  value={editData.email}
+                  onChange={(e) => setEditData(prev => ({ ...prev, email: e.target.value }))}
                   disabled={isLoading}
                   className="bg-white border-gray-300 text-gray-900"
                 />
@@ -192,22 +237,22 @@ export function RestaurantManagementModal({
 
               <div className="space-y-4">
                 <div className="text-center space-y-2">
-                  <h3 className="text-lg font-semibold text-gray-900">Delete Restaurant</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">Delete Farmer</h3>
                   <p className="text-sm text-gray-600">
-                    This action cannot be undone. To confirm deletion, please type the{" "}
-                    <span className="font-semibold text-gray-900">restaurant name</span> below:
+                    This action cannot be undone. To confirm deletion, please type{" "}
+                    <span className="font-semibold text-gray-900">{farmerName}</span> below:
                   </p>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="deleteConfirm" className="text-gray-900">
-                    Type restaurant name{" "}
-                    <span className="font-semibold text-red-500">{restaurant.name}</span>{" "}
+                    Type{" "}
+                    <span className="font-semibold text-red-500">{farmerName}</span>{" "}
                     to confirm
                   </Label>
                   <Input
                     id="deleteConfirm"
-                    placeholder="Type restaurant name"
+                    placeholder="Type farmer location"
                     value={deleteConfirmText}
                     onChange={(e) => setDeleteConfirmText(e.target.value)}
                     disabled={isLoading}
@@ -218,50 +263,55 @@ export function RestaurantManagementModal({
             </div>
           ) : (
             <div className="py-4 space-y-4">
-
               <div className="space-y-3">
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="text-sm font-medium text-gray-600">Restaurant Name:</div>
-                  <div className="text-sm col-span-2 text-gray-900 font-medium">{restaurant.name}</div>
+                  <div className="text-sm font-medium text-gray-600">Province:</div>
+                  <div className="text-sm col-span-2 text-gray-900 font-medium">{farmer.province}</div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="text-sm font-medium text-gray-600">Email:</div>
-                  <div className="text-sm col-span-2 text-gray-900">{restaurant.email}</div>
+                  <div className="text-sm font-medium text-gray-600">District:</div>
+                  <div className="text-sm col-span-2 text-gray-900">{farmer.district}</div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="text-sm font-medium text-gray-600">Sector:</div>
+                  <div className="text-sm col-span-2 text-gray-900">{farmer.sector}</div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="text-sm font-medium text-gray-600">Cell:</div>
+                  <div className="text-sm col-span-2 text-gray-900">{farmer.cell}</div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="text-sm font-medium text-gray-600">Village:</div>
+                  <div className="text-sm col-span-2 text-gray-900">{farmer.village}</div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="text-sm font-medium text-gray-600">Phone:</div>
-                  <div className="text-sm col-span-2 text-gray-900">{restaurant.phone || "Not provided"}</div>
+                  <div className="text-sm col-span-2 text-gray-900">{farmer.phone || "Not provided"}</div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="text-sm font-medium text-gray-600">Location:</div>
-                  <div className="text-sm col-span-2 text-gray-900">{restaurant.location}</div>
+                  <div className="text-sm font-medium text-gray-600">Email:</div>
+                  <div className="text-sm col-span-2 text-gray-900">{farmer.email || "Not provided"}</div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="text-sm font-medium text-gray-600">Status:</div>
                   <div className="text-sm col-span-2">
                     <Badge className={
-                      restaurant.status === "active" ? "bg-green-100 text-green-800" :
-                      restaurant.status === "suspended" ? "bg-red-100 text-red-800" :
+                      farmer.status === "active" ? "bg-green-100 text-green-800" :
+                      farmer.status === "inactive" ? "bg-red-100 text-red-800" :
                       "bg-gray-100 text-gray-800"
                     }>
-                      {restaurant.status.charAt(0).toUpperCase() + restaurant.status.slice(1)}
+                      {farmer.status ? farmer.status.charAt(0).toUpperCase() + farmer.status.slice(1) : "Active"}
                     </Badge>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="text-sm font-medium text-gray-600">Orders:</div>
-                  <div className="text-sm col-span-2 text-gray-900">{restaurant.ordersCount} orders</div>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="text-sm font-medium text-gray-600">Total Spent:</div>
-                  <div className="text-sm col-span-2 text-green-600 font-medium">
-                    RWF {restaurant.totalSpent.toLocaleString()}
-                  </div>
+                  <div className="text-sm font-medium text-gray-600">Submissions:</div>
+                  <div className="text-sm col-span-2 text-gray-900">{farmer.submissions.length} submissions</div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="text-sm font-medium text-gray-600">Joined:</div>
                   <div className="text-sm col-span-2 text-gray-900">
-                    {new Date(restaurant.createdAt).toLocaleDateString()}
+                    {new Date(farmer.createdAt).toLocaleDateString()}
                   </div>
                 </div>
               </div>

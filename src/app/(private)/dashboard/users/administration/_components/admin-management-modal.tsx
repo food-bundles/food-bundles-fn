@@ -14,27 +14,27 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { PencilIcon, Trash2Icon } from "lucide-react";
+import { PencilIcon, Trash2Icon} from "lucide-react";
 import { toast } from "sonner";
-import type { Restaurant } from "./restaurant-columns";
+import type { Admin } from "@/app/contexts/AdminsContext";
 
-interface RestaurantManagementModalProps {
-  restaurant: Restaurant | null;
+interface AdminManagementModalProps {
+  admin: Admin | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdate: () => void;
-  onEdit: (restaurantId: string, data: any) => Promise<void>;
-  onDelete: (restaurantId: string) => Promise<void>;
+  onEdit: (adminId: string, data: any) => Promise<void>;
+  onDelete: (adminId: string) => Promise<void>;
 }
 
-export function RestaurantManagementModal({
-  restaurant,
+export function AdminManagementModal({
+  admin,
   open,
   onOpenChange,
   onUpdate,
   onEdit,
   onDelete,
-}: RestaurantManagementModalProps) {
+}: AdminManagementModalProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,22 +42,30 @@ export function RestaurantManagementModal({
 
   // Edit form state
   const [editData, setEditData] = useState({
-    name: "",
+    username: "",
     email: "",
     phone: "",
-    location: "",
+    province: "",
+    district: "",
+    sector: "",
+    cell: "",
+    village: "",
   });
 
   useEffect(() => {
-    if (restaurant) {
+    if (admin) {
       setEditData({
-        name: restaurant.name,
-        email: restaurant.email,
-        phone: restaurant.phone || "",
-        location: restaurant.location,
+        username: admin.username,
+        email: admin.email,
+        phone: admin.phone || "",
+        province: admin.province || "",
+        district: admin.district || "",
+        sector: admin.sector || "",
+        cell: admin.cell || "",
+        village: admin.village || "",
       });
     }
-  }, [restaurant]);
+  }, [admin]);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -65,47 +73,51 @@ export function RestaurantManagementModal({
 
   const handleCancelEdit = () => {
     setIsEditing(false);
-    if (restaurant) {
+    if (admin) {
       setEditData({
-        name: restaurant.name,
-        email: restaurant.email,
-        phone: restaurant.phone || "",
-        location: restaurant.location,
+        username: admin.username,
+        email: admin.email,
+        phone: admin.phone || "",
+        province: admin.province || "",
+        district: admin.district || "",
+        sector: admin.sector || "",
+        cell: admin.cell || "",
+        village: admin.village || "",
       });
     }
   };
 
   const handleSaveEdit = async () => {
-    if (!restaurant) return;
+    if (!admin) return;
     
     setIsLoading(true);
     try {
-      await onEdit(restaurant.id, editData);
-      toast.success("Restaurant updated successfully");
+      await onEdit(admin.id, editData);
+      toast.success("Admin updated successfully");
       setIsEditing(false);
       onUpdate();
     } catch (error: any) {
-      console.error("Failed to update restaurant:", error);
-      toast.error(error.message || "Failed to update restaurant");
+      console.error("Failed to update admin:", error);
+      toast.error(error.message || "Failed to update admin");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!restaurant) return;
+    if (!admin) return;
     
     setIsLoading(true);
     try {
-      await onDelete(restaurant.id);
-      toast.success("Restaurant deleted successfully");
+      await onDelete(admin.id);
+      toast.success("Admin deleted successfully");
       setIsDeleting(false);
       setDeleteConfirmText("");
       onOpenChange(false);
       onUpdate();
     } catch (error: any) {
-      console.error("Failed to delete restaurant:", error);
-      toast.error(error.message || "Failed to delete restaurant");
+      console.error("Failed to delete admin:", error);
+      toast.error(error.message || "Failed to delete admin");
     } finally {
       setIsLoading(false);
     }
@@ -116,21 +128,21 @@ export function RestaurantManagementModal({
     setDeleteConfirmText("");
   };
 
-  const isDeleteConfirmValid = deleteConfirmText === restaurant?.name;
+  const isDeleteConfirmValid = deleteConfirmText === admin?.username;
 
-  if (!restaurant) return null;
+  if (!admin) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] bg-white text-gray-900 border-gray-200 flex flex-col p-0">
         <DialogHeader className="px-6 pt-6 pb-2">
           <DialogTitle className="text-gray-900">
-            Restaurant Management
+            Admin Management
           </DialogTitle>
           <DialogDescription className="text-gray-600">
             {isDeleting
-              ? "Confirm deletion of this restaurant"
-              : "View and manage restaurant details"}
+              ? "Confirm deletion of this admin"
+              : "View and manage admin details"}
           </DialogDescription>
         </DialogHeader>
 
@@ -138,11 +150,11 @@ export function RestaurantManagementModal({
           {isEditing ? (
             <div className="py-4 space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-gray-900">Restaurant Name</Label>
+                <Label htmlFor="username" className="text-gray-900">Username</Label>
                 <Input
-                  id="name"
-                  value={editData.name}
-                  onChange={(e) => setEditData(prev => ({ ...prev, name: e.target.value }))}
+                  id="username"
+                  value={editData.username}
+                  onChange={(e) => setEditData(prev => ({ ...prev, username: e.target.value }))}
                   disabled={isLoading}
                   className="bg-white border-gray-300 text-gray-900"
                 />
@@ -171,15 +183,60 @@ export function RestaurantManagementModal({
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="location" className="text-gray-900">Location</Label>
-                <Input
-                  id="location"
-                  value={editData.location}
-                  onChange={(e) => setEditData(prev => ({ ...prev, location: e.target.value }))}
-                  disabled={isLoading}
-                  className="bg-white border-gray-300 text-gray-900"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="province" className="text-gray-900">Province</Label>
+                  <Input
+                    id="province"
+                    value={editData.province}
+                    onChange={(e) => setEditData(prev => ({ ...prev, province: e.target.value }))}
+                    disabled={isLoading}
+                    className="bg-white border-gray-300 text-gray-900"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="district" className="text-gray-900">District</Label>
+                  <Input
+                    id="district"
+                    value={editData.district}
+                    onChange={(e) => setEditData(prev => ({ ...prev, district: e.target.value }))}
+                    disabled={isLoading}
+                    className="bg-white border-gray-300 text-gray-900"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="sector" className="text-gray-900">Sector</Label>
+                  <Input
+                    id="sector"
+                    value={editData.sector}
+                    onChange={(e) => setEditData(prev => ({ ...prev, sector: e.target.value }))}
+                    disabled={isLoading}
+                    className="bg-white border-gray-300 text-gray-900"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cell" className="text-gray-900">Cell</Label>
+                  <Input
+                    id="cell"
+                    value={editData.cell}
+                    onChange={(e) => setEditData(prev => ({ ...prev, cell: e.target.value }))}
+                    disabled={isLoading}
+                    className="bg-white border-gray-300 text-gray-900"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="village" className="text-gray-900">Village</Label>
+                  <Input
+                    id="village"
+                    value={editData.village}
+                    onChange={(e) => setEditData(prev => ({ ...prev, village: e.target.value }))}
+                    disabled={isLoading}
+                    className="bg-white border-gray-300 text-gray-900"
+                  />
+                </div>
               </div>
             </div>
           ) : isDeleting ? (
@@ -192,22 +249,22 @@ export function RestaurantManagementModal({
 
               <div className="space-y-4">
                 <div className="text-center space-y-2">
-                  <h3 className="text-lg font-semibold text-gray-900">Delete Restaurant</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">Delete Admin</h3>
                   <p className="text-sm text-gray-600">
-                    This action cannot be undone. To confirm deletion, please type the{" "}
-                    <span className="font-semibold text-gray-900">restaurant name</span> below:
+                    This action cannot be undone. To confirm deletion, please type{" "}
+                    <span className="font-semibold text-gray-900">{admin.username}</span> below:
                   </p>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="deleteConfirm" className="text-gray-900">
-                    Type restaurant name{" "}
-                    <span className="font-semibold text-red-500">{restaurant.name}</span>{" "}
+                    Type{" "}
+                    <span className="font-semibold text-red-500">{admin.username}</span>{" "}
                     to confirm
                   </Label>
                   <Input
                     id="deleteConfirm"
-                    placeholder="Type restaurant name"
+                    placeholder="Type username"
                     value={deleteConfirmText}
                     onChange={(e) => setDeleteConfirmText(e.target.value)}
                     disabled={isLoading}
@@ -221,47 +278,57 @@ export function RestaurantManagementModal({
 
               <div className="space-y-3">
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="text-sm font-medium text-gray-600">Restaurant Name:</div>
-                  <div className="text-sm col-span-2 text-gray-900 font-medium">{restaurant.name}</div>
+                  <div className="text-sm font-medium text-gray-600">Username:</div>
+                  <div className="text-sm col-span-2 text-gray-900 font-medium">{admin.username}</div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="text-sm font-medium text-gray-600">Email:</div>
-                  <div className="text-sm col-span-2 text-gray-900">{restaurant.email}</div>
+                  <div className="text-sm col-span-2 text-gray-900">{admin.email}</div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="text-sm font-medium text-gray-600">Role:</div>
+                  <div className="text-sm col-span-2">
+                    <Badge className="bg-green-100 text-green-800">{admin.role}</Badge>
+                  </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="text-sm font-medium text-gray-600">Phone:</div>
-                  <div className="text-sm col-span-2 text-gray-900">{restaurant.phone || "Not provided"}</div>
+                  <div className="text-sm col-span-2 text-gray-900">{admin.phone || "Not provided"}</div>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="text-sm font-medium text-gray-600">Location:</div>
-                  <div className="text-sm col-span-2 text-gray-900">{restaurant.location}</div>
-                </div>
+                {admin.province && (
+                  <>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="text-sm font-medium text-gray-600">Province:</div>
+                      <div className="text-sm col-span-2 text-gray-900">{admin.province}</div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="text-sm font-medium text-gray-600">District:</div>
+                      <div className="text-sm col-span-2 text-gray-900">{admin.district}</div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="text-sm font-medium text-gray-600">Location:</div>
+                      <div className="text-sm col-span-2 text-gray-900">
+                        {admin.sector}, {admin.cell}, {admin.village}
+                      </div>
+                    </div>
+                  </>
+                )}
                 <div className="grid grid-cols-3 gap-2">
                   <div className="text-sm font-medium text-gray-600">Status:</div>
                   <div className="text-sm col-span-2">
                     <Badge className={
-                      restaurant.status === "active" ? "bg-green-100 text-green-800" :
-                      restaurant.status === "suspended" ? "bg-red-100 text-red-800" :
+                      admin.status === "active" ? "bg-green-100 text-green-800" :
+                      admin.status === "suspended" ? "bg-red-100 text-red-800" :
                       "bg-gray-100 text-gray-800"
                     }>
-                      {restaurant.status.charAt(0).toUpperCase() + restaurant.status.slice(1)}
+                      {admin.status ? admin.status.charAt(0).toUpperCase() + admin.status.slice(1) : "Active"}
                     </Badge>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="text-sm font-medium text-gray-600">Orders:</div>
-                  <div className="text-sm col-span-2 text-gray-900">{restaurant.ordersCount} orders</div>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="text-sm font-medium text-gray-600">Total Spent:</div>
-                  <div className="text-sm col-span-2 text-green-600 font-medium">
-                    RWF {restaurant.totalSpent.toLocaleString()}
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="text-sm font-medium text-gray-600">Joined:</div>
+                  <div className="text-sm font-medium text-gray-600">Created:</div>
                   <div className="text-sm col-span-2 text-gray-900">
-                    {new Date(restaurant.createdAt).toLocaleDateString()}
+                    {new Date(admin.createdAt).toLocaleDateString()}
                   </div>
                 </div>
               </div>

@@ -1,54 +1,39 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  MoreHorizontal,
-  Eye,
-  Edit,
-  Trash2,
-  Phone,
-  Mail,
-  MapPin,
-} from "lucide-react";
 import { format } from "date-fns";
+import { Farmer } from "@/app/contexts/FarmersContext";
 
-export type Farmer = {
-  id: string;
-  location: string;
-  role: string;
-  phone?: string;
-  email?: string;
-  createdAt: string;
-  submissionsCount: number;
-  status: "active" | "inactive" | "pending";
-};
-
-export const farmerColumns: ColumnDef<Farmer>[] = [
+export const getFarmerColumns = (
+  onManage: (farmer: Farmer) => void
+): ColumnDef<Farmer>[] => [
   {
-    accessorKey: "id",
-    header: "Farmer ID",
+    id: "index",
+    header: "No",
     cell: ({ row }) => (
       <div className="font-mono text-sm">
-        {row.getValue("id")?.toString().slice(0, 8)}
+        {row.index + 1}
       </div>
     ),
   },
   {
-    accessorKey: "location",
+    accessorKey: "province",
     header: "Location",
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2">
-        <MapPin className="h-4 w-4 text-gray-500" />
-        <span>{row.getValue("location")}</span>
-      </div>
-    ),
+    cell: ({ row }) => {
+      const farmer = row.original;
+      const location = `${farmer.province}, ${farmer.district}`;
+      const subLocation = `${farmer.sector}, ${farmer.cell}, ${farmer.village}`;
+      
+      return (
+        <div className="flex items-center gap-2">
+          <div className="flex flex-col">
+            <span className="font-medium">{location}</span>
+            <span className="text-xs text-gray-500">{subLocation}</span>
+          </div>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "phone",
@@ -57,7 +42,6 @@ export const farmerColumns: ColumnDef<Farmer>[] = [
       const phone = row.getValue("phone") as string;
       return phone ? (
         <div className="flex items-center gap-2">
-          <Phone className="h-4 w-4 text-gray-500" />
           <span>{phone}</span>
         </div>
       ) : (
@@ -65,53 +49,43 @@ export const farmerColumns: ColumnDef<Farmer>[] = [
       );
     },
   },
+
   {
-    accessorKey: "email",
-    header: "Email",
+    accessorKey: "submissions",
+    header: "Submissions",
     cell: ({ row }) => {
-      const email = row.getValue("email") as string;
-      return email ? (
-        <div className="flex items-center gap-2">
-          <Mail className="h-4 w-4 text-gray-500" />
-          <span>{email}</span>
-        </div>
-      ) : (
-        <span className="text-gray-400">Not provided</span>
+      const submissions = row.getValue("submissions") as any[];
+      return (
+        <Badge variant="outline">
+          {submissions.length} submissions
+        </Badge>
       );
     },
-  },
-  {
-    accessorKey: "submissionsCount",
-    header: "Submissions",
-    cell: ({ row }) => (
-      <Badge variant="outline">
-        {row.getValue("submissionsCount")} submissions
-      </Badge>
-    ),
   },
   {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
       const status = row.getValue("status") as string;
+      const displayStatus = status || "active";
       return (
         <Badge
           variant={
-            status === "active"
+            displayStatus === "active"
               ? "default"
-              : status === "pending"
+              : displayStatus === "pending"
               ? "secondary"
               : "destructive"
           }
           className={
-            status === "active"
+            displayStatus === "active"
               ? "bg-green-100 text-green-800 hover:bg-green-200"
-              : status === "pending"
+              : displayStatus === "pending"
               ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
               : "bg-red-100 text-red-800 hover:bg-red-200"
           }
         >
-          {status.charAt(0).toUpperCase() + status.slice(1)}
+          {displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
         </Badge>
       );
     },
@@ -131,28 +105,14 @@ export const farmerColumns: ColumnDef<Farmer>[] = [
       const farmer = row.original;
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem>
-              <Eye className="mr-2 h-4 w-4" />
-              View Details
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Edit className="mr-2 h-4 w-4" />
-              Edit Farmer
-            </DropdownMenuItem>
-            <DropdownMenuItem className="text-red-600">
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete Farmer
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={() => onManage(farmer)}
+          className="flex items-center gap-2"
+        >
+          view
+        </Button>
       );
     },
   },

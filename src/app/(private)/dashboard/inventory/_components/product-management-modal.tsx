@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { PencilIcon, Trash2Icon, Package } from "lucide-react";
+import { PencilIcon, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -319,12 +319,6 @@ export function ProductManagementModal({
             </div>
           ) : (
             <div className="py-4 space-y-4">
-              <div className="flex justify-center">
-                <div className="h-20 w-20 rounded-full bg-green-600/10 flex items-center justify-center">
-                  <Package className="h-10 w-10 text-green-600" />
-                </div>
-              </div>
-
               {/* Product Images */}
               {product.images && product.images.length > 0 && (
                 <div className="grid grid-cols-3 gap-2 mb-4">
