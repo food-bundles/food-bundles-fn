@@ -18,6 +18,14 @@ import { productService } from "@/app/services/productService";
 interface InventoryManagementProps {
   products: Product[];
   onRefresh: () => void;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  onPaginationChange?: (page: number, limit: number) => void;
+  isLoading?: boolean;
 }
 
 const statusOptions = [
@@ -42,6 +50,9 @@ const categoryOptions = [
 export function InventoryManagement({
   products,
   onRefresh,
+  pagination,
+  onPaginationChange,
+  isLoading = false,
 }: InventoryManagementProps) {
   // Filter states
   const [searchValue, setSearchValue] = useState("");
@@ -182,8 +193,9 @@ export function InventoryManagement({
     <>
       <DataTable
         columns={columns}
-        data={filteredData}
+        data={pagination ? products : filteredData}
         title="Inventory Management"
+        description={pagination ? `Total: ${pagination.total} products` : undefined}
         showExport={true}
         onExport={handleExport}
         showAddButton={true}
@@ -208,6 +220,9 @@ export function InventoryManagement({
         showColumnVisibility={true}
         showPagination={true}
         showRowSelection={true}
+        pagination={pagination}
+        onPaginationChange={onPaginationChange}
+        isLoading={isLoading}
       />
 
       {/* Modals */}

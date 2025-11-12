@@ -10,17 +10,27 @@ import { Spinner } from "@/components/ui/shadcn-io/spinner";
 export default function InventoryPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [paginationLoading, setPaginationLoading] = useState(false);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
   const { getAllProductsRoleBased } = useProducts();
 
-  // ✅ Fetch products based on user role
-  const fetchProducts = async () => {
+  // ✅ Fetch products based on user role with pagination
+  const fetchProducts = async (page = 1, limit = 10, isPagination = false) => {
     try {
-      setLoading(true);
-      const response = await getAllProductsRoleBased();
+      if (isPagination) {
+        setPaginationLoading(true);
+      } else {
+        setLoading(true);
+      }
+      const response = await getAllProductsRoleBased({ page, limit });
 
       // Check if API returned data correctly
       if (response?.success && Array.isArray(response?.data)) {
-
         const mappedProducts = response.data.map((product: Product) => ({
           id: product.id,
           productName: product.productName,
@@ -50,6 +60,16 @@ export default function InventoryPage() {
         }));
 
         setProducts(mappedProducts);
+        
+        // Update pagination from API response
+        if (response.pagination) {
+          setPagination({
+            page: response.pagination.page,
+            limit: response.pagination.limit,
+            total: response.pagination.total,
+            totalPages: response.pagination.totalPages,
+          });
+        }
       } else {
         console.warn("Unexpected API response format:", response);
       }
@@ -57,12 +77,17 @@ export default function InventoryPage() {
       console.error("Failed to fetch products:", error);
     } finally {
       setLoading(false);
+      setPaginationLoading(false);
     }
+  };
+
+  const handlePaginationChange = (page: number, limit: number) => {
+    fetchProducts(page, limit, true);
   };
 
   // ✅ Use effect (correct spelling)
   useEffect(() => {
-    fetchProducts();
+    fetchProducts(1, 10);
   }, []);
 
   if (loading)
@@ -73,7 +98,13 @@ export default function InventoryPage() {
     );
   return (
     <div className="p-6">
-      <InventoryManagement products={products} onRefresh={fetchProducts} />
+      <InventoryManagement 
+        products={products} 
+        onRefresh={() => fetchProducts(pagination.page, pagination.limit)}
+        pagination={pagination}
+        onPaginationChange={handlePaginationChange}
+        isLoading={paginationLoading}
+      />
     </div>
   );
 }

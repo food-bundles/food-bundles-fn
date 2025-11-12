@@ -57,7 +57,14 @@ export interface ProductsResponse {
 interface ProductContextType {
   categories: Category[];
   getAllProducts: () => Promise<ProductsResponse>;
-  getAllProductsRoleBased: () => Promise<ProductsResponse>;
+  getAllProductsRoleBased: (params?: {
+    page?: number;
+    limit?: number;
+    categoryId?: string;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }) => Promise<ProductsResponse & { pagination?: any }>;
   getAllProductsByCategoryId: (categoryId: string) => Promise<ProductsResponse>;
   getProductById: (productId: string) => Promise<{ data: Product }>;
   refreshCategories: () => Promise<void>;
@@ -113,32 +120,39 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
     }
   }, [categories]);
 
-  const getAllProductsRoleBased =
-    useCallback(async (): Promise<ProductsResponse> => {
-      try {
-        const response = await productService.getAllProductsRoleBased();
+  const getAllProductsRoleBased = useCallback(async (params?: {
+    page?: number;
+    limit?: number;
+    categoryId?: string;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }): Promise<ProductsResponse & { pagination?: any }> => {
+    try {
+      const response = await productService.getAllProductsRoleBased(params);
 
-        const transformedProducts = response.data.map((product: any) => ({
-          ...product,
-          expiryDate: product.expiryDate ? new Date(product.expiryDate) : null,
-          category: product.category || null,
-          rating: product.rating || Math.random() * 2 + 3,
-          soldCount: product.soldCount || Math.floor(Math.random() * 100),
-        }));
+      const transformedProducts = response.data.map((product: any) => ({
+        ...product,
+        expiryDate: product.expiryDate ? new Date(product.expiryDate) : null,
+        category: product.category || null,
+        rating: product.rating || Math.random() * 2 + 3,
+        soldCount: product.soldCount || Math.floor(Math.random() * 100),
+      }));
 
-        return {
-          success: true,
-          data: transformedProducts,
-        };
-      } catch (error) {
-        console.error("Failed to fetch role-based products:", error);
-        return {
-          success: false,
-          data: [],
-          message: "Failed to fetch role-based products",
-        };
-      }
-    }, [categories]);
+      return {
+        success: true,
+        data: transformedProducts,
+        pagination: response.pagination,
+      };
+    } catch (error) {
+      console.error("Failed to fetch role-based products:", error);
+      return {
+        success: false,
+        data: [],
+        message: "Failed to fetch role-based products",
+      };
+    }
+  }, [categories]);
 
   const getAllProductsByCategoryId = useCallback(
     async (categoryId: string): Promise<ProductsResponse> => {

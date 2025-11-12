@@ -120,6 +120,16 @@ interface DataTableProps<TData, TValue> {
 
   // Custom filter props
   customFilters?: React.ReactNode;
+
+  // Server-side pagination
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  onPaginationChange?: (page: number, limit: number) => void;
+  isLoading?: boolean;
 }
 
 export function DataTable<TData, TValue>({
@@ -137,6 +147,9 @@ export function DataTable<TData, TValue>({
   showPagination = true,
   showRowSelection = true,
   customFilters,
+  pagination,
+  onPaginationChange,
+  isLoading = false,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -152,13 +165,15 @@ export function DataTable<TData, TValue>({
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    initialState: {
-      pagination: {
-        pageIndex: 0,
-        pageSize: 5,
+    ...(pagination ? {} : { getPaginationRowModel: getPaginationRowModel() }),
+    ...(!pagination && {
+      initialState: {
+        pagination: {
+          pageIndex: 0,
+          pageSize: 5,
+        },
       },
-    },
+    }),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
@@ -172,15 +187,34 @@ export function DataTable<TData, TValue>({
   });
 
   const getPageNumbers = () => {
-    const totalPages = table.getPageCount();
-    const currentPage = table.getState().pagination.pageIndex + 1;
+    const totalPages = pagination?.totalPages || table.getPageCount();
+    const currentPage = pagination?.page || (table.getState().pagination.pageIndex + 1);
     const pages = [];
 
-    for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(totalPages, startPage + 4);
+
+    for (let i = startPage; i <= endPage; i++) {
       pages.push(i);
     }
 
     return pages;
+  };
+
+  const handlePageChange = (page: number) => {
+    if (pagination && onPaginationChange) {
+      onPaginationChange(page, pagination.limit);
+    } else {
+      table.setPageIndex(page - 1);
+    }
+  };
+
+  const handlePageSizeChange = (pageSize: number) => {
+    if (pagination && onPaginationChange) {
+      onPaginationChange(1, pageSize);
+    } else {
+      table.setPageSize(pageSize);
+    }
   };
 
   const renderFilter = (filter: FilterConfig) => {
@@ -291,7 +325,17 @@ export function DataTable<TData, TValue>({
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+              [...Array(10)].map((_, i) => (
+                <TableRow key={i}>
+                  {columns.map((_, colIndex) => (
+                    <TableCell key={colIndex}>
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
@@ -336,38 +380,45 @@ export function DataTable<TData, TValue>({
           {showPagination && (
             <div className="flex items-center space-x-2">
               <button
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
-                className={`p-1 rounded  ${
-                  table.getCanNextPage()
-                    ? "text-gray-900 hover:bg-gray-100"
-                    : "text-gray-400 cursor-not-allowed"
+                onClick={() => {
+                  const currentPage = pagination?.page || (table.getState().pagination.pageIndex + 1);
+                  if (currentPage > 1) handlePageChange(currentPage - 1);
+                }}
+                disabled={pagination ? pagination.page <= 1 : !table.getCanPreviousPage()}
+                className={`p-1 rounded ${
+                  pagination ? (pagination.page > 1 ? "text-gray-900 hover:bg-gray-100" : "text-gray-400 cursor-not-allowed") :
+                  (table.getCanPreviousPage() ? "text-gray-900 hover:bg-gray-100" : "text-gray-400 cursor-not-allowed")
                 }`}
               >
-                {/* previous */}
                 <ChevronsLeft className="h-6 w-6" />
               </button>
 
-              {getPageNumbers().map((pageNumber) => (
-                <button
-                  key={pageNumber}
-                  onClick={() => table.setPageIndex(pageNumber - 1)}
-                  className={`px-3 rounded ${
-                    table.getState().pagination.pageIndex + 1 === pageNumber
-                      ? "bg-green-700 hover:bg-green-800 text-white"
-                      : "bg-white hover:bg-gray-100 text-gray-900"
-                  }`}
-                >
-                  {pageNumber}
-                </button>
-              ))}
+              {getPageNumbers().map((pageNumber) => {
+                const currentPage = pagination?.page || (table.getState().pagination.pageIndex + 1);
+                return (
+                  <button
+                    key={pageNumber}
+                    onClick={() => handlePageChange(pageNumber)}
+                    className={`px-3 rounded ${
+                      currentPage === pageNumber
+                        ? "bg-green-700 hover:bg-green-800 text-white"
+                        : "bg-white hover:bg-gray-100 text-gray-900"
+                    }`}
+                  >
+                    {pageNumber}
+                  </button>
+                );
+              })}
               <button
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
+                onClick={() => {
+                  const currentPage = pagination?.page || (table.getState().pagination.pageIndex + 1);
+                  const totalPages = pagination?.totalPages || table.getPageCount();
+                  if (currentPage < totalPages) handlePageChange(currentPage + 1);
+                }}
+                disabled={pagination ? pagination.page >= pagination.totalPages : !table.getCanNextPage()}
                 className={`p-1 rounded ${
-                  table.getCanNextPage()
-                    ? "text-gray-900 hover:bg-gray-100"
-                    : "text-gray-400 cursor-not-allowed"
+                  pagination ? (pagination.page < pagination.totalPages ? "text-gray-900 hover:bg-gray-100" : "text-gray-400 cursor-not-allowed") :
+                  (table.getCanNextPage() ? "text-gray-900 hover:bg-gray-100" : "text-gray-400 cursor-not-allowed")
                 }`}
               >
                 <ChevronsRight className="h-6 w-6" />
@@ -378,12 +429,12 @@ export function DataTable<TData, TValue>({
           {showPagination && (
             <div className="flex items-center space-x-2">
               <Select
-                value={`${table.getState().pagination.pageSize}`}
-                onValueChange={(value) => table.setPageSize(Number(value))}
+                value={`${pagination?.limit || table.getState().pagination.pageSize}`}
+                onValueChange={(value) => handlePageSizeChange(Number(value))}
               >
                 <SelectTrigger className="h-8 w-[70px]">
                   <SelectValue
-                    placeholder={table.getState().pagination.pageSize}
+                    placeholder={pagination?.limit || table.getState().pagination.pageSize}
                   />
                 </SelectTrigger>
                 <SelectContent side="top">
