@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { PencilIcon, Trash2Icon, Store } from "lucide-react";
+import { PencilIcon, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
 import type { Restaurant } from "./restaurant-columns";
 
@@ -218,11 +218,6 @@ export function RestaurantManagementModal({
             </div>
           ) : (
             <div className="py-4 space-y-4">
-              <div className="flex justify-center">
-                <div className="h-20 w-20 rounded-full bg-green-600/10 flex items-center justify-center">
-                  <Store className="h-10 w-10 text-green-600" />
-                </div>
-              </div>
 
               <div className="space-y-3">
                 <div className="grid grid-cols-3 gap-2">

@@ -11,6 +11,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export interface Order {
   id: string;
@@ -60,44 +70,73 @@ function StatusDropdown({ currentStatus, orderId, onUpdate }: {
 }) {
   const [selectedStatus, setSelectedStatus] = useState(currentStatus);
   const [showUpdate, setShowUpdate] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleStatusChange = (newStatus: string) => {
     setSelectedStatus(newStatus);
     setShowUpdate(newStatus !== currentStatus);
   };
 
-  const handleUpdate = () => {
+  const handleUpdate = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowConfirm(true);
+  };
+
+  const confirmUpdate = () => {
     onUpdate(orderId, selectedStatus);
     setShowUpdate(false);
+    setShowConfirm(false);
+  };
+
+  const handleCancel = () => {
+    setShowConfirm(false);
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <Select value={selectedStatus} onValueChange={handleStatusChange}>
-        <SelectTrigger className="w-32 h-8">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="PENDING">Pending</SelectItem>
-          <SelectItem value="CONFIRMED">Confirmed</SelectItem>
-          <SelectItem value="PREPARING">Preparing</SelectItem>
-          <SelectItem value="READY">Ready</SelectItem>
-          <SelectItem value="IN_TRANSIT">In Transit</SelectItem>
-          <SelectItem value="DELIVERED">Delivered</SelectItem>
-          <SelectItem value="CANCELLED">Cancelled</SelectItem>
-          <SelectItem value="REFUNDED">Refunded</SelectItem>
-        </SelectContent>
-      </Select>
-      {showUpdate && (
-        <Button
-          size="sm"
-          onClick={handleUpdate}
-          className="h-6 w-6 p-0 bg-green-600 hover:bg-green-700"
-        >
-          <Check className="h-3 w-3" />
-        </Button>
-      )}
-    </div>
+    <>
+      <div className="flex items-center gap-2">
+        <Select value={selectedStatus} onValueChange={handleStatusChange}>
+          <SelectTrigger className="w-32 h-8">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="PENDING">Pending</SelectItem>
+            <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+            <SelectItem value="PREPARING">Preparing</SelectItem>
+            <SelectItem value="READY">Ready</SelectItem>
+            <SelectItem value="IN_TRANSIT">In Transit</SelectItem>
+            <SelectItem value="DELIVERED">Delivered</SelectItem>
+            <SelectItem value="CANCELLED">Cancelled</SelectItem>
+            <SelectItem value="REFUNDED">Refunded</SelectItem>
+          </SelectContent>
+        </Select>
+        {showUpdate && (
+          <Button
+            size="sm"
+            onClick={handleUpdate}
+            className="h-6 w-6 p-0 bg-green-600 hover:bg-green-700"
+          >
+            <Check className="h-3 w-3" />
+          </Button>
+        )}
+      </div>
+      
+      <AlertDialog open={showConfirm} onOpenChange={() => {}}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Status Update</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-700">
+              Are you sure you want to update the order status to &rdquo;{selectedStatus}&rdquo;? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancel}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmUpdate}>Update Status</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
@@ -109,42 +148,71 @@ function PaymentStatusDropdown({ currentStatus, orderId, onUpdate }: {
 }) {
   const [selectedStatus, setSelectedStatus] = useState(currentStatus);
   const [showUpdate, setShowUpdate] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleStatusChange = (newStatus: string) => {
     setSelectedStatus(newStatus);
     setShowUpdate(newStatus !== currentStatus);
   };
 
-  const handleUpdate = () => {
+  const handleUpdate = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowConfirm(true);
+  };
+
+  const confirmUpdate = () => {
     onUpdate(orderId, selectedStatus);
     setShowUpdate(false);
+    setShowConfirm(false);
+  };
+
+  const handleCancel = () => {
+    setShowConfirm(false);
   };
 
   return (
-    <div className="flex items-center gap-2">
-      <Select value={selectedStatus} onValueChange={handleStatusChange}>
-        <SelectTrigger className="w-32 h-8">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="PENDING">Pending</SelectItem>
-          <SelectItem value="PROCESSING">Processing</SelectItem>
-          <SelectItem value="COMPLETED">Completed</SelectItem>
-          <SelectItem value="FAILED">Failed</SelectItem>
-          <SelectItem value="CANCELLED">Cancelled</SelectItem>
-          <SelectItem value="REFUNDED">Refunded</SelectItem>
-        </SelectContent>
-      </Select>
-      {showUpdate && (
-        <Button
-          size="sm"
-          onClick={handleUpdate}
-          className="h-6 w-6 p-0 bg-green-600 hover:bg-green-700"
-        >
-          <Check className="h-3 w-3" />
-        </Button>
-      )}
-    </div>
+    <>
+      <div className="flex items-center gap-2">
+        <Select value={selectedStatus} onValueChange={handleStatusChange}>
+          <SelectTrigger className="w-32 h-8">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="PENDING">Pending</SelectItem>
+            <SelectItem value="PROCESSING">Processing</SelectItem>
+            <SelectItem value="COMPLETED">Completed</SelectItem>
+            <SelectItem value="FAILED">Failed</SelectItem>
+            <SelectItem value="CANCELLED">Cancelled</SelectItem>
+            <SelectItem value="REFUNDED">Refunded</SelectItem>
+          </SelectContent>
+        </Select>
+        {showUpdate && (
+          <Button
+            size="sm"
+            onClick={handleUpdate}
+            className="h-6 w-6 p-0 bg-green-600 hover:bg-green-700"
+          >
+            <Check className="h-3 w-3" />
+          </Button>
+        )}
+      </div>
+      
+      <AlertDialog open={showConfirm} onOpenChange={() => {}}>
+        <AlertDialogContent >
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Payment Status Update</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-700">
+              Are you sure you want to update the payment status to &rdquo;{selectedStatus}&rdquo;? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancel}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmUpdate}>Update Payment Status</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 

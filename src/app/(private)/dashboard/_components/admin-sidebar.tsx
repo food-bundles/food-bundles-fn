@@ -20,7 +20,7 @@ import {
   Crown,
   Ticket,
 } from "lucide-react";
-import { usePathname} from "next/navigation";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
 import { authService } from "@/app/services/authService";
@@ -126,20 +126,22 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   };
 
   return (
-    <div className="relative w-60 min-w-60 h-screen overflow-hidden">
+    <div className="relative w-60 min-w-60 h-screen overflow-hidden bg-green-900">
       {/* Animated Squares Background */}
       <div className="absolute inset-0 animated-squares z-0" />
+
       <div
         className={`
-      fixed md:relative
-      ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
-      z-50 md:z-auto
-      w-60 min-w-60 h-screen border-r border-gray-200 bg-gray-50 flex flex-col shrink-0 
-      transition-transform duration-300 ease-in-out
-    `}
+          fixed md:relative
+          ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+          z-50 md:z-auto
+          w-60 min-w-60 h-screen border-r border-gray-200 flex flex-col shrink-0 
+          transition-transform duration-300 ease-in-out relative
+        `}
+        style={{ backgroundColor: "transparent" }}
       >
         {/* Logo */}
-        <div className="p-3 md:p-4 flex items-center gap-2 shrink-0">
+        <div className="p-3 md:p-4 flex items-center gap-2 shrink-0 relative z-10 bg-green-700 backdrop-blur-sm">
           <OptimizedImage
             src="/imgs/Food_bundle_logo.png"
             alt="Logo"
@@ -147,13 +149,13 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
             height={40}
             className="w-7 h-7 md:w-8 md:h-8 rounded-full object-cover"
           />
-          <h1 className="text-lg md:text-xl font-bold text-black">
+          <h1 className="text-lg md:text-xl font-bold text-green-100">
             FoodBundles
           </h1>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 py-2 md:py-4 overflow-auto scrollbar-hide">
+        <nav className="flex-1 py-2 md:py-4 overflow-auto scrollbar-hide relative z-10">
           <ul className="space-y-1 px-2 md:px-3 pb-4">
             {menuItems.map((item, index) => {
               const isActive = isItemActive(item);
@@ -170,14 +172,14 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                           "w-full flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap justify-between",
                           isActive
                             ? "bg-green-500 hover:bg-green-600 text-white"
-                            : "text-gray-800 hover:bg-green-100"
+                            : "text-green-200 "
                         )}
                       >
-                        <div className="flex items-center">
+                        <div className="flex items-center hover:text-green-500">
                           <item.icon
                             className={cn(
                               "mr-2 md:mr-3 h-4 w-4 md:h-5 md:w-5",
-                              isActive ? "text-white" : " text-green-600"
+                              isActive ? "text-white" : " text-green-500"
                             )}
                           />
                           {item.label}
@@ -200,12 +202,12 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                                   className={cn(
                                     "flex items-center px-2 md:px-3 py-2 rounded text-xs md:text-sm font-medium transition-colors whitespace-nowrap",
                                     isSubActive
-                                      ? "bg-transparent text-green-600 hover:text-green-800"
-                                      : "text-gray-600 hover:bg-green-50"
+                                      ? "bg-transparent text-green-600 "
+                                      : "text-gray-600 "
                                   )}
                                 >
-                                  <subItem.icon className="mr-2 md:mr-3 h-3 w-3 md:h-4 md:w-4 text-green-500" />
-                                  <span className="truncate">
+                                  <subItem.icon className="mr-2 md:mr-3 h-2 w-2 md:h-3 md:w-3 text-green-500" />
+                                  <span className="truncate text-[12px] text-green-200 hover:text-green-500">
                                     {subItem.label}
                                   </span>
                                 </Link>
@@ -221,18 +223,18 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                       onClick={() => onClose()}
                       className={cn(
                         "flex items-center px-2 md:px-3 py-2 text-xs md:text-sm font-medium transition-colors whitespace-nowrap rounded-md",
-                        isActive
-                          ? "bg-green-700 hover:bg-green-600 text-white"
-                          : "text-gray-800 hover:bg-green-100"
+                        isActive ? "bg-green-700 hover:bg-green-600" : ""
                       )}
                     >
                       <item.icon
                         className={cn(
                           "mr-2 md:mr-3 h-4 w-4 md:h-5 md:w-5",
-                          isActive ? "text-white" : " text-green-600"
+                          isActive ? "text-white" : " text-green-500"
                         )}
                       />
-                      <span className="truncate">{item.label}</span>
+                      <span className="truncate text-green-200 hover:text-green-500">
+                        {item.label}
+                      </span>
                     </Link>
                   )}
                 </li>
@@ -246,7 +248,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                 disabled={isLoggingOut}
                 className={cn(
                   "w-full flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap",
-                  "text-gray-800 hover:bg-red-100 hover:text-red-600",
+                  "text-red-300  hover:text-red-400",
                   isLoggingOut && "opacity-50 cursor-not-allowed"
                 )}
               >

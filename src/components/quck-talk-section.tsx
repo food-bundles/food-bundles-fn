@@ -229,7 +229,7 @@ function FarmCarousel() {
                   alt={`${item.name} - ${idx + 1}`}
                   className="w-full h-full rounded-lg object-cover transition-transform duration-300 group-hover:scale-105"
                   transformation={[
-                    { width: 400, height: 320, crop: "fill", quality: "80" }
+                    { width: 400, height: 320, crop: "fill", quality: "80" },
                   ]}
                 />
                 <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
@@ -258,7 +258,7 @@ function ChatWindow({ isOpen, onClose }: ChatWindowProps) {
   const [messages, setMessages] = useState([
     {
       id: 1,
-      text: "Hi! I'm Food Bundle Assistant. How can I help you today?",
+      text: "Hi! I'm Food BundlesAssistant. How can I help you today?",
       sender: "bot",
       time: new Date().toLocaleTimeString([], {
         hour: "2-digit",
@@ -312,7 +312,7 @@ function ChatWindow({ isOpen, onClose }: ChatWindowProps) {
             <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-green-600" />
           </div>
           <div>
-            <h4 className="font-semibold text-[14px]">Food Bundle Support</h4>
+            <h4 className="font-semibold text-[14px]">Food BundlesSupport</h4>
             <p className="text-green-100 text-[12px]">Online</p>
           </div>
         </div>

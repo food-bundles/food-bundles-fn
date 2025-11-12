@@ -162,291 +162,120 @@ export default function AdminOrdersPage() {
 
   const handleDownloadPDF = (order: Order) => {
     try {
-      // Create HTML content for PDF
-      const htmlContent = `
-            <!DOCTYPE html>
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        toast.error('Please allow popups to download PDF');
+        return;
+      }
+      
+      printWindow.document.write(`
+        <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
-          <title>Order ${order.orderNumber}</title>
+          <title>Order Invoice - ${order.orderNumber}</title>
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-              max-width: 900px; 
-              margin: 0 auto; 
-              padding: 30px;
-              font-size: 12px;
-              line-height: 1.5;
-            }
-            .header { 
-              text-align: center; 
-              margin-bottom: 30px; 
-              padding-bottom: 20px;
-              border-bottom: 3px solid #15803D;
-            }
-            .header img {
-              width: 80px;
-              height: 80px;
-              margin-bottom: 10px;
-            }
-            .header h1 { 
-              font-size: 24px; 
-              color: #22c55e; 
-              margin-bottom: 5px;
-            }
-            .header h2 { 
-              font-size: 16px; 
-              color: #64748b; 
-              font-weight: normal;
-            }
-            .info-container {
-              display: flex;
-              gap: 20px;
-              margin-bottom: 25px;
-            }
-            .info-section {
-              flex: 1;
-              background: #f8fafc;
-              padding: 5px 10px;
-              border-radius: 6px;
-              border-left: 3px solid #22c55e;
-            }
-            .info-section h3 { 
-              font-size: 13px; 
-              color: #22c55e; 
-              margin-bottom: 10px;
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
-            }
-            .info-row {
-              margin-bottom: 6px;
-              font-size: 11px;
-            }
-            .label { 
-              font-weight: 600; 
-              color: #475569;
-              display: inline-block;
-              min-width: 100px;
-            }
-            .value {
-              color: #1e293b;
-            }
-            .items-section {
-              margin-top: 25px;
-            }
-            .items-section h3 {
-              font-size: 14px;
-              color: #22c55e;
-              margin-bottom: 12px;
-              text-align: center;
-            }
-            .items { 
-              border-collapse: collapse; 
-              width: 100%; 
-              font-size: 11px;
-              box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-            }
-            .items th { 
-              background: linear-gradient(to bottom, #15803D, #22c55e);
-              color: white;
-              padding: 10px;
-              text-align: left;
-              font-weight: 600;
-              text-transform: uppercase;
-              font-size: 10px;
-              letter-spacing: 0.5px;
-            }
-            .items td { 
-              border: 1px solid #e2e8f0; 
-              padding: 10px;
-              background: white;
-            }
-            .items tbody tr:hover {
-              background: #f8fafc;
-            }
-            .items .product-cell {
-              display: flex;
-              align-items: center;
-              gap: 8px;
-            }
-            .items .product-img {
-              width: 30px;
-              height: 30px;
-              border-radius: 4px;
-              object-fit: cover;
-            }
-            .total-section { 
-              display: flex;
-              justify-content: end;
-              align-items: center;
-              gap:10px;
-              margin-top: 20px;
-              padding: 15px;
-              background: #f8fafc;
-              border-radius: 8px;
-            }
-            .total-section .total-label {
-              font-size: 14px;
-              color: #64748b;
-              margin-bottom: 5px;
-            }
-            .total-section .total-amount {
-              font-size: 20px;
-              font-weight: bold;
-              color: #22c55e;
-            }
-            .footer {
-              margin-top: 40px;
-              text-align: center;
-              font-size: 10px;
-              color: #94a3b8;
-              padding-top: 20px;
-              border-top: 1px solid #e2e8f0;
-            }
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            .invoice { max-width: 700px; margin: 0 auto; border: 2px solid #22c55e; border-radius: 8px; padding: 20px; }
+            .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #22c55e; padding-bottom: 15px; }
+            .logo { width: 50px; height: 50px; margin: 0 auto 10px; background: #22c55e; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; }
+            .header h1 { color: #22c55e; margin-bottom: 5px; }
+            .info-section { margin: 20px 0; }
+            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+            .info-item { background: #f8fafc; padding: 10px; border-radius: 5px; border-left: 3px solid #22c55e; }
+            .info-label { font-size: 11px; color: #64748b; text-transform: uppercase; margin-bottom: 3px; }
+            .info-value { font-weight: 600; color: #1f2937; }
+            .items { margin: 20px 0; }
+            .items table { width: 100%; border-collapse: collapse; }
+            .items th, .items td { padding: 8px; border: 1px solid #e5e7eb; text-align: left; }
+            .items th { background: #22c55e; color: white; }
+            .total { background: #f0fdf4; font-weight: bold; color: #22c55e; text-align: right; padding: 15px; margin-top: 10px; border-radius: 5px; }
+            .footer { text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #e5e7eb; color: #64748b; font-size: 12px; }
           </style>
         </head>
         <body>
-          <div class="header">
-            <img src="https://res.cloudinary.com/dzxyelclu/image/upload/v1760111270/Food_bundle_logo_cfsnsw.png" alt="Logo">
-            <h1>Order Invoice</h1>
-            <h2>Order ${order.orderNumber}</h2>
-          </div>
-          
-          <div class="info-container">
+          <div class="invoice">
+            <div class="header">
+              <img src="https://res.cloudinary.com/dzxyelclu/image/upload/v1760111270/Food_bundle_logo_cfsnsw.png" alt="Logo" style="width: 50px; height: 50px; margin: 0 auto 10px; border-radius: 50%;">
+              <h1>FoodBundles</h1>
+              <p>Order Invoice</p>
+            </div>
             <div class="info-section">
-              <h3>Restaurant Information</h3>
-              <div class="info-row">
-                <span class="label">Name:</span>
-                <span class="value">${order.restaurant.name}</span>
+              <h3>Order Information</h3>
+              <div class="info-grid">
+                <div class="info-item">
+                  <div class="info-label">Order Number</div>
+                  <div class="info-value">${order.orderNumber}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Order Date</div>
+                  <div class="info-value">${new Date(order.createdAt).toLocaleDateString()}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Restaurant</div>
+                  <div class="info-value">${order.restaurant.name}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Status</div>
+                  <div class="info-value">${order.status}</div>
+                </div>
               </div>
-              <div class="info-row">
-                <span class="label">Email:</span>
-                <span class="value">${order.restaurant.email}</span>
+              <div class="info-item">
+                <div class="info-label">Customer</div>
+                <div class="info-value">${order.billingName} - ${order.billingPhone}</div>
               </div>
-              <div class="info-row">
-                <span class="label">Order Date:</span>
-                <span class="value">${new Date(
-                  order.createdAt
-                ).toLocaleDateString()}</span>
+              <div class="info-item">
+                <div class="info-label">Delivery Address</div>
+                <div class="info-value">${order.billingAddress}</div>
               </div>
             </div>
-            
-            <div class="info-section">
-              <h3>Customer Information</h3>
-              <div class="info-row">
-                <span class="label">Name:</span>
-                <span class="value">${order.billingName}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Phone:</span>
-                <span class="value">${order.billingPhone}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Email:</span>
-                <span class="value">${order.billingEmail}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Address:</span>
-                <span class="value">${order.billingAddress}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="info-container">
-            <div class="info-section">
-              <h3>Order Status</h3>
-              <div class="info-row">
-                <span class="label">Status:</span>
-                <span class="value">${order.status}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">Payment Status:</span>
-                <span class="value">${order.paymentStatus}</span>
-              </div>
-            </div>
-            
-            <div class="info-section">
-              <h3>Payment Information</h3>
-              <div class="info-row">
-                <span class="label">Method:</span>
-                <span class="value">${order.paymentMethod}</span>
-              </div>
-              ${
-                order.notes
-                  ? `
-              <div class="info-row">
-                <span class="label">Notes:</span>
-                <span class="value">${order.notes}</span>
-              </div>
-              `
-                  : ""
-              }
-            </div>
-          </div>
-          
-          <div class="items-section">
-            <h3>Order Items</h3>
-            <table class="items">
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th style="text-align: center;">Quantity</th>
-                  <th style="text-align: right;">Unit Price</th>
-                  <th style="text-align: right;">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${order.orderItems
-                  .map(
-                    (item) => `
+            <div class="items">
+              <h3>Order Items</h3>
+              <table>
+                <thead>
                   <tr>
-                    <td>
-                      <div class="product-cell">
-                        <img class="product-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 50 50'%3E%3Crect width='50' height='50' fill='%23e0e7ff'/%3E%3Ctext x='25' y='32' font-size='20' text-anchor='middle'%3E🍽️%3C/text%3E%3C/svg%3E" alt="Product">
-                        <span>${item.productName}</span>
-                      </div>
-                    </td>
-                    <td style="text-align: center;">${item.quantity} ${
-                      item.unit
-                    }</td>
-                    <td style="text-align: right;">${item.unitPrice.toLocaleString()} RWF</td>
-                    <td style="text-align: right; font-weight: 600;">${item.subtotal.toLocaleString()} RWF</td>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Unit Price</th>
+                    <th>Total</th>
                   </tr>
-                `
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-          </div>
-          
-          <div class="total-section">
-            <div class="total-label">Total Amount</div>
-            <div class="total-amount">${order.totalAmount.toLocaleString()} RWF</div>
-          </div>
-
-          <div class="footer">
-            <p>Thank you for your order! • Generated on ${new Date().toLocaleString()}</p>
+                </thead>
+                <tbody>
+                  ${order.orderItems.map(item => `
+                    <tr>
+                      <td>${item.productName}</td>
+                      <td>${item.quantity} ${item.unit}</td>
+                      <td>${item.unitPrice.toLocaleString()} RWF</td>
+                      <td>${item.subtotal.toLocaleString()} RWF</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+            <div class="total">
+              <strong>Total Amount: ${order.totalAmount.toLocaleString()} RWF</strong>
+            </div>
+            <div class="footer">
+              <p>Thank you for your order!</p>
+              <p>Generated on ${new Date().toLocaleString()}</p>
+            </div>
           </div>
         </body>
         </html>
-      `;
-
-      // Create blob and download
-      const blob = new Blob([htmlContent], { type: "text/html" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `order-${order.orderNumber}.html`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      toast.success(`Downloaded order ${order.orderNumber} as HTML`);
+      `);
+      
+      printWindow.document.close();
+      printWindow.focus();
+      
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 250);
+      
     } catch (error) {
-      console.error("Error generating PDF:", error);
-      toast.error("Failed to download order");
+      console.error('Failed to generate PDF:', error);
+      toast.error('Failed to generate PDF');
     }
   };
 

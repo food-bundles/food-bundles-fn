@@ -144,7 +144,7 @@ export default function VouchersList() {
                 <div className="space-y-4 ">
                   <div className="flex justify-center text-center">
                     <div className="">
-                      <p className="text-xs text-gray-500">FoodBundle Credit</p>
+                      <p className="text-xs text-gray-500">FoodBundles Credit</p>
                       <p className="flex items-center text-xs text-gray-500">
                         <span className="font-semibold text-blue-600 text-sm pr-1">
                           {getDiscountPercentage(voucher.voucherType)}%
