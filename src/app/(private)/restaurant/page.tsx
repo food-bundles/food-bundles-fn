@@ -28,7 +28,7 @@ export default function RestaurantPage() {
   const [sortBy, setSortBy] = useState("random");
   const { selectedCategory, setSelectedCategory } = useProductSection();
   
-  const PRODUCTS_PER_PAGE = 10;
+  const PRODUCTS_PER_PAGE = 15;
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -83,13 +83,17 @@ export default function RestaurantPage() {
         price: product.unitPrice,
         originalPrice: product.discountedPrice || undefined,
         image: product.images?.[0] || "/placeholder.svg",
-        category: product.category?.name || "OTHER",
-        categoryId: product.category?.id || "",
+        category: {
+          id: product.category?.id || "",
+          name: product.category?.name || "OTHER",
+          description: product.category?.description
+        },
         inStock: product.quantity > 0,
         rating: Math.random() * 2 + 3,
         isNew: Math.random() > 0.5,
         isFeatured: Math.random() > 0.7,
         createdAt: product.createdAt,
+        unit: product.unit,
         discountPercent:
           product.discountedPrice && product.unitPrice
             ? Math.round(

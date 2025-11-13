@@ -206,14 +206,6 @@ export function InventoryManagement({
             <div className="flex flex-wrap items-center gap-2 flex-1">
               <TableFilters filters={filters} />
             </div>
-            {(dateRange.from || dateRange.to) && (
-              <button
-                onClick={clearDateRange}
-                className="text-xs sm:text-sm text-gray-500 hover:text-gray-700 underline whitespace-nowrap"
-              >
-                Clear Date Filter
-              </button>
-            )}
           </div>
         }
         showSearch={false}
