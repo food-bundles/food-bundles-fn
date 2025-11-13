@@ -84,7 +84,8 @@ export function Footer() {
               <Twitter className="h-5 w-5" />
             </Link>
             <Link
-              href="#"
+              href="https://www.instagram.com/foodbundlesrw/"
+              target="_blank"
               className="text-green-200 hover:text-white transition-colors"
             >
               <Instagram className="h-5 w-5" />

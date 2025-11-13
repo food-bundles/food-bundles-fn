@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
@@ -13,7 +14,7 @@ import {
   Star,
   Heart,
   ShoppingCart,
-  Eye,
+  // Eye,
   Check,
 } from "lucide-react";
 import {
@@ -27,7 +28,6 @@ import { useAuth } from "@/app/contexts/auth-context";
 import { useCart } from "@/app/contexts/cart-context";
 import { useProductSection } from "@/hooks/useProductSection";
 import Link from "next/link";
-import { toast } from "sonner";
 
 interface ProductCardProps {
   id: string;
@@ -38,6 +38,8 @@ interface ProductCardProps {
   rating: number;
   category?: string;
   discountPercent?: number;
+  unit?: string;
+  productData?: any;
 }
 
 const ProductCard = memo(function ProductCard({
@@ -48,11 +50,13 @@ const ProductCard = memo(function ProductCard({
   image,
   rating,
   discountPercent,
+  unit,
 }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [inputValue, setInputValue] = useState("1");
+  const [isWishlisted, setIsWishlisted] = useState(false);
   const { addToCart, cartItems, updateCartItem } = useCart();
 
 
@@ -101,6 +105,11 @@ const ProductCard = memo(function ProductCard({
     }
   }, [isInCart, cartItem, quantity, addToCart, updateCartItem, id]);
 
+  const handleWishlist = useCallback(() => {
+    setIsWishlisted(true);
+    setTimeout(() => setIsWishlisted(false), 2000);
+  }, []);
+
   const renderStars = (rating: number) => {
     const stars = [];
     const fullStars = Math.floor(rating);
@@ -118,142 +127,149 @@ const ProductCard = memo(function ProductCard({
 
   return (
     <div
-        className={
-          "w-full bg-white transition-all duration-300 max-w-[200px] sm:max-w-[220px]"
-        }
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        <Card className="border border-gray-200 shadow hover:shadow-lg rounded-md hover:rounded hover:border-green-500 overflow-hidden transition-all duration-300 p-0 pb-2 h-full">
-          <div className="relative w-full  flex items-center justify-center group overflow-hidden h-40 sm:h-[180px] ">
-            <OptimizedImage
-              src={image || "/placeholder.svg"}
-              alt={name}
-              width={200}
-              height={200}
-              className="object-contain w-full max-h-full transition-transform duration-300 group-hover:scale-105"
-              transformation={[
-                { width: 400, height: 400, crop: "pad", quality: "80" }
-              ]}
-            />
-            {discountPercent && (
-              <div className="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">
-                {discountPercent}% OFF
+      className={
+        "w-full bg-white transition-all duration-300 max-w-[200px] sm:max-w-[220px]"
+      }
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <Card className="border border-gray-200 shadow hover:shadow-lg rounded-md hover:rounded hover:border-green-500 overflow-hidden transition-all duration-300 p-0 pb-2 h-full">
+        <div className="relative w-full  flex items-center justify-center group overflow-hidden h-40 sm:h-[180px] ">
+          <OptimizedImage
+            src={image || "/placeholder.svg"}
+            alt={name}
+            width={200}
+            height={200}
+            className="object-contain w-full max-h-full transition-transform duration-300 group-hover:scale-105"
+            transformation={[
+              { width: 400, height: 400, crop: "pad", quality: "80" },
+            ]}
+          />
+          {discountPercent && (
+            <div className="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">
+              {discountPercent}% OFF
+            </div>
+          )}
+          {isInCart  && (
+            <a href="/restaurant/checkout" className="absolute inset-0">
+              <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-lg flex items-center cursor-pointer hover:bg-green-600 transition-colors">
+                <Check className="w-3 h-3 mr-1" /> Buy Now
               </div>
-            )}
-            {isInCart && isHovered && (
-              <a href="/restaurant/checkout" className="absolute inset-0">
-                <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-lg flex items-center cursor-pointer hover:bg-green-600 transition-colors">
-                  <Check className="w-3 h-3 mr-1" /> Buy Now
-                </div>
-              </a>
-            )}
+            </a>
+          )}
 
-            <div
-              className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${
-                isHovered ? "opacity-100 scale-100" : "opacity-0 scale-95"
-              }`}
-            >
-              <div className="bg-green-500 flex items-center justify-center shadow-lg px-1 p-1 space-x-6 sm:space-x-8">
-                <button className="text-white hover:text-gray-200 transition-colors font-bold">
-                  <Eye className="w-5 h-5 sm:w-6 sm:h-6 cursor-pointer" />
-                </button>
+          <div
+            className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${
+              isHovered ? "opacity-100 scale-100" : "opacity-0 scale-95"
+            }`}
+          >
+            <div className="bg-green-500 flex items-center justify-center shadow-lg px-8 p-1 space-x-6 sm:space-x-8">
+              {/* <button className="text-white hover:text-gray-200 transition-colors font-bold">
+                <Eye className="w-5 h-5 sm:w-6 sm:h-6 cursor-pointer" />
+              </button> */}
 
-                <div className="relative">
-                  <button
-                    onClick={handleCartAction}
-                    disabled={isAddingToCart || isUpdateDisabled}
-                    className={`text-white hover:text-gray-200 transition-colors font-bold ${
-                      isAddingToCart || isUpdateDisabled
-                        ? "opacity-50 cursor-not-allowed"
-                        : ""
-                    }`}
-                  >
-                    {isAddingToCart ? (
-                      <div className="border-2 border-white border-t-transparent rounded-full animate-spin w-5 h-5 sm:w-6 sm:h-6 " />
-                    ) : (
-                      <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 cursor-pointer" />
-                    )}
-                  </button>
-                </div>
-
-                <button className="text-white hover:text-gray-200 transition-colors font-bold">
-                  <Heart className="w-5 h-5 sm:w-6 sm:h-6 cursor-pointer" />
+              <div className="relative">
+                <button
+                  onClick={handleCartAction}
+                  disabled={isAddingToCart || isUpdateDisabled}
+                  className={`text-white hover:text-gray-200 transition-colors font-bold ${
+                    isAddingToCart || isUpdateDisabled
+                      ? "opacity-50 cursor-not-allowed"
+                      : ""
+                  }`}
+                >
+                  {isAddingToCart ? (
+                    <div className="border-2 border-white border-t-transparent rounded-full animate-spin w-5 h-5 sm:w-6 sm:h-6 " />
+                  ) : (
+                    <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 cursor-pointer" />
+                  )}
                 </button>
               </div>
 
-              <div className="flex items-center justify-center gap-2 pt-2">
-                <div className="flex items-center border bg-white border-gray-300 rounded-full overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newValue = Math.max(
-                        1,
-                        (Number.parseInt(inputValue) || 1) - 1
-                      );
-                      setInputValue(newValue.toString());
-                      setQuantity(newValue);
-                    }}
-                    disabled={isAddingToCart}
-                    className="px-2 py-1 text-sm bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
-                  >
-                    -
-                  </button>
+              <button
+                onClick={handleWishlist}
+                className="text-white hover:text-gray-200 transition-colors font-bold"
+              >
+                <Heart
+                  className={`w-5 h-5 sm:w-6 sm:h-6 cursor-pointer transition-all ${
+                    isWishlisted ? "fill-orange-500 text-orange-500 scale-110" : ""
+                  }`}
+                />
+              </button>
+            </div>
 
-                  <input
-                    type="number"
-                    value={inputValue}
-                    onChange={handleQuantityChange}
-                    onBlur={handleQuantityBlur}
-                    min={1}
-                    disabled={isAddingToCart}
-                    className="w-12 text-center text-sm font-semibold focus:outline-non disabled:bg-gray-100
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <div className="flex items-center border bg-white border-gray-300 rounded-full overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newValue = Math.max(
+                      1,
+                      (Number.parseInt(inputValue) || 1) - 1
+                    );
+                    setInputValue(newValue.toString());
+                    setQuantity(newValue);
+                  }}
+                  disabled={isAddingToCart}
+                  className="px-2 py-1 text-sm bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+                >
+                  -
+                </button>
+
+                <input
+                  type="number"
+                  value={inputValue}
+                  onChange={handleQuantityChange}
+                  onBlur={handleQuantityBlur}
+                  min={1}
+                  disabled={isAddingToCart}
+                  className="w-12 text-center text-sm font-semibold focus:outline-non disabled:bg-gray-100
         [&::-webkit-outer-spin-button]:appearance-none 
         [&::-webkit-inner-spin-button]:appearance-none 
         [-moz-appearance:textfield]"
-                  />
+                />
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newValue = (Number.parseInt(inputValue) || 0) + 1;
-                      setInputValue(newValue.toString());
-                      setQuantity(newValue);
-                    }}
-                    disabled={isAddingToCart}
-                    className="px-2 py-1 text-sm bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
-                  >
-                    +
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newValue = (Number.parseInt(inputValue) || 0) + 1;
+                    setInputValue(newValue.toString());
+                    setQuantity(newValue);
+                  }}
+                  disabled={isAddingToCart}
+                  className="px-2 py-1 text-sm bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+                >
+                  +
+                </button>
               </div>
             </div>
           </div>
+        </div>
 
-          <div className="px-3 sm:px-4">
-            <h3 className="font-semibold text-gray-800 leading-tight line-clamp-2 min-h-6 text-sm ">
-              {name}
-            </h3>
+        <div className="px-3 sm:px-4">
+          <h3 className="font-semibold text-gray-800 leading-tight line-clamp-2 min-h-6 text-sm ">
+            {name}
+          </h3>
 
-            <div className="flex items-center gap-2 my-1">
-              <div className="flex">{renderStars(rating)}</div>
-              <span className="text-gray-500 text-xs ">
-                ({rating.toFixed(2)})
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-gray-900 text-base text-[16px] ">
-                {price.toFixed(2)} Rwf
-              </span>
-              {originalPrice && (
-                <span className="text-gray-400 line-through text-[12px] ">
-                  {originalPrice.toFixed(2)}Rwf
-                </span>
-              )}
-            </div>
+          <div className="flex items-center gap-2 my-1">
+            <div className="flex">{renderStars(rating)}</div>
+            <span className="text-gray-500 text-xs ">
+              ({rating.toFixed(2)})
+            </span>
           </div>
-        </Card>
+
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-gray-900 text-base text-[16px] ">
+              {price.toFixed(2)} Rwf{unit && `/${unit}`}
+            </span>
+            {originalPrice && (
+              <span className="text-gray-400 line-through text-[12px] ">
+                {originalPrice.toFixed(2)}Rwf{unit && `/${unit}`}
+              </span>
+            )}
+          </div>
+        </div>
+      </Card>
     </div>
   );
 });
@@ -276,6 +292,7 @@ interface Product {
   isFeatured?: boolean;
   discountPercent?: number;
   createdAt: string;
+  unit?: string;
 }
 
 interface Category {
@@ -393,10 +410,10 @@ export function ProductsSection({
                 <div className="flex flex-col lg:flex-row items-center lg:items-stretch justify-between gap-4 w-full px-4">
                   {/* Left: Greeting */}
                   <div className="flex flex-col justify-center text-center lg:text-left">
-                    <h1 className="text-[16px] font-semibold text-gray-800 mb-1">
+                    <h1 className="text-[20px] font-semibold text-gray-800 mb-1">
                       Hello <span className="text-green-600">{userName}</span>!
                     </h1>
-                    <p className="text-gray-500 text-[13px]">
+                    <p className="text-gray-500 text-[16px]">
                       Welcome to Our Farm
                     </p>
                   </div>
@@ -534,24 +551,23 @@ export function ProductsSection({
                     <div className="relative">
                       <input
                         type="text"
-                        placeholder="Search products by name or price..."
+                        placeholder="Search by name or price"
                         value={localSearchQuery}
                         onChange={(e) => setLocalSearchQuery(e.target.value)}
-                        className="w-full sm:w-64 px-4 py-2 placeholder:text-[12px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                        className="w-40 px-4 py-2 placeholder:text-[12px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
                       />
                     </div>
                   )}
 
-                  {/* Sort Dropdown */}
                   {sorting && (
-                    <div className="lg:w-1/2 sm:w-auto">
+                    <div className="w-1/2 sm:w-auto">
                       <Select
                         value={sorting.sortBy}
                         onValueChange={(value) => sorting.onSortChange(value)}
                       >
                         <SelectTrigger
                           className="
-          w-full sm:w-48 
+          w-40
           border border-gray-300 
           focus:ring-2 focus:ring-green-500 focus:border-green-500
           rounded-lg text-[12px] sm:text-[13px]
@@ -594,6 +610,8 @@ export function ProductsSection({
                         rating={product.rating}
                         category={product.category.name}
                         discountPercent={product.discountPercent}
+                        unit={product.unit}
+                        productData={product}
                       />
                     ))}
                   </div>

@@ -199,17 +199,7 @@ export default function VouchersList() {
                   )}
                 </div>
 
-                <div className="text-center">
-                  <div
-                    className={`text-xs px-3 py-1 rounded ${
-                      isActive
-                        ? "bg-green-50 text-green-700"
-                        : "bg-gray-50 text-gray-700"
-                    }`}
-                  >
-                    Service Fee: {0}%
-                  </div>
-                </div>
+          
               </Card>
             );
           })}

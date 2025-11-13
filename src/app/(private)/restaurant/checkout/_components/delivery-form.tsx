@@ -13,12 +13,21 @@ import {
   ExternalLink,
   Info,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useCart } from "@/app/contexts/cart-context";
 import { useAuth } from "@/app/contexts/auth-context";
+import { useVouchers } from "@/app/contexts/VoucherContext";
 import {
   checkoutService,
   CheckoutRequest,
 } from "@/app/services/checkoutService";
+import Link from "next/link";
 import dynamic from "next/dynamic";
 import "leaflet/dist/leaflet.css";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
@@ -66,9 +75,12 @@ type PaymentMethod = "wallet" | "momo" | "card" | "voucher";
 export function Checkout() {
   const { cart, totalItems, totalQuantity, totalAmount, isLoading } = useCart();
   const { user, isAuthenticated } = useAuth();
+  const { myVouchers, getMyVouchers } = useVouchers();
   const [showFlutterwaveInfo, setShowFlutterwaveInfo] = useState(false);
   const [flutterwaveRedirectUrl, setFlutterwaveRedirectUrl] =
     useState<string>("");
+  const [availableVouchers, setAvailableVouchers] = useState<any[]>([]);
+  const [isLoadingVouchers, setIsLoadingVouchers] = useState(false);
 
   const [method, setMethod] = useState<PaymentMethod>("momo");
 
@@ -138,6 +150,35 @@ export function Checkout() {
       }
     }
   }, [isAuthenticated, user]);
+
+  useEffect(() => {
+    if (method === "voucher" && isAuthenticated) {
+      const fetchVouchers = async () => {
+        try {
+          setIsLoadingVouchers(true);
+          const response = await getMyVouchers({ status: "ACTIVE", activeOnly: true });
+          if (response?.data) {
+            // Filter vouchers that have remaining credit and are not expired
+            const validVouchers = response.data.filter((voucher: any) => 
+              voucher.status === "ACTIVE" && 
+              voucher.remainingCredit > 0 &&
+              new Date(voucher.expiryDate) > new Date()
+            );
+            setAvailableVouchers(validVouchers);
+          }
+        } catch (error) {
+          console.error("Error fetching vouchers:", error);
+          setAvailableVouchers([]);
+        } finally {
+          setIsLoadingVouchers(false);
+        }
+      };
+      fetchVouchers();
+    } else if (method !== "voucher") {
+      setAvailableVouchers([]);
+      setIsLoadingVouchers(false);
+    }
+  }, [method, isAuthenticated, getMyVouchers]);
 
   const summaryData = {
     totalItems,
@@ -696,21 +737,48 @@ export function Checkout() {
               )}
 
               {method === "voucher" && (
-                <div className="space-y-2 mt-3">
-                  <input
-                    type="text"
-                    placeholder="Enter Voucher Code"
-                    value={formData.voucherCode}
-                    onChange={(e) =>
-                      handleInputChange("voucherCode", e.target.value)
-                    }
-                    className={`w-full h-10 px-3 border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none text-[14px] ${
-                      errors.voucherCode ? "border-red-500" : "border-gray-300"
-                    }`}
-                    disabled={isSubmitting}
-                  />
-                  {errors.voucherCode && (
-                    <p className="text-red-600 text-xs">{errors.voucherCode}</p>
+                <div className="space-y-3 mt-3">
+                  {isLoadingVouchers ? (
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-green-600" />
+                  ) : availableVouchers.length > 0 ? (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">
+                        Select Voucher
+                      </label>
+                      <Select
+                        value={formData.voucherCode}
+                        onValueChange={(value) => handleInputChange("voucherCode", value)}
+                        disabled={isSubmitting}
+                      >
+                        <SelectTrigger className={`w-full h-10 text-[14px] ${
+                          errors.voucherCode ? "border-red-500" : "border-gray-300"
+                        }`}>
+                          <SelectValue placeholder="Select a voucher" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableVouchers.map((voucher) => (
+                            <SelectItem key={voucher.id} value={voucher.voucherCode}>
+                              {voucher.voucherCode} - {voucher.discountPercentage}% OFF (Remaining: {voucher.remainingCredit.toLocaleString()} RWF)
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {errors.voucherCode && (
+                        <p className="text-red-600 text-xs">{errors.voucherCode}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 border border-gray-200 rounded-lg bg-gray-50">
+                      <p className="text-sm text-gray-600 mb-3">
+                        You don&rsquo;t have any active vouchers
+                      </p>
+                      <Link 
+                        href="/restaurant/vouchers"
+                        className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md transition-colors"
+                      >
+                        Apply for Voucher
+                      </Link>
+                    </div>
                   )}
                 </div>
               )}
