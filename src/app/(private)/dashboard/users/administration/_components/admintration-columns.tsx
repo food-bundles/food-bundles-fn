@@ -70,7 +70,7 @@ export const getAdminColumns = (
     header: "Location",
     cell: ({ row }) => {
       const admin = row.original;
-      if (!admin.province) {
+      if (!admin.location) {
         return (
           <div className="flex items-center gap-2">
             <span className="text-gray-400">Not provided</span>

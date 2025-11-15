@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { createContext, useContext, useCallback, useState } from "react";
@@ -9,6 +10,7 @@ export interface Admin {
   email: string;
   role: string;
   phone?: string;
+  location?: string;
   province?: string;
   district?: string;
   sector?: string;

@@ -76,4 +76,19 @@ export const restaurantService = {
       throw error;
     }
   },
+
+  // Accept agreement
+  acceptAgreement: async (identifier: string) => {
+    try {
+      const response = await axiosClient.post("/restaurants/accept", { identifier });
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error: any) {
+      console.error("Accept agreement error:", error);
+      throw error;
+    }
+  },
 };

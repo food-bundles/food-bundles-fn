@@ -11,6 +11,7 @@ import {
   type ProductFormData,
 } from "./create-product-modal";
 import { ProductManagementModal } from "./product-management-modal";
+import { ProductStatusModal } from "./product-status-modal";
 import type { Product } from "@/app/contexts/product-context";
 import { toast } from "sonner";
 import { productService } from "@/app/services/productService";
@@ -64,11 +65,29 @@ export function InventoryManagement({
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isManagementOpen, setIsManagementOpen] = useState(false);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [statusProduct, setStatusProduct] = useState<Product | null>(null);
 
   // Modal handlers
   const handleManageProduct = (product: Product) => {
     setSelectedProduct(product);
     setIsManagementOpen(true);
+  };
+
+  const handleStatusClick = (product: Product) => {
+    setStatusProduct(product);
+    setIsStatusModalOpen(true);
+  };
+
+  const handleStatusUpdate = async (productId: string, status: string, reason?: string) => {
+    try {
+      await productService.updateProductStatus(productId, status, reason);
+      toast.success("Product status updated successfully");
+      onRefresh();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to update product status");
+      throw error;
+    }
   };
 
   const handleEditProduct = async (productId: string, formData: FormData) => {
@@ -106,7 +125,7 @@ export function InventoryManagement({
 
   // Get columns with handlers
   const columns = useMemo(() => {
-    return getInventoryColumns(handleManageProduct);
+    return getInventoryColumns(handleManageProduct, handleStatusClick);
   }, []);
 
   // Filter data
@@ -137,8 +156,23 @@ export function InventoryManagement({
       }
 
       // Category filter
-      if (categoryValue !== "all" && product.category?.name !== categoryValue) {
-        return false;
+      if (categoryValue !== "all") {
+        // Map category values to actual category names
+        const categoryNameMap: { [key: string]: string } = {
+          "VEGETABLES": "Fresh Vegetables",
+          "FRUITS": "Fruits",
+          "GRAINS": "Grains",
+          "TUBERS": "Tubers",
+          "LEGUMES": "Legumes",
+          "HERBS_SPICES": "Herbs & Spices",
+          "ANIMAL_PRODUCTS": "Animal Products",
+          "OTHER": "Other"
+        };
+        
+        const expectedCategoryName = categoryNameMap[categoryValue] || categoryValue;
+        if (product.category?.name !== expectedCategoryName) {
+          return false;
+        }
       }
 
       // Date range filter (expiry date)
@@ -193,7 +227,7 @@ export function InventoryManagement({
     <>
       <DataTable
         columns={columns}
-        data={pagination ? products : filteredData}
+        data={filteredData}
         title="Inventory Management"
         description={pagination ? `Total: ${pagination.total} products` : undefined}
         showExport={true}
@@ -231,6 +265,13 @@ export function InventoryManagement({
         onUpdate={onRefresh}
         onEdit={handleEditProduct}
         onDelete={handleDeleteProduct}
+      />
+
+      <ProductStatusModal
+        product={statusProduct}
+        open={isStatusModalOpen}
+        onOpenChange={setIsStatusModalOpen}
+        onStatusUpdate={handleStatusUpdate}
       />
     </>
   );

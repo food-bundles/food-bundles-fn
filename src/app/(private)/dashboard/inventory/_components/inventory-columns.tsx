@@ -7,7 +7,8 @@ import Image from "next/image";
 import type { Product } from "@/app/contexts/product-context";
 
 export const getInventoryColumns = (
-  onManage: (product: Product) => void
+  onManage: (product: Product) => void,
+  onStatusClick?: (product: Product) => void
 ): ColumnDef<Product>[] => [
   {
     accessorKey: "productName",
@@ -170,7 +171,7 @@ export const getInventoryColumns = (
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 font-medium"
         >
-          Expiry Date
+          Expiry Date 
         </Button>
       );
     },
@@ -204,15 +205,17 @@ export const getInventoryColumns = (
     header: "Status",
     cell: ({ row }) => {
       const status = row.original.status;
+      const product = row.original;
 
       return (
         <Badge
           variant={status === "ACTIVE" ? "default" : "secondary"}
-          className={
-            status === "ACTIVE"
-              ? "bg-green-100 text-green-700 hover:bg-green-100"
-              : "bg-gray-100 text-gray-800 hover:bg-gray-100"
+          className={ 
+            status === "ACTIVE" 
+              ? "bg-green-100 text-green-800 hover:text-green-900 hover:bg-green-200 cursor-pointer"
+              : "bg-red-100 text-red-800 hover:text-red-900 hover:bg-red-200 cursor-pointer"
           }
+          onClick={() => onStatusClick?.(product)}
         >
           {status}
         </Badge>
