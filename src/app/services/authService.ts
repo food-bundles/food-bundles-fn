@@ -74,4 +74,19 @@ export const authService = {
     const response = await axiosClient.get("/health");
     return response.data;
   },
+
+  forgotPassword: async (email: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/forgot-password", { email });
+    return response.data;
+  },
+
+  resetPassword: async (token: string, newPassword: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/reset-password", {
+      token,
+      newPassword,
+    });
+    return response.data;
+  },
 };

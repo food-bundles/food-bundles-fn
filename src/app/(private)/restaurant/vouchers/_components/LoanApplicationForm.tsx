@@ -2,8 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LuTicketCheck } from "react-icons/lu";
+import { CardContent} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -92,13 +91,6 @@ export default function LoanApplicationForm({
       </h2>
       <div className="flex justify-center">
         <div className="w-[300px] h-[400px] flex flex-col p-6 border rounded shadow-none bg-white">
-          <CardHeader className="p-0 pb-4">
-            <CardTitle className="flex items-center justify-center gap-2 font-medium text-sm">
-              <LuTicketCheck className="h-5 w-5 text-orange-400 shrink-0" />
-              <span>Apply for Voucher</span>
-            </CardTitle>
-          </CardHeader>
-
           <CardContent className="p-0 flex-1 flex flex-col">
             <div className="space-y-3 flex-1">
               <div>

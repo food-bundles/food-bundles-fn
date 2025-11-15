@@ -35,7 +35,17 @@ interface ProductManagementModalProps {
   onDelete: (productId: string) => Promise<void>;
 }
 
-const units = ["kg", "g", "lbs", "pieces", "liters", "ml", "boxes", "bags", "bunches"];
+const units = [
+  "kg",
+  "g",
+  "lbs",
+  "pieces",
+  "liters",
+  "ml",
+  "boxes",
+  "bags",
+  "bunches",
+];
 
 export function ProductManagementModal({
   product,
@@ -76,7 +86,9 @@ export function ProductManagementModal({
         sku: product.sku,
         quantity: product.quantity,
         unit: product.unit,
-        expiryDate: product.expiryDate ? new Date(product.expiryDate).toISOString().split('T')[0] : "",
+        expiryDate: product.expiryDate
+          ? new Date(product.expiryDate).toISOString().split("T")[0]
+          : "",
       });
       setImagesToKeep(product.images || []);
     }
@@ -99,7 +111,9 @@ export function ProductManagementModal({
         sku: product.sku,
         quantity: product.quantity,
         unit: product.unit,
-        expiryDate: product.expiryDate ? new Date(product.expiryDate).toISOString().split('T')[0] : "",
+        expiryDate: product.expiryDate
+          ? new Date(product.expiryDate).toISOString().split("T")[0]
+          : "",
       });
       setImagesToKeep(product.images || []);
     }
@@ -107,11 +121,11 @@ export function ProductManagementModal({
 
   const handleSaveEdit = async () => {
     if (!product) return;
-    
+
     setIsLoading(true);
     try {
       const formData = new FormData();
-      
+
       // Add text fields
       Object.entries(editData).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== "") {
@@ -121,12 +135,12 @@ export function ProductManagementModal({
 
       // Add images to keep
       imagesToKeep.forEach((imageUrl) => {
-        formData.append('keepImages', imageUrl);
+        formData.append("keepImages", imageUrl);
       });
 
       // Add new image files
       imageFiles.forEach((file) => {
-        formData.append('images', file);
+        formData.append("images", file);
       });
 
       await onEdit(product.id, formData);
@@ -145,7 +159,7 @@ export function ProductManagementModal({
 
   const handleDelete = async () => {
     if (!product) return;
-    
+
     setIsLoading(true);
     try {
       await onDelete(product.id);
@@ -174,7 +188,7 @@ export function ProductManagementModal({
   };
 
   const handleRemoveImage = (imageUrl: string) => {
-    setImagesToKeep(prev => prev.filter(img => img !== imageUrl));
+    setImagesToKeep((prev) => prev.filter((img) => img !== imageUrl));
   };
 
   const isDeleteConfirmValid = deleteConfirmText === product?.productName;
@@ -182,7 +196,8 @@ export function ProductManagementModal({
   if (!product) return null;
 
   const quantity = product.quantity;
-  const stockStatus = quantity > 50 ? "In Stock" : quantity > 0 ? "Low Stock" : "Out of Stock";
+  const stockStatus =
+    quantity > 50 ? "In Stock" : quantity > 0 ? "Low Stock" : "Out of Stock";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -203,21 +218,32 @@ export function ProductManagementModal({
             <div className="py-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="productName" className="text-gray-900">Product Name</Label>
+                  <Label htmlFor="productName" className="text-gray-900">
+                    Product Name
+                  </Label>
                   <Input
                     id="productName"
                     value={editData.productName}
-                    onChange={(e) => setEditData(prev => ({ ...prev, productName: e.target.value }))}
+                    onChange={(e) =>
+                      setEditData((prev) => ({
+                        ...prev,
+                        productName: e.target.value,
+                      }))
+                    }
                     disabled={isLoading}
                     className="bg-white border-gray-300 text-gray-900"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="sku" className="text-gray-900">SKU</Label>
+                  <Label htmlFor="sku" className="text-gray-900">
+                    SKU
+                  </Label>
                   <Input
                     id="sku"
                     value={editData.sku}
-                    onChange={(e) => setEditData(prev => ({ ...prev, sku: e.target.value }))}
+                    onChange={(e) =>
+                      setEditData((prev) => ({ ...prev, sku: e.target.value }))
+                    }
                     disabled={isLoading}
                     className="bg-white border-gray-300 text-gray-900"
                   />
@@ -226,21 +252,32 @@ export function ProductManagementModal({
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="quantity" className="text-gray-900">Quantity</Label>
+                  <Label htmlFor="quantity" className="text-gray-900">
+                    Quantity
+                  </Label>
                   <Input
                     id="quantity"
                     type="number"
                     value={editData.quantity}
-                    onChange={(e) => setEditData(prev => ({ ...prev, quantity: Number(e.target.value) }))}
+                    onChange={(e) =>
+                      setEditData((prev) => ({
+                        ...prev,
+                        quantity: Number(e.target.value),
+                      }))
+                    }
                     disabled={isLoading}
                     className="bg-white border-gray-300 text-gray-900"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="unit" className="text-gray-900">Unit</Label>
+                  <Label htmlFor="unit" className="text-gray-900">
+                    Unit
+                  </Label>
                   <Select
                     value={editData.unit}
-                    onValueChange={(value) => setEditData(prev => ({ ...prev, unit: value }))}
+                    onValueChange={(value) =>
+                      setEditData((prev) => ({ ...prev, unit: value }))
+                    }
                     disabled={isLoading}
                   >
                     <SelectTrigger className="bg-white border-gray-300 text-gray-900">
@@ -248,7 +285,9 @@ export function ProductManagementModal({
                     </SelectTrigger>
                     <SelectContent className="bg-white border-gray-200">
                       {units.map((unit) => (
-                        <SelectItem key={unit} value={unit}>{unit}</SelectItem>
+                        <SelectItem key={unit} value={unit}>
+                          {unit}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -257,23 +296,37 @@ export function ProductManagementModal({
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="unitPrice" className="text-gray-900">Unit Price (RWF)</Label>
+                  <Label htmlFor="unitPrice" className="text-gray-900">
+                    Unit Price (RWF)
+                  </Label>
                   <Input
                     id="unitPrice"
                     type="number"
                     value={editData.unitPrice}
-                    onChange={(e) => setEditData(prev => ({ ...prev, unitPrice: Number(e.target.value) }))}
+                    onChange={(e) =>
+                      setEditData((prev) => ({
+                        ...prev,
+                        unitPrice: Number(e.target.value),
+                      }))
+                    }
                     disabled={isLoading}
                     className="bg-white border-gray-300 text-gray-900"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="bonus" className="text-gray-900">Bonus (%)</Label>
+                  <Label htmlFor="bonus" className="text-gray-900">
+                    Bonus (%)
+                  </Label>
                   <Input
                     id="bonus"
                     type="number"
                     value={editData.bonus}
-                    onChange={(e) => setEditData(prev => ({ ...prev, bonus: Number(e.target.value) }))}
+                    onChange={(e) =>
+                      setEditData((prev) => ({
+                        ...prev,
+                        bonus: Number(e.target.value),
+                      }))
+                    }
                     disabled={isLoading}
                     className="bg-white border-gray-300 text-gray-900"
                   />
@@ -281,15 +334,22 @@ export function ProductManagementModal({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="images" className="text-gray-900">Product Images</Label>
-                
+                <Label htmlFor="images" className="text-gray-900">
+                  Product Images
+                </Label>
+
                 {/* Current Images */}
                 {imagesToKeep.length > 0 && (
                   <div className="mb-3">
-                    <p className="text-sm text-gray-600 mb-2">Current Images:</p>
+                    <p className="text-sm text-gray-600 mb-2">
+                      Current Images:
+                    </p>
                     <div className="grid grid-cols-4 gap-2">
                       {imagesToKeep.map((image, index) => (
-                        <div key={index} className="relative aspect-square rounded-lg overflow-hidden border group">
+                        <div
+                          key={index}
+                          className="relative aspect-square rounded-lg overflow-hidden border group"
+                        >
                           <Image
                             src={image || "/placeholder.svg"}
                             alt={`Current ${index + 1}`}
@@ -308,7 +368,7 @@ export function ProductManagementModal({
                     </div>
                   </div>
                 )}
-                
+
                 <Input
                   id="images"
                   type="file"
@@ -318,9 +378,13 @@ export function ProductManagementModal({
                   disabled={isLoading}
                   className="bg-white border-gray-300 text-gray-900"
                 />
-                <p className="text-xs text-gray-500">Select new images to replace current ones</p>
+                <p className="text-xs text-gray-500">
+                  Select new images to replace current ones
+                </p>
                 {imageFiles.length > 0 && (
-                  <p className="text-sm text-green-600">{imageFiles.length} new file(s) selected</p>
+                  <p className="text-sm text-green-600">
+                    {imageFiles.length} new file(s) selected
+                  </p>
                 )}
               </div>
             </div>
@@ -334,17 +398,25 @@ export function ProductManagementModal({
 
               <div className="space-y-4">
                 <div className="text-center space-y-2">
-                  <h3 className="text-lg font-semibold text-gray-900">Delete Product</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Delete Product
+                  </h3>
                   <p className="text-sm text-gray-600">
-                    This action cannot be undone. To confirm deletion, please type the{" "}
-                    <span className="font-semibold text-gray-900">product name</span> below:
+                    This action cannot be undone. To confirm deletion, please
+                    type the{" "}
+                    <span className="font-semibold text-gray-900">
+                      product name
+                    </span>{" "}
+                    below:
                   </p>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="deleteConfirm" className="text-gray-900">
                     Type product name{" "}
-                    <span className="font-semibold text-red-500">{product.productName}</span>{" "}
+                    <span className="font-semibold text-red-500">
+                      {product.productName}
+                    </span>{" "}
                     to confirm
                   </Label>
                   <Input
@@ -364,7 +436,10 @@ export function ProductManagementModal({
               {product.images && product.images.length > 0 && (
                 <div className="grid grid-cols-3 gap-2 mb-4">
                   {product.images.slice(0, 3).map((image, index) => (
-                    <div key={index} className="relative aspect-square rounded-lg overflow-hidden border">
+                    <div
+                      key={index}
+                      className="relative aspect-square rounded-lg overflow-hidden border"
+                    >
                       <Image
                         src={image || "/placeholder.svg"}
                         alt={`${product.productName} ${index + 1}`}
@@ -378,51 +453,90 @@ export function ProductManagementModal({
 
               <div className="space-y-3">
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="text-sm font-medium text-gray-600">Product Name:</div>
-                  <div className="text-sm col-span-2 text-gray-900 font-medium">{product.productName}</div>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="text-sm font-medium text-gray-600">SKU:</div>
-                  <div className="text-sm col-span-2 text-gray-900">{product.sku}</div>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="text-sm font-medium text-gray-600">Category:</div>
-                  <div className="text-sm col-span-2">
-                    <Badge variant="outline">{product.category?.name || "Unknown"}</Badge>
+                  <div className="text-sm font-medium text-gray-600">
+                    Product Name:
+                  </div>
+                  <div className="text-sm col-span-2 text-gray-900 font-medium">
+                    {product.productName}
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="text-sm font-medium text-gray-600">Stock Status:</div>
+                  <div className="text-sm font-medium text-gray-600">SKU:</div>
+                  <div className="text-sm col-span-2 text-gray-900">
+                    {product.sku}
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="text-sm font-medium text-gray-600">
+                    Category:
+                  </div>
                   <div className="text-sm col-span-2">
-                    <Badge className={
-                      stockStatus === "In Stock" ? "bg-green-100 text-green-800" :
-                      stockStatus === "Low Stock" ? "bg-yellow-100 text-yellow-800" :
-                      "bg-red-100 text-red-800"
-                    }>
+                    <Badge variant="outline">
+                      {product.category?.name || "Unknown"}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="text-sm font-medium text-gray-600">
+                    Stock Status:
+                  </div>
+                  <div className="text-sm col-span-2">
+                    <Badge
+                      className={
+                        stockStatus === "In Stock"
+                          ? "bg-green-100 text-green-800"
+                          : stockStatus === "Low Stock"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-red-100 text-red-800"
+                      }
+                    >
                       {stockStatus}
                     </Badge>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="text-sm font-medium text-gray-600">Quantity:</div>
-                  <div className="text-sm col-span-2 text-gray-900">{product.quantity} {product.unit}</div>
+                  <div className="text-sm font-medium text-gray-600">
+                    Quantity:
+                  </div>
+                  <div className="text-sm col-span-2 text-gray-900">
+                    {product.quantity} {product.unit}
+                  </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="text-sm font-medium text-gray-600">Unit Price:</div>
+                  <div className="text-sm font-medium text-gray-600">
+                    Unit Price:
+                  </div>
                   <div className="text-sm col-span-2 text-green-600 font-medium">
                     {product.unitPrice.toLocaleString()} RWF
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="text-sm font-medium text-gray-600">Bonus:</div>
-                  <div className="text-sm col-span-2 text-gray-900">{product.bonus}%</div>
+                  <div className="text-sm font-medium text-gray-600">
+                    Bonus:
+                  </div>
+                  <div className="text-sm col-span-2 text-gray-900">
+                    {product.bonus}%
+                  </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="text-sm font-medium text-gray-600">Created:</div>
+                  <div className="text-sm font-medium text-gray-600">
+                    Created:
+                  </div>
                   <div className="text-sm col-span-2 text-gray-900">
                     {new Date(product.createdAt).toLocaleDateString()}
                   </div>
                 </div>
+                {product.status === "INACTIVE" &&
+                  (product as any).inactiveReason && (
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="text-sm font-medium text-gray-600">
+                        Inactive Reason:
+                      </div>
+                      <div className="text-sm col-span-2 text-red-600 font-medium">
+                        {(product as any).inactiveReason}
+                      </div>
+                    </div>
+                  )}
               </div>
             </div>
           )}

@@ -128,4 +128,20 @@ export const productService = {
     const response = await axiosClient.delete(`/products/${productId}`);
     return response.data;
   },
+
+  updateProductStatus: async (productId: string, status: string, reason?: string) => {
+    const axiosClient = createAxiosClient();
+    const requestBody: any = { status };
+    
+    // Only add reason for INACTIVE status
+    if (status === "INACTIVE" && reason) {
+      requestBody.reason = reason;
+    }
+    
+    const response = await axiosClient.patch(
+      `/products/${productId}/status`,
+      requestBody
+    );
+    return response.data;
+  },
 };
