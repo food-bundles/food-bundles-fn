@@ -35,8 +35,16 @@ export default function ApproveLoanModal({ isOpen, onClose, selectedApp, onAppro
     }
   }, [selectedApp]);
 
+  const isFormValid = () => {
+    return (
+      approvalData.approvedAmount.trim() !== "" &&
+      approvalData.voucherType !== "" &&
+      approvalData.repaymentDays.trim() !== ""
+    );
+  };
+
   const handleApprove = async () => {
-    if (!selectedApp || !approvalData.approvedAmount || !approvalData.voucherType) return;
+    if (!selectedApp || !isFormValid()) return;
 
     try {
       await onApprove({
@@ -48,7 +56,7 @@ export default function ApproveLoanModal({ isOpen, onClose, selectedApp, onAppro
       setApprovalData({ approvedAmount: "", repaymentDays: "30", voucherType: "", notes: "" });
       onClose();
     } catch (error) {
-      console.error("Failed to approve loan:", error);
+      console.error("Failed to approve Voucher:", error);
     }
   };
 
@@ -56,7 +64,7 @@ export default function ApproveLoanModal({ isOpen, onClose, selectedApp, onAppro
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Approve Loan Application</DialogTitle>
+          <DialogTitle>Approve Voucher Application</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div>
@@ -105,8 +113,12 @@ export default function ApproveLoanModal({ isOpen, onClose, selectedApp, onAppro
             />
           </div>
           <div className="flex gap-2 pt-4">
-            <Button onClick={handleApprove} className="bg-green-600 hover:bg-green-700">
-              Approve Loan
+            <Button 
+              onClick={handleApprove} 
+              className="bg-green-600 hover:bg-green-700"
+              disabled={!isFormValid()}
+            >
+              Approve Voucher
             </Button>
             <Button variant="outline" onClick={onClose}>
               Cancel

@@ -36,9 +36,7 @@ export default function RestaurantsPage() {
         const restaurantsData = response.data.restaurants || response.data;
         console.log("Restaurants Data:", restaurantsData);
         const mappedRestaurants = restaurantsData.map((restaurant: any) => {
-          const location = [restaurant.province, restaurant.district, restaurant.sector, restaurant.cell, restaurant.village]
-            .filter(Boolean)
-            .join(", ") || "Not specified";
+          const location = restaurant.location || "Not specified";
           
           const ordersCount = restaurant.orders?.length || 0;
           const totalSpent = restaurant.orders?.reduce((sum: number, order: any) => {
@@ -101,13 +99,8 @@ export default function RestaurantsPage() {
 
   const handleCreateRestaurant = async (data: any) => {
     try {
-      // Use phone as password if no password provided
-      const restaurantData = {
-        ...data,
-        password: data.password || data.phone,
-      };
-      await restaurantService.createRestaurant(restaurantData);
-      toast.success("Restaurant created successfully");
+      await restaurantService.createRestaurantByAdmin(data);
+      toast.success("Restaurant created successfully. Password sent via SMS.");
       fetchRestaurants();
     } catch (error: any) {
       throw new Error(error.response?.data?.message || "Failed to create restaurant");

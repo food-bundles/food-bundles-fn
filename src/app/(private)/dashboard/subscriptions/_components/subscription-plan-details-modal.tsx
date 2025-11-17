@@ -59,6 +59,13 @@ export function SubscriptionPlanDetailsModal({
     description: plan.description || "",
     price: plan.price.toString(),
     duration: plan.duration.toString(),
+    voucherAccess: plan.voucherAccess,
+    voucherPaymentDays: plan.voucherPaymentDays,
+    freeDelivery: plan.freeDelivery,
+    stablePricing: plan.stablePricing,
+    receiveEBM: plan.receiveEBM,
+    advertisingAccess: plan.advertisingAccess,
+    otherServices: plan.otherServices,
     features: plan.features || [],
     isActive: plan.isActive,
   });
@@ -71,6 +78,13 @@ export function SubscriptionPlanDetailsModal({
       description: plan.description || "",
       price: plan.price.toString(),
       duration: plan.duration.toString(),
+      voucherAccess: plan.voucherAccess,
+      voucherPaymentDays: plan.voucherPaymentDays,
+      freeDelivery: plan.freeDelivery,
+      stablePricing: plan.stablePricing,
+      receiveEBM: plan.receiveEBM,
+      advertisingAccess: plan.advertisingAccess,
+      otherServices: plan.otherServices,
       features: plan.features || [],
       isActive: plan.isActive,
     });
@@ -83,6 +97,13 @@ export function SubscriptionPlanDetailsModal({
       description: plan.description || "",
       price: plan.price.toString(),
       duration: plan.duration.toString(),
+      voucherAccess: plan.voucherAccess,
+      voucherPaymentDays: plan.voucherPaymentDays,
+      freeDelivery: plan.freeDelivery,
+      stablePricing: plan.stablePricing,
+      receiveEBM: plan.receiveEBM,
+      advertisingAccess: plan.advertisingAccess,
+      otherServices: plan.otherServices,
       features: plan.features || [],
       isActive: plan.isActive,
     });
@@ -114,6 +135,13 @@ export function SubscriptionPlanDetailsModal({
         description: editData.description,
         price: Number.parseFloat(editData.price),
         duration: Number.parseInt(editData.duration),
+        voucherAccess: editData.voucherAccess,
+        voucherPaymentDays: editData.voucherPaymentDays,
+        freeDelivery: editData.freeDelivery,
+        stablePricing: editData.stablePricing,
+        receiveEBM: editData.receiveEBM,
+        advertisingAccess: editData.advertisingAccess,
+        otherServices: editData.otherServices,
         features: editData.features,
         isActive: editData.isActive,
       };
@@ -260,54 +288,102 @@ export function SubscriptionPlanDetailsModal({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="features" className="text-gray-900">
-                  Features
-                </Label>
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <Input
-                      value={currentFeature}
-                      onChange={(e) => setCurrentFeature(e.target.value)}
-                      placeholder="Add a feature..."
-                      onKeyPress={(e) => e.key === "Enter" && addFeature()}
+                <Label className="text-gray-900">Plan Features</Label>
+                <div className="space-y-3 mt-2">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="edit-voucherAccess"
+                      checked={editData.voucherAccess}
+                      onChange={(e) =>
+                        setEditData(prev => ({ ...prev, voucherAccess: e.target.checked }))
+                      }
                       disabled={isLoading}
-                      className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
+                      className="rounded border-gray-300"
                     />
-                    <Button
-                      type="button"
-                      onClick={addFeature}
-                      size="sm"
-                      disabled={isLoading}
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      Add
-                    </Button>
+                    <Label htmlFor="edit-voucherAccess" className="text-sm">
+                      Voucher Access ({editData.voucherPaymentDays} days)
+                    </Label>
                   </div>
-                  <div className="space-y-1">
-                    {editData.features.map((feature: any, index: any) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded border border-gray-200"
-                      >
-                        <span className="text-xs text-gray-900">
-                          <span className="font-medium">{index + 1}.</span>{" "}
-                          {feature}
-                        </span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeFeature(index)}
-                          disabled={isLoading}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50 text-xs"
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                    ))}
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="edit-freeDelivery"
+                      checked={editData.freeDelivery}
+                      onChange={(e) =>
+                        setEditData(prev => ({ ...prev, freeDelivery: e.target.checked }))
+                      }
+                      disabled={isLoading}
+                      className="rounded border-gray-300"
+                    />
+                    <Label htmlFor="edit-freeDelivery" className="text-sm">
+                      Free Delivery
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="edit-stablePricing"
+                      checked={editData.stablePricing}
+                      onChange={(e) =>
+                        setEditData(prev => ({ ...prev, stablePricing: e.target.checked }))
+                      }
+                      disabled={isLoading}
+                      className="rounded border-gray-300"
+                    />
+                    <Label htmlFor="edit-stablePricing" className="text-sm">
+                      Stable Pricing
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="edit-receiveEBM"
+                      checked={editData.receiveEBM}
+                      onChange={(e) =>
+                        setEditData(prev => ({ ...prev, receiveEBM: e.target.checked }))
+                      }
+                      disabled={isLoading}
+                      className="rounded border-gray-300"
+                    />
+                    <Label htmlFor="edit-receiveEBM" className="text-sm">
+                      Receive EBM
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="edit-advertisingAccess"
+                      checked={editData.advertisingAccess}
+                      onChange={(e) =>
+                        setEditData(prev => ({ ...prev, advertisingAccess: e.target.checked }))
+                      }
+                      disabled={isLoading}
+                      className="rounded border-gray-300"
+                    />
+                    <Label htmlFor="edit-advertisingAccess" className="text-sm">
+                      Advertising Access
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="edit-otherServices"
+                      checked={editData.otherServices}
+                      onChange={(e) =>
+                        setEditData(prev => ({ ...prev, otherServices: e.target.checked }))
+                      }
+                      disabled={isLoading}
+                      className="rounded border-gray-300"
+                    />
+                    <Label htmlFor="edit-otherServices" className="text-sm">
+                      Other Services
+                    </Label>
                   </div>
                 </div>
               </div>
+
+         
 
               <div className="flex items-center justify-between space-x-2">
                 <Label htmlFor="isActive" className="text-gray-900">
@@ -441,6 +517,49 @@ export function SubscriptionPlanDetailsModal({
                     </div>
                   </div>
                 )}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="text-sm font-medium text-gray-600">
+                    Plan Features:
+                  </div>
+                  <div className="text-sm col-span-2 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Badge className={plan.voucherAccess ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+                        {plan.voucherAccess ? "✓" : "✗"}
+                      </Badge>
+                      <span className="text-gray-900">Voucher Access {plan.voucherAccess && `(${plan.voucherPaymentDays} days)`}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className={plan.freeDelivery ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+                        {plan.freeDelivery ? "✓" : "✗"}
+                      </Badge>
+                      <span className="text-gray-900">Free Delivery</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className={plan.stablePricing ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+                        {plan.stablePricing ? "✓" : "✗"}
+                      </Badge>
+                      <span className="text-gray-900">Stable Pricing</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className={plan.receiveEBM ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+                        {plan.receiveEBM ? "✓" : "✗"}
+                      </Badge>
+                      <span className="text-gray-900">Receive EBM</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className={plan.advertisingAccess ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+                        {plan.advertisingAccess ? "✓" : "✗"}
+                      </Badge>
+                      <span className="text-gray-900">Advertising Access</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className={plan.otherServices ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+                        {plan.otherServices ? "✓" : "✗"}
+                      </Badge>
+                      <span className="text-gray-900">Other Services</span>
+                    </div>
+                  </div>
+                </div>
                 {plan.features && plan.features.length > 0 && (
                   <div className="grid grid-cols-3 gap-2">
                     <div className="text-sm font-medium text-gray-600">

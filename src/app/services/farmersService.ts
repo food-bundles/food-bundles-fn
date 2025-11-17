@@ -47,6 +47,19 @@ export const farmersService = {
       throw error;
     }
   },
+  createFarmerByAdmin: async (data: any) => {
+    try {
+      const response = await axiosClient.post("/farmers/admin/create", data);
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error: any) {
+      console.error("Create farmer error:", error);
+      throw error;
+    }
+  },
 
   // Update farmer
   updateFarmer: async (farmerId: string, data: any) => {

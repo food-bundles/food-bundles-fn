@@ -10,7 +10,7 @@ export function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
 
   // Routes foe logged-in users only
-  const protectedRoutes = ["/dashboard", "/restaurant", "/farmer"];
+  const protectedRoutes = ["/dashboard", "/restaurant", "/farmers"];
   const isProtectedRoute = protectedRoutes.some((route) =>
     pathname.startsWith(route)
   );
@@ -71,7 +71,7 @@ export const config = {
     "/aggregator/:path*",
     "/logistics/:path*",
     "/restaurant/:path*",
-    "/farmer/:path*",
+    "/farmers/:path*",
     "/guest/:path*",
   ],
 };

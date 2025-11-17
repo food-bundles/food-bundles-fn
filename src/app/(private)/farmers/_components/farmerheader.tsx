@@ -20,6 +20,7 @@ import { useAuth } from "@/app/contexts/auth-context"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
+import { OptimizedImage } from "@/components/OptimizedImage";
 
 const testNotifications: {
   id: string;
@@ -104,14 +105,17 @@ export default function DashboardHeader() {
         <div className="container mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-13">
             {/* Left: Brand */}
-            <div className="flex items-center gap-2 bg-green-50 px-2 sm:px-3 py-1 rounded-full border-2 border-primary flex-shrink-0">
-              <Image 
-                width={32} 
-                height={32} 
-                src="/imgs/Food_bundle_logo.png" 
-                alt="FoodBundle Logo"  
-                className="rounded-full object-cover w-5 h-5"
-              />
+            <div className="flex items-center gap-2 bg-green-50 px-2 sm:px-3 py-1 rounded-full border-2 border-primary shrink-0">
+              <OptimizedImage
+                                 src="/imgs/Food_bundle_logo.png"
+                                 alt="FoodBundle Logo"
+                                 width={32}
+                                 height={32}
+                                 className="rounded-full object-cover w-5 h-5"
+                                 transformation={[
+                                   { width: 64, height: 64, crop: "fill", quality: "85" },
+                                 ]}
+                               />
               <div className="flex flex-col">
                 <span className="text-2sm font-bold text-black whitespace-nowrap">Food bundles</span>
               </div>
@@ -143,7 +147,7 @@ export default function DashboardHeader() {
                   >
                     {user ? (
                       <>
-                        <div className="p-[2px] bg-green-600 rounded-full flex items-center justify-center">
+                        <div className="p-0.5 bg-green-600 rounded-full flex items-center justify-center">
                           {user?.profileImage ? (
                             <Image                      
                               src={profileImage || "/placeholder.svg"}
@@ -247,7 +251,7 @@ export default function DashboardHeader() {
               <div className="px-2 py-4 space-y-1">
                 {/* Mobile Profile Section */}
                 <div className="flex items-center gap-3 px-3 py-2 mb-2">
-                  <div className="p-[2px] bg-green-600 rounded-full flex items-center justify-center">
+                  <div className="p-0.5 bg-green-600 rounded-full flex items-center justify-center">
                     {user?.profileImage ? (
                       <Image                      
                         src={profileImage || "/placeholder.svg"}

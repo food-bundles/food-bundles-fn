@@ -122,11 +122,16 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
           {cartItems.length > 0 && (
             <div className="sticky bottom-0 bg-white border-t border-gray-200 pt-4 pb-6 px-2 sm:px-1">
               <div className="flex justify-between items-center mb-2 sm:mb-1">
-                <span className="text-lg sm:text-sm font-semibold">Total:</span>
+                <span className="text-lg sm:text-sm font-semibold">Subtotal:</span>
                 <span className="text-lg sm:text-sm font-bold">
                   {totalAmount} Rwf
                 </span>
               </div>
+              {totalAmount < 100000 && (
+                <div className="text-xs text-gray-600 mb-2">
+                  + 5,000 Rwf delivery fee (orders under 100,000 Rwf)
+                </div>
+              )}
               <a href="restaurant/checkout">
                 <Button className="w-full py-3 sm:py-2 text-sm sm:text-xs bg-green-600 hover:bg-green-700 rounded-none">
                   Buy Now

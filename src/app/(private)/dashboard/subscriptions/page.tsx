@@ -80,6 +80,7 @@ export default function AdminSubscriptionsPage() {
     stablePricing: false,
     receiveEBM: false,
     advertisingAccess: false,
+    otherServices: false,
   });
   const [currentFeature, setCurrentFeature] = useState("");
 
@@ -188,6 +189,7 @@ export default function AdminSubscriptionsPage() {
         stablePricing: newPlan.stablePricing,
         receiveEBM: newPlan.receiveEBM,
         advertisingAccess: newPlan.advertisingAccess,
+        otherServices: newPlan.otherServices,
       };
 
       const response = await subscriptionService.createSubscriptionPlan(
@@ -208,6 +210,7 @@ export default function AdminSubscriptionsPage() {
           stablePricing: false,
           receiveEBM: false,
           advertisingAccess: false,
+          otherServices: false,
         });
         setCurrentFeature("");
         await loadSubscriptionPlans();
@@ -484,7 +487,24 @@ export default function AdminSubscriptionsPage() {
                           className="rounded border-gray-300"
                         />
                         <Label htmlFor="advertisingAccess" className="text-sm">
-                          Advertising - Connect your products to reach more guests
+                          Advertising Access
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="otherServices"
+                          checked={newPlan.otherServices}
+                          onChange={(e) =>
+                            setNewPlan((prev) => ({
+                              ...prev,
+                              otherServices: e.target.checked,
+                            }))
+                          }
+                          className="rounded border-gray-300"
+                        />
+                        <Label htmlFor="otherServices" className="text-sm">
+                          Other Services
                         </Label>
                       </div>
                     </div>
@@ -566,12 +586,6 @@ export default function AdminSubscriptionsPage() {
           showPagination={true}
           showRowSelection={true}
         />
-      )}
-
-      {loading && (
-        <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700"></div>
-        </div>
       )}
     </div>
   );

@@ -22,8 +22,8 @@ export interface CheckoutRequest {
     cvv: string;
   }
   cardholderName?: string;
-
   phoneNumber?: string;
+  otherServices?: boolean;
 }
 
 export interface Checkout {

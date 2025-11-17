@@ -11,11 +11,13 @@ import { DataTable } from "@/components/data-table";
 import { useVouchers } from "@/app/contexts/VoucherContext";
 import { ILoanApplication, LoanStatus } from "@/lib/types";
 import ApproveLoanModal from "./ApproveLoanModal";
+import RejectLoanModal from "./RejectLoanModal";
 
 export default function LoanApplicationsTable() {
   const { allLoanApplications, loading, getAllLoanApplications, approveLoan, rejectLoan, disburseLoan } = useVouchers();
   const [selectedApp, setSelectedApp] = useState<ILoanApplication | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
 
   useEffect(() => {
     getAllLoanApplications();
@@ -27,9 +29,11 @@ export default function LoanApplicationsTable() {
     setSelectedApp(null);
   };
 
-  const handleReject = async (id: string, reason: string) => {
+  const handleReject = async (reason: string) => {
+    if (!selectedApp) return;
     try {
-      await rejectLoan(id, reason);
+      await rejectLoan(selectedApp.id, reason);
+      setSelectedApp(null);
     } catch (error) {
       console.error("Failed to reject loan:", error);
     }
@@ -107,7 +111,7 @@ export default function LoanApplicationsTable() {
                   className="bg-green-600 hover:bg-green-700"
                   onClick={() => {
                     setSelectedApp(app);
-                    setIsModalOpen(true);
+                    setIsApproveModalOpen(true);
                   }}
                 >
                   <CheckCircle className="h-4 w-4 mr-1" />
@@ -117,8 +121,8 @@ export default function LoanApplicationsTable() {
                   size="sm" 
                   variant="destructive"
                   onClick={() => {
-                    const reason = prompt("Reason for rejection:");
-                    if (reason) handleReject(app.id, reason);
+                    setSelectedApp(app);
+                    setIsRejectModalOpen(true);
                   }}
                 >
                   <XCircle className="h-4 w-4 mr-1" />
@@ -153,10 +157,22 @@ export default function LoanApplicationsTable() {
         showPagination={true}
       />
       <ApproveLoanModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isApproveModalOpen}
+        onClose={() => {
+          setIsApproveModalOpen(false);
+          setSelectedApp(null);
+        }}
         selectedApp={selectedApp}
         onApprove={handleApprove}
+      />
+      <RejectLoanModal
+        isOpen={isRejectModalOpen}
+        onClose={() => {
+          setIsRejectModalOpen(false);
+          setSelectedApp(null);
+        }}
+        selectedApp={selectedApp}
+        onReject={handleReject}
       />
     </>
   );
