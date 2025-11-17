@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { faqData, keywordMapping, chatbotContext } from "@/data/faqData";
 
 
 type ContactInfo = {
@@ -37,21 +39,31 @@ type Props = {
   faqs: FAQ[];
 };
 
+// Initialize Gemini AI
+const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || "");
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
 export function HelpContent({ contactInfo, faqs }: Props) {
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
 
   // chat state
   const [messages, setMessages] = useState<
     { id: number; text: string; sender: "user" | "bot"; time: string }[]
-  >([]);
+  >([{
+    id: 1,
+    text: "Hello! I'm Food Bundle Support Online. I'm here to help you with questions about our services, vouchers, subscriptions, and more. How can I assist you today?",
+    sender: "bot",
+    time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+  }]);
   const [message, setMessage] = useState("");
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim()) return;
 
-    const newMsg = {
+    const userMessage = {
       id: Date.now(),
       text: message,
       sender: "user" as const,
@@ -61,24 +73,62 @@ export function HelpContent({ contactInfo, faqs }: Props) {
       }),
     };
 
-    setMessages((prev) => [...prev, newMsg]);
+    setMessages((prev) => [...prev, userMessage]);
+    const currentMessage = message;
     setMessage("");
+    setIsTyping(true);
 
-    // optional bot reply simulation
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          text: "Thanks for reaching out! Our team will get back to you soon.",
-          sender: "bot",
-          time: new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-        },
-      ]);
-    }, 1000);
+    try {
+      let reply: string;
+
+      // Check FAQ first for exact matches
+      const faqMatch = Object.keys(faqData).find(key => 
+        key.toLowerCase().includes(currentMessage.toLowerCase()) ||
+        currentMessage.toLowerCase().includes(key.toLowerCase())
+      );
+
+      if (faqMatch) {
+        reply = faqData[faqMatch as keyof typeof faqData];
+      } else {
+        // Use Gemini AI with context
+        const prompt = `${chatbotContext}
+
+FAQ Database: ${JSON.stringify(faqData)}
+
+User Question: ${currentMessage}
+
+Please provide a helpful response based on the FAQ data and context. If the question isn't covered in the FAQ, provide general assistance and direct them to contact support.`;
+        
+        const result = await model.generateContent(prompt);
+        reply = result.response.text();
+      }
+
+      const botMessage = {
+        id: Date.now() + 1,
+        text: reply,
+        sender: "bot" as const,
+        time: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
+
+      setMessages((prev) => [...prev, botMessage]);
+    } catch (error) {
+      console.error('Chatbot error:', error);
+      const errorMessage = {
+        id: Date.now() + 1,
+        text: "I'm having trouble right now. Please contact our support team at +250 796 897 823 or sales@food.rw for immediate assistance.",
+        sender: "bot" as const,
+        time: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   const toggleFAQ = (id: string) => {
@@ -190,7 +240,9 @@ export function HelpContent({ contactInfo, faqs }: Props) {
             <div className="flex flex-col items-center">
               <h4 className="font-semibold text-gray-900 mb-1">For More</h4>
               <p className="text-sm text-gray-600 mb-1">Chat With Our Agent</p>
-              <p className="text-xs text-gray-500">Available now</p>
+              <p className="text-xs text-green-500 hover:rounded-md hover:bg-green-300 p-2" 
+              onClick={() => setIsChatOpen(true)}
+              >Available now</p>
             </div>
           </div>
         </div>
@@ -400,8 +452,8 @@ export function HelpContent({ contactInfo, faqs }: Props) {
                 <div
                   className={`max-w-xs px-3 py-2 rounded-lg text-xs sm:text-sm ${
                     msg.sender === "user"
-                      ? "bg-green-500 text-primary-foreground"
-                      : "bg-muted text-muted-foreground"
+                      ? "bg-green-500 text-white"
+                      : "bg-gray-100 text-gray-800"
                   }`}
                 >
                   <p>{msg.text}</p>
@@ -409,6 +461,17 @@ export function HelpContent({ contactInfo, faqs }: Props) {
                 </div>
               </div>
             ))}
+            {isTyping && (
+              <div className="flex justify-start">
+                <div className="bg-gray-100 text-gray-800 px-3 py-2 rounded-lg text-xs sm:text-sm">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Chat Input */}
