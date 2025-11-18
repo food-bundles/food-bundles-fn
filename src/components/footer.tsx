@@ -25,7 +25,7 @@ export function Footer() {
             </h3>
             <div className="space-y-2">
               <Link
-                href="/farmer"
+                href="/farmers"
                 className="block text-green-200 hover:text-white transition-colors text-[13px]"
               >
                 For Farmers

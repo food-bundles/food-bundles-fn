@@ -89,7 +89,7 @@ export function Header() {
   const getProfilePath = useCallback((userRole: string): string => {
     switch (userRole) {
       case UserRole.FARMER:
-        return "/farmer/settings";
+        return "/farmers/settings";
       case UserRole.RESTAURANT:
         return "#";
       case UserRole.AGGREGATOR:

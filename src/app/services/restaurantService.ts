@@ -91,4 +91,19 @@ export const restaurantService = {
       throw error;
     }
   },
+
+  // Create restaurant by admin (no password required)
+  createRestaurantByAdmin: async (restaurantData: any) => {
+    try {
+      const response = await axiosClient.post("/restaurants/admin/create", restaurantData);
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error: any) {
+      console.error("Create restaurant by admin error:", error);
+      throw error;
+    }
+  },
 };

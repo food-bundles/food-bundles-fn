@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { ProductSubmissionData } from "../(private)/Farmer/_components/product-submission-modal"
+import { ProductSubmissionData } from "../(private)/farmers/_components/product-submission-modal"
 import createAxiosClient from "../hooks/axiosClient"
 
 export interface CreatProductSubmissionData {

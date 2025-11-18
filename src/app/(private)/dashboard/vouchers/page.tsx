@@ -1,6 +1,6 @@
 "use client";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState } from "react";
 import { VoucherProvider } from "@/app/contexts/VoucherContext";
 import { RestaurantProvider } from "@/app/contexts/RestaurantContext";
 import VoucherStats from "./_components/VoucherStats";
@@ -8,7 +8,11 @@ import LoanApplicationsTable from "./_components/LoanApplicationsTable";
 import VouchersTable from "./_components/VouchersTable";
 import CreateVoucherForm from "./_components/CreateVoucherForm";
 
+type ActiveTab = "loans" | "vouchers";
+
 export default function VoucherManagementPage() {
+  const [activeTab, setActiveTab] = useState<ActiveTab>("loans");
+
   return (
     <VoucherProvider>
       <RestaurantProvider>
@@ -25,20 +29,40 @@ export default function VoucherManagementPage() {
 
         <VoucherStats />
 
-        <Tabs defaultValue="loans" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="loans">Loan Applications</TabsTrigger>
-            <TabsTrigger value="vouchers">All Vouchers</TabsTrigger>
-          </TabsList>
+        {/* Tabs */}
+        <div className="border-b">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setActiveTab("loans")}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === "loans"
+                  ? "border-green-500 text-green-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              Loan Applications
+            </button>
+            <button
+              onClick={() => setActiveTab("vouchers")}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === "vouchers"
+                  ? "border-green-500 text-green-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              All Vouchers
+            </button>
+          </nav>
+        </div>
 
-          <TabsContent value="loans" className="space-y-6">
+        {/* Content */}
+        <div className="space-y-6 mt-6">
+          {activeTab === "loans" ? (
             <LoanApplicationsTable />
-          </TabsContent>
-
-          <TabsContent value="vouchers" className="space-y-6">
+          ) : (
             <VouchersTable />
-          </TabsContent>
-        </Tabs>
+          )}
+        </div>
         </div>
       </RestaurantProvider>
     </VoucherProvider>

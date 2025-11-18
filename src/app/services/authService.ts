@@ -32,6 +32,11 @@ export const authService = {
     const response = await axiosClient.post("/restaurants", restaurantData);
     return response.data;
   },
+  registerRestaurantByAdmin: async (restaurantData: ICreateRestaurantData) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/admin/create", restaurantData);
+    return response.data;
+  },
 
   verifyRestaurant: async (phone: string, otp: string) => {
     const axiosClient = createAxiosClient();

@@ -105,11 +105,11 @@ export default function SubscribePage() {
                       </span>
                     </div>
                   )}
-                  {plan.freeDelivery && (
+                  {plan.freeDelivery && plan.otherServices && (
                     <div className="flex items-start space-x-2">
                       <p className="text-green-500 text-[16px] mr-2">🗸</p>
                       <span className="text-gray-800 text-[13px]">
-                        Free Delivery
+                        Free Delivery & Other Services
                       </span>
                     </div>
                   )}
@@ -133,7 +133,7 @@ export default function SubscribePage() {
                     <div className="flex items-start space-x-2">
                       <p className="text-green-500 text-[16px] mr-2">🗸</p>
                       <span className="text-gray-800 text-[13px]">
-                        Advertising - Connect your products to reach more guests
+                        Advertising Access
                       </span>
                     </div>
                   )}

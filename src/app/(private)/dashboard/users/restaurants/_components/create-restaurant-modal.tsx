@@ -35,18 +35,10 @@ export function CreateRestaurantModal({
     phone: "",
     tin: "",
     location: "",
-    password: "",
-    verified: true,
-    agreed: true,
   });
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Auto-fill password with phone number if phone changes and password is empty
-    if (field === "phone" && !formData.password) {
-      setFormData(prev => ({ ...prev, password: value }));
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -69,9 +61,6 @@ export function CreateRestaurantModal({
         phone: "",
         tin: "",
         location: "",
-        password: "",
-        verified: true,
-        agreed: true,
       });
     } catch (error: any) {
       console.error("Failed to create restaurant:", error);
@@ -90,7 +79,7 @@ export function CreateRestaurantModal({
             Create New Restaurant
           </DialogTitle>
           <DialogDescription className="text-gray-600">
-            Create a new restaurant account with admin privileges
+            Create a new restaurant account. Password will be auto-generated and sent via SMS.
           </DialogDescription>
         </DialogHeader>
 
@@ -154,52 +143,8 @@ export function CreateRestaurantModal({
               onChange={(e) => handleInputChange("location", e.target.value)}
               disabled={isLoading}
               className="bg-white border-gray-300 text-gray-900"
-              placeholder="Enter location (optional)"
+              placeholder="Enter location (e.g., Kimihurura)"
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-gray-900">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              value={formData.password}
-              onChange={(e) => handleInputChange("password", e.target.value)}
-              disabled={isLoading}
-              className="bg-white border-gray-300 text-gray-900"
-              placeholder="Default: phone number"
-            />
-            <p className="text-xs text-gray-500">
-              Leave empty to use phone number as default password
-            </p>
-          </div>
-
-          <div className="space-y-4 pt-4 border-t border-gray-200">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label htmlFor="verified" className="text-gray-900">Verified Status</Label>
-                <p className="text-xs text-gray-500">Mark restaurant as verified</p>
-              </div>
-              <Switch
-                id="verified"
-                checked={formData.verified}
-                onCheckedChange={(checked) => handleInputChange("verified", checked)}
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <Label htmlFor="agreed" className="text-gray-900">Terms Agreement</Label>
-                <p className="text-xs text-gray-500">Mark terms as agreed</p>
-              </div>
-              <Switch
-                id="agreed"
-                checked={formData.agreed}
-                onCheckedChange={(checked) => handleInputChange("agreed", checked)}
-                disabled={isLoading}
-              />
-            </div>
           </div>
 
           <DialogFooter className="pt-4">

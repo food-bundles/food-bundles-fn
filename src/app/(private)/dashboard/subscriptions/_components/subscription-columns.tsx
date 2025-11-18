@@ -16,6 +16,13 @@ export type SubscriptionPlan = {
   description?: string;
   price: number;
   duration: number;
+  voucherAccess: boolean;
+  voucherPaymentDays?: number;
+  freeDelivery: boolean;
+  stablePricing: boolean;
+  receiveEBM: boolean;
+  advertisingAccess: boolean;
+  otherServices: boolean;
   features?: any;
   isActive: boolean;
   createdAt: string;

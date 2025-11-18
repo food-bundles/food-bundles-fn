@@ -15,6 +15,7 @@ export interface SubscriptionPlan {
   stablePricing: boolean;
   receiveEBM: boolean;
   advertisingAccess: boolean;
+  otherServices: boolean;
   features?: any;
   isActive: boolean;
   createdAt: string;

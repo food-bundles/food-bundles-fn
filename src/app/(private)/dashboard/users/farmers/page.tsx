@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
@@ -9,6 +10,8 @@ import { useFarmers, type Farmer } from "@/app/contexts/FarmersContext";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
 import { FarmerManagementModal } from "./_components/farmer-management-modal";
+import { CreateFarmerModal } from "./_components/create-farmer-modal";
+import { farmersService } from "@/app/services/farmersService";
 
 function FarmersPageContent() {
   const { farmers,  error, getAllFarmers, updateFarmer, deleteFarmer, clearError } = useFarmers();
@@ -18,6 +21,7 @@ function FarmersPageContent() {
   const [mounted, setMounted] = useState(false);
   const [selectedFarmer, setSelectedFarmer] = useState<Farmer | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   // All hooks must be called before any conditional returns
   const filteredData = useMemo(() => {
@@ -75,6 +79,16 @@ function FarmersPageContent() {
     getAllFarmers();
   };
 
+  const handleCreateFarmer = async (data: any) => {
+    try {
+      await farmersService.createFarmerByAdmin(data);
+      toast.success("Farmer created successfully. PIN sent via SMS.");
+      getAllFarmers();
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Failed to create farmer");
+    }
+  };
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -103,7 +117,9 @@ function FarmersPageContent() {
         title="Farmers Management"
         showExport={true}
         onExport={handleExport}
-        showAddButton={false}
+        showAddButton={true}
+        addButtonLabel="Add Farmer"
+        onAddButton={() => setIsCreateOpen(true)}
         customFilters={mounted ? <TableFilters filters={filters} /> : <div />}
         showSearch={false}
         showColumnVisibility={true}
@@ -118,6 +134,12 @@ function FarmersPageContent() {
         onUpdate={handleUpdate}
         onEdit={updateFarmer}
         onDelete={deleteFarmer}
+      />
+      
+      <CreateFarmerModal
+        open={isCreateOpen}
+        onOpenChange={setIsCreateOpen}
+        onCreate={handleCreateFarmer}
       />
     </div>
   );

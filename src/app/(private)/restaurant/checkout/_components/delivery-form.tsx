@@ -110,6 +110,7 @@ export function Checkout() {
   const [isVerifyingVoucherOTP, setIsVerifyingVoucherOTP] = useState(false);
   const [checkoutSessionId, setCheckoutSessionId] = useState("");
   const [voucherOTPError, setVoucherOTPError] = useState("");
+  const [otherServices, setOtherServices] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -180,13 +181,19 @@ export function Checkout() {
     }
   }, [method, isAuthenticated, getMyVouchers]);
 
+  // Calculate fees
+  const deliveryFee = totalAmount < 100000 ? 5000 : 0;
+  const packagingFee = otherServices ? 15000 : 0;
+  const finalTotal = totalAmount + deliveryFee + packagingFee;
+
   const summaryData = {
     totalItems,
     totalQuantity,
     subtotal: totalAmount,
     discount: 0,
-    deliveryFee: 0,
-    total: totalAmount,
+    deliveryFee,
+    packagingFee,
+    total: finalTotal,
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -333,6 +340,7 @@ export function Checkout() {
         notes: formData.deliveryInstructions,
         deliveryDate: new Date().toISOString().split("T")[0],
         currency: "RWF",
+        otherServices,
       };
 
       if (method === "card") {
@@ -464,6 +472,11 @@ export function Checkout() {
                 <span>Rwf {summaryData.total.toLocaleString()}</span>
               </div>
             </div>
+            {totalAmount < 100000 && (
+              <div className="text-xs text-gray-600 mt-2">
+                * Delivery fee applies for orders under 100,000 RWF
+              </div>
+            )}
           </div>
         </div>
 
@@ -559,6 +572,21 @@ export function Checkout() {
                   className="w-full pl-10 pt-3 pb-3 border border-gray-300 text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none rounded-none text-[13px] resize-none"
                   disabled={isSubmitting}
                 />
+              </div>
+
+              {/* Other Services Checkbox */}
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="otherServices"
+                  checked={otherServices}
+                  onChange={(e) => setOtherServices(e.target.checked)}
+                  className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                  disabled={isSubmitting}
+                />
+                <label htmlFor="otherServices" className="text-sm text-gray-700">
+                  Add other services (+15,000 RWF)
+                </label>
               </div>
 
               {/* Payment Method Section */}
