@@ -23,6 +23,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     isLoading,
     totalItems,
     totalAmount,
+    cart,
   } = useCart();
 
   // Handle escape key
@@ -127,11 +128,21 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   {totalAmount} Rwf
                 </span>
               </div>
-              {totalAmount < 100000 && (
-                <div className="text-xs text-gray-600 mb-2">
-                  + 5,000 Rwf delivery fee (orders under 100,000 Rwf)
-                </div>
-              )}
+              {(() => {
+                const hasActiveSubscription = cart?.restaurant?.subscriptions?.some(
+                  (sub: any) => sub.status === 'ACTIVE' && sub.plan
+                );
+                const subscriptionPlan = hasActiveSubscription 
+                  ? cart?.restaurant?.subscriptions?.find((sub: any) => sub.status === 'ACTIVE')?.plan 
+                  : null;
+                const hasFreeDelivery = subscriptionPlan?.freeDelivery || false;
+                
+                return !hasFreeDelivery && totalAmount < 100000 && (
+                  <div className="text-xs text-gray-600 mb-2">
+                    + 5,000 Rwf delivery fee (orders under 100,000 Rwf)
+                  </div>
+                );
+              })()}
               <a href="restaurant/checkout">
                 <Button className="w-full py-3 sm:py-2 text-sm sm:text-xs bg-green-600 hover:bg-green-700 rounded-none">
                   Buy Now

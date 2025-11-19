@@ -345,7 +345,7 @@ export const ordersColumns = (
     },
     cell: ({ row }) => (
       <div className="font-medium ">
-        #{row.getValue("orderId")}
+        {row.getValue("orderId")}
       </div>
     ),
   },

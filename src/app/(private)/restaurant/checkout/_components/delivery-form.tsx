@@ -181,9 +181,20 @@ export function Checkout() {
     }
   }, [method, isAuthenticated, getMyVouchers]);
 
+  // Check subscription benefits
+  const hasActiveSubscription = cart?.restaurant?.subscriptions?.some(
+    (sub: any) => sub.status === 'ACTIVE' && sub.plan
+  );
+  const subscriptionPlan = hasActiveSubscription 
+    ? cart?.restaurant?.subscriptions?.find((sub: any) => sub.status === 'ACTIVE')?.plan 
+    : null;
+  
+  const hasFreeDelivery = subscriptionPlan?.freeDelivery || false;
+  const hasOtherServices = subscriptionPlan?.otherServices || false;
+
   // Calculate fees
-  const deliveryFee = totalAmount < 100000 ? 5000 : 0;
-  const packagingFee = otherServices ? 15000 : 0;
+  const deliveryFee = hasFreeDelivery ? 0 : (totalAmount < 100000 ? 5000 : 0);
+  const packagingFee = (hasOtherServices || otherServices) ? 15000 : 0;
   const finalTotal = totalAmount + deliveryFee + packagingFee;
 
   const summaryData = {
@@ -464,7 +475,7 @@ export function Checkout() {
             </div>
             <div className="flex justify-between text-gray-900">
               <span>Delivery fee</span>
-              <span>Free</span>
+              <span>{deliveryFee > 0 ? `Rwf ${deliveryFee.toLocaleString()}` : 'Free'}</span>
             </div>
             <div className="border-t pt-3">
               <div className="flex justify-between font-medium text-gray-900">
@@ -472,7 +483,7 @@ export function Checkout() {
                 <span>Rwf {summaryData.total.toLocaleString()}</span>
               </div>
             </div>
-            {totalAmount < 100000 && (
+            {!hasFreeDelivery && totalAmount < 100000 && (
               <div className="text-xs text-gray-600 mt-2">
                 * Delivery fee applies for orders under 100,000 RWF
               </div>
@@ -574,20 +585,22 @@ export function Checkout() {
                 />
               </div>
 
-              {/* Other Services Checkbox */}
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="otherServices"
-                  checked={otherServices}
-                  onChange={(e) => setOtherServices(e.target.checked)}
-                  className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                  disabled={isSubmitting}
-                />
-                <label htmlFor="otherServices" className="text-sm text-gray-700">
-                  Add other services (+15,000 RWF)
-                </label>
-              </div>
+              {/* Other Services Checkbox - Only show if user doesn't have otherServices in subscription */}
+              {!hasOtherServices && (
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="otherServices"
+                    checked={otherServices}
+                    onChange={(e) => setOtherServices(e.target.checked)}
+                    className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                    disabled={isSubmitting}
+                  />
+                  <label htmlFor="otherServices" className="text-sm text-gray-700">
+                    Add other services (+15,000 RWF)
+                  </label>
+                </div>
+              )}
 
               {/* Payment Method Section */}
               <div className="space-y-3">
