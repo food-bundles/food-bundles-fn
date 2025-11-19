@@ -16,6 +16,7 @@ import Autoplay from "embla-carousel-autoplay";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { Textarea } from "./ui/textarea";
 import Link from "next/link";
+import { SharedChat } from './shared-chat';
 
 const farmers = [
   {
@@ -153,11 +154,33 @@ function ContactForm({
     email: "",
     message: "",
   });
+  const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
 
-  const handleSubmit = (e: any) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
-    // console.log("Form submitted:", formData);
-    setFormData({ name: "", email: "", message: "" });
+    setStatus('sending');
+    
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/contact-submissions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+      
+      if (response.ok) {
+        setStatus('success');
+        setFormData({ name: "", email: "", message: "" });
+        setTimeout(() => setStatus('idle'), 3000);
+      } else {
+        setStatus('error');
+        setTimeout(() => setStatus('idle'), 3000);
+      }
+    } catch (error) {
+      setStatus('error');
+      setTimeout(() => setStatus('idle'), 3000);
+    }
   };
 
   return (
@@ -181,12 +204,19 @@ function ContactForm({
         onChange={(e) => setFormData({ ...formData, message: e.target.value })}
         className="w-full min-h-[60px] px-3 py-2 text-sm bg-white border border-gray-300 rounded  resize-none"
       />
+      {status === 'success' && (
+        <p className="text-green-600 text-sm font-medium">Message sent successfully!</p>
+      )}
+      {status === 'error' && (
+        <p className="text-red-600 text-sm font-medium">Failed to send message. Please try again.</p>
+      )}
       <div className="flex items-center gap-4">
         <Button
           onClick={handleSubmit}
-          className="bg-green-600 hover:bg-green-700 flex items-center gap-2 rounded"
+          disabled={status === 'sending'}
+          className="bg-green-600 hover:bg-green-700 flex items-center gap-2 rounded disabled:opacity-50"
         >
-          Send
+          {status === 'sending' ? 'Sending...' : 'Send'}
           <Send className="h-4 w-4" />
         </Button>
         <p className="text-xs font-medium text-gray-600">
@@ -258,139 +288,7 @@ function FarmCarousel() {
   );
 }
 
-interface ChatWindowProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
 
-function ChatWindow({ isOpen, onClose }: ChatWindowProps) {
-  const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      text: "Hi! I'm Food BundlesAssistant. How can I help you today?",
-      sender: "bot",
-      time: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    },
-  ]);
-
-  const handleSend = (e: any) => {
-    e.preventDefault();
-    if (!message.trim()) return;
-
-    const newMessage = {
-      id: messages.length + 1,
-      text: message,
-      sender: "user",
-      time: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
-    setMessages([...messages, newMessage]);
-    setMessage("");
-
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: prev.length + 1,
-          text: "Thanks for your message! How can I assist you further?",
-          sender: "bot",
-          time: new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-        },
-      ]);
-    }, 600);
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed bottom-4 right-4 w-[calc(100vw-2rem)] max-w-md sm:w-96 h-[75vh] max-h-[600px] bg-white border rounded shadow-2xl z-50 flex flex-col">
-      <div className="flex items-center justify-between p-2 bg-green-600 text-white rounded">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-              <span className="text-green-600 text-[14px] font-bold">F</span>
-            </div>
-            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-green-600" />
-          </div>
-          <div>
-            <h4 className="font-semibold text-[14px]">Food BundlesSupport</h4>
-            <p className="text-green-100 text-[12px]">Online</p>
-          </div>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onClose}
-          className="h-8 w-8 p-0 text-white hover:bg-green-700"
-        >
-          <X className="h-5 w-5" />
-        </Button>
-      </div>
-
-      <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-gray-50">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex ${
-              msg.sender === "user" ? "justify-end" : "justify-start"
-            }`}
-          >
-            <div
-              className={`max-w-[80%] px-4 py-2 rounded-2xl text-[12px] ${
-                msg.sender === "user"
-                  ? "bg-green-600 text-white rounded-br-none"
-                  : "bg-white text-gray-800 rounded-bl-none shadow"
-              }`}
-            >
-              <p>{msg.text}</p>
-              <p
-                className={`text-xs mt-1 ${
-                  msg.sender === "user" ? "text-green-100" : "text-gray-500"
-                }`}
-              >
-                {msg.time}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="p-4 border-t bg-white rounded-b-xl">
-        <div className="flex gap-2">
-          <Textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSend(e);
-              }
-            }}
-            placeholder="Type your message..."
-            className="flex-1 text-sm rounded placeholder:text-[12px] resize-none h-[60px] overflow-y-auto scrollbar-hide"
-          />
-
-          <Button
-            onClick={handleSend}
-            size="sm"
-            className="bg-green-600 hover:bg-green-700 h-10 w-10 p-0 rounded-full"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function QuickTalkSection() {
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -451,7 +349,11 @@ export default function QuickTalkSection() {
         </button>
       )}
 
-      <ChatWindow isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+      <SharedChat 
+        isOpen={isChatOpen} 
+        onClose={() => setIsChatOpen(false)}
+        title="Food Bundle Support"
+      />
     </div>
   );
 }
