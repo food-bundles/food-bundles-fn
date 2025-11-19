@@ -19,6 +19,7 @@ import {
   Soup,
   Crown,
   Ticket,
+  MessageSquare,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -54,6 +55,11 @@ const menuItems = [
     icon: Ticket,
     label: "Voucher Management",
     href: "/dashboard/vouchers",
+  },
+  {
+    icon: MessageSquare,
+    label: "Contact Submissions",
+    href: "/dashboard/contact-submissions",
   },
   {
     icon: Users,
