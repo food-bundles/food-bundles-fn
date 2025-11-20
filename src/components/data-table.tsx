@@ -299,18 +299,18 @@ export function DataTable<TData, TValue>({
 
       {/* Table */}
       <div className="rounded-md border">
-        <Table>
+        <Table >
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
                 key={headerGroup.id}
-                className="bg-green-700 hover:bg-green-800"
+                className=""
               >
                 {headerGroup.headers.map((header) => {
                   return (
                     <TableHead
                       key={header.id}
-                      className="text-white py-0 text-[13px]"
+                      className=" py-0 text-[13px]"
                     >
                       {header.isPlaceholder
                         ? null

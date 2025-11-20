@@ -90,7 +90,7 @@ export default function RestaurantOrdersPage() {
     const statusMap: Record<string, string> = {
       PENDING: "pending",
       CONFIRMED: "confirmed",
-      PROCESSING: "processing",
+      PREPARING: "preparing",
       READY: "ready",
       SHIPPED: "ready",
       DELIVERED: "delivered",
@@ -114,6 +114,20 @@ export default function RestaurantOrdersPage() {
       return false;
     }
 
+    // Date filtering
+    if (selectedDate) {
+      const orderDate = new Date(order.originalData.createdAt);
+      const filterDate = new Date(selectedDate);
+      
+      // Compare dates (ignoring time)
+      const orderDateOnly = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
+      const filterDateOnly = new Date(filterDate.getFullYear(), filterDate.getMonth(), filterDate.getDate());
+      
+      if (orderDateOnly.getTime() !== filterDateOnly.getTime()) {
+        return false;
+      }
+    }
+
     return true;
   });
 
@@ -121,7 +135,7 @@ export default function RestaurantOrdersPage() {
     { label: "All Status", value: "all" },
     { label: "Pending", value: "pending" },
     { label: "Confirmed", value: "confirmed" },
-    { label: "Processing", value: "processing" },
+    { label: "preparing", value: "preparing" },
     { label: "Ready", value: "ready" },
     { label: "Delivered", value: "delivered" },
     { label: "Cancelled", value: "cancelled" },
