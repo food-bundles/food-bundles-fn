@@ -7,8 +7,6 @@ import {
   FileText,
   ShoppingCart,
   Package,
-  CreditCard,
-  TrendingUp,
   Users,
   LogOut,
   HelpCircle,
@@ -40,12 +38,6 @@ const menuItems = [
     href: "/dashboard/restaurant-orders",
   },
   { icon: Package, label: "Inventory", href: "/dashboard/inventory" },
-  {
-    icon: CreditCard,
-    label: "Payments",
-    href: "/dashboard/payments",
-  },
-  { icon: TrendingUp, label: "Sales", href: "/dashboard/sales" },
   {
     icon: Crown,
     label: "Subscriptions",

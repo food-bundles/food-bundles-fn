@@ -41,7 +41,12 @@ const paymentStatusOptions = [
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [totalOrders, setTotalOrders] = useState(0);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
   const { user } = useAuth();
 
   // WebSocket integration for real-time updates
@@ -64,11 +69,14 @@ export default function AdminOrdersPage() {
   const [dateTo, setDateTo] = useState<Date | undefined>();
 
   // Fetch orders with filters
-  const fetchOrders = async () => {
+  const fetchOrders = async (page = pagination.page, limit = pagination.limit) => {
     try {
       setLoading(true);
 
-      const params: any = {};
+      const params: any = {
+        page,
+        limit,
+      };
 
       // Add filters only if they have values
       if (selectedStatus !== "all") params.status = selectedStatus;
@@ -107,7 +115,12 @@ export default function AdminOrdersPage() {
         }));
 
         setOrders(mappedOrders);
-        setTotalOrders(response.pagination?.total || 0);
+        setPagination({
+          page: response.pagination?.page || 1,
+          limit: response.pagination?.limit || 10,
+          total: response.pagination?.total || 0,
+          totalPages: response.pagination?.totalPages || 0,
+        });
       }
     } catch (error) {
       console.error("Failed to fetch orders:", error);
@@ -118,7 +131,7 @@ export default function AdminOrdersPage() {
   };
 
   useEffect(() => {
-    fetchOrders();
+    fetchOrders(1, pagination.limit);
   }, [
     selectedStatus,
     selectedPaymentStatus,
@@ -126,6 +139,10 @@ export default function AdminOrdersPage() {
     dateFrom,
     dateTo,
   ]);
+
+  const handlePaginationChange = (page: number, limit: number) => {
+    fetchOrders(page, limit);
+  };
 
   // Handle real-time order updates from WebSocket
   useEffect(() => {
@@ -378,9 +395,12 @@ export default function AdminOrdersPage() {
         <DataTable
           columns={ordersColumns}
           data={filteredOrders}
-          description={`Total: ${totalOrders} orders`}
+          description={`Total: ${pagination.total} orders`}
           showColumnVisibility={false}
           showPagination={true}
+          pagination={pagination}
+          onPaginationChange={handlePaginationChange}
+          isLoading={loading}
         />
       )}
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -55,7 +56,7 @@ export default function ForgotPasswordPage() {
           </h2>
           
           <p className="text-[14px] text-gray-600 mb-6">
-            Enter your email address and we'll send you a link to reset your password.
+            Enter your email address and we&#39;ll send you a link to reset your password.
           </p>
 
           {!isSuccess ? (

@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { voucherService } from "@/app/services/voucherService";
 import { useVouchers } from "@/app/contexts/VoucherContext";
@@ -26,11 +26,12 @@ interface Restaurant {
   phone?: string;
 }
 
-export default function CreateVoucherForm({ onSuccess }: CreateVoucherFormProps) {
+const CreateVoucherForm = forwardRef<{ openModal: () => void }, CreateVoucherFormProps>(({ onSuccess }, ref) => {
   const { getAllVouchers } = useVouchers();
-  const { restaurants, getAllRestaurants } = useRestaurants();
+  const { getAllRestaurants } = useRestaurants();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [comboboxOpen, setComboboxOpen] = useState(false);
   const [error, setError] = useState("");
@@ -45,7 +46,13 @@ export default function CreateVoucherForm({ onSuccess }: CreateVoucherFormProps)
 
   useEffect(() => {
     if (open && restaurants.length === 0) {
-      getAllRestaurants();
+      const fetchRestaurants = async () => {
+        const response = await getAllRestaurants();
+        if (response.success) {
+          setRestaurants(response.data);
+        }
+      };
+      fetchRestaurants();
     }
   }, [open, restaurants.length, getAllRestaurants]);
 
@@ -93,14 +100,12 @@ export default function CreateVoucherForm({ onSuccess }: CreateVoucherFormProps)
     }
   };
 
+  useImperativeHandle(ref, () => ({
+    openModal: () => setOpen(true)
+  }));
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="bg-green-600 hover:bg-green-700">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Voucher
-        </Button>
-      </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Create New Voucher</DialogTitle>
@@ -157,7 +162,7 @@ export default function CreateVoucherForm({ onSuccess }: CreateVoucherFormProps)
                           />
                           <div>
                             <div className="font-medium">{restaurant.name}</div>
-                            <div className="text-sm text-gray-500">{restaurant.phone} • {restaurant.email}</div>
+                            <div className="text-[10px] text-gray-800">{restaurant.phone} / {restaurant.email}</div>
                           </div>
                         </CommandItem>
                       ))}
@@ -235,4 +240,8 @@ export default function CreateVoucherForm({ onSuccess }: CreateVoucherFormProps)
       </DialogContent>
     </Dialog>
   );
-}
+});
+
+CreateVoucherForm.displayName = "CreateVoucherForm";
+
+export default CreateVoucherForm;

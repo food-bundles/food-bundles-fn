@@ -7,6 +7,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { OptimizedImage } from "@/components/OptimizedImage";
 
 export default function NotFound() {
   const router = useRouter();
@@ -30,7 +31,7 @@ export default function NotFound() {
         <div className="flex justify-center">
           <div className=" p-6">
             <Avatar className="w-24 h-24 mx-auto mb-4">
-              <Image
+              <OptimizedImage
                 src="/imgs/page_not-found.svg"
                 alt="Logo"
                 width={100}
@@ -41,7 +42,7 @@ export default function NotFound() {
               <h1 className="text-6xl font-bold text-foregroundfont-[family-name:var(--font-playfair)]">
                 404
               </h1>
-              <h2 className="text-2xl font-semibold text-foreground font-[family-name:var(--font-playfair)]">
+              <h2 className="text-2xl font-semibold text-foreground font-(family-name:--font-playfair)">
                 Oops! Page Not Found
               </h2>
             </div>

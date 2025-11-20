@@ -128,7 +128,7 @@ export function AdminManagementModal({
     setDeleteConfirmText("");
   };
 
-  const isDeleteConfirmValid = deleteConfirmText === admin?.username;
+  const isDeleteConfirmValid = deleteConfirmText.trim().toLowerCase() === admin?.username.trim().toLowerCase();
 
   if (!admin) return null;
 

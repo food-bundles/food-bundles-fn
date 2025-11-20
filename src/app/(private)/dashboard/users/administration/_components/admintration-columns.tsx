@@ -11,7 +11,7 @@ export const getAdminColumns = (
     id: "index",
     header: "No",
     cell: ({ row }) => (
-      <div className="font-mono text-sm">
+      <div className="text-sm">
         {row.index + 1}
       </div>
     ),
@@ -21,7 +21,7 @@ export const getAdminColumns = (
     header: "Username",
     cell: ({ row }) => (
       <div className="flex items-center gap-2">
-        <span className="font-medium">{row.getValue("username")}</span>
+        <span className="">{row.getValue("username")}</span>
       </div>
     ),
   },
@@ -77,10 +77,10 @@ export const getAdminColumns = (
           </div>
         );
       }
-      const location = `${admin.province}, ${admin.district}`;
+      const location = `${admin.location}`;
       return (
         <div className="flex items-center gap-2">
-          <span className="font-medium">{location}</span>
+          <span className="">{location}</span>
         </div>
       );
     },
