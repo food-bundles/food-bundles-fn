@@ -337,15 +337,15 @@ export const ordersColumns = (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-medium text-[13px]"
+          className="h-auto p-0 text-[13px]"
         >
           Order ID
         </Button>
       );
     },
     cell: ({ row }) => (
-      <div className="font-medium ">
-        #{row.getValue("orderId")}
+      <div className="">
+        {row.getValue("orderId")}
       </div>
     ),
   },
@@ -363,7 +363,7 @@ export const ordersColumns = (
       );
     },
     cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("customerName")}</div>
+      <div className="">{row.getValue("customerName")}</div>
     ),
   },
   {
@@ -373,7 +373,7 @@ export const ordersColumns = (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-medium text-[13px]"
+          className="h-auto p-0  text-[13px]"
         >
           Order Date
         </Button>
@@ -386,7 +386,7 @@ export const ordersColumns = (
     header: "Items",
     cell: ({ row }) => (
       <div
-        className="font-medium max-w-[200px] truncate"
+        className=" max-w-[200px] truncate"
         title={row.getValue("items")}
       >
         {row.getValue("items")}

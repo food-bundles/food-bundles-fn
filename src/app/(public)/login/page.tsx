@@ -2,42 +2,42 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { ILoginData, UserRole } from "@/lib/types";
 import { authService } from "@/app/services/authService";
 import { getRedirectPath } from "@/lib/navigations";
-import { useAuth } from "@/app/contexts/auth-context";
-import { useSearchParams } from "next/navigation";
-
-function LoginSearchParamsHandler() {
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const redirect = searchParams?.get("redirect");
-    const reason = searchParams?.get("reason");
-
-    if (redirect) {
-      localStorage.setItem("pendingRedirect", redirect);
-    }
-
-    if (reason === "expired") {
-    }
-  }, [searchParams]);
-
-  return null; 
-}
 
 function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [identifierError, setIdentifierError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [isBackendAvailable, setIsBackendAvailable] = useState(true);
   const [backendMessage, setBackendMessage] = useState("");
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
 
-  const { login: authLogin } = useAuth();
+  // Load saved credentials on mount
+  useEffect(() => {
+    const savedIdentifier = localStorage.getItem('loginIdentifier');
+    const savedPassword = localStorage.getItem('loginPassword');
+    if (savedIdentifier) setIdentifier(savedIdentifier);
+    if (savedPassword) setPassword(savedPassword);
+  }, []);
+
+  // Save credentials as user types
+  useEffect(() => {
+    localStorage.setItem('loginIdentifier', identifier);
+  }, [identifier]);
+
+  useEffect(() => {
+    localStorage.setItem('loginPassword', password);
+  }, [password]);
+
 
   useEffect(() => {
     const checkBackend = async () => {
@@ -73,24 +73,26 @@ function LoginForm() {
     e.preventDefault();
     if (!isBackendAvailable) return;
     setIsLoading(true);
-    setError("");
-
-    const formData = new FormData(e.currentTarget);
-    const identifier = formData.get("identifier") as string;
-    const password = formData.get("password") as string;
+    // Don't clear error immediately - let it persist until success
 
     function isValidTIN(tin: string) {
       return /^[0-9]{9}$/.test(tin); // adjust length if needed
     }
 
+    // Validate identifier
     if (
       !identifier.includes("@") &&
       !isValidPhone(identifier) &&
       !isValidTIN(identifier)
     ) {
-      setError(
-        "Invalid identifier. Must be email, phone (10–15 digits), or 9-digit TIN."
-      );
+      setIdentifierError("Must be email, phone (10–15 digits), or 9-digit TIN");
+      setIsLoading(false);
+      return;
+    }
+
+    // Validate password
+    if (!password.trim()) {
+      setPasswordError("Password is required");
       setIsLoading(false);
       return;
     }
@@ -102,9 +104,12 @@ function LoginForm() {
       : { tin: identifier, password };
 
     try {
+      // Clear all errors when attempting login
+      setError("");
+      setIdentifierError("");
+      setPasswordError("");
       const response = await authService.login(loginPayload);
-      authLogin(response);
-
+      
       const pendingRedirect = localStorage.getItem("pendingRedirect");
       if (pendingRedirect) {
         localStorage.removeItem("pendingRedirect");
@@ -112,6 +117,10 @@ function LoginForm() {
         return;
       }
 
+      // Clear credentials from localStorage on successful login
+      localStorage.removeItem('loginIdentifier');
+      localStorage.removeItem('loginPassword');
+      
       const userRole = response.data?.user?.role;
       if (userRole) {
         const redirectPath = getRedirectPath(userRole as UserRole);
@@ -121,7 +130,16 @@ function LoginForm() {
         setIsLoading(false);
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || "Login failed");
+      const errorMessage = err.response?.data?.message || err.message || "Login failed";
+      
+      // Show field-specific errors or general error
+      if (errorMessage.toLowerCase().includes("email") || errorMessage.toLowerCase().includes("identifier")) {
+        setIdentifierError(errorMessage);
+      } else if (errorMessage.toLowerCase().includes("password")) {
+        setPasswordError(errorMessage);
+      } else {
+        setError(errorMessage);
+      }
       setIsLoading(false);
     }
   }
@@ -158,18 +176,35 @@ function LoginForm() {
             <Input
               type="text"
               name="identifier"
+              value={identifier}
+              onChange={(e) => {
+                setIdentifier(e.target.value);
+                if (identifierError) setIdentifierError(""); // Clear error when user types
+              }}
               placeholder="Email/Tin number/Phone"
-              className="pl-10 h-10 text-[13px] border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-none text-gray-900"
+              className={`pl-10 h-10 text-[13px] focus:border-green-500 focus:ring-green-500 rounded-none text-gray-900 ${
+                identifierError ? "border-red-500" : "border-gray-300"
+              }`}
               disabled={!isBackendAvailable || isLoading}
             />
+            {identifierError && (
+              <p className="text-red-600 text-xs mt-1">{identifierError}</p>
+            )}
           </div>
 
           <div className="relative">
             <Input
               type={showPassword ? "text" : "password"}
               name="password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (passwordError) setPasswordError(""); // Clear error when user types
+              }}
               placeholder="Password"
-              className="pl-10 h-10 text-[13px] border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-none text-gray-900"
+              className={`pl-10 h-10 text-[13px] focus:border-green-500 focus:ring-green-500 rounded-none text-gray-900 ${
+                passwordError ? "border-red-500" : "border-gray-300"
+              }`}
               disabled={!isBackendAvailable || isLoading}
             />
             <button
@@ -183,6 +218,9 @@ function LoginForm() {
                 <Eye className="h-4 w-4" />
               )}
             </button>
+            {passwordError && (
+              <p className="text-red-600 text-xs mt-1">{passwordError}</p>
+            )}
           </div>
 
           <div className="flex justify-between items-center">
@@ -234,34 +272,7 @@ export default function LoginPage() {
         <h1 className="text-2xl font-bold text-black">My Account</h1>
       </div>
       <div className="flex items-center justify-center py-6  px-6 lg:px-8">
-        <Suspense
-          fallback={
-            <div className="w-full max-w-3xl flex">
-              <div className="hidden lg:flex w-1/2 bg-white p-8 flex-col justify-center rounded-none shadow">
-                <div className="animate-pulse">
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
-                  <div className="h-3 bg-gray-200 rounded w-full"></div>
-                </div>
-              </div>
-              <div className="w-full lg:w-1/2 bg-white p-8 shadow">
-                <div className="animate-pulse">
-                  <div className="h-6 bg-gray-200 rounded w-1/2 mb-4"></div>
-                  <div className="space-y-4">
-                    <div className="h-10 bg-gray-200 rounded"></div>
-                    <div className="h-10 bg-gray-200 rounded"></div>
-                    <div className="h-10 bg-gray-200 rounded"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          }
-        >
-          <LoginForm />
-        </Suspense>
-
-        <Suspense fallback={null}>
-          <LoginSearchParamsHandler />
-        </Suspense>
+        <LoginForm />
       </div>
     </div>
   );

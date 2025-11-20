@@ -13,6 +13,13 @@ import { authService } from "@/app/services/authService";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import NotificationsDrawer from "./notificationDrawer";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const sampleNotifications = [
   {
@@ -125,76 +132,73 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
                 {unreadCount}
               </Badge>
             </button> */}
-            {/* Desktop User Menu - Custom Dropdown */}
-            <div className="hidden sm:block relative profile-dropdown">
-              <button
-                onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                className="flex items-center gap-2 hover:bg-transparent  cursor-pointer text-primary-foreground hover:text-primary-foreground"
-                suppressHydrationWarning
-              >
-                {user ? (
-                  <>
-                    <span className="font-medium text-[13px] hidden md:inline">
-                      {userName}
-                    </span>
-                    <div className="rounded-full flex items-center justify-center">
-                      {user?.profileImage ? (
-                        <Image
-                          src={profileImage || "/placeholder.svg"}
-                          alt={`${userName}'s profile`}
-                          width={32}
-                          height={32}
-                          className="rounded-full object-cover w-6 h-6 sm:w-8 sm:h-8"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.src = "/placeholder.svg";
-                          }}
-                        />
-                      ) : (
-                        <div className="rounded-full bg-green-600 text-white flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 font-medium">
-                          {userName.substring(0, 2).toUpperCase()}
-                        </div>
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <Skeleton className="h-5 w-20 md:h-6 md:w-24 hidden md:inline bg-green-600/60" />
-                    <Skeleton className="rounded-full h-8 w-8 sm:h-10 sm:w-10 bg-green-600/60" />
-                  </>
-                )}
-              </button>
-
-              {/* Custom Dropdown Menu */}
-              {isProfileDropdownOpen && (
-                <div className="absolute -right-4 top-9 w-32 bg-white shadow-lg border border-gray-200 py-1 z-50">
-                  <Link href="#" className="block">
-                    <div className="flex items-center gap-1 px-4 py-2 text-[13px] text-gray-700 hover:bg-gray-100 cursor-pointer transition-colors">
-                      <UserPlus className="w-4 h-4" />
-                      Profile
-                    </div>
-                  </Link>
-                  <Link href="/" className="block">
-                    <div className="flex items-center gap-1 px-4 py-2 text-[13px] text-gray-700 hover:bg-gray-100 cursor-pointer transition-colors">
-                      <Home className="w-4 h-4" />
-                      Home
-                    </div>
-                  </Link>
-                  <div className="border-t border-gray-100 mt-1"></div>
-                  <button
-                    onClick={handleLogout}
-                    disabled={isLoggingOut}
-                    className={cn(
-                      "w-full text-left px-4 py-2 text-[13px] transition-colors whitespace-nowrap",
-                      "text-red-600 hover:bg-gray-100",
-                      isLoggingOut && "opacity-50 cursor-not-allowed"
-                    )}
-                  >
-                    {isLoggingOut ? "Logging out..." : "Logout"}
-                  </button>
+            {/* User Menu - All Screens */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 hover:bg-transparent cursor-pointer text-primary-foreground hover:text-primary-foreground">
+                  {user ? (
+                    <>
+                      <span className="font-medium text-[13px] hidden md:inline">
+                        {userName}
+                      </span>
+                      <div className="rounded-full flex items-center justify-center">
+                        {user?.profileImage ? (
+                          <Image
+                            src={profileImage || "/placeholder.svg"}
+                            alt={`${userName}'s profile`}
+                            width={32}
+                            height={32}
+                            className="rounded-full object-cover w-6 h-6 sm:w-8 sm:h-8"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = "/placeholder.svg";
+                            }}
+                          />
+                        ) : (
+                          <div className="rounded-full bg-green-600 text-white flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 font-medium">
+                            {userName.substring(0, 2).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Skeleton className="h-5 w-20 md:h-6 md:w-24 hidden md:inline bg-green-600/60" />
+                      <Skeleton className="rounded-full h-8 w-8 sm:h-10 sm:w-10 bg-green-600/60" />
+                    </>
+                  )}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-52" align="end" alignOffset={-15}>
+                <div className="px-2 py-1.5">
+                  <p className="text-[13px] font-medium text-gray-900 truncate">{userName}</p>
+                  <p className="text-[12px] text-gray-500 truncate">{user?.email}</p>
                 </div>
-              )}
-            </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="#" className="flex items-center gap-2 text-[13px]">
+                    <UserPlus className="w-4 h-4" />
+                    Profile
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/" className="flex items-center gap-2 text-[13px]">
+                    <Home className="w-4 h-4" />
+                    Home
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="text-red-600 focus:text-red-600 text-[13px]"
+                >
+                  {isLoggingOut ? "Logging out..." : "Logout"}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+
           </div>
         </div>
       </header>

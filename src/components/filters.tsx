@@ -128,7 +128,22 @@ export function TableFilters({ filters, className }: TableFiltersProps) {
                 {filter.value
                   ? format(filter.value as Date, "PPP")
                   : filter.label}
-                <CalendarIcon className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
+                <div className="flex items-center gap-1">
+                  {filter.value && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-4 w-4 p-0 hover:bg-gray-200"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        filter.onChange?.(undefined);
+                      }}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
+                  <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+                </div>
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
