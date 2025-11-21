@@ -40,12 +40,8 @@ const categoryOptions = [
   { label: "All Categories", value: "all" },
   { label: "Vegetables", value: "VEGETABLES" },
   { label: "Fruits", value: "FRUITS" },
-  { label: "Grains", value: "GRAINS" },
-  { label: "Tubers", value: "TUBERS" },
-  { label: "Legumes", value: "LEGUMES" },
-  { label: "Herbs & Spices", value: "HERBS_SPICES" },
   { label: "Animal Products", value: "ANIMAL_PRODUCTS" },
-  { label: "Other", value: "OTHER" },
+  { label: "Others", value: "OTHER" },
 ];
 
 export function InventoryManagement({
@@ -159,14 +155,10 @@ export function InventoryManagement({
       if (categoryValue !== "all") {
         // Map category values to actual category names
         const categoryNameMap: { [key: string]: string } = {
-          "VEGETABLES": "Fresh Vegetables",
-          "FRUITS": "Fruits",
-          "GRAINS": "Grains",
-          "TUBERS": "Tubers",
-          "LEGUMES": "Legumes",
-          "HERBS_SPICES": "Herbs & Spices",
-          "ANIMAL_PRODUCTS": "Animal Products",
-          "OTHER": "Other"
+          VEGETABLES: "Fresh Vegetables",
+          FRUITS: "Fresh Fruits",
+          ANIMAL_PRODUCTS: "Animal Products",
+          OTHER: "Others",
         };
         
         const expectedCategoryName = categoryNameMap[categoryValue] || categoryValue;

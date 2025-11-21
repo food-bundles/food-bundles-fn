@@ -5,19 +5,34 @@
 import { useState, useEffect } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { CheckCircle, XCircle, Calendar } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { CheckCircle, XCircle, Trash2, MoreHorizontal } from "lucide-react";
 import { DataTable } from "@/components/data-table";
 import { useVouchers } from "@/app/contexts/VoucherContext";
 import { ILoanApplication, LoanStatus } from "@/lib/types";
 import ApproveLoanModal from "./ApproveLoanModal";
 import RejectLoanModal from "./RejectLoanModal";
+import { toast } from "sonner";
 
 export default function LoanApplicationsTable() {
-  const { allLoanApplications, loading, getAllLoanApplications, approveLoan, rejectLoan, disburseLoan } = useVouchers();
+  const {
+    allLoanApplications,
+    getAllLoanApplications,
+    approveLoan,
+    rejectLoan,
+    disburseLoan,
+  } = useVouchers();
   const [selectedApp, setSelectedApp] = useState<ILoanApplication | null>(null);
   const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+
 
   useEffect(() => {
     getAllLoanApplications();
@@ -25,16 +40,26 @@ export default function LoanApplicationsTable() {
 
   const handleApprove = async (approvalData: any) => {
     if (!selectedApp) return;
-    await approveLoan(selectedApp.id, approvalData);
-    setSelectedApp(null);
+    try {
+      await approveLoan(selectedApp.id, approvalData);
+      toast.success("Loan application approved successfully!");
+      await getAllLoanApplications(); // Refresh data
+      setSelectedApp(null);
+    } catch (error) {
+      toast.error("Failed to approve loan application");
+      console.error("Failed to approve loan:", error);
+    }
   };
 
   const handleReject = async (reason: string) => {
     if (!selectedApp) return;
     try {
       await rejectLoan(selectedApp.id, reason);
+      toast.success("Loan application rejected successfully!");
+      await getAllLoanApplications(); // Refresh data
       setSelectedApp(null);
     } catch (error) {
+      toast.error("Failed to reject loan application");
       console.error("Failed to reject loan:", error);
     }
   };
@@ -52,17 +77,17 @@ export default function LoanApplicationsTable() {
   const getStatusBadge = (status: LoanStatus) => {
     switch (status) {
       case LoanStatus.PENDING:
-        return <Badge className="bg-yellow-500">Pending</Badge>;
+        return <div className="text-yellow-500">Pending</div>;
       case LoanStatus.APPROVED:
-        return <Badge className="bg-green-500">Approved</Badge>;
+        return <div className="text-green-500">Approved</div>;
       case LoanStatus.DISBURSED:
-        return <Badge className="bg-blue-500">Disbursed</Badge>;
+        return <div className="text-blue-500">Disbursed</div>;
       case LoanStatus.REJECTED:
-        return <Badge className="bg-red-500">Rejected</Badge>;
+        return <div className="text-red-500">Rejected</div>;
       case LoanStatus.SETTLED:
-        return <Badge className="bg-gray-500">Settled</Badge>;
+        return <div className="text-gray-500">Settled</div>;
       default:
-        return <Badge>{status}</Badge>;
+        return <div>{status}</div>;
     }
   };
 
@@ -70,32 +95,34 @@ export default function LoanApplicationsTable() {
     {
       accessorKey: "restaurantName",
       header: "Restaurant",
-      cell: ({ row }) => (row.original as any).restaurant?.name || row.original.restaurantName || "N/A"
+      cell: ({ row }) =>
+        (row.original as any).restaurant?.name ||
+        row.original.restaurantName ||
+        "N/A",
     },
     {
       accessorKey: "requestedAmount",
       header: "Amount",
-      cell: ({ row }) => `${row.original.requestedAmount.toLocaleString()} RWF`
+      cell: ({ row }) => `${row.original.requestedAmount.toLocaleString()} RWF`,
     },
     {
       accessorKey: "purpose",
       header: "Purpose",
-      cell: ({ row }) => row.original.purpose || "N/A"
+      cell: ({ row }) => row.original.purpose || "N/A",
     },
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => getStatusBadge(row.original.status)
+      cell: ({ row }) => getStatusBadge(row.original.status),
     },
     {
       accessorKey: "createdAt",
       header: "Date",
       cell: ({ row }) => (
-        <div className="flex items-center gap-1 text-sm text-gray-500">
-          <Calendar className="h-3 w-3" />
+        <div className="flex items-center gap-1 text-sm text-gray-700">
           {new Date(row.original.createdAt).toLocaleDateString()}
         </div>
-      )
+      ),
     },
     {
       id: "actions",
@@ -103,49 +130,48 @@ export default function LoanApplicationsTable() {
       cell: ({ row }) => {
         const app = row.original;
         return (
-          <div className="flex gap-2">
-            {app.status === LoanStatus.PENDING && (
-              <>
-                <Button 
-                  size="sm" 
-                  className="bg-green-600 hover:bg-green-700"
-                  onClick={() => {
-                    setSelectedApp(app);
-                    setIsApproveModalOpen(true);
-                  }}
-                >
-                  <CheckCircle className="h-4 w-4 mr-1" />
-                  Approve
+          <div className="flex justify-end">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
                 </Button>
-                <Button 
-                  size="sm" 
-                  variant="destructive"
-                  onClick={() => {
-                    setSelectedApp(app);
-                    setIsRejectModalOpen(true);
-                  }}
-                >
-                  <XCircle className="h-4 w-4 mr-1" />
-                  Reject
-                </Button>
-              </>
-            )}
-            {/* {app.status === LoanStatus.APPROVED && (
-              <Button 
-                size="sm" 
-                className="bg-blue-600 hover:bg-blue-700"
-                onClick={() => handleDisburse(app.id)}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem
+                disabled={app.status !== LoanStatus.PENDING}
+                onClick={() => {
+                  setSelectedApp(app);
+                  setIsApproveModalOpen(true);
+                }}
               >
-                Disburse
-              </Button>
-            )} */}
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Approve
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={app.status !== LoanStatus.PENDING}
+                onClick={() => {
+                  setSelectedApp(app);
+                  setIsRejectModalOpen(true);
+                }}
+              >
+                <XCircle className="mr-2 h-4 w-4" />
+                Reject
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-red-600">
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         );
-      }
-    }
+      },
+    },
   ];
-
-  if (loading) return <div className="p-6">Loading...</div>;
 
   return (
     <>
@@ -174,6 +200,7 @@ export default function LoanApplicationsTable() {
         selectedApp={selectedApp}
         onReject={handleReject}
       />
+
     </>
   );
 }

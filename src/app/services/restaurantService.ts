@@ -4,18 +4,25 @@ import createAxiosClient from "@/app/hooks/axiosClient";
 const axiosClient = createAxiosClient();
 
 export const restaurantService = {
-  // Get all restaurants
-  getAllRestaurants: async (params?: any) => {
+  // Get all restaurants with pagination
+  getAllRestaurants: async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }) => {
     try {
       const response = await axiosClient.get("/restaurants", { params });
-      return {
-        success: true,
-        data: response.data.data,
-        pagination: response.data.pagination,
-      };
+      return response.data;
     } catch (error: any) {
       console.error("Get restaurants error:", error);
-      throw error;
+      return {
+        success: false,
+        data: [],
+        message: error.response?.data?.message || "Failed to fetch restaurants",
+      };
     }
   },
 

@@ -2,7 +2,6 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  MapPin,
   ShoppingCart,
 } from "lucide-react";
 import { format } from "date-fns";
@@ -24,12 +23,21 @@ export const getRestaurantColumns = (
   onManage: (restaurant: Restaurant) => void
 ): ColumnDef<Restaurant>[] => [
   {
+    id: "index",
+    header: "No",
+    cell: ({ row }) => (
+      <div className="text-sm">
+        {row.index + 1}
+      </div>
+    ),
+  },
+  {
     accessorKey: "name",
     header: "Rest Name",
     cell: ({ row }) => {
       const fullName = row.getValue("name") as string;
       const shortName = fullName.split(" - ")[0];
-      return <div className="font-medium">{shortName}</div>;
+      return <div className="">{shortName}</div>;
     },
   },
   {
@@ -66,9 +74,8 @@ export const getRestaurantColumns = (
       
       return (
         <div className="flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-gray-500" />
           <div className="flex flex-col">
-            <span className="font-medium">{mainLocation}</span>
+            <span className="">{mainLocation}</span>
             {subLocations && (
               <span className="text-xs text-gray-500">{subLocations}</span>
             )}
@@ -83,7 +90,7 @@ export const getRestaurantColumns = (
     cell: ({ row }) => (
       <div className="flex items-center gap-2">
         <ShoppingCart className="h-4 w-4 text-gray-500" />
-        <Badge variant="outline">{row.getValue("ordersCount")} orders</Badge>
+        <Badge variant="outline" className="font-normal">{row.getValue("ordersCount")} orders</Badge>
       </div>
     ),
   },
@@ -92,7 +99,7 @@ export const getRestaurantColumns = (
     header: "Total Spent",
     cell: ({ row }) => {
       const amount = row.getValue("totalSpent") as number;
-      return <div className="font-medium">RWF {amount.toLocaleString()}</div>;
+      return <div className=""> {amount.toLocaleString()}</div>;
     },
   },
   {

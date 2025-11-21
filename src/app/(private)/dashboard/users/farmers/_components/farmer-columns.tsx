@@ -28,8 +28,8 @@ export const getFarmerColumns = (
       return (
         <div className="flex items-center gap-2">
           <div className="flex flex-col">
-            <span className="font-medium">{location}</span>
-            <span className="text-xs text-gray-500">{subLocation}</span>
+            <span className="text-[14px]">{location}</span>
+            <span className="text-[12px] text-gray-500">{subLocation}</span>
           </div>
         </div>
       );

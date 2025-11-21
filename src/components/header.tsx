@@ -4,7 +4,7 @@
 
 import { Button } from "@/components/ui/button";
 import { OptimizedImage } from "@/components/OptimizedImage";
-import { Menu, X, UserPlus, User, ShoppingCart, BrickWall } from "lucide-react";
+import { Menu, X, UserPlus, User, ShoppingCart, BrickWall, Home } from "lucide-react";
 import { useState, useCallback, useRef, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/contexts/auth-context";
@@ -13,6 +13,13 @@ import Link from "next/link";
 import { getRedirectPath } from "@/lib/navigations";
 import { Skeleton } from "./ui/skeleton";
 import { toast } from "react-toastify";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Separate component for search params logic
 function SearchParamsHandler() {
@@ -89,19 +96,19 @@ export function Header() {
   const getProfilePath = useCallback((userRole: string): string => {
     switch (userRole) {
       case UserRole.FARMER:
-        return "/farmers/settings";
+        return "/farmers";
       case UserRole.RESTAURANT:
         return "#";
       case UserRole.AGGREGATOR:
-        return "/aggregator/settings";
+        return "/aggregator";
       case UserRole.ADMIN:
       case UserRole.LOGISTICS:
-        return "/dashboard/settings";
+        return "/dashboard";
       default:
         console.warn(
           `Unknown user role: ${userRole}. Redirecting to default settings.`
         );
-        return "/dashboard/settings";
+        return "/dashboard";
     }
   }, []);
 
@@ -406,68 +413,86 @@ export function Header() {
 
               {/* Right actions */}
               <div className="flex items-center gap-2">
-                {/* Desktop User Menu */}
-                <div className="hidden md:block relative">
+                {/* Desktop User Menu - Shadcn DropdownMenu */}
+                <div className="hidden md:block">
                   {isAuthenticated ? (
-                    <>
-                      <button
-                        onClick={() =>
-                          setIsProfileDropdownOpen(!isProfileDropdownOpen)
-                        }
-                        className="flex items-center gap-2 hover:bg-transparent py-2 px-3 cursor-pointer text-primary-foreground"
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="flex items-center gap-2 hover:bg-transparent py-2 px-3 cursor-pointer text-primary-foreground">
+                          <span className="font-medium text-sm max-w-32 truncate">
+                            {userName.slice(0, 8)}
+                          </span>
+                          <div className="rounded-full flex items-center justify-center">
+                            {profileImage ? (
+                              <OptimizedImage
+                                src={profileImage}
+                                alt={`${userName}'s profile`}
+                                width={24}
+                                height={24}
+                                className="rounded-full object-cover"
+                                transformation={[
+                                  {
+                                    width: 48,
+                                    height: 48,
+                                    crop: "fill",
+                                    quality: "80",
+                                  },
+                                ]}
+                              />
+                            ) : (
+                              <div className="rounded-full bg-green-600 text-white flex items-center justify-center w-6 h-6 text-xs font-bold">
+                                {userName.substring(0, 2).toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        className="w-48"
+                        align="end"
+                        alignOffset={-15}
                       >
-                        <span className="font-medium text-sm max-w-32 truncate">
-                          {userName.slice(0, 8)}
-                        </span>
-                        <div className="rounded-full flex items-center justify-center">
-                          {profileImage ? (
-                            <OptimizedImage
-                              src={profileImage}
-                              alt={`${userName}'s profile`}
-                              width={24}
-                              height={24}
-                              className="rounded-full object-cover"
-                              transformation={[
-                                {
-                                  width: 48,
-                                  height: 48,
-                                  crop: "fill",
-                                  quality: "80",
-                                },
-                              ]}
-                            />
-                          ) : (
-                            <div className="rounded-full bg-green-600 text-white flex items-center justify-center w-6 h-6 text-xs font-bold">
-                              {userName.substring(0, 2).toUpperCase()}
-                            </div>
-                          )}
+                        <div className="px-2 py-1.5">
+                          <p className="text-[13px] font-medium text-gray-900 truncate">
+                            {userName}
+                          </p>
+                          <p className="text-[12px] text-gray-500 truncate">
+                            {user?.email}
+                          </p>
                         </div>
-                      </button>
-
-                      {isProfileDropdownOpen && (
-                        <div className="absolute -right-6 top-full mt-2 w-40 bg-white shadow-lg border border-gray-200 py-1 z-50">
-                          <button
-                            className="block sm:flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            onClick={handleDashboardNavigation}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={handleDashboardNavigation}
+                          className="flex items-center gap-2 text-[13px]"
+                        >
+                          <UserPlus className="w-4 h-4" />
+                          My Account
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={handleProfileNavigation}
+                          className="flex items-center gap-2 text-[13px]"
+                        >
+                          <User className="w-4 h-4" />
+                          Profile
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link
+                            href="/"
+                            className="flex items-center gap-2 text-[13px]"
                           >
-                            My Account
-                          </button>
-                          <button
-                            className="sm:flex items-center block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            onClick={handleProfileNavigation}
-                          >
-                            Profile
-                          </button>
-                          <div className="border-t border-gray-100 mt-1"></div>
-                          <button
-                            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                            onClick={handleLogout}
-                          >
-                            Logout
-                          </button>
-                        </div>
-                      )}
-                    </>
+                            <Home className="w-4 h-4" />
+                            Home
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={handleLogout}
+                          className="text-red-600 focus:text-red-600 text-[13px]"
+                        >
+                          Logout
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   ) : isAuthTransitioning || isLoading ? (
                     <div className="flex items-center gap-2 px-3">
                       <Skeleton className="h-6 w-20 rounded bg-green-600/60" />

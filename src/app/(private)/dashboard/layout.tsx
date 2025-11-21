@@ -6,6 +6,7 @@ import { SubmissionProvider } from "@/app/contexts/submission-context";
 import { CategoryProvider } from "@/app/contexts/category-context";
 import { ProductProvider } from "@/app/contexts/product-context";
 import { useState, useEffect } from "react";
+import { RestaurantProvider } from "@/app/contexts/RestaurantContext";
 
 export default function AdminLayout({
   children,
@@ -30,17 +31,25 @@ export default function AdminLayout({
 
   return (
     <SubmissionProvider>
+     <RestaurantProvider>
       <CategoryProvider>
         <ProductProvider>
           <div className="flex h-screen bg-white">
             {/* Sidebar */}
-            <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:relative z-50 md:z-auto transition-transform duration-300 ease-in-out`}>
-              <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+            <div
+              className={`${
+                sidebarOpen ? "translate-x-0" : "-translate-x-full"
+              } md:translate-x-0 fixed md:relative z-50 md:z-auto transition-transform duration-300 ease-in-out`}
+            >
+              <AdminSidebar
+                isOpen={sidebarOpen}
+                onClose={() => setSidebarOpen(false)}
+              />
             </div>
-            
+
             {/* Mobile overlay */}
             {sidebarOpen && (
-              <div 
+              <div
                 className="fixed inset-0 z-40 md:hidden"
                 onClick={() => setSidebarOpen(false)}
               />
@@ -48,7 +57,10 @@ export default function AdminLayout({
 
             <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
               <div className="bg-green-500 w-full flex-shrink-0">
-                <AdminHeader onMenuClick={() => setSidebarOpen(!sidebarOpen)} sidebarOpen={sidebarOpen} />
+                <AdminHeader
+                  onMenuClick={() => setSidebarOpen(!sidebarOpen)}
+                  sidebarOpen={sidebarOpen}
+                />
               </div>
 
               <main className="flex-grow min-h-0">
@@ -60,6 +72,7 @@ export default function AdminLayout({
           </div>
         </ProductProvider>
       </CategoryProvider>
+     </RestaurantProvider>
     </SubmissionProvider>
   );
 }

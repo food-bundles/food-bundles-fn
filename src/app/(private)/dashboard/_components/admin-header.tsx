@@ -53,7 +53,7 @@ export function AdminHeader({ onMenuClick, sidebarOpen }: AdminHeaderProps) {
             )}
           </button>
 
-          <Link href="/dashboard/settings" className="hidden sm:block">
+          <Link href="/#" className="hidden sm:block">
             <button className="p-1.5 md:p-2 hover:bg-green-600 cursor-pointer rounded-full text-white">
               <Settings className="h-4 w-4 md:h-5 md:w-5" />
             </button>

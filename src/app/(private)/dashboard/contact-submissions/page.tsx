@@ -85,7 +85,7 @@ export default function ContactSubmissionsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
       <div className="p-6 max-w-7xl mx-auto space-y-6">
         {/* Header Section */}
         <div className="bg-white rounded-xl shadow-sm border p-6">
@@ -95,8 +95,8 @@ export default function ContactSubmissionsPage() {
                 <MessageSquare className="h-6 w-6 text-green-600" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Contact Submissions</h1>
-                <p className="text-sm text-gray-600">Manage and respond to customer inquiries</p>
+                <h1 className="text-[16px] font-medium text-gray-900">Contact Submissions</h1>
+                <p className="text-[12px] text-gray-600">Manage and respond to customer inquiries</p>
               </div>
             </div>
             <div className="relative">

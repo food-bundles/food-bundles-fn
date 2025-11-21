@@ -18,6 +18,30 @@ export function middleware(req: NextRequest) {
   const isGuestOnlyRoute = guestOnlyRoutes.some((route) =>
     pathname.startsWith(route)
   );
+  
+  // Auth pages that logged-in users shouldn't access
+  const authPages = ["/login", "/signup", "/forgot-password", "/reset-password"];
+  const isAuthPage = authPages.includes(pathname);
+  // Handle auth pages - redirect logged-in users to home
+  if (isAuthPage) {
+    if (token) {
+      try {
+        const decoded: any = jwt.decode(token);
+        
+        // If token is expired, allow access to auth pages
+        if (decoded.exp && decoded.exp * 1000 < Date.now()) {
+          return NextResponse.next();
+        }
+        
+        // Redirect to home if user is authenticated
+        return NextResponse.redirect(new URL("/", req.url));
+      } catch (error) {
+        return NextResponse.next();
+      }
+    }
+    return NextResponse.next();
+  }
+
   // Handle guest-only routes
   if (isGuestOnlyRoute) {
     if (token) {
@@ -73,5 +97,9 @@ export const config = {
     "/restaurant/:path*",
     "/farmers/:path*",
     "/guest/:path*",
+    "/login",
+    "/signup",
+    "/forgot-password",
+    "/reset-password",
   ],
 };
