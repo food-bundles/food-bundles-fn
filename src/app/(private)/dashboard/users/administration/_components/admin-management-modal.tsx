@@ -110,7 +110,7 @@ export function AdminManagementModal({
     setIsLoading(true);
     try {
       await onDelete(admin.id);
-      toast.success("Admin deleted successfully");
+      toast.success("User deleted successfully");
       setIsDeleting(false);
       setDeleteConfirmText("");
       onOpenChange(false);
