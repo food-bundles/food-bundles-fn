@@ -116,7 +116,7 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
           {/* Right side */}
           <div className="flex items-center gap-2 sm:gap-4">
             {/* I will need this Notifications please don't remove this commented button */}
-            {/* <button
+            <button
               className="relative cursor-pointer text-primary-foreground hover:text-primary-foreground h-8 w-8 sm:h-10 sm:w-10"
               onClick={() => setIsNotificationsOpen(true)}
             >
@@ -124,7 +124,7 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
               <Badge className="absolute top-0 right-3 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 flex items-center justify-center bg-red-500 text-white text-xs">
                 {unreadCount}
               </Badge>
-            </button> */}
+            </button>
             {/* Desktop User Menu - Custom Dropdown */}
             <div className="hidden sm:block relative profile-dropdown">
               <button

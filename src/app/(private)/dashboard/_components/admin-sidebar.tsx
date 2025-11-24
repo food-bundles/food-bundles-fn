@@ -20,7 +20,9 @@ import {
   Crown,
   Ticket,
   MessageSquare,
+  Bell,
 } from "lucide-react";
+import NotificationsDrawer from "@/app/(private)/restaurant/_components/notificationDrawer";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
@@ -55,11 +57,6 @@ const menuItems = [
     icon: Ticket,
     label: "Voucher Management",
     href: "/dashboard/vouchers",
-  },
-  {
-    icon: MessageSquare,
-    label: "Contact Submissions",
-    href: "/dashboard/contact-submissions",
   },
   {
     icon: Users,
@@ -147,17 +144,23 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         style={{ backgroundColor: "transparent" }}
       >
         {/* Logo */}
-        <div className="p-3 md:p-4 flex items-center gap-2 shrink-0 relative z-10 bg-green-700 backdrop-blur-sm">
-          <OptimizedImage
-            src="/imgs/Food_bundle_logo.png"
-            alt="Logo"
-            width={40}
-            height={40}
-            className="w-7 h-7 md:w-8 md:h-8 rounded-full object-cover"
+        <div className="p-3 md:p-4 flex items-center justify-between shrink-0 relative z-10 bg-green-700 backdrop-blur-sm">
+          <div className="flex items-center gap-2">
+            <OptimizedImage
+              src="/imgs/Food_bundle_logo.png"
+              alt="Logo"
+              width={40}
+              height={40}
+              className="w-7 h-7 md:w-8 md:h-8 rounded-full object-cover"
+            />
+            <h1 className="text-lg md:text-xl font-bold text-green-100">
+              FoodBundles
+            </h1>
+          </div>
+          <NotificationsDrawer 
+            isOpen={false} 
+            onClose={() => {}} 
           />
-          <h1 className="text-lg md:text-xl font-bold text-green-100">
-            FoodBundles
-          </h1>
         </div>
 
         {/* Navigation */}
@@ -280,7 +283,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                 Get support for managing your food production and inventory.
               </p>
               <Button className="w-full bg-green-600 text-white text-xs py-2 px-3 rounded-md hover:bg-green-700 transition-colors">
-                Go to help center
+               <Link href="/dashboard/contact-submissions">Go to help center</Link>
               </Button>
             </div>
           </div>

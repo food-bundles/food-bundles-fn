@@ -10,6 +10,7 @@ export const authService = {
   login: async (loginData: ILoginData) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.post("/login", loginData);
+    console.log("Login response:", response);
 
     if (response.data.success && response.data.token) {
       if (typeof window !== "undefined") {
