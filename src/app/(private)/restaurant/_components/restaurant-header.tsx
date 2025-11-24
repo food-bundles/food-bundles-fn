@@ -138,8 +138,8 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
                 </Badge>
               )}
             </button>
-            {/* I will need this Notifications please don't remove this commented button */}
-            {/* <button
+            {/* Notifications Button */}
+            <button
               className="relative cursor-pointer text-primary-foreground hover:text-primary-foreground h-8 w-8 sm:h-10 sm:w-10"
               onClick={() => setIsNotificationsOpen(true)}
             >
@@ -147,8 +147,9 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
               <Badge className="absolute top-0 right-3 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 flex items-center justify-center bg-red-500 text-white text-xs">
                 {unreadCount}
               </Badge>
-            </button> */}
-            {/* User Menu - All Screens */}
+            </button>
+            
+            {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 hover:bg-transparent cursor-pointer text-primary-foreground hover:text-primary-foreground">
@@ -221,7 +222,6 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
       <NotificationsDrawer
         isOpen={isNotificationsOpen}
         onClose={() => setIsNotificationsOpen(false)}
-        notifications={sampleNotifications}
       />
       <CartDrawer
         isOpen={isCartOpen}

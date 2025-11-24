@@ -12,7 +12,7 @@ import { Spinner } from "@/components/ui/shadcn-io/spinner";
 function SearchLoading() {
   return (
     <div className="h-screen flex items-center justify-center p-4">
-      <Spinner variant="ring" />
+      <Spinner variant="ring"/>
     </div>
   );
 }
