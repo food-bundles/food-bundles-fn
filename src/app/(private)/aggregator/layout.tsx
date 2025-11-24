@@ -14,8 +14,8 @@ export default async function AdminLayout({
   const user = await roleGuard([ UserRole.AGGREGATOR]);
   return (
     <SubmissionProvider>
-      <main className="flex-grow overflow-auto min-h-0">
-        <div className="container mx-auto max-w-full px-4">{children}</div>
+      <main className="grow overflow-auto min-h-0">
+        <div className="container mx-auto max-w-full">{children}</div>
       </main>
     </SubmissionProvider>
   );

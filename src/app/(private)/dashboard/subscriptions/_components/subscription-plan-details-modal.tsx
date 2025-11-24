@@ -69,7 +69,6 @@ export function SubscriptionPlanDetailsModal({
     features: plan.features || [],
     isActive: plan.isActive,
   });
-  const [currentFeature, setCurrentFeature] = useState("");
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -107,25 +106,8 @@ export function SubscriptionPlanDetailsModal({
       features: plan.features || [],
       isActive: plan.isActive,
     });
-    setCurrentFeature("");
   };
 
-  const addFeature = () => {
-    if (currentFeature.trim()) {
-      setEditData((prev) => ({
-        ...prev,
-        features: [...prev.features, currentFeature.trim()],
-      }));
-      setCurrentFeature("");
-    }
-  };
-
-  const removeFeature = (index: number) => {
-    setEditData((prev) => ({
-      ...prev,
-      features: prev.features.filter((_: any, i: any) => i !== index),
-    }));
-  };
 
   const handleSaveEdit = async () => {
     setIsLoading(true);

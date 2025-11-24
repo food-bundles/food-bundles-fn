@@ -1,31 +1,56 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Plus, Calendar, Eye, Trash2, Package, Tag, X, Hash, MapPin, RefreshCw, AlertCircle } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Skeleton } from "@/components/ui/skeleton"
-import ProductSubmissionModal, { ProductSubmissionData } from "./product-submission-modal"
-import { productColumns } from "./product-columns"
-import { DataTable } from "@/components/data-table"
-import { Product } from "./product-context"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
-import { productSubmissionService, Submission } from "@/app/services/productSubmissionService"
-import { TableFilters, FilterConfig, createCommonFilters } from "@/components/filters"
+import { useState, useEffect } from "react";
+import {
+  Plus,
+  Calendar,
+  Eye,
+  Trash2,
+  Package,
+  Tag,
+  X,
+  Hash,
+  MapPin,
+  RefreshCw,
+  AlertCircle,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import ProductSubmissionModal, {
+  ProductSubmissionData,
+} from "./product-submission-modal";
+import { productColumns } from "./product-columns";
+import { DataTable } from "@/components/data-table";
+import { Product } from "./product-context";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import {
+  productSubmissionService,
+  Submission,
+} from "@/app/services/productSubmissionService";
+import {
+  TableFilters,
+  FilterConfig,
+  createCommonFilters,
+} from "@/components/filters";
 
 interface productSubmitData {
-  productName: string
-  category: string
-  quantity: number
-  unit: string
-  submittedDate: string
-  price: string
-  status: string
-  statusColor: string
-  image: string
-  location: string
-  priceValue: number
+  productName: string;
+  category: string;
+  quantity: number;
+  unit: string;
+  submittedDate: string;
+  price: string;
+  status: string;
+  statusColor: string;
+  image: string;
+  location: string;
+  priceValue: number;
 }
 
 // Status color mapping function
@@ -33,20 +58,20 @@ const getStatusColor = (status: string): string => {
   switch (status) {
     case "APPROVED":
     case "Approved":
-      return "bg-green-100 text-green-800"
+      return "bg-green-100 text-green-800";
     case "PENDING":
     case "Pending":
-      return "bg-yellow-100 text-yellow-800"
+      return "bg-yellow-100 text-yellow-800";
     case "VERIFIED":
     case "Verified":
-      return "bg-blue-100 text-blue-800"
+      return "bg-blue-100 text-blue-800";
     case "REJECTED":
     case "Rejected":
-      return "bg-red-100 text-red-800"
+      return "bg-red-100 text-red-800";
     default:
-      return "bg-gray-100 text-gray-800"
+      return "bg-gray-100 text-gray-800";
   }
-}
+};
 
 // Transform database submission to Product format
 const transformSubmissionToProduct = (submission: Submission): Product => {
@@ -54,14 +79,15 @@ const transformSubmissionToProduct = (submission: Submission): Product => {
     submission.village,
     submission.cell,
     submission.sector,
-  ].filter(Boolean)
+  ].filter(Boolean);
 
-  const location = locationParts.length > 0 ? locationParts.join(", ") : "Rwanda"
+  const location =
+    locationParts.length > 0 ? locationParts.join(", ") : "Rwanda";
 
   return {
     id: submission.id,
     name: submission.productName,
-    category: submission.category?.name || "General",
+    category: submission.category || { id: "general", name: "General" },
     quantity: `${submission.submittedQty}`,
     unit: submission.unit,
     submittedDate: new Date(submission.submittedAt).toLocaleDateString(),
@@ -71,18 +97,18 @@ const transformSubmissionToProduct = (submission: Submission): Product => {
     image: "/placeholder.svg?height=48&width=48&text=Product",
     location,
     priceValue: submission.wishedPrice,
-  }
-}
+  };
+};
 
 export default function ProductManagement() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [selectedStatus, setSelectedStatus] = useState<string>("All")
-  const [showSubmissionModal, setShowSubmissionModal] = useState(false)
-  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [viewProduct, setViewProduct] = useState<Product | null>(null)
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<string>("All");
+  const [showSubmissionModal, setShowSubmissionModal] = useState(false);
+  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [viewProduct, setViewProduct] = useState<Product | null>(null);
 
   const statusOptions = [
     { label: "All", value: "All" },
@@ -90,65 +116,68 @@ export default function ProductManagement() {
     { label: "VERIFIED", value: "VERIFIED" },
     { label: "APPROVED", value: "APPROVED" },
     { label: "REJECTED", value: "REJECTED" },
-  ]
+  ];
 
   const fetchSubmissions = async () => {
     try {
-      setLoading(true)
-      setError(null)
-      const submissions = await productSubmissionService.getSubmissionHistory()
-      const transformedProducts = submissions.map(transformSubmissionToProduct)
-      setProducts(transformedProducts)
+      setLoading(true);
+      setError(null);
+      const submissions = await productSubmissionService.getSubmissionHistory();
+      const transformedProducts = submissions.map(transformSubmissionToProduct);
+      setProducts(transformedProducts);
     } catch (err) {
-      console.error("Failed to fetch submissions:", err)
-      setError("Failed to load submissions")
+      console.error("Failed to fetch submissions:", err);
+      setError("Failed to load submissions");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchSubmissions()
-  }, [])
+    fetchSubmissions();
+  }, []);
 
   const filteredProducts = products.filter((product) => {
-    const matchesStatus = selectedStatus === "All" || product.status === selectedStatus
-    const matchesDate = !dateFilter || product.submittedDate.includes(dateFilter.toLocaleDateString())
+    const matchesStatus =
+      selectedStatus === "All" || product.status === selectedStatus;
+    const matchesDate =
+      !dateFilter ||
+      product.submittedDate.includes(dateFilter.toLocaleDateString());
     const matchesSearch =
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.location.toLowerCase().includes(searchTerm.toLowerCase())
-    return matchesStatus && matchesDate && matchesSearch
-  })
+      (typeof product.category === 'string' ? product.category : product.category.name).toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.location.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesStatus && matchesDate && matchesSearch;
+  });
 
   const handleProductSubmit = async (data: ProductSubmissionData) => {
     try {
-      setLoading(true)
-      await productSubmissionService.submitProduct(data)
-      await fetchSubmissions()
-      setShowSubmissionModal(false)
-      alert("Product submitted successfully!")
+      setLoading(true);
+      await productSubmissionService.submitProduct(data);
+      await fetchSubmissions();
+      setShowSubmissionModal(false);
+      alert("Product submitted successfully!");
     } catch (error) {
-      console.error("Error submitting product:", error)
-      alert("Failed to submit product. Please try again.")
+      console.error("Error submitting product:", error);
+      alert("Failed to submit product. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleViewDetails = (product: Product | null, lock = false) => {
-    setViewProduct(product)
-  }
+    setViewProduct(product);
+  };
 
   const handleRefresh = () => {
-    fetchSubmissions()
-  }
+    fetchSubmissions();
+  };
 
   const handleClearFilters = () => {
-    setSearchTerm("")
-    setSelectedStatus("All")
-    setDateFilter(undefined)
-  }
+    setSearchTerm("");
+    setSelectedStatus("All");
+    setDateFilter(undefined);
+  };
 
   // Create filter configurations
   const filters: FilterConfig[] = [
@@ -157,9 +186,13 @@ export default function ProductManagement() {
       setSearchTerm,
       "Search products, categories, or locations..."
     ),
-    createCommonFilters.status(selectedStatus, setSelectedStatus, statusOptions),
+    createCommonFilters.status(
+      selectedStatus,
+      setSelectedStatus,
+      statusOptions
+    ),
     createCommonFilters.date(dateFilter, setDateFilter, "Date Filter"),
-  ]
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -199,14 +232,21 @@ export default function ProductManagement() {
                     : "bg-transparent text-gray-600 border-gray-300 hover:bg-gray-50"
                 }
               >
-                {status.label} ({status.value === "All" ? products.length : products.filter((p) => p.status === status.value).length})
+                {status.label} (
+                {status.value === "All"
+                  ? products.length
+                  : products.filter((p) => p.status === status.value).length}
+                )
               </Button>
             ))}
           </div>
 
           {/* Filter Component */}
           <div className="mb-6">
-            <TableFilters filters={filters} className="flex-col sm:flex-row items-stretch sm:items-center " />
+            <TableFilters
+              filters={filters}
+              className="flex-col sm:flex-row items-stretch sm:items-center "
+            />
             {(searchTerm || selectedStatus !== "All" || dateFilter) && (
               <Button
                 variant="outline"
@@ -224,7 +264,7 @@ export default function ProductManagement() {
             columns={productColumns(handleViewDetails)}
             data={filteredProducts}
             title=""
-            descrption=""
+            // descrption=""
             showExport={false}
             showSearch={false}
             showColumnVisibility={true}
@@ -268,13 +308,15 @@ export default function ProductManagement() {
             <X className="w-4 h-4 text-gray-600" />
           </button>
 
-          <h2 className="text-[18px] font-semibold text-gray-900 mb-3 pr-6">Product Details</h2>
+          <h2 className="text-[18px] font-semibold text-gray-900 mb-3 pr-6">
+            Product Details
+          </h2>
 
           <div className="flex flex-col gap-3 text-sm text-gray-700">
             {/* Name */}
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
                   <Package className="w-3 h-3 text-blue-600" />
                 </div>
                 <span className="font-medium ">Name:</span>
@@ -285,18 +327,18 @@ export default function ProductManagement() {
             {/* Category */}
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+                <div className="w-6 h-6 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
                   <Tag className="w-3 h-3 text-purple-600" />
                 </div>
                 <span className="font-medium">Category:</span>
               </div>
-              <span className="text-right">{viewProduct.category}</span>
+              <span className="text-right">{viewProduct.category.name}</span>
             </div>
 
             {/* Quantity */}
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+                <div className="w-6 h-6 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
                   <Hash className="w-3 h-3 text-green-600" />
                 </div>
                 <span className="font-medium">Quantity:</span>
@@ -307,7 +349,7 @@ export default function ProductManagement() {
             {/* Location */}
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
+                <div className="w-6 h-6 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
                   <MapPin className="w-3 h-3 text-red-600" />
                 </div>
                 <span className="font-medium">Location:</span>
@@ -318,23 +360,29 @@ export default function ProductManagement() {
             {/* Price */}
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 rounded-lg bg-yellow-100 flex items-center justify-center flex-shrink-0">
+                <div className="w-6 h-6 rounded-lg bg-yellow-100 flex items-center justify-center shrink-0">
                   <div className="w-2 h-2 rounded-full bg-yellow-600"></div>
                 </div>
                 <span className="font-medium">Price:</span>
               </div>
-              <span className="text-right font-semibold">{viewProduct.price}</span>
+              <span className="text-right font-semibold">
+                {viewProduct.price}
+              </span>
             </div>
 
             {/* Status */}
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                <div className="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
                   <div className="w-2 h-2 rounded-full bg-gray-600"></div>
                 </div>
                 <span className="font-medium">Status:</span>
               </div>
-              <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(viewProduct.status)}`}>
+              <span
+                className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(
+                  viewProduct.status
+                )}`}
+              >
                 {viewProduct.status}
               </span>
             </div>
@@ -342,7 +390,7 @@ export default function ProductManagement() {
             {/* Submitted */}
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 rounded-lg bg-indigo-100 flex items-center justify-center flex-shrink-0">
+                <div className="w-6 h-6 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
                   <Calendar className="w-3 h-3 text-indigo-600" />
                 </div>
                 <span className="font-medium">Submitted:</span>
@@ -353,5 +401,5 @@ export default function ProductManagement() {
         </div>
       )}
     </div>
-  )
+  );
 }

@@ -107,8 +107,8 @@ export default function AdminOrdersPage() {
           orderNumber: order.orderNumber,
           restaurantId: order.restaurantId,
           totalAmount: order.totalAmount,
-          status: order.status,
-          paymentStatus: order.paymentStatus,
+          status: order.status as Order['status'],
+          paymentStatus: order.paymentStatus as Order['paymentStatus'],
           paymentMethod: order.paymentMethod,
           billingName: order.billingName,
           billingPhone: order.billingPhone,
@@ -353,8 +353,8 @@ export default function AdminOrdersPage() {
           orderNumber: order.orderNumber,
           restaurantId: order.restaurantId,
           totalAmount: order.totalAmount,
-          status: order.status,
-          paymentStatus: order.paymentStatus,
+          status: order.status as Order['status'],
+          paymentStatus: order.paymentStatus as Order['paymentStatus'],
           paymentMethod: order.paymentMethod,
           billingName: order.billingName,
           billingPhone: order.billingPhone,
@@ -381,8 +381,10 @@ export default function AdminOrdersPage() {
         });
       }
     } catch (error: any) {
-      // Revert optimistic update on error
-      fetchOrders();
+      // Revert optimistic update on error - add the order back
+      setOrders(prevOrders => [...prevOrders, orderToDelete].sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      ));
       console.error("Failed to delete order:", error);
       toast.error("Cancel Order before deletion");
     }
@@ -395,18 +397,79 @@ export default function AdminOrdersPage() {
     setDeleteModalOpen(false);
   };
 
-  const handleOrderUpdate = () => {
-    fetchOrders();
+  const handleOrderUpdate = async () => {
+    // Silent refresh without loading state
+    try {
+      const params: any = {
+        page: pagination.page,
+        limit: pagination.limit,
+      };
+      
+      if (selectedStatus !== "all") params.status = selectedStatus;
+      if (selectedPaymentStatus !== "all") params.paymentStatus = selectedPaymentStatus;
+      if (selectedRestaurantId) params.restaurantId = selectedRestaurantId;
+      if (dateFrom) params.dateFrom = dateFrom.toISOString().split("T")[0];
+      if (dateTo) params.dateTo = dateTo.toISOString().split("T")[0];
+      
+      const response = await orderService.getAllOrdersByAdmin(params);
+      
+      if (response.success) {
+        const mappedOrders = response.data.map((order: any) => ({
+          id: order.id,
+          orderNumber: order.orderNumber,
+          restaurantId: order.restaurantId,
+          totalAmount: order.totalAmount,
+          status: order.status as Order['status'],
+          paymentStatus: order.paymentStatus as Order['paymentStatus'],
+          paymentMethod: order.paymentMethod,
+          billingName: order.billingName,
+          billingPhone: order.billingPhone,
+          billingEmail: order.billingEmail,
+          billingAddress: order.billingAddress,
+          notes: order.notes,
+          requestedDelivery: order.requestedDelivery,
+          estimatedDelivery: order.estimatedDelivery,
+          actualDelivery: order.actualDelivery,
+          paymentReference: order.paymentReference,
+          createdAt: order.createdAt,
+          updatedAt: order.updatedAt,
+          restaurant: order.restaurant,
+          orderItems: order.orderItems || [],
+          _count: order._count || { orderItems: 0 },
+        }));
+        
+        setOrders(mappedOrders);
+        setPagination({
+          page: response.pagination?.page || 1,
+          limit: response.pagination?.limit || 10,
+          total: response.pagination?.total || 0,
+          totalPages: response.pagination?.totalPages || 0,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to refresh orders:", error);
+    }
+    
     handleModalClose();
   };
 
   // Status update handlers
   const handleStatusUpdate = async (orderId: string, status: string) => {
+    const previousOrders = [...orders];
+    
     try {
+      // Optimistic update
+      setOrders(prevOrders => 
+        prevOrders.map(order => 
+          order.id === orderId ? { ...order, status: status as Order['status'] } : order
+        )
+      );
+      
       await orderService.updateOrder(orderId, { status });
       toast.success("Order status updated successfully");
-      fetchOrders();
     } catch (error: any) {
+      // Revert on error
+      setOrders(previousOrders);
       console.error("Failed to update order status:", error);
       toast.error("Failed to update order status");
     }
@@ -416,11 +479,21 @@ export default function AdminOrdersPage() {
     orderId: string,
     paymentStatus: string
   ) => {
+    const previousOrders = [...orders];
+    
     try {
+      // Optimistic update
+      setOrders(prevOrders => 
+        prevOrders.map(order => 
+          order.id === orderId ? { ...order, paymentStatus: paymentStatus as any } : order
+        )
+      );
+      
       await orderService.updateOrder(orderId, { paymentStatus });
       toast.success("Payment status updated successfully");
-      fetchOrders();
     } catch (error: any) {
+      // Revert on error
+      setOrders(previousOrders);
       console.error("Failed to update payment status:", error);
       toast.error("Failed to update payment status");
     }

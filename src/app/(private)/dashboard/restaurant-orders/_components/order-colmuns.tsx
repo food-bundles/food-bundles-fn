@@ -2,7 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { Eye, X, Check, MoreHorizontal, Trash2, FileText } from "lucide-react";
+import { Eye, Check, MoreHorizontal, Trash2, FileText } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -79,6 +79,12 @@ function StatusDropdown({ currentStatus, orderId, onUpdate }: {
   const [selectedStatus, setSelectedStatus] = useState(currentStatus);
   const [showUpdate, setShowUpdate] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  // Sync with current status when it changes
+  useEffect(() => {
+    setSelectedStatus(currentStatus);
+    setShowUpdate(false);
+  }, [currentStatus]);
 
   const handleStatusChange = (newStatus: string) => {
     setSelectedStatus(newStatus);
@@ -157,6 +163,12 @@ function PaymentStatusDropdown({ currentStatus, orderId, onUpdate }: {
   const [selectedStatus, setSelectedStatus] = useState(currentStatus);
   const [showUpdate, setShowUpdate] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  // Sync with current status when it changes
+  useEffect(() => {
+    setSelectedStatus(currentStatus);
+    setShowUpdate(false);
+  }, [currentStatus]);
 
   const handleStatusChange = (newStatus: string) => {
     setSelectedStatus(newStatus);
@@ -330,12 +342,6 @@ export const createOrdersColumns = (actions: {
                 <FileText className="mr-2 h-4 w-4" />
                 Print Order
               </DropdownMenuItem>
-              {order.status !== "CANCELLED" && order.status !== "DELIVERED" && (
-                <DropdownMenuItem onClick={() => actions.onCancel(order)}>
-                  <X className="mr-2 h-4 w-4" />
-                  Cancel Order
-                </DropdownMenuItem>
-              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem 
                 className="text-red-600"

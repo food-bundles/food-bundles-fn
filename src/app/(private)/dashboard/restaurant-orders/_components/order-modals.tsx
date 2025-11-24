@@ -263,11 +263,17 @@ export function CancelOrderModal({ open, onClose, order, onCancel }: CancelOrder
 
     try {
       setLoading(true);
-      await orderService.cancelOrder(order.id, { reason });
-      toast.success("Order cancelled successfully");
-      onCancel();
+      
+      // Close modal immediately for better UX
       onClose();
       setReason("");
+      
+      // Cancel order in backend
+      await orderService.cancelOrder(order.id, { reason });
+      toast.success("Order cancelled successfully");
+      
+      // Trigger silent refresh in parent
+      onCancel();
     } catch (error: any) {
       console.error("Failed to cancel order:", error);
       toast.error(error.response?.data?.message || "Failed to cancel order");

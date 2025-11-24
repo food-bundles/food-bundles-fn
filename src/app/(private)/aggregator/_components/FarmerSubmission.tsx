@@ -5,6 +5,7 @@ import {
   type FarmerSubmission as SubmissionType,
 } from "@/app/contexts/submission-context";
 import { toast } from "sonner";
+import FarmerManagement from "./FarmerManagement";
 
 interface FarmerSubmissionProps {
   initialSubmissions?: SubmissionType[];
@@ -13,7 +14,7 @@ interface FarmerSubmissionProps {
 export default function FarmerSubmission({
   initialSubmissions = [],
 }: FarmerSubmissionProps) {
-  const [activeTab, setActiveTab] = useState<"unverified" | "verified">(
+  const [activeTab, setActiveTab] = useState<"unverified" | "verified" | "farmers">(
     "unverified"
   );
   const [searchTerm, setSearchTerm] = useState("");
@@ -209,21 +210,21 @@ export default function FarmerSubmission({
 
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-3 sm:p-6">
       {/* Header with count */}
-      <div className="mb-6">
-        <h2 className="text-lg font-medium text-gray-900 mb-4">
+      <div className="mb-4 sm:mb-6">
+        <h2 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">
           You have {verifiedCount} verified Farmers
         </h2>
 
         {/* Search Bar */}
-        <div className="relative mb-6">
+        <div className="relative mb-4 sm:mb-6">
           <input
             type="text"
             placeholder="Search Farmer"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full max-w-sm pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            className="w-full sm:max-w-sm pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
           />
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg
@@ -243,17 +244,18 @@ export default function FarmerSubmission({
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-6 border-b border-gray-200">
+        <div className="flex items-center gap-3 sm:gap-6 border-b border-gray-200 overflow-x-auto">
           {[
             { key: "unverified", label: "Unverified" },
-            { key: "verified", label: "My verified Farmers" },
+            { key: "verified", label: "Verified" },
+            { key: "farmers", label: "Farmers" },
           ].map((filter) => (
             <button
               key={filter.key}
               onClick={() =>
-                setActiveTab(filter.key as "unverified" | "verified")
+                setActiveTab(filter.key as "unverified" | "verified" | "farmers")
               }
-              className={`pb-3 text-sm font-medium transition-colors ${
+              className={`pb-3 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === filter.key
                   ? "text-gray-900 border-b-2 border-gray-900"
                   : "text-gray-500 hover:text-gray-700"
@@ -265,55 +267,59 @@ export default function FarmerSubmission({
         </div>
       </div>
 
-      {/* Farmer Cards */}
-      <div className="space-y-4">
-        {filteredFarmers.map((farmer) => (
+      {/* Content based on active tab */}
+      {activeTab === "farmers" ? (
+        <FarmerManagement />
+      ) : (
+        <>
+          <div className="space-y-3 sm:space-y-4">
+            {filteredFarmers.map((farmer) => (
           <div
             key={farmer.id}
-            className="bg-[#F0FDF4] rounded-lg p-4 border border-gray-200 relative"
+            className="bg-[#F0FDF4] rounded-lg p-3 sm:p-4 border border-gray-200 relative"
           >
             <div
               className={`${!farmer.isVerified ? "cursor-pointer" : ""}`}
               onClick={() => !farmer.isVerified && handleCardClick(farmer.id)}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-4">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div className="flex items-start space-x-3 sm:space-x-4 flex-1">
                   {/* Profile Circle */}
-                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold text-base sm:text-lg shrink-0">
                     {farmer.name.charAt(0).toUpperCase()}
                   </div>
 
                   {/* Farmer Info */}
-                  <div className="flex-1">
-                    <div className="mb-1">
-                      <span className="font-semibold text-gray-900 text-lg">
+                  <div className="flex-1 min-w-0">
+                    <div className="mb-2">
+                      <div className="font-semibold text-gray-900 text-base sm:text-lg wrap-break-word">
                         {farmer.phone}
-                      </span>
-                      <span className="text-gray-600 ml-2">
+                      </div>
+                      <div className="text-gray-600 text-sm">
                         ({farmer.name})
-                      </span>
+                      </div>
                     </div>
 
-                    <div className="flex items-center space-x-4 mb-2 text-sm text-gray-600">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mb-2 text-xs sm:text-sm text-gray-600 gap-1 sm:gap-0">
                       <span>{farmer.date}</span>
                       <span>{farmer.time}</span>
                     </div>
 
                     <div className="mb-2">
-                      <span className="font-medium text-gray-700">
+                      <div className="font-medium text-gray-700 text-sm wrap-break-word">
                         {farmer.product}: {farmer.quantity}
-                      </span>
-                      <span className="text-gray-700 ml-2">
+                      </div>
+                      <div className="text-gray-700 text-sm">
                         wish price:{" "}
                         <span className="font-medium">{farmer.wishPrice}</span>
-                      </span>
+                      </div>
                     </div>
 
-                    <div className="flex items-center space-x-2 mb-2">
-                      <span className="text-sm text-gray-600">Location:</span>
-                      <span className="text-sm text-gray-600">
+                    <div className="mb-2">
+                      <span className="text-xs sm:text-sm text-gray-600">Location:</span>
+                      <div className="text-xs sm:text-sm text-gray-600 wrap-break-word">
                         {farmer.location}
-                      </span>
+                      </div>
                     </div>
 
                     {/* Accepted Details (for verified farmers) */}
@@ -340,45 +346,49 @@ export default function FarmerSubmission({
                 </div>
 
                 {/* Right Side - Time */}
-                <div className="text-sm text-green-600 font-medium">
+                <div className="text-xs sm:text-sm text-green-600 font-medium self-start">
                   {farmer.timeAgo}
                 </div>
               </div>
 
               {/* Expanded Section for Unverified Farmers */}
               {!farmer.isVerified && expandedCards.has(farmer.id) && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <div className="flex items-center justify-center space-x-4">
-                    <span className="text-sm text-gray-600">Quantity:</span>
-                    <input
-                      type="number"
-                      className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
-                      placeholder="kg"
-                      value={acceptedQuantities[farmer.id] || ""}
-                      onChange={(e) =>
-                        setAcceptedQuantities((prev) => ({
-                          ...prev,
-                          [farmer.id]: e.target.value,
-                        }))
-                      }
-                      onClick={(e) => e.stopPropagation()}
-                    />
+                <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-3 sm:gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs sm:text-sm text-gray-600 min-w-0">Quantity:</span>
+                      <input
+                        type="number"
+                        className="w-16 sm:w-20 px-2 py-1 border border-gray-300 rounded text-xs sm:text-sm"
+                        placeholder="kg"
+                        value={acceptedQuantities[farmer.id] || ""}
+                        onChange={(e) =>
+                          setAcceptedQuantities((prev) => ({
+                            ...prev,
+                            [farmer.id]: e.target.value,
+                          }))
+                        }
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
 
-                    <span className="text-sm text-gray-600">Price:</span>
-                    <input
-                      type="number"
-                      className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
-                      placeholder="Rwf"
-                      value={acceptedPrices[farmer.id] || ""}
-                      onChange={(e) =>
-                        setAcceptedPrices((prev) => ({
-                          ...prev,
-                          [farmer.id]: e.target.value,
-                        }))
-                      }
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    <span className="text-sm text-gray-600">Rwf</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs sm:text-sm text-gray-600">Price:</span>
+                      <input
+                        type="number"
+                        className="w-16 sm:w-20 px-2 py-1 border border-gray-300 rounded text-xs sm:text-sm"
+                        placeholder="Rwf"
+                        value={acceptedPrices[farmer.id] || ""}
+                        onChange={(e) =>
+                          setAcceptedPrices((prev) => ({
+                            ...prev,
+                            [farmer.id]: e.target.value,
+                          }))
+                        }
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <span className="text-xs sm:text-sm text-gray-600">Rwf</span>
+                    </div>
 
                     <button
                       onClick={(e) => {
@@ -386,7 +396,7 @@ export default function FarmerSubmission({
                         handleVerify(farmer.id);
                       }}
                       disabled={loading}
-                      className="px-4 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 sm:px-4 py-1.5 sm:py-1 bg-green-500 text-white text-xs sm:text-sm rounded hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
                     >
                       {loading ? "Verifying..." : "Verify"}
                     </button>
@@ -395,15 +405,17 @@ export default function FarmerSubmission({
               )}
             </div>
           </div>
-        ))}
-      </div>
+            ))}
+          </div>
 
-      {filteredFarmers.length === 0 && !loading && (
-        <div className="text-center py-8">
-          <p className="text-gray-500">
-            No farmers found matching your search.
-          </p>
-        </div>
+          {filteredFarmers.length === 0 && !loading && (
+            <div className="text-center py-8">
+              <p className="text-gray-500">
+                No farmers found matching your search.
+              </p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
