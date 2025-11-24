@@ -16,6 +16,17 @@ import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import { ViewOrderModal, CancelOrderModal } from "./_components/order-modals";
 import { useWebSocket } from "@/hooks/useOrderWebSocket";
 import { useAuth } from "@/app/contexts/auth-context";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Trash2 } from "lucide-react";
 
 const statusOptions = [
   { label: "All Status", value: "all" },
@@ -58,6 +69,7 @@ export default function AdminOrdersPage() {
   // Modal states
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   // Filter states
@@ -95,8 +107,8 @@ export default function AdminOrdersPage() {
           orderNumber: order.orderNumber,
           restaurantId: order.restaurantId,
           totalAmount: order.totalAmount,
-          status: order.status,
-          paymentStatus: order.paymentStatus,
+          status: order.status as Order['status'],
+          paymentStatus: order.paymentStatus as Order['paymentStatus'],
           paymentMethod: order.paymentMethod,
           billingName: order.billingName,
           billingPhone: order.billingPhone,
@@ -301,24 +313,163 @@ export default function AdminOrdersPage() {
     setCancelModalOpen(true);
   };
 
+  const handleDeleteOrder = (order: Order) => {
+    setSelectedOrder(order);
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDeleteOrder = async () => {
+    if (!selectedOrder) return;
+    
+    const orderToDelete = selectedOrder;
+    
+    try {
+      // Optimistically remove from UI immediately
+      setOrders(prevOrders => prevOrders.filter(order => order.id !== orderToDelete.id));
+      setDeleteModalOpen(false);
+      setSelectedOrder(null);
+      
+      // Delete from backend
+      await orderService.deleteOrder(orderToDelete.id);
+      toast.success("Order deleted successfully");
+      
+      // Silent refresh without loading state
+      const params: any = {
+        page: pagination.page,
+        limit: pagination.limit,
+      };
+      
+      if (selectedStatus !== "all") params.status = selectedStatus;
+      if (selectedPaymentStatus !== "all") params.paymentStatus = selectedPaymentStatus;
+      if (selectedRestaurantId) params.restaurantId = selectedRestaurantId;
+      if (dateFrom) params.dateFrom = dateFrom.toISOString().split("T")[0];
+      if (dateTo) params.dateTo = dateTo.toISOString().split("T")[0];
+      
+      const response = await orderService.getAllOrdersByAdmin(params);
+      
+      if (response.success) {
+        const mappedOrders = response.data.map((order: any) => ({
+          id: order.id,
+          orderNumber: order.orderNumber,
+          restaurantId: order.restaurantId,
+          totalAmount: order.totalAmount,
+          status: order.status as Order['status'],
+          paymentStatus: order.paymentStatus as Order['paymentStatus'],
+          paymentMethod: order.paymentMethod,
+          billingName: order.billingName,
+          billingPhone: order.billingPhone,
+          billingEmail: order.billingEmail,
+          billingAddress: order.billingAddress,
+          notes: order.notes,
+          requestedDelivery: order.requestedDelivery,
+          estimatedDelivery: order.estimatedDelivery,
+          actualDelivery: order.actualDelivery,
+          paymentReference: order.paymentReference,
+          createdAt: order.createdAt,
+          updatedAt: order.updatedAt,
+          restaurant: order.restaurant,
+          orderItems: order.orderItems || [],
+          _count: order._count || { orderItems: 0 },
+        }));
+        
+        setOrders(mappedOrders);
+        setPagination({
+          page: response.pagination?.page || 1,
+          limit: response.pagination?.limit || 10,
+          total: response.pagination?.total || 0,
+          totalPages: response.pagination?.totalPages || 0,
+        });
+      }
+    } catch (error: any) {
+      // Revert optimistic update on error - add the order back
+      setOrders(prevOrders => [...prevOrders, orderToDelete].sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      ));
+      console.error("Failed to delete order:", error);
+      toast.error("Cancel Order before deletion");
+    }
+  };
+
   const handleModalClose = () => {
     setSelectedOrder(null);
     setViewModalOpen(false);
     setCancelModalOpen(false);
+    setDeleteModalOpen(false);
   };
 
-  const handleOrderUpdate = () => {
-    fetchOrders();
+  const handleOrderUpdate = async () => {
+    // Silent refresh without loading state
+    try {
+      const params: any = {
+        page: pagination.page,
+        limit: pagination.limit,
+      };
+      
+      if (selectedStatus !== "all") params.status = selectedStatus;
+      if (selectedPaymentStatus !== "all") params.paymentStatus = selectedPaymentStatus;
+      if (selectedRestaurantId) params.restaurantId = selectedRestaurantId;
+      if (dateFrom) params.dateFrom = dateFrom.toISOString().split("T")[0];
+      if (dateTo) params.dateTo = dateTo.toISOString().split("T")[0];
+      
+      const response = await orderService.getAllOrdersByAdmin(params);
+      
+      if (response.success) {
+        const mappedOrders = response.data.map((order: any) => ({
+          id: order.id,
+          orderNumber: order.orderNumber,
+          restaurantId: order.restaurantId,
+          totalAmount: order.totalAmount,
+          status: order.status as Order['status'],
+          paymentStatus: order.paymentStatus as Order['paymentStatus'],
+          paymentMethod: order.paymentMethod,
+          billingName: order.billingName,
+          billingPhone: order.billingPhone,
+          billingEmail: order.billingEmail,
+          billingAddress: order.billingAddress,
+          notes: order.notes,
+          requestedDelivery: order.requestedDelivery,
+          estimatedDelivery: order.estimatedDelivery,
+          actualDelivery: order.actualDelivery,
+          paymentReference: order.paymentReference,
+          createdAt: order.createdAt,
+          updatedAt: order.updatedAt,
+          restaurant: order.restaurant,
+          orderItems: order.orderItems || [],
+          _count: order._count || { orderItems: 0 },
+        }));
+        
+        setOrders(mappedOrders);
+        setPagination({
+          page: response.pagination?.page || 1,
+          limit: response.pagination?.limit || 10,
+          total: response.pagination?.total || 0,
+          totalPages: response.pagination?.totalPages || 0,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to refresh orders:", error);
+    }
+    
     handleModalClose();
   };
 
   // Status update handlers
   const handleStatusUpdate = async (orderId: string, status: string) => {
+    const previousOrders = [...orders];
+    
     try {
+      // Optimistic update
+      setOrders(prevOrders => 
+        prevOrders.map(order => 
+          order.id === orderId ? { ...order, status: status as Order['status'] } : order
+        )
+      );
+      
       await orderService.updateOrder(orderId, { status });
       toast.success("Order status updated successfully");
-      fetchOrders();
     } catch (error: any) {
+      // Revert on error
+      setOrders(previousOrders);
       console.error("Failed to update order status:", error);
       toast.error("Failed to update order status");
     }
@@ -328,11 +479,21 @@ export default function AdminOrdersPage() {
     orderId: string,
     paymentStatus: string
   ) => {
+    const previousOrders = [...orders];
+    
     try {
+      // Optimistic update
+      setOrders(prevOrders => 
+        prevOrders.map(order => 
+          order.id === orderId ? { ...order, paymentStatus: paymentStatus as any } : order
+        )
+      );
+      
       await orderService.updateOrder(orderId, { paymentStatus });
       toast.success("Payment status updated successfully");
-      fetchOrders();
     } catch (error: any) {
+      // Revert on error
+      setOrders(previousOrders);
       console.error("Failed to update payment status:", error);
       toast.error("Failed to update payment status");
     }
@@ -342,6 +503,7 @@ export default function AdminOrdersPage() {
     onView: handleViewOrder,
     onDownloadPDF: handleDownloadPDF,
     onCancel: handleCancelOrder,
+    onDelete: handleDeleteOrder,
     onStatusUpdate: handleStatusUpdate,
     onPaymentStatusUpdate: handlePaymentStatusUpdate,
   });
@@ -387,11 +549,7 @@ export default function AdminOrdersPage() {
 
       <TableFilters filters={filters} />
 
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Spinner variant="ring" />
-        </div>
-      ) : (
+    
         <DataTable
           columns={ordersColumns}
           data={filteredOrders}
@@ -402,7 +560,7 @@ export default function AdminOrdersPage() {
           onPaginationChange={handlePaginationChange}
           isLoading={loading}
         />
-      )}
+      
 
       {/* Modals */}
       <ViewOrderModal
@@ -417,6 +575,36 @@ export default function AdminOrdersPage() {
         order={selectedOrder}
         onCancel={handleOrderUpdate}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded bg-red-100 flex items-center justify-center">
+                <Trash2 className="h-4 w-4 text-red-600" />
+              </div>
+              Delete Order
+            </AlertDialogTitle>
+            <AlertDialogDescription className="mt-4 text-sm text-gray-800">
+              Are you sure you want to delete order{" "}
+              <strong className="text-green-600">{selectedOrder?.restaurant.name}</strong>:{" "}
+              <strong>{selectedOrder?.orderNumber}</strong> ? 
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteModalOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteOrder}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete Order
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -215,8 +215,17 @@ export const productSubmissionService = {
         url += `?category=${encodeURIComponent(category)}`
       }
 
-      const response = await axiosClient.get<Product[]>(url)
-      return response.data
+      const response = await axiosClient.get(url)
+      
+      // Handle different response structures
+      if (response.data?.data) {
+        return response.data.data
+      } else if (Array.isArray(response.data)) {
+        return response.data
+      } else {
+        console.warn("Unexpected response structure:", response.data)
+        return []
+      }
     } catch (error) {
       console.error("Failed to fetch all products from database:", error)
       return []
@@ -225,32 +234,61 @@ export const productSubmissionService = {
 
 
   // Get product details if it exists
-  getProductDetails: async (productName: string, category: string): Promise<Product | null> => {
+  getProductDetails: async (productName: string, categoryName: string): Promise<Product | null> => {
     try {
+      console.log("[getProductDetails] Searching for product:", productName, "in category:", categoryName)
       const axiosClient = createAxiosClient()
+      
+      // First try to get all products and filter by name and category
+      console.log("[getProductDetails] Fetching all products...")
+      const allProducts = await productSubmissionService.getAllProducts()
+      console.log("[getProductDetails] All products:", allProducts)
+      
+      // Find product by name and category
+      const matchingProduct = allProducts.find(product => {
+        const nameMatch = product.productName.toLowerCase() === productName.toLowerCase()
+        const categoryMatch = product.category.name.toLowerCase() === categoryName.toLowerCase()
+        console.log("[getProductDetails] Checking product:", product.productName, "category:", product.category.name, "nameMatch:", nameMatch, "categoryMatch:", categoryMatch)
+        return nameMatch && categoryMatch
+      })
+      
+      console.log("[getProductDetails] Matching product from all products:", matchingProduct)
+      
+      if (matchingProduct) {
+        return matchingProduct
+      }
+      
+      // Fallback: try the search endpoint
+      console.log("[getProductDetails] Trying search endpoint...")
       const response = await axiosClient.get<Product[]>(
-        `/products/search?name=${encodeURIComponent(productName)}&category=${encodeURIComponent(category)}`,
+        `/products/search?name=${encodeURIComponent(productName)}&category=${encodeURIComponent(categoryName)}`,
       )
+      
+      console.log("[getProductDetails] Search response:", response.data)
 
       return response.data.length > 0 ? response.data[0] : null
     } catch (error) {
-      console.error("Failed to get product details:", error)
+      console.error("[getProductDetails] Failed to get product details:", error)
       return null
     }
   },
 
   submitProduct: async (data: ProductSubmissionData): Promise<ProductSubmissionData> => {
   try {
+    console.log("[submitProduct] Starting submission with data:", data)
     const axiosClient = createAxiosClient()
 
-    // now category is ID
+    // Get product details to find the product ID
+    console.log("[submitProduct] Looking for product:", data.productName, "in category:", data.category)
     const existingProduct = await productSubmissionService.getProductDetails(
       data.productName,
       data.category
     )
+    
+    console.log("[submitProduct] Found product:", existingProduct)
 
     if (!existingProduct) {
-      throw new Error("Product not found. Please select from existing products.")
+      throw new Error("Product not found. Please select a valid product from the list.")
     }
 
     const submissionPayload = {
@@ -262,17 +300,23 @@ export const productSubmissionService = {
       cell: data.cell,
       village: data.village,
     }
+    
+    console.log("[submitProduct] Submitting to URL:", `/farmers/submit-product/${existingProduct.id}`)
+    console.log("[submitProduct] Payload:", submissionPayload)
 
     const response = await axiosClient.post(
       `/farmers/submit-product/${existingProduct.id}`,
       submissionPayload,
       { headers: { "Content-Type": "application/json" } }
     )
+    
+    console.log("[submitProduct] Response:", response.data)
 
     return response.data
      } catch (error) {
+      console.error("[submitProduct] Error:", error)
       if (error instanceof Error) {
-        console.error("Error message:", error.message)
+        console.error("[submitProduct] Error message:", error.message)
       }
     throw error
   }

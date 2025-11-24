@@ -191,7 +191,6 @@ const loadVillages = async (province: string, district: string, sector: string, 
   const loadCategories = async () => {
     setLoadingCategories(true)
     try {
-
       const fetchedCategories = await productSubmissionService.fetchActiveCategories()
       setCategories(fetchedCategories)
 
@@ -199,7 +198,6 @@ const loadVillages = async (province: string, district: string, sector: string, 
         toast.warning("No categories available. Please contact support.")
       }
     } catch (error: any) {
-      console.error("[v0] Failed to load categories:", error)
 
       if (error.message.includes("Unable to connect")) {
         toast.error("Cannot connect to server. Please ensure the API server is running.")
@@ -293,14 +291,12 @@ const loadVillages = async (province: string, district: string, sector: string, 
     setIsSubmitting(true)
 
     try {
+      
       const response = await productSubmissionService.submitProduct(formData)
+      
 
-      // Narrow the type of response before accessing its properties
-      if (
-        typeof response === "object" &&
-        response !== null &&
-        ("success" in response || "id" in response)
-      ) {
+      // Check if submission was successful
+      if (response) {
         onSubmit(formData)
         toast.success("Product submitted successfully!")
 
@@ -320,30 +316,32 @@ const loadVillages = async (province: string, district: string, sector: string, 
         setErrors({})
         onClose()
       } else {
-        if (typeof response === "object" && response !== null && "message" in response) {
-          toast.error((response as { message?: string }).message || "Failed to submit product")
-        } else {
-          toast.error("Failed to submit product")
-        }
+        toast.error("Failed to submit product")
       }
     } catch (error: any) {
-      console.error("[v0] Submission error:", error)
+   
 
-      if (error.message.includes("Authentication required")) {
-        toast.error("Please log in again to continue")
-      } else if (error.message.includes("Unable to connect")) {
-        toast.error("Cannot connect to server. Please check your connection.")
-      } else if (error.response?.status === 401) {
-        toast.error("Please log in again to continue")
+      let errorMessage = "Something went wrong. Please try again."
+      
+      if (error.message?.includes("Product not found")) {
+        errorMessage = "Selected product is not available. Please choose a different product."
+      } else if (error.message?.includes("Authentication required") || error.response?.status === 401) {
+        errorMessage = "Please log in again to continue"
+      } else if (error.message?.includes("Unable to connect")) {
+        errorMessage = "Cannot connect to server. Please check your connection."
       } else if (error.response?.status === 403) {
-        toast.error("You don't have permission to submit products")
+        errorMessage = "You don't have permission to submit products"
       } else if (error.response?.status === 409) {
-        toast.error("Product already exists or duplicate submission")
+        errorMessage = "Product already exists or duplicate submission"
       } else if (error.response?.status === 422) {
-        toast.error("Invalid product data. Please check your inputs.")
-      } else {
-        toast.error(error.response?.data?.message || error.message || "Something went wrong. Please try again.")
+        errorMessage = "Invalid product data. Please check your inputs."
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      } else if (error.message) {
+        errorMessage = error.message
       }
+      
+      toast.error(errorMessage)
     } finally {
       setIsSubmitting(false)
     }

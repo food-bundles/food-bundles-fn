@@ -2,8 +2,16 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { Eye, Download, X, Check } from "lucide-react";
-import { useState } from "react";
+import { Eye, Check, MoreHorizontal, Trash2, FileText } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useState, useEffect } from "react";
 import {
   Select,
   SelectContent,
@@ -71,6 +79,12 @@ function StatusDropdown({ currentStatus, orderId, onUpdate }: {
   const [selectedStatus, setSelectedStatus] = useState(currentStatus);
   const [showUpdate, setShowUpdate] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  // Sync with current status when it changes
+  useEffect(() => {
+    setSelectedStatus(currentStatus);
+    setShowUpdate(false);
+  }, [currentStatus]);
 
   const handleStatusChange = (newStatus: string) => {
     setSelectedStatus(newStatus);
@@ -150,6 +164,12 @@ function PaymentStatusDropdown({ currentStatus, orderId, onUpdate }: {
   const [showUpdate, setShowUpdate] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  // Sync with current status when it changes
+  useEffect(() => {
+    setSelectedStatus(currentStatus);
+    setShowUpdate(false);
+  }, [currentStatus]);
+
   const handleStatusChange = (newStatus: string) => {
     setSelectedStatus(newStatus);
     setShowUpdate(newStatus !== currentStatus);
@@ -220,6 +240,7 @@ export const createOrdersColumns = (actions: {
   onView: (order: Order) => void;
   onDownloadPDF: (order: Order) => void;
   onCancel: (order: Order) => void;
+  onDelete: (order: Order) => void;
   onStatusUpdate: (orderId: string, status: string) => void;
   onPaymentStatusUpdate: (orderId: string, paymentStatus: string) => void;
 }): ColumnDef<Order>[] => [
@@ -303,33 +324,34 @@ export const createOrdersColumns = (actions: {
       const order = row.original;
 
       return (
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => actions.onView(order)}
-            className="h-8 w-8 p-0 hover:bg-blue-100"
-          >
-            <Eye className="h-4 w-4 text-blue-600" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => actions.onDownloadPDF(order)}
-            className="h-8 w-8 p-0 hover:bg-green-100"
-          >
-            <Download className="h-4 w-4 text-green-600" />
-          </Button>
-          {order.status !== "CANCELLED" && order.status !== "DELIVERED" && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => actions.onCancel(order)}
-              className="h-8 w-8 p-0 hover:bg-red-100"
-            >
-              <X className="h-4 w-4 text-red-600" />
-            </Button>
-          )}
+        <div className="flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => actions.onView(order)}>
+                <Eye className="mr-2 h-4 w-4" />
+                View Order
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => actions.onDownloadPDF(order)}>
+                <FileText className="mr-2 h-4 w-4" />
+                Print Order
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                className="text-red-600"
+                onClick={() => actions.onDelete(order)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Order
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       );
     },
