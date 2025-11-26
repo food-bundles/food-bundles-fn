@@ -253,7 +253,9 @@ export default function FarmerSubmission({
             <button
               key={filter.key}
               onClick={() =>
-                setActiveTab(filter.key as "unverified" | "verified" | "farmers")
+                setActiveTab(
+                  filter.key as "unverified" | "verified" | "farmers"
+                )
               }
               className={`pb-3 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === filter.key
@@ -274,137 +276,149 @@ export default function FarmerSubmission({
         <>
           <div className="space-y-3 sm:space-y-4">
             {filteredFarmers.map((farmer) => (
-          <div
-            key={farmer.id}
-            className="bg-[#F0FDF4] rounded-lg p-3 sm:p-4 border border-gray-200 relative"
-          >
-            <div
-              className={`${!farmer.isVerified ? "cursor-pointer" : ""}`}
-              onClick={() => !farmer.isVerified && handleCardClick(farmer.id)}
-            >
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                <div className="flex items-start space-x-3 sm:space-x-4 flex-1">
-                  {/* Profile Circle */}
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold text-base sm:text-lg shrink-0">
-                    {farmer.name.charAt(0).toUpperCase()}
-                  </div>
-
-                  {/* Farmer Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="mb-2">
-                      <div className="font-semibold text-gray-900 text-base sm:text-lg wrap-break-word">
-                        {farmer.phone}
+              <div
+                key={farmer.id}
+                className="bg-[#F0FDF4] rounded-lg p-3 sm:p-4 border border-gray-200 relative"
+              >
+                <div
+                  className={`${!farmer.isVerified ? "cursor-pointer" : ""}`}
+                  onClick={() =>
+                    !farmer.isVerified && handleCardClick(farmer.id)
+                  }
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div className="flex items-start space-x-3 sm:space-x-4 flex-1">
+                      {/* Profile Circle */}
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-semibold text-base sm:text-lg shrink-0">
+                        {farmer.name.charAt(0).toUpperCase()}
                       </div>
-                      <div className="text-gray-600 text-sm">
-                        ({farmer.name})
-                      </div>
-                    </div>
 
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mb-2 text-xs sm:text-sm text-gray-600 gap-1 sm:gap-0">
-                      <span>{farmer.date}</span>
-                      <span>{farmer.time}</span>
-                    </div>
-
-                    <div className="mb-2">
-                      <div className="font-medium text-gray-700 text-sm wrap-break-word">
-                        {farmer.product}: {farmer.quantity}
-                      </div>
-                      <div className="text-gray-700 text-sm">
-                        wish price:{" "}
-                        <span className="font-medium">{farmer.wishPrice}</span>
-                      </div>
-                    </div>
-
-                    <div className="mb-2">
-                      <span className="text-xs sm:text-sm text-gray-600">Location:</span>
-                      <div className="text-xs sm:text-sm text-gray-600 wrap-break-word">
-                        {farmer.location}
-                      </div>
-                    </div>
-
-                    {/* Accepted Details (for verified farmers) */}
-                    {farmer.isVerified &&
-                      farmer.acceptedQuantity &&
-                      farmer.acceptedPrice && (
-                        <div className="mt-3 text-sm text-gray-600">
-                          You accepted Quantity:{" "}
-                          <span className="font-medium">
-                            {farmer.acceptedQuantity}
-                          </span>
-                          <span className="mx-2">
-                            with price:{" "}
-                            <span className="font-medium">
-                              {farmer.acceptedPrice}
-                            </span>
-                          </span>
-                          {farmer.acceptedAt && (
-                            <div>Accepted At: {farmer.acceptedAt}</div>
-                          )}
+                      {/* Farmer Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="mb-2">
+                          <div className="font-semibold text-gray-900 text-base sm:text-lg wrap-break-word">
+                            {farmer.phone}
+                          </div>
+                          <div className="text-gray-600 text-sm">
+                            ({farmer.name})
+                          </div>
                         </div>
-                      )}
-                  </div>
-                </div>
 
-                {/* Right Side - Time */}
-                <div className="text-xs sm:text-sm text-green-600 font-medium self-start">
-                  {farmer.timeAgo}
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 mb-2 text-xs sm:text-sm text-gray-600 gap-1 sm:gap-0">
+                          <span>{farmer.date}</span>
+                          <span>{farmer.time}</span>
+                        </div>
+
+                        <div className="mb-2">
+                          <div className="font-medium text-gray-700 text-sm wrap-break-word">
+                            {farmer.product}: {farmer.quantity}
+                          </div>
+                          <div className="text-gray-700 text-sm">
+                            wish price:{" "}
+                            <span className="font-medium">
+                              {farmer.wishPrice}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="mb-2">
+                          <span className="text-xs sm:text-sm text-gray-600">
+                            Location:
+                          </span>
+                          <div className="text-xs sm:text-sm text-gray-600 wrap-break-word">
+                            {farmer.location}
+                          </div>
+                        </div>
+
+                        {/* Accepted Details (for verified farmers) */}
+                        {farmer.isVerified &&
+                          farmer.acceptedQuantity &&
+                          farmer.acceptedPrice && (
+                            <div className="mt-3 text-sm text-gray-600">
+                              You accepted Quantity:{" "}
+                              <span className="font-bold text-green-600">
+                                {farmer.acceptedQuantity}
+                              </span>
+                              <span className="mx-2">
+                                with price:{" "}
+                                <span className="font-bold text-green-600">
+                                  {farmer.acceptedPrice}
+                                </span>
+                              </span>
+                              {farmer.acceptedAt && (
+                                <div>Accepted At: {farmer.acceptedAt}</div>
+                              )}
+                            </div>
+                          )}
+                      </div>
+                    </div>
+
+                    {/* Right Side - Time */}
+                    <div className="text-xs sm:text-sm text-green-600 font-medium self-start">
+                      {farmer.timeAgo}
+                    </div>
+                  </div>
+
+                  {/* Expanded Section for Unverified Farmers */}
+                  {!farmer.isVerified && expandedCards.has(farmer.id) && (
+                    <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-3 sm:gap-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs sm:text-sm text-gray-600 min-w-0">
+                            Quantity:
+                          </span>
+                          <input
+                            type="number"
+                            className="w-16 sm:w-20 px-2 py-1 border border-gray-300 rounded text-xs sm:text-sm"
+                            placeholder="kg"
+                            value={acceptedQuantities[farmer.id] || ""}
+                            onChange={(e) =>
+                              setAcceptedQuantities((prev) => ({
+                                ...prev,
+                                [farmer.id]: e.target.value,
+                              }))
+                            }
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs sm:text-sm text-gray-600">
+                            Price:
+                          </span>
+                          <input
+                            type="number"
+                            className="w-16 sm:w-20 px-2 py-1 border border-gray-300 rounded text-xs sm:text-sm"
+                            placeholder="Rwf"
+                            value={acceptedPrices[farmer.id] || ""}
+                            onChange={(e) =>
+                              setAcceptedPrices((prev) => ({
+                                ...prev,
+                                [farmer.id]: e.target.value,
+                              }))
+                            }
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <span className="text-xs sm:text-sm text-gray-600">
+                            Rwf
+                          </span>
+                        </div>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleVerify(farmer.id);
+                          }}
+                          disabled={loading}
+                          className="px-3 sm:px-4 py-1.5 sm:py-1 bg-green-500 text-white text-xs sm:text-sm rounded hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+                        >
+                          {loading ? "Verifying..." : "Verify"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-
-              {/* Expanded Section for Unverified Farmers */}
-              {!farmer.isVerified && expandedCards.has(farmer.id) && (
-                <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center gap-3 sm:gap-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs sm:text-sm text-gray-600 min-w-0">Quantity:</span>
-                      <input
-                        type="number"
-                        className="w-16 sm:w-20 px-2 py-1 border border-gray-300 rounded text-xs sm:text-sm"
-                        placeholder="kg"
-                        value={acceptedQuantities[farmer.id] || ""}
-                        onChange={(e) =>
-                          setAcceptedQuantities((prev) => ({
-                            ...prev,
-                            [farmer.id]: e.target.value,
-                          }))
-                        }
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs sm:text-sm text-gray-600">Price:</span>
-                      <input
-                        type="number"
-                        className="w-16 sm:w-20 px-2 py-1 border border-gray-300 rounded text-xs sm:text-sm"
-                        placeholder="Rwf"
-                        value={acceptedPrices[farmer.id] || ""}
-                        onChange={(e) =>
-                          setAcceptedPrices((prev) => ({
-                            ...prev,
-                            [farmer.id]: e.target.value,
-                          }))
-                        }
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      <span className="text-xs sm:text-sm text-gray-600">Rwf</span>
-                    </div>
-
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleVerify(farmer.id);
-                      }}
-                      disabled={loading}
-                      className="px-3 sm:px-4 py-1.5 sm:py-1 bg-green-500 text-white text-xs sm:text-sm rounded hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
-                    >
-                      {loading ? "Verifying..." : "Verify"}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
             ))}
           </div>
 

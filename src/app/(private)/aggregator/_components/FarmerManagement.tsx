@@ -13,7 +13,7 @@ import { CreateFarmerModal } from "./create-farmer-modal";
 import { farmersService } from "@/app/services/farmersService";
 
 export default function FarmerManagement() {
-  const { farmers, error, getAllFarmers, updateFarmer, deleteFarmer, clearError } = useFarmers();
+  const { farmers, error, getAllFarmers, updateFarmer, clearError } = useFarmers();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateRange, setDateRange] = useState<Date | undefined>(undefined);
@@ -64,9 +64,7 @@ export default function FarmerManagement() {
     });
   }, []);
 
-  const handleExport = () => {
-    console.log("Exporting farmers data...");
-  };
+
 
   const handleModalClose = () => {
     setIsModalOpen(false);
@@ -110,12 +108,9 @@ export default function FarmerManagement() {
   return (
     <div className="p-6">
       <DataTable
-        // dont show columns 
         columns={farmerColumns}
         data={filteredData}
         title="Farmers Management"
-        showExport={true}
-        onExport={handleExport}
         showAddButton={true}
         addButtonLabel="Add Farmer"
         onAddButton={() => setIsCreateOpen(true)}
@@ -132,7 +127,6 @@ export default function FarmerManagement() {
         onOpenChange={handleModalClose}
         onUpdate={handleUpdate}
         onEdit={updateFarmer}
-        onDelete={deleteFarmer}
       />
       
       <CreateFarmerModal

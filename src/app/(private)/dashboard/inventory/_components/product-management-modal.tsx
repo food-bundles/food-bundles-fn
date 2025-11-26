@@ -133,10 +133,9 @@ export function ProductManagementModal({
         }
       });
 
-      // Add images to keep
-      imagesToKeep.forEach((imageUrl) => {
-        formData.append("keepImages", imageUrl);
-      });
+      if (imagesToKeep.length > 0) {
+        formData.append("images", JSON.stringify(imagesToKeep));
+      }
 
       // Add new image files
       imageFiles.forEach((file) => {
