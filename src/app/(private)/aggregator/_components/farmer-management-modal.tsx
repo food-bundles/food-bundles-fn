@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { PencilIcon, Trash2Icon } from "lucide-react";
+import { PencilIcon } from "lucide-react";
 import { toast } from "sonner";
 import type { Farmer } from "@/app/contexts/FarmersContext";
 
@@ -24,7 +24,6 @@ interface FarmerManagementModalProps {
   onOpenChange: (open: boolean) => void;
   onUpdate: () => void;
   onEdit: (farmerId: string, data: any) => Promise<void>;
-  onDelete: (farmerId: string) => Promise<void>;
 }
 
 export function FarmerManagementModal({
@@ -33,12 +32,11 @@ export function FarmerManagementModal({
   onOpenChange,
   onUpdate,
   onEdit,
-  onDelete,
 }: FarmerManagementModalProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [submissionPage, setSubmissionPage] = useState(1);
+  const submissionsPerPage = 5;
 
   // Edit form state
   const [editData, setEditData] = useState({
@@ -101,32 +99,12 @@ export function FarmerManagementModal({
     }
   };
 
-  const handleDelete = async () => {
-    if (!farmer) return;
-    
-    setIsLoading(true);
-    try {
-      await onDelete(farmer.id);
-      toast.success("Farmer deleted successfully");
-      setIsDeleting(false);
-      setDeleteConfirmText("");
-      onOpenChange(false);
-      onUpdate();
-    } catch (error: any) {
-      console.error("Failed to delete farmer:", error);
-      toast.error(error.message || "Failed to delete farmer");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCancelDelete = () => {
-    setIsDeleting(false);
-    setDeleteConfirmText("");
-  };
-
-  const farmerName = farmer ? `${farmer.province} - ${farmer.district}` : "";
-  const isDeleteConfirmValid = deleteConfirmText.trim().toLowerCase() === farmerName.trim().toLowerCase();
+  // Pagination for submissions
+  const submissions = farmer?.submissions || [];
+  const totalSubmissions = submissions.length;
+  const totalPages = Math.ceil(totalSubmissions / submissionsPerPage);
+  const startIndex = (submissionPage - 1) * submissionsPerPage;
+  const paginatedSubmissions = submissions.slice(startIndex, startIndex + submissionsPerPage);
 
   if (!farmer) return null;
 
@@ -138,9 +116,7 @@ export function FarmerManagementModal({
             Farmer Management
           </DialogTitle>
           <DialogDescription className="text-gray-600">
-            {isDeleting
-              ? "Confirm deletion of this farmer"
-              : "View and manage farmer details"}
+            View and manage farmer details and submissions
           </DialogDescription>
         </DialogHeader>
 
@@ -227,40 +203,7 @@ export function FarmerManagementModal({
                 />
               </div>
             </div>
-          ) : isDeleting ? (
-            <div className="py-4 space-y-4">
-              <div className="flex justify-center">
-                <div className="h-20 w-20 rounded-full bg-red-600/10 flex items-center justify-center">
-                  <Trash2Icon className="h-10 w-10 text-red-600" />
-                </div>
-              </div>
 
-              <div className="space-y-4">
-                <div className="text-center space-y-2">
-                  <h3 className="text-lg font-semibold text-gray-900">Delete Farmer</h3>
-                  <p className="text-sm text-gray-600">
-                    This action cannot be undone. To confirm deletion, please type{" "}
-                    <span className="font-semibold text-gray-900">{farmerName}</span> below:
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="deleteConfirm" className="text-gray-900">
-                    Type{" "}
-                    <span className="font-semibold text-red-500">{farmerName}</span>{" "}
-                    to confirm
-                  </Label>
-                  <Input
-                    id="deleteConfirm"
-                    placeholder="Type farmer location"
-                    value={deleteConfirmText}
-                    onChange={(e) => setDeleteConfirmText(e.target.value)}
-                    disabled={isLoading}
-                    className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400"
-                  />
-                </div>
-              </div>
-            </div>
           ) : (
             <div className="py-4 space-y-4">
               <div className="space-y-3">
@@ -305,8 +248,8 @@ export function FarmerManagementModal({
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="text-sm font-medium text-gray-600">Submissions:</div>
-                  <div className="text-sm col-span-2 text-gray-900">{farmer.submissions.length} submissions</div>
+                  <div className="text-sm font-medium text-gray-600">Total Submissions:</div>
+                  <div className="text-sm col-span-2 text-gray-900">{totalSubmissions} submissions</div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="text-sm font-medium text-gray-600">Joined:</div>
@@ -315,6 +258,66 @@ export function FarmerManagementModal({
                   </div>
                 </div>
               </div>
+              
+              {/* Submissions Section */}
+              {totalSubmissions > 0 && (
+                <div className="mt-6 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium text-gray-900">Recent Submissions</h4>
+                    <span className="text-xs text-gray-500">
+                      {startIndex + 1}-{Math.min(startIndex + submissionsPerPage, totalSubmissions)} of {totalSubmissions}
+                    </span>
+                  </div>
+                  
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {paginatedSubmissions.map((submission: any) => (
+                      <div key={submission.id} className="p-3 bg-gray-50 rounded-lg border">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">{submission.productName}</p>
+                            <p className="text-xs text-gray-600">Quantity: {submission.submittedQty} kg</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-gray-500">
+                              {new Date(submission.submittedAt).toLocaleDateString()}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {new Date(submission.submittedAt).toLocaleTimeString()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between pt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSubmissionPage(prev => Math.max(1, prev - 1))}
+                        disabled={submissionPage === 1}
+                        className="text-xs"
+                      >
+                        Previous
+                      </Button>
+                      <span className="text-xs text-gray-500">
+                        Page {submissionPage} of {totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSubmissionPage(prev => Math.min(totalPages, prev + 1))}
+                        disabled={submissionPage === totalPages}
+                        className="text-xs"
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -340,44 +343,15 @@ export function FarmerManagementModal({
                 {isLoading ? "Saving..." : "Save Changes"}
               </Button>
             </>
-          ) : isDeleting ? (
-            <>
-              <Button
-                variant="outline"
-                onClick={handleCancelDelete}
-                disabled={isLoading}
-                className="bg-white border-gray-300 text-gray-900 hover:bg-gray-50"
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleDelete}
-                disabled={isLoading || !isDeleteConfirmValid}
-                className="bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? "Deleting..." : "I Understand"}
-              </Button>
-            </>
           ) : (
-            <>
-              <Button
-                variant="outline"
-                onClick={handleEdit}
-                className="flex items-center gap-1 bg-white border-gray-300 text-gray-900 hover:bg-gray-50"
-              >
-                <PencilIcon className="h-4 w-4" />
-                Edit
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => setIsDeleting(true)}
-                className="flex items-center gap-1"
-              >
-                <Trash2Icon className="h-4 w-4" />
-                Delete
-              </Button>
-            </>
+            <Button
+              variant="outline"
+              onClick={handleEdit}
+              className="flex items-center gap-1 bg-white border-gray-300 text-gray-900 hover:bg-gray-50"
+            >
+              <PencilIcon className="h-4 w-4" />
+              Edit
+            </Button>
           )}
         </DialogFooter>
       </DialogContent>

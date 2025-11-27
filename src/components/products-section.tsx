@@ -68,9 +68,9 @@ const ProductCard = memo(function ProductCard({
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    if (value === "" || /^\d+$/.test(value)) {
+    if (value === "" || /^\d*\.?\d*$/.test(value)) {
       setInputValue(value);
-      const numValue = Number.parseInt(value) || 1;
+      const numValue = Number.parseFloat(value) || 1;
       if (numValue > 0) {
         setQuantity(numValue);
       }
@@ -78,8 +78,8 @@ const ProductCard = memo(function ProductCard({
   };
 
   const handleQuantityBlur = () => {
-    const numValue = Number.parseInt(inputValue) || 1;
-    const finalValue = Math.max(1, numValue);
+    const numValue = Number.parseFloat(inputValue) || 1;
+    const finalValue = Math.max(0.1, numValue);
     setQuantity(finalValue);
     setInputValue(finalValue.toString());
   };
@@ -205,7 +205,7 @@ const ProductCard = memo(function ProductCard({
                   onClick={() => {
                     const newValue = Math.max(
                       1,
-                      (Number.parseInt(inputValue) || 1) - 1
+                      (Number.parseFloat(inputValue) || 1) - 1
                     );
                     setInputValue(newValue.toString());
                     setQuantity(newValue);
@@ -221,7 +221,8 @@ const ProductCard = memo(function ProductCard({
                   value={inputValue}
                   onChange={handleQuantityChange}
                   onBlur={handleQuantityBlur}
-                  min={1}
+                  step="0.01"
+                  min="0.1"
                   disabled={isAddingToCart}
                   className="w-12 text-center text-sm font-semibold focus:outline-non disabled:bg-gray-100
         [&::-webkit-outer-spin-button]:appearance-none 
@@ -232,7 +233,7 @@ const ProductCard = memo(function ProductCard({
                 <button
                   type="button"
                   onClick={() => {
-                    const newValue = (Number.parseInt(inputValue) || 0) + 1;
+                    const newValue = (Number.parseFloat(inputValue) || 0) + 1;
                     setInputValue(newValue.toString());
                     setQuantity(newValue);
                   }}
