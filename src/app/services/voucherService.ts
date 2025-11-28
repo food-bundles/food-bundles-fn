@@ -83,9 +83,9 @@ export const voucherService = {
     return response.data;
   },
 
-  updateVoucher: async (id: string, updateData: Partial<IVoucherData>) => {
+  updateVoucher: async (id: string, updateData: { status?: string; voucherType?: string; discountPercentage?: number; creditLimit?: number }) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.put(`/vouchers/${id}`, updateData);
+    const response = await axiosClient.patch(`/vouchers/${id}`, updateData);
     return response.data;
   },
 
@@ -141,6 +141,12 @@ export const voucherService = {
   rejectLoan: async (id: string, reason?: string) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.patch(`/vouchers/loans/${id}/reject`, { reason });
+    return response.data;
+  },
+
+  deleteLoanApplication: async (id: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.delete(`/vouchers/loans/${id}`);
     return response.data;
   },
 

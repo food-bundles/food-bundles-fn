@@ -30,6 +30,9 @@ interface VoucherContextType {
   approveLoan: (loanId: string, approvalData: any) => Promise<any>;
   rejectLoan: (loanId: string, reason: string) => Promise<any>;
   disburseLoan: (loanId: string) => Promise<any>;
+  deleteLoanApplication: (loanId: string) => Promise<any>;
+  updateVoucher: (voucherId: string, updateData: any) => Promise<any>;
+  deactivateVoucher: (voucherId: string, reason?: string) => Promise<any>;
 
   // Utility Methods
   clearError: () => void;
@@ -198,6 +201,54 @@ export function VoucherProvider({ children }: VoucherProviderProps) {
     }
   }, [getAllLoanApplications]);
 
+  const deleteLoanApplication = useCallback(async (loanId: string) => {
+    try {
+      setLoading(true);
+      const response = await voucherService.deleteLoanApplication(loanId);
+      if (response.success) {
+        await getAllLoanApplications();
+      }
+      return response;
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to delete loan application");
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [getAllLoanApplications]);
+
+  const updateVoucher = useCallback(async (voucherId: string, updateData: any) => {
+    try {
+      setLoading(true);
+      const response = await voucherService.updateVoucher(voucherId, updateData);
+      if (response.success) {
+        await getAllVouchers();
+      }
+      return response;
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to update voucher");
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [getAllVouchers]);
+
+  const deactivateVoucher = useCallback(async (voucherId: string, reason?: string) => {
+    try {
+      setLoading(true);
+      const response = await voucherService.deactivateVoucher(voucherId, reason);
+      if (response.success) {
+        await getAllVouchers();
+      }
+      return response;
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to deactivate voucher");
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [getAllVouchers]);
+
   const contextValue: VoucherContextType = {
     // State
     myVouchers,
@@ -222,6 +273,9 @@ export function VoucherProvider({ children }: VoucherProviderProps) {
     approveLoan,
     rejectLoan,
     disburseLoan,
+    deleteLoanApplication,
+    updateVoucher,
+    deactivateVoucher,
 
     // Utility Methods
     clearError,

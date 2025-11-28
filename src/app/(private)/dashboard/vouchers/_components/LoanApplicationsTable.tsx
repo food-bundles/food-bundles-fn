@@ -20,6 +20,16 @@ import { ILoanApplication, LoanStatus } from "@/lib/types";
 import ApproveLoanModal from "./ApproveLoanModal";
 import RejectLoanModal from "./RejectLoanModal";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function LoanApplicationsTable() {
   const {
@@ -28,10 +38,13 @@ export default function LoanApplicationsTable() {
     approveLoan,
     rejectLoan,
     disburseLoan,
+    deleteLoanApplication,
   } = useVouchers();
   const [selectedApp, setSelectedApp] = useState<ILoanApplication | null>(null);
   const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
 
   useEffect(() => {
@@ -61,6 +74,22 @@ export default function LoanApplicationsTable() {
     } catch (error) {
       toast.error("Failed to reject loan application");
       console.error("Failed to reject loan:", error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedApp) return;
+    try {
+      await deleteLoanApplication(selectedApp.id);
+      toast.success("Loan application deleted successfully!");
+      await getAllLoanApplications();
+      setIsDeleteModalOpen(false);
+      setSelectedApp(null);
+      setDeleteConfirmText("");
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Failed to delete loan application";
+      toast.error(errorMessage);
+      console.error("Failed to delete loan:", error);
     }
   };
 
@@ -161,7 +190,13 @@ export default function LoanApplicationsTable() {
                 Reject
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600">
+              <DropdownMenuItem 
+                className="text-red-600"
+                onClick={() => {
+                  setSelectedApp(app);
+                  setIsDeleteModalOpen(true);
+                }}
+              >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete
               </DropdownMenuItem>
@@ -201,6 +236,74 @@ export default function LoanApplicationsTable() {
         onReject={handleReject}
       />
 
+      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+        <DialogContent className="sm:max-w-[425px] bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900">
+              Delete Loan Application
+            </DialogTitle>
+            <DialogDescription className="text-gray-600">
+              This action cannot be undone. To confirm deletion, please type the{" "}
+              <span className="font-semibold text-gray-900">
+                restaurant name
+              </span>{" "}
+              below:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex justify-center">
+              <div className="h-16 w-16 rounded-full bg-red-600/10 flex items-center justify-center">
+                <Trash2 className="h-8 w-8 text-red-600" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="deleteConfirm" className="text-gray-900">
+                <div className="flex items-center flex-wrap gap-1">
+                  <span>Type restaurant name</span>
+                  <span className="font-semibold text-red-500">
+                    {(selectedApp as any)?.restaurant?.name ||
+                      selectedApp?.restaurantName ||
+                      "N/A"}
+                  </span>
+                  <span>to confirm</span>
+                </div>
+              </Label>
+
+              <Input
+                id="deleteConfirm"
+                placeholder="Type restaurant name"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                className="bg-white border-gray-300 text-gray-900"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsDeleteModalOpen(false);
+                setDeleteConfirmText("");
+                setSelectedApp(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={
+                deleteConfirmText !==
+                ((selectedApp as any)?.restaurant?.name ||
+                  selectedApp?.restaurantName ||
+                  "N/A")
+              }
+            >
+              Delete Application
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
