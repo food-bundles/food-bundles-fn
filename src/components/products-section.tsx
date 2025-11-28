@@ -32,14 +32,12 @@ import Link from "next/link";
 interface ProductCardProps {
   id: string;
   name: string;
-  price: number;
-  originalPrice?: number;
+  price: number;           // Final price to show (discounted or regular)
+  originalPrice?: number;  // For strikethrough
   image: string;
   rating: number;
-  category?: string;
   discountPercent?: number;
   unit?: string;
-  productData?: any;
 }
 
 const ProductCard = memo(function ProductCard({
@@ -57,13 +55,11 @@ const ProductCard = memo(function ProductCard({
   const [quantity, setQuantity] = useState(1);
   const [inputValue, setInputValue] = useState("1");
   const [isWishlisted, setIsWishlisted] = useState(false);
+
   const { addToCart, cartItems, updateCartItem } = useCart();
-
-
   const cartItem = cartItems.find((item) => item.productId === id);
   const isInCart = !!cartItem;
   const cartQuantity = cartItem?.quantity || 0;
-
   const isUpdateDisabled = isInCart && quantity === cartQuantity;
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,69 +84,55 @@ const ProductCard = memo(function ProductCard({
     setIsAddingToCart(true);
     try {
       if (isInCart && cartItem) {
-        const success = await updateCartItem(cartItem.id, quantity);
-        if (success) {
-          console.log("Cart updated successfully");
-        }
+        await updateCartItem(cartItem.id, quantity);
       } else {
-        const success = await addToCart(id, quantity);
-        if (success) {
-          console.log("Product added to cart successfully");
-        }
+        await addToCart(id, quantity);
       }
     } catch (error) {
-      console.error("Error with cart action:", error);
+      console.error("Cart error:", error);
     } finally {
       setIsAddingToCart(false);
     }
   }, [isInCart, cartItem, quantity, addToCart, updateCartItem, id]);
 
-  const handleWishlist = useCallback(() => {
+  const handleWishlist = () => {
     setIsWishlisted(true);
     setTimeout(() => setIsWishlisted(false), 2000);
-  }, []);
+  };
 
   const renderStars = (rating: number) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    for (let i = 0; i < 5; i++) {
-      if (i < fullStars) {
-        stars.push(
-          <Star key={i} className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-        );
-      } else {
-        stars.push(<Star key={i} className="w-3 h-3 text-gray-300" />);
-      }
-    }
-    return stars;
+    return Array.from({ length: 5 }, (_, i) => (
+      <Star
+        key={i}
+        className={`w-3 h-3 ${i < Math.floor(rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+      />
+    ));
   };
 
   return (
     <div
-      className={
-        "w-full bg-white transition-all duration-300 max-w-[200px] sm:max-w-[220px]"
-      }
+      className="w-full bg-white transition-all duration-300 max-w-[200px] sm:max-w-[220px]"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <Card className="border border-gray-200 shadow hover:shadow-lg rounded-md hover:rounded hover:border-green-500 overflow-hidden transition-all duration-300 p-0 pb-2 h-full">
-        <div className="relative w-full  flex items-center justify-center group overflow-hidden h-40 sm:h-[180px] ">
+        <div className="relative w-full flex items-center justify-center group overflow-hidden h-40 sm:h-[180px]">
           <OptimizedImage
             src={image || "/placeholder.svg"}
             alt={name}
             width={200}
             height={200}
             className="object-contain w-full max-h-full transition-transform duration-300 group-hover:scale-105"
-            transformation={[
-              { width: 400, height: 400, crop: "pad", quality: "80" },
-            ]}
+            transformation={[{ width: 400, height: 400, crop: "pad", quality: "80" }]}
           />
-          {discountPercent && (
-            <div className="absolute top-2 left-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">
+
+          {discountPercent ? (
+            <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
               {discountPercent}% OFF
             </div>
-          )}
-          {isInCart  && (
+          ) : null}
+
+          {isInCart && (
             <a href="/restaurant/checkout" className="absolute inset-0">
               <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-lg flex items-center cursor-pointer hover:bg-green-600 transition-colors">
                 <Check className="w-3 h-3 mr-1" /> Buy Now
@@ -163,43 +145,29 @@ const ProductCard = memo(function ProductCard({
               isHovered ? "opacity-100 scale-100" : "opacity-0 scale-95"
             }`}
           >
-            <div className="bg-green-500 flex items-center justify-center shadow-lg px-8 p-1 space-x-6 sm:space-x-8">
-              {/* <button className="text-white hover:text-gray-200 transition-colors font-bold">
-                <Eye className="w-5 h-5 sm:w-6 sm:h-6 cursor-pointer" />
-              </button> */}
-
-              <div className="relative">
-                <button
-                  onClick={handleCartAction}
-                  disabled={isAddingToCart || isUpdateDisabled}
-                  className={`text-white hover:text-gray-200 transition-colors font-bold ${
-                    isAddingToCart || isUpdateDisabled
-                      ? "opacity-50 cursor-not-allowed"
-                      : ""
-                  }`}
-                >
-                  {isAddingToCart ? (
-                    <div className="border-2 border-white border-t-transparent rounded-full animate-spin w-5 h-5 sm:w-6 sm:h-6 " />
-                  ) : (
-                    <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 cursor-pointer" />
-                  )}
-                </button>
-              </div>
-
+            <div className="bg-green-500 flex items-center justify-center shadow-lg px-8 p-1 space-x-6 sm:space-x-8 rounded-full">
               <button
-                onClick={handleWishlist}
-                className="text-white hover:text-gray-200 transition-colors font-bold"
+                onClick={handleCartAction}
+                disabled={isAddingToCart || isUpdateDisabled}
+                className={`text-white hover:text-gray-200 transition-colors font-bold ${
+                  isAddingToCart || isUpdateDisabled ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               >
+                {isAddingToCart ? (
+                  <div className="border-2 border-white border-t-transparent rounded-full animate-spin w-6 h-6" />
+                ) : (
+                  <ShoppingCart className="w-6 h-6" />
+                )}
+              </button>
+              <button onClick={handleWishlist} className="text-white hover:text-gray-200">
                 <Heart
-                  className={`w-5 h-5 sm:w-6 sm:h-6 cursor-pointer transition-all ${
-                    isWishlisted ? "fill-orange-500 text-orange-500 scale-110" : ""
-                  }`}
+                  className={`w-6 h-6 transition-all ${isWishlisted ? "fill-orange-500 text-orange-500 scale-110" : ""}`}
                 />
               </button>
             </div>
 
-            <div className="flex items-center justify-center gap-2 pt-2">
-              <div className="flex items-center border bg-white border-gray-300 rounded-full overflow-hidden">
+            <div className="flex items-center justify-center gap-2 pt-3">
+              <div className="flex items Benin border bg-white border-gray-300 rounded-full overflow-hidden">
                 <button
                   type="button"
                   onClick={() => {
@@ -215,7 +183,6 @@ const ProductCard = memo(function ProductCard({
                 >
                   -
                 </button>
-
                 <input
                   type="number"
                   value={inputValue}
@@ -224,12 +191,8 @@ const ProductCard = memo(function ProductCard({
                   step="0.01"
                   min="0.1"
                   disabled={isAddingToCart}
-                  className="w-12 text-center text-sm font-semibold focus:outline-non disabled:bg-gray-100
-        [&::-webkit-outer-spin-button]:appearance-none 
-        [&::-webkit-inner-spin-button]:appearance-none 
-        [-moz-appearance:textfield]"
+                  className="w-12 text-center text-sm font-semibold focus:outline-none disabled:bg-gray-100 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                 />
-
                 <button
                   type="button"
                   onClick={() => {
@@ -247,25 +210,27 @@ const ProductCard = memo(function ProductCard({
           </div>
         </div>
 
-        <div className="px-3 sm:px-4">
-          <h3 className="font-semibold text-gray-800 leading-tight line-clamp-2 min-h-6 text-sm ">
+        <div className="px-3 sm:px-4 pt-2">
+          <h3 className="font-semibold text-gray-800 leading-tight line-clamp-2 min-h-6 text-sm">
             {name}
           </h3>
-
           <div className="flex items-center gap-2 my-1">
             <div className="flex">{renderStars(rating)}</div>
-            <span className="text-gray-500 text-xs ">
-              ({rating.toFixed(2)})
-            </span>
+            <span className="text-gray-500 text-xs">({rating.toFixed(1)})</span>
           </div>
-
           <div className="flex items-center gap-2">
-            <span className="font-bold text-gray-900 text-base text-[16px] ">
-              {price.toFixed(2)} Rwf{unit && `/${unit}`}
-            </span>
-            {originalPrice && (
-              <span className="text-gray-400 line-through text-[12px] ">
-                {originalPrice.toFixed(2)}Rwf{unit && `/${unit}`}
+            {originalPrice ? (
+              <span className="font-bold text-gray-900 text-base">
+                {price.toLocaleString()} Rwf
+                {unit && <span className="text-sm font-normal text-gray-600">/{unit}</span>}
+                <span className="text-gray-500 line-through text-sm ml-2">
+                  {originalPrice.toLocaleString()} Rwf
+                </span>
+              </span>
+            ) : (
+              <span className="font-bold text-gray-900 text-base">
+                {price.toLocaleString()} Rwf
+                {unit && <span className="text-sm font-normal text-gray-600">/{unit}</span>}
               </span>
             )}
           </div>
@@ -294,6 +259,8 @@ interface Product {
   discountPercent?: number;
   createdAt: string;
   unit?: string;
+  discountedPrice: number | null;
+  bonus: number;
 }
 
 interface Category {
@@ -340,12 +307,13 @@ export function ProductsSection({
 }: ProductsSectionProps) {
   const { selectedCategory, setSelectedCategory } = useProductSection();
   const { user, isAuthenticated } = useAuth();
-    const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [showDiscounted, setShowDiscounted] = useState(false);
   const { totalItems, totalQuantity, totalAmount, isLoading } = useCartSummary();
-  
+
 
   const searchQuery = search?.query || "";
-  const setSearchQuery = search?.onSearch || (() => {});
+  const setSearchQuery = search?.onSearch || (() => { });
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
 
   // Debounce search to avoid API calls on every keystroke
@@ -364,29 +332,40 @@ export function ProductsSection({
     setLocalSearchQuery(searchQuery);
   }, [searchQuery]);
 
-  // Apply client-side sorting with better performance
-  const sortedProducts = useMemo(() => {
-    if (!sorting?.sortBy || sorting.sortBy === "random") return products;
-    
-    return [...products].sort((a, b) => {
-      switch (sorting.sortBy) {
-        case "price_asc":
-          return a.price - b.price;
-        case "price_desc":
-          return b.price - a.price;
-        case "name_asc":
-          return a.name.localeCompare(b.name);
-        case "name_desc":
-          return b.name.localeCompare(a.name);
-        case "newest":
-          return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-        case "rating":
-          return (b.rating || 0) - (a.rating || 0);
-        default:
-          return 0;
-      }
-    });
-  }, [products, sorting?.sortBy]);
+ const filteredAndSortedProducts = useMemo(() => {
+  let filtered = products;
+
+  // Filter discounted products
+  if (showDiscounted) {
+    filtered = products.filter(product => 
+      product.discountedPrice !== null && 
+      product.bonus > 0
+    );
+  }
+
+  // Sorting logic
+  if (!sorting?.sortBy || sorting.sortBy === "random") return filtered;
+
+  return [...filtered].sort((a, b) => {
+    switch (sorting.sortBy) {
+      case "price_asc":
+        return a.price - b.price;
+      case "price_desc":
+        return b.price - a.price;
+      case "name_asc":
+        return a.name.localeCompare(b.name);
+      case "name_desc":
+        return b.name.localeCompare(a.name);
+      case "newest":
+        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+      case "rating":
+        return (b.rating || 0) - (a.rating || 0);
+      default:
+        return 0;
+    }
+  });
+}, [products, showDiscounted, sorting?.sortBy]);
+
 
   // Show all categories (backend handles filtering)
   const categoriesWithAll = [
@@ -523,19 +502,19 @@ export function ProductsSection({
                 <div className="px-4 sm:px-8 pb-4">
                   <div className="flex flex-wrap gap-2">
                     {categoriesWithAll.map((category) => {
-                      const isSelected = selectedCategory === category.name;
+                      const isSelected = selectedCategory === category.name && !showDiscounted;
                       return (
                         <button
                           key={category.name}
                           onClick={() => {
                             setSelectedCategory(category.name);
+                            setShowDiscounted(false);
                             onCategorySelect?.(category.name);
                           }}
-                          className={`px-4 py-[3px] rounded-full text-[13px] font-medium transition-all ${
-                            isSelected
-                              ? "bg-green-600 text-white shadow-md"
-                              : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300"
-                          }`}
+                          className={`px-4 py-[3px] rounded-full text-[13px] font-medium transition-all ${isSelected
+                            ? "bg-green-600 text-white shadow-md"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300"
+                            }`}
                         >
                           {category.name === "All Categories"
                             ? `All`
@@ -543,8 +522,24 @@ export function ProductsSection({
                         </button>
                       );
                     })}
+
+                    <button 
+                      onClick={() => {
+                        setShowDiscounted(!showDiscounted);
+                        setSelectedCategory("All Categories");
+                      }}
+                      className={`px-4 py-[3px] rounded-full text-[13px] font-medium transition-all ${showDiscounted
+                        ? "bg-green-600 text-white shadow-md"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300"
+                        }`}
+                    >
+                      Discounted
+                    </button>
+
                   </div>
+
                 </div>
+
 
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                   {/* Search Input */}
@@ -568,12 +563,12 @@ export function ProductsSection({
                       >
                         <SelectTrigger
                           className="
-          w-40
-          border border-gray-300 
-          focus:ring-2 focus:ring-green-500 focus:border-green-500
-          rounded-lg text-[12px] sm:text-[13px]
-          bg-white
-        "
+                                w-40
+                                border border-gray-300 
+                                focus:ring-2 focus:ring-green-500 focus:border-green-500
+                                rounded-lg text-[12px] sm:text-[13px]
+                                bg-white
+                              "
                         >
                           <SelectValue placeholder="Sort by" />
                         </SelectTrigger>
@@ -598,9 +593,9 @@ export function ProductsSection({
             {/* Products Grid */}
             <div className="px-4 sm:px-6 overflow-y-auto">
               <div className="mb-12">
-                {sortedProducts.length > 0 ? (
+                {filteredAndSortedProducts.length > 0 ? (
                   <div className="grid gap-4 justify-items-center grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-                    {sortedProducts.map((product) => (
+                    {filteredAndSortedProducts.map((product) => (
                       <ProductCard
                         key={product.id}
                         id={product.id}
@@ -625,8 +620,8 @@ export function ProductsSection({
                       {searchQuery
                         ? `No products found matching "${searchQuery}".`
                         : selectedCategory === "All Categories"
-                        ? "There are no products available at the moment."
-                        : `No products found in the "${selectedCategory.replace(
+                          ? "There are no products available at the moment."
+                          : `No products found in the "${selectedCategory.replace(
                             /_/g,
                             " "
                           )}" category.`}
@@ -657,11 +652,10 @@ export function ProductsSection({
                         disabled={
                           pagination.currentPage === 1 || pagination.isLoading
                         }
-                        className={`p-1 rounded ${
-                          pagination.currentPage === 1 || pagination.isLoading
-                            ? "text-gray-400 cursor-not-allowed"
-                            : "text-gray-900 hover:bg-gray-100"
-                        }`}
+                        className={`p-1 rounded ${pagination.currentPage === 1 || pagination.isLoading
+                          ? "text-gray-400 cursor-not-allowed"
+                          : "text-gray-900 hover:bg-gray-100"
+                          }`}
                         title="Previous Page"
                       >
                         <svg
@@ -706,11 +700,10 @@ export function ProductsSection({
                                 pagination.onPageChange(pageNumber)
                               }
                               disabled={pagination.isLoading}
-                              className={`px-3 py-1 rounded text-sm ${
-                                pageNumber === pagination.currentPage
-                                  ? "bg-green-700 hover:bg-green-800 text-white"
-                                  : "bg-white hover:bg-gray-100 text-gray-900 border border-gray-300"
-                              }`}
+                              className={`px-3 py-1 rounded text-sm ${pageNumber === pagination.currentPage
+                                ? "bg-green-700 hover:bg-green-800 text-white"
+                                : "bg-white hover:bg-gray-100 text-gray-900 border border-gray-300"
+                                }`}
                             >
                               {pageNumber}
                             </button>
@@ -727,12 +720,11 @@ export function ProductsSection({
                           pagination.currentPage === pagination.totalPages ||
                           pagination.isLoading
                         }
-                        className={`p-1 rounded ${
-                          pagination.currentPage === pagination.totalPages ||
+                        className={`p-1 rounded ${pagination.currentPage === pagination.totalPages ||
                           pagination.isLoading
-                            ? "text-gray-400 cursor-not-allowed"
-                            : "text-gray-900 hover:bg-gray-100"
-                        }`}
+                          ? "text-gray-400 cursor-not-allowed"
+                          : "text-gray-900 hover:bg-gray-100"
+                          }`}
                         title="Next Page"
                       >
                         <svg
