@@ -3,6 +3,71 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Eye, Check, MoreHorizontal, Trash2, FileText } from "lucide-react";
+
+// Helper function to get payment method colors
+const getPaymentMethodColor = (method: string) => {
+  switch (method.toLowerCase()) {
+    case 'cash':
+      return 'bg-green-100 text-green-700 border-green-200';
+    case 'card':
+    case 'credit_card':
+    case 'debit_card':
+      return 'bg-blue-100 text-blue-700 border-blue-200';
+    case 'mobile_money':
+    case 'momo':
+      return 'bg-green-100 text-green-700 border-green-200';
+    case 'voucher':
+      return 'bg-purple-100 text-purple-700 border-purple-200';
+    case 'bank_transfer':
+      return 'bg-indigo-100 text-indigo-700 border-indigo-200';
+    default:
+      return 'bg-gray-100 text-gray-700 border-gray-200';
+  }
+};
+
+// Helper function to get order status colors
+const getOrderStatusColor = (status: string) => {
+  switch (status) {
+    case 'PENDING':
+      return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+    case 'CONFIRMED':
+      return 'bg-blue-100 text-blue-700 border-blue-200';
+    case 'PREPARING':
+      return 'bg-orange-100 text-orange-700 border-orange-200';
+    case 'READY':
+      return 'bg-purple-100 text-purple-700 border-purple-200';
+    case 'IN_TRANSIT':
+      return 'bg-indigo-100 text-indigo-700 border-indigo-200';
+    case 'DELIVERED':
+      return 'bg-green-100 text-green-700 border-green-200';
+    case 'CANCELLED':
+      return 'bg-red-100 text-red-700 border-red-200';
+    case 'REFUNDED':
+      return 'bg-gray-100 text-gray-700 border-gray-200';
+    default:
+      return 'bg-gray-100 text-gray-700 border-gray-200';
+  }
+};
+
+// Helper function to get payment status colors
+const getPaymentStatusColor = (status: string) => {
+  switch (status) {
+    case 'PENDING':
+      return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+    case 'PROCESSING':
+      return 'bg-blue-100 text-blue-700 border-blue-200';
+    case 'COMPLETED':
+      return 'bg-green-100 text-green-700 border-green-200';
+    case 'FAILED':
+      return 'bg-red-100 text-red-700 border-red-200';
+    case 'CANCELLED':
+      return 'bg-gray-100 text-gray-700 border-gray-200';
+    case 'REFUNDED':
+      return 'bg-orange-100 text-orange-700 border-orange-200';
+    default:
+      return 'bg-gray-100 text-gray-700 border-gray-200';
+  }
+};
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -111,7 +176,7 @@ function StatusDropdown({ currentStatus, orderId, onUpdate }: {
     <>
       <div className="flex items-center gap-2">
         <Select value={selectedStatus} onValueChange={handleStatusChange}>
-          <SelectTrigger className="w-32 h-8">
+          <SelectTrigger className={`w-32 h-4 ${getOrderStatusColor(selectedStatus)}`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -195,7 +260,7 @@ function PaymentStatusDropdown({ currentStatus, orderId, onUpdate }: {
     <>
       <div className="flex items-center gap-2">
         <Select value={selectedStatus} onValueChange={handleStatusChange}>
-          <SelectTrigger className="w-32 h-8">
+          <SelectTrigger className={`w-32 h-4 ${getPaymentStatusColor(selectedStatus)}`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -257,7 +322,9 @@ export const createOrdersColumns = (actions: {
     cell: ({ row }) => (
       <div>
         <div className="font-medium">{row.original.restaurant.name}</div>
-        <div className="text-[12px] text-gray-600">{row.original.restaurant.email}</div>
+        <div className="text-[12px] text-gray-800">
+          {row.original.restaurant.email}
+        </div>
       </div>
     ),
   },
@@ -267,7 +334,9 @@ export const createOrdersColumns = (actions: {
     cell: ({ row }) => (
       <div>
         <div className="font-medium">{row.getValue("billingName")}</div>
-        <div className="text-[12px] text-gray-600">{row.original.billingPhone}</div>
+        <div className="text-[12px] text-gray-800">
+          {row.original.billingPhone}
+        </div>
       </div>
     ),
   },
@@ -277,6 +346,9 @@ export const createOrdersColumns = (actions: {
     cell: ({ row }) => (
       <div className="font-medium">
         RWF {row.getValue<number>("totalAmount").toLocaleString()}
+        <div className={`text-[12px]  lowercase rounded-full border px-2 ${getPaymentMethodColor(row.original.paymentMethod)}`}>
+          {row.original.paymentMethod}
+        </div>
       </div>
     ),
   },
@@ -343,7 +415,7 @@ export const createOrdersColumns = (actions: {
                 Print Order
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="text-red-600"
                 onClick={() => actions.onDelete(order)}
               >

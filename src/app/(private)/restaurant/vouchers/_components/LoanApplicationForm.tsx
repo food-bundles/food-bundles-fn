@@ -25,6 +25,7 @@ export default function LoanApplicationForm({
   const [formData, setFormData] = useState({
     requestedAmount: "",
     purpose: "",
+    customPurpose: "",
     selectedDays: "",
   });
   const [maxVoucherDays, setMaxVoucherDays] = useState(7);
@@ -54,6 +55,7 @@ export default function LoanApplicationForm({
     "Equipment maintenance and repairs",
     "Seasonal menu preparation",
     "Emergency cash flow support",
+    "Other",
   ];
 
   const paymentDays = useMemo(() => {
@@ -68,9 +70,11 @@ export default function LoanApplicationForm({
   const handleSubmit = async () => {
     if (!formData.requestedAmount) return;
 
+    const finalPurpose = formData.purpose === "Other" ? formData.customPurpose : formData.purpose;
+    
     const result = await applyForLoan({
       requestedAmount: parseFloat(formData.requestedAmount),
-      purpose: formData.purpose,
+      purpose: finalPurpose,
       voucherDays: parseInt(formData.selectedDays),
     });
 
@@ -78,6 +82,7 @@ export default function LoanApplicationForm({
       setFormData({
         requestedAmount: "",
         purpose: "",
+        customPurpose: "",
         selectedDays: "",
       });
       onSuccess();
@@ -139,6 +144,26 @@ export default function LoanApplicationForm({
                 </Select>
               </div>
 
+              {formData.purpose === "Other" && (
+                <div>
+                  <label className="block text-[14px] font-medium text-gray-700 mb-2">
+                    Custom Reason *
+                  </label>
+                  <Input
+                    type="text"
+                    value={formData.customPurpose}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        customPurpose: e.target.value,
+                      }))
+                    }
+                    placeholder="Enter your reason"
+                    className="w-full rounded text-sm h-10"
+                  />
+                </div>
+              )}
+
               <div>
                 <label className="block text-[14px] font-medium text-gray-700 mb-2">
                   Days for Payment
@@ -169,9 +194,20 @@ export default function LoanApplicationForm({
                 </Select>
               </div>
 
-              {error==="No active subscription. Subscribe to create new vouchers." && <div className="text-red-600 text-xs">{error}
-              <a href="/restaurant/vouchers/subscribe" className="text-blue-600 hover:underline">Subscribe</a>
-              </div>}
+              {error && (
+                <div className="text-red-600 text-xs">
+                  {error === "No active subscription. Subscribe to create new vouchers." ? (
+                    <>
+                      {error}{" "}
+                      <a href="/restaurant/vouchers/subscribe" className="text-blue-600 hover:underline">
+                        Subscribe
+                      </a>
+                    </>
+                  ) : (
+                    error
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="mt-4">
