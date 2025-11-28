@@ -5,7 +5,7 @@ import { Bell,UserPlus, Home } from "lucide-react";
 import { MdMenuOpen, MdClose } from "react-icons/md";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/app/contexts/auth-context";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,54 +13,9 @@ import { authService } from "@/app/services/authService";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import NotificationsDrawer from "./notificationDrawer";
+import { notificationService } from "@/app/services/notificationService";
 
-const sampleNotifications = [
-  {
-    id: "1",
-    title: "Order Initiated",
-    message: "Your order with id #123-4568 has been initiated successfully",
-    orderId: "#123-4568",
-    timestamp: "12/12/2024 08:30 PM",
-    isRead: false,
-    type: "order_initiated" as const,
-  },
-  {
-    id: "2",
-    title: "Order Completed",
-    message: "Your order with id #123-4568 has been completed successfully",
-    orderId: "#123-4568",
-    timestamp: "12/12/2024 08:30 PM",
-    isRead: true,
-    type: "order_completed" as const,
-  },
-  {
-    id: "3",
-    title: "Payment Received",
-    message: "Payment for order #123-4568 has been received",
-    orderId: "#123-4568",
-    timestamp: "12/12/2024 08:30 PM",
-    isRead: true,
-    type: "payment_received" as const,
-  },
-  {
-    id: "4",
-    title: "Order Cancelled",
-    message: "Your order with id #123-4569 has been cancelled",
-    orderId: "#123-4569",
-    timestamp: "12/12/2024 08:30 PM",
-    isRead: false,
-    type: "order_cancelled" as const,
-  },
-  {
-    id: "5",
-    title: "Order Initiated",
-    message: "Your order with id #123-4570 has been initiated successfully",
-    orderId: "#123-4570",
-    timestamp: "12/12/2024 08:30 PM",
-    isRead: false,
-    type: "order_initiated" as const,
-  },
-];
+
 
 interface RestaurantHeaderProps {
   onMenuClick: () => void;
@@ -69,10 +24,22 @@ interface RestaurantHeaderProps {
 
 export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderProps) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
-  const unreadCount = sampleNotifications.filter((n) => !n.isRead).length;
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const { user, getUserProfileImage } = useAuth();
-    const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const response = await notificationService.getUnreadCount();
+        setUnreadCount(response.data.unreadCount);
+      } catch (error) {
+        console.error('Failed to fetch unread count:', error);
+      }
+    };
+    fetchUnreadCount();
+  }, []);
 
 
     const handleLogout = async () => {
@@ -201,7 +168,6 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
       <NotificationsDrawer
         isOpen={isNotificationsOpen}
         onClose={() => setIsNotificationsOpen(false)}
-        notifications={sampleNotifications}
       />
     </>
   );
