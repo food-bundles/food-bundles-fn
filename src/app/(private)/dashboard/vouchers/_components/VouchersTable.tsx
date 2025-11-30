@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,20 +17,36 @@ import { Eye, Trash2, Edit, CreditCard, MoreHorizontal, Plus } from "lucide-reac
 import { DataTable } from "@/components/data-table";
 import { useVouchers } from "@/app/contexts/VoucherContext";
 import { IVoucher, VoucherStatus, VoucherType } from "@/lib/types";
+import { VoucherManagementModal } from "./VoucherManagementModal";
+import { toast } from "sonner";
 
 interface VouchersTableProps {
   onCreateVoucher?: () => void;
 }
 
 export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
-  const { allVouchers, getAllVouchers } = useVouchers();
+  const { allVouchers, getAllVouchers, updateVoucher, deactivateVoucher } = useVouchers();
+  const [selectedVoucher, setSelectedVoucher] = useState<IVoucher | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     getAllVouchers();
   }, [getAllVouchers]);
 
   const handleDeactivate = async (id: string) => {
-    console.log("Deactivate voucher:", id);
+    try {
+      await deactivateVoucher(id, "Deactivated by admin");
+      toast.success("Voucher deactivated successfully");
+      await getAllVouchers();
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || "Failed to deactivate voucher";
+      toast.error(errorMessage);
+      console.error("Failed to deactivate voucher:", error);
+    }
+  };
+
+  const handleEdit = async (voucherId: string, updateData: any) => {
+    await updateVoucher(voucherId, updateData);
   };
 
   const getStatusBadge = (status: VoucherStatus) => {
@@ -91,11 +108,10 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
     },
     {
       id: "usage",
-      header: "Used/Remaining",
+      header: "Used Credit",
       cell: ({ row }) => (
         <div className="text-sm">
-          <div className="text-orange-600">Ud: {row.original.usedCredit.toLocaleString()} RWF</div>
-          <div className="text-green-600">Rm: {row.original.remainingCredit.toLocaleString()} RWF</div>
+          <div ><span className="font-medium text-green-600">{row.original.usedCredit.toLocaleString()}</span> RWF</div>
         </div>
       )
     },
@@ -129,13 +145,14 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setSelectedVoucher(voucher);
+                    setIsModalOpen(true);
+                  }}
+                >
                   <Eye className="mr-2 h-4 w-4" />
                   View
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
                 </DropdownMenuItem>
                 {voucher.status === VoucherStatus.ACTIVE && (
                   <>
@@ -176,6 +193,13 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
         data={allVouchers}
         showColumnVisibility={true}
         showPagination={true}
+      />
+      <VoucherManagementModal
+        voucher={selectedVoucher}
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        onUpdate={getAllVouchers}
+        onEdit={handleEdit}
       />
     </div>
   );

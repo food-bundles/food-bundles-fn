@@ -145,9 +145,9 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   + 5,000 Rwf delivery fee (orders under 100,000 Rwf)
                 </div>
               )}
-              <a href="restaurant/checkout">
+              <a href="/restaurant/checkout">
                 <Button className="w-full sm:py-2 py-1 text-sm sm:text-xs bg-green-600 hover:bg-green-700 rounded-none">
-                  Buy Now
+                  Buy Now 
                 </Button>
               </a>
             </div>

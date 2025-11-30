@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { Bell,UserPlus, Home } from "lucide-react";
+import { Bell,UserPlus, Home, ShoppingCart } from "lucide-react";
 import { MdMenuOpen, MdClose } from "react-icons/md";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -13,6 +13,8 @@ import { authService } from "@/app/services/authService";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import NotificationsDrawer from "./notificationDrawer";
+import CartDrawer from "@/components/cartDrawer";
+import { useCartSummary } from "@/app/contexts/cart-context";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -76,9 +78,11 @@ interface RestaurantHeaderProps {
 
 export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderProps) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
    const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const unreadCount = sampleNotifications.filter((n) => !n.isRead).length;
   const { user, getUserProfileImage } = useAuth();
+  const { totalItems } = useCartSummary();
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
 
@@ -122,6 +126,18 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
 
           {/* Right side */}
           <div className="flex items-center gap-2 sm:gap-4">
+            {/* Cart Icon */}
+            <button
+              className="relative cursor-pointer text-primary-foreground hover:text-primary-foreground h-8 w-8 sm:h-10 sm:w-10"
+              onClick={() => setIsCartOpen(true)}
+            >
+              <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
+              {totalItems > 0 && (
+                <Badge className="absolute top-0 right-2 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 flex items-center justify-center bg-green-500 text-white text-xs">
+                  {totalItems > 99 ? "99+" : totalItems}
+                </Badge>
+              )}
+            </button>
             {/* I will need this Notifications please don't remove this commented button */}
             {/* <button
               className="relative cursor-pointer text-primary-foreground hover:text-primary-foreground h-8 w-8 sm:h-10 sm:w-10"
@@ -206,6 +222,10 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
         isOpen={isNotificationsOpen}
         onClose={() => setIsNotificationsOpen(false)}
         notifications={sampleNotifications}
+      />
+      <CartDrawer
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
       />
     </>
   );
