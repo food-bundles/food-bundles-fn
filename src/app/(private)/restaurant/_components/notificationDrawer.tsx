@@ -5,36 +5,43 @@ import { X, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-type Notification = {
-  id: string;
-  title: string;
-  message: string;
-  orderId: string;
-  timestamp: string;
-  isRead: boolean;
-  type:
-    | "order_initiated"
-    | "order_completed"
-    | "order_cancelled"
-    | "payment_received";
-};
+import { notificationService, Notification } from "@/app/services/notificationService";
+import { formatDistanceToNow } from "date-fns";
+import { Spinner } from "@/components/ui/shadcn-io/spinner";
 
 interface NotificationsDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  notifications: Notification[];
 }
 
 export default function NotificationsDrawer({
   isOpen,
   onClose,
-  notifications: initialNotifications,
 }: NotificationsDrawerProps) {
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(false);
   const [activeFilter, setActiveFilter] = useState<"all" | "read" | "unread">(
     "all"
   );
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchNotifications();
+    }
+  }, [isOpen]);
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const response = await notificationService.getNotifications(1, 20);
+      console.log("Fetched notifications:", response.data);
+      setNotifications(response.data);
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Handle escape key
   useEffect(() => {
@@ -56,36 +63,41 @@ export default function NotificationsDrawer({
     return true;
   });
 
-  const handleMarkAllRead = () => {
-    setNotifications((prev) =>
-      prev.map((notification) => ({ ...notification, isRead: true }))
-    );
+  const handleMarkAllRead = async () => {
+    try {
+      await notificationService.markAllAsRead();
+      setNotifications((prev) =>
+        prev.map((notification) => ({ ...notification, isRead: true }))
+      );
+    } catch (error) {
+      console.error('Failed to mark all as read:', error);
+    }
   };
 
-  const handleMarkAsUnread = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((notification) =>
-        notification.id === id
-          ? { ...notification, isRead: false }
-          : notification
-      )
-    );
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      await notificationService.markAsRead(id);
+      setNotifications((prev) =>
+        prev.map((notification) =>
+          notification.id === id
+            ? { ...notification, isRead: true }
+            : notification
+        )
+      );
+    } catch (error) {
+      console.error('Failed to mark as read:', error);
+    }
   };
 
-  const handleMarkAsRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((notification) =>
-        notification.id === id
-          ? { ...notification, isRead: true }
-          : notification
-      )
-    );
-  }
-
-  const handleDelete = (id: string) => {
-    setNotifications((prev) =>
-      prev.filter((notification) => notification.id !== id)
-    );
+  const handleDelete = async (id: string) => {
+    try {
+      await notificationService.deleteNotification(id);
+      setNotifications((prev) =>
+        prev.filter((notification) => notification.id !== id)
+      );
+    } catch (error) {
+      console.error('Failed to delete notification:', error);
+    }
   };
 
   const getNotificationBg = (notification: Notification) => {
@@ -95,21 +107,27 @@ export default function NotificationsDrawer({
     return "bg-green-50 border-green-200";
   };
 
+  const getEventTypeColor = (eventType: string) => {
+    switch (eventType) {
+      case 'VOUCHER_ISSUED': return 'bg-green-200 text-green-800';
+      case 'NEW_ORDER_PLACED': return 'bg-blue-200 text-blue-800';
+      case 'ORDER_COMPLETED': return 'bg-purple-200 text-purple-800';
+      default: return 'bg-gray-200 text-gray-800';
+    }
+  };
+
   const getStatusBadge = (notification: Notification) => {
     if (!notification.isRead) {
       return (
         <span className="px-3 py-1 bg-yellow-200 text-yellow-800 text-xs font-medium rounded-full">
-          New order
+          New
         </span>
       );
     }
     return (
-      <button
-        onClick={() => handleMarkAsUnread(notification.id)}
-        className="px-3 py-1 bg-green-200 text-green-800 text-xs font-medium rounded-full hover:bg-green-300 transition-colors"
-      >
-        Mark as unread
-      </button>
+      <span className="px-3 py-1 bg-gray-200 text-gray-600 text-xs font-medium rounded-full">
+        Read
+      </span>
     );
   };
 
@@ -187,7 +205,11 @@ export default function NotificationsDrawer({
 
           {/* Notifications list */}
           <div className="space-y-4">
-            {filteredNotifications.length === 0 ? (
+            {loading ? (
+             <div className="flex justify-center items-center h-32">
+              <Spinner variant="ring"/>
+             </div>
+            ) : filteredNotifications.length === 0 ? (
               <Card className="">
                 <CardContent className="p-8 text-center">
                   <p className="text-gray-500">No notifications found</p>
@@ -223,9 +245,14 @@ export default function NotificationsDrawer({
                         {notification.message}
                       </p>
                       <div className="flex items-center justify-between">
-                        <p className="text-xs text-gray-500">
-                          {notification.timestamp}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-1 text-xs rounded-full ${getEventTypeColor(notification.eventType)}`}>
+                            {notification.eventType.replace('_', ' ')}
+                          </span>
+                          <p className="text-xs text-gray-500">
+                            {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                          </p>
+                        </div>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
