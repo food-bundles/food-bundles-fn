@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { Bell,UserPlus, Home, ShoppingCart } from "lucide-react";
@@ -11,10 +10,10 @@ import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
 import { authService } from "@/app/services/authService";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 import NotificationsDrawer from "./notificationDrawer";
 import CartDrawer from "@/components/cartDrawer";
 import { useCartSummary } from "@/app/contexts/cart-context";
+import { usePathname } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,19 +32,26 @@ interface RestaurantHeaderProps {
 export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderProps) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  // const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(true);
   const { user, getUserProfileImage } = useAuth();
-  const { totalItems } = useCartSummary();
+  const { totalItems, isLoading } = useCartSummary();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const pathname = usePathname();
+  
+  const showCartIcon = pathname !== "/restaurant";
 
   useEffect(() => {
     const fetchUnreadCount = async () => {
       try {
+        setIsLoadingNotifications(true);
         const response = await notificationService.getUnreadCount();
         setUnreadCount(response.data.unreadCount);
       } catch (error) {
         console.error('Failed to fetch unread count:', error);
+      } finally {
+        setIsLoadingNotifications(false);
       }
     };
     fetchUnreadCount();
@@ -92,29 +98,40 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
 
           {/* Right side */}
           <div className="flex items-center gap-2 sm:gap-4">
-            {/* Cart Icon */}
-            <button
-              className="relative cursor-pointer text-primary-foreground hover:text-primary-foreground h-8 w-8 sm:h-10 sm:w-10"
-              onClick={() => setIsCartOpen(true)}
-            >
-              <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
-              {totalItems > 0 && (
-                <Badge className="absolute top-0 right-2 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 flex items-center justify-center bg-green-500 text-white text-xs">
-                  {totalItems > 99 ? "99+" : totalItems}
-                </Badge>
-              )}
-            </button>
+            {showCartIcon && (
+              <button
+                className="relative cursor-pointer text-primary-foreground hover:text-primary-foreground h-8 w-8 sm:h-10 sm:w-10"
+                onClick={() => setIsCartOpen(true)}
+              >
+                <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
+                {isLoading ? (
+                  <Skeleton className="absolute top-0 right-2 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-green-600/60" />
+                ) : (
+                  totalItems > 0 && (
+                    <Badge className="absolute top-0 right-2 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 flex items-center justify-center bg-green-500 text-white text-xs">
+                      {totalItems > 99 ? "99+" : totalItems}
+                    </Badge>
+                  )
+                )}
+              </button>
+            )}
             {/* Notifications Button */}
             <button
               className="relative cursor-pointer text-primary-foreground hover:text-primary-foreground h-8 w-8 sm:h-10 sm:w-10"
               onClick={() => setIsNotificationsOpen(true)}
             >
               <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
-              <Badge className="absolute top-0 right-3 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 flex items-center justify-center bg-red-500 text-white text-xs">
-                {unreadCount}
-              </Badge>
+              {unreadCount=== 0 ? (
+                <Skeleton className="absolute top-0 right-3 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-green-600/60" />
+              ) : (
+                unreadCount > 0 && (
+                  <Badge className="absolute top-0 right-3 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 flex items-center justify-center bg-green-500 text-white text-xs">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </Badge>
+                )
+              )}
             </button>
-            
+
             {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -152,20 +169,34 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
                   )}
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-52" align="end" alignOffset={-15}>
+              <DropdownMenuContent
+                className="w-52"
+                align="end"
+                alignOffset={-15}
+              >
                 <div className="px-2 py-1.5">
-                  <p className="text-[13px] font-medium text-gray-900 truncate">{userName}</p>
-                  <p className="text-[12px] text-gray-500 truncate">{user?.email}</p>
+                  <p className="text-[13px] font-medium text-gray-900 truncate">
+                    {userName}
+                  </p>
+                  <p className="text-[12px] text-gray-500 truncate">
+                    {user?.email}
+                  </p>
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="#" className="flex items-center gap-2 text-[13px]">
+                  <Link
+                    href="#"
+                    className="flex items-center gap-2 text-[13px]"
+                  >
                     <UserPlus className="w-4 h-4" />
                     Profile
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/" className="flex items-center gap-2 text-[13px]">
+                  <Link
+                    href="/"
+                    className="flex items-center gap-2 text-[13px]"
+                  >
                     <Home className="w-4 h-4" />
                     Home
                   </Link>
@@ -180,8 +211,6 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-
-
           </div>
         </div>
       </header>
@@ -189,10 +218,7 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
         isOpen={isNotificationsOpen}
         onClose={() => setIsNotificationsOpen(false)}
       />
-      <CartDrawer
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-      />
+      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </>
   );
 }

@@ -144,14 +144,13 @@ export default function NotificationsDrawer({
         }`}
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 flex justify-between items-center p-6">
+        <div className="sticky top-0 z-10 bg-green-700 border-b border-gray-200 flex justify-between items-center p-6">
           <div className="flex items-center gap-2">
-            <Bell className="w-5 h-5 text-gray-600" />
-            <span className="text-xl font-bold text-gray-900">
+            <span className="text-xl text-white font-bold">
               Notifications
             </span>
             {unreadCount > 0 && (
-              <Badge className="bg-red-500 text-white text-xs">
+              <Badge className="bg-green-500 text-white text-xs">
                 {unreadCount}
               </Badge>
             )}
@@ -160,7 +159,7 @@ export default function NotificationsDrawer({
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 transition-colors hover:rotate-90 transform duration-200"
           >
-            <X className="w-6 h-6" />
+            <X className="w-6 h-6 text-white" />
           </button>
         </div>
 
@@ -174,7 +173,7 @@ export default function NotificationsDrawer({
             <Button
               onClick={handleMarkAllRead}
               size="sm"
-              className="bg-gray-900 hover:bg-gray-800 text-white"
+              className="bg-green-700 hover:bg-green-600 text-white"
             >
               Mark all read
             </Button>

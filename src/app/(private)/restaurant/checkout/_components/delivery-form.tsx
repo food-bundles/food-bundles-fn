@@ -297,18 +297,6 @@ export function Checkout() {
         "Please select location on map or enter address";
     }
 
-    // Card validation
-    if (method === "card") {
-      if (!formData.cardNumber.trim()) {
-        newErrors.cardNumber = "Card number is required";
-      }
-      if (!formData.cardCvv.trim()) {
-        newErrors.cardCvv = "CVV is required";
-      }
-      if (!formData.cardExpiryMonth.trim() || !formData.cardExpiryYear.trim()) {
-        newErrors.cardExpiry = "Card expiry is required";
-      }
-    }
 
     // Voucher validation
     if (method === "voucher") {
@@ -355,14 +343,7 @@ export function Checkout() {
         otherServices,
       };
 
-      if (method === "card") {
-        checkoutPayload.cardDetails = {
-          cardNumber: formData.cardNumber.replace(/\s/g, ""),
-          cvv: formData.cardCvv,
-          expiryMonth: formData.cardExpiryMonth.padStart(2, "0"),
-          expiryYear: formData.cardExpiryYear,
-        };
-      }
+
 
       if (method === "voucher") {
         checkoutPayload.voucherCode = formData.voucherCode;
@@ -380,24 +361,17 @@ export function Checkout() {
           return;
         }
 
-        if (method === "momo") {
-          const responseData = response.data as any;
-          const paymentProvider = responseData?.checkout?.paymentProvider;
-          const requiresRedirect = responseData?.requiresRedirect;
-          const redirectUrl = responseData?.redirectUrl;
+        // Check if redirect is required for any payment method
+        const responseData = response.data as any;
+        const requiresRedirect = responseData?.requiresRedirect;
+        const redirectUrl = responseData?.redirectUrl;
+        const paymentProvider = responseData?.checkout?.paymentProvider;
 
-          if (paymentProvider === "PAYPACK") {
-            window.location.href = "/restaurant";
-          } else if (
-            paymentProvider === "FLUTTERWAVE" &&
-            requiresRedirect &&
-            redirectUrl
-          ) {
-            setFlutterwaveRedirectUrl(redirectUrl);
-            setShowFlutterwaveInfo(true);
-          } else {
-            window.location.href = "/restaurant";
-          }
+        if (requiresRedirect && redirectUrl) {
+          setFlutterwaveRedirectUrl(redirectUrl);
+          setShowFlutterwaveInfo(true);
+        } else if (method === "momo" && paymentProvider === "PAYPACK") {
+          window.location.href = "/restaurant";
         } else {
           window.location.href = "/restaurant";
         }
@@ -454,6 +428,11 @@ export function Checkout() {
         <Spinner variant="ring" />
       </div>
     );
+  }
+
+  if (!cart || !cart.id || totalItems === 0) {
+    window.location.href = "/restaurant";
+    return null;
   }
 
   return (
@@ -686,103 +665,7 @@ export function Checkout() {
                 </div>
               </div>
 
-              {/* Dynamic Payment Inputs */}
-              {method === "momo" && (
-                <div className="relative mt-3">
-                  <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-900" />
-                  <input
-                    type="tel"
-                    placeholder="Enter MoMo Phone Number"
-                    value={formData.phoneNumber}
-                    onChange={(e) =>
-                      handleInputChange("phoneNumber", e.target.value)
-                    }
-                    className="w-full pl-10 h-10 border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none rounded-none text-[14px] border-gray-300"
-                    disabled={isSubmitting}
-                  />
-                </div>
-              )}
 
-              {method === "card" && (
-                <div className="space-y-2 mt-3">
-                  <input
-                    type="text"
-                    placeholder="Card Number"
-                    value={formData.cardNumber}
-                    onChange={(e) =>
-                      handleInputChange("cardNumber", e.target.value)
-                    }
-                    className={`w-full h-8 px-3 placeholder:text-[12px] border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none text-[14px] ${
-                      errors.cardNumber ? "border-red-500" : "border-gray-300"
-                    }`}
-                    disabled={isSubmitting}
-                  />
-                  {errors.cardNumber && (
-                    <p className="text-red-600 text-xs">{errors.cardNumber}</p>
-                  )}
-                  <div className="flex gap-2">
-                    <div className="flex-1">
-                      <div className="flex gap-1">
-                        <input
-                          type="text"
-                          placeholder="MM"
-                          maxLength={2}
-                          value={formData.cardExpiryMonth}
-                          onChange={(e) =>
-                            handleInputChange("cardExpiryMonth", e.target.value)
-                          }
-                          className={`flex-1 h-8 px-3 placeholder:text-[12px] border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none text-[14px] ${
-                            errors.cardExpiry
-                              ? "border-red-500"
-                              : "border-gray-300"
-                          }`}
-                          disabled={isSubmitting}
-                        />
-                        <input
-                          type="text"
-                          placeholder="YY"
-                          maxLength={2}
-                          value={formData.cardExpiryYear}
-                          onChange={(e) =>
-                            handleInputChange("cardExpiryYear", e.target.value)
-                          }
-                          className={`flex-1 h-8 px-3 placeholder:text-[12px] border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none text-[14px] ${
-                            errors.cardExpiry
-                              ? "border-red-500"
-                              : "border-gray-300"
-                          }`}
-                          disabled={isSubmitting}
-                        />
-                      </div>
-                      {errors.cardExpiry && (
-                        <p className="text-red-600 text-xs mt-1">
-                          {errors.cardExpiry}
-                        </p>
-                      )}
-                    </div>
-                    <div className="w-20">
-                      <input
-                        type="text"
-                        placeholder="CVV"
-                        maxLength={3}
-                        value={formData.cardCvv}
-                        onChange={(e) =>
-                          handleInputChange("cardCvv", e.target.value)
-                        }
-                        className={`w-full h-8 px-3 placeholder:text-[12px] border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none text-[14px] ${
-                          errors.cardCvv ? "border-red-500" : "border-gray-300"
-                        }`}
-                        disabled={isSubmitting}
-                      />
-                      {errors.cardCvv && (
-                        <p className="text-red-600 text-xs mt-1">
-                          {errors.cardCvv}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {method === "wallet" && (
                 <div className="space-y-2 mt-3">

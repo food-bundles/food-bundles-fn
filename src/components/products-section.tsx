@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
@@ -38,6 +37,8 @@ interface ProductCardProps {
   rating: number;
   discountPercent?: number;
   unit?: string;
+  category?: string;
+  productData?: Product;
 }
 
 const ProductCard = memo(function ProductCard({

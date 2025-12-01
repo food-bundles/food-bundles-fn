@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, ShoppingCart } from "lucide-react";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
@@ -36,6 +36,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     : null;
   
   const hasFreeDelivery = subscriptionPlan?.freeDelivery || false;
+  const deliveryFee = hasFreeDelivery ? 0 : totalAmount < 100000 ? 5000 : 0;
 
   // Handle escape key
   useEffect(() => {
@@ -62,21 +63,20 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
       {/* Drawer */}
       <div
-        className={`fixed top-0 right-0 h-full bg-white text-gray-900 z-50 transform transition-all duration-300 ease-in-out overflow-y-auto shadow-2xl border-l border-gray-200 scrollbar-hide
+        className={`fixed top-0 right-0 h-full bg-white text-gray-900 z-50 transform transition-all duration-300 ease-in-out overflow-y-auto shadow-2xl  scrollbar-hide
           w-[90vw] sm:w-[300px] md:w-[350px] lg:w-[400px]
           ${isOpen ? "translate-x-0" : "translate-x-full"}`}
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 flex justify-between items-center px-4 sm:px-6 py-3">
+        <div className="sticky top-0 z-10 bg-green-600  flex justify-between items-center px-4 sm:px-6 py-4">
           <div className="flex items-center gap-2">
-            <span className="text-lg sm:text-base font-medium text-gray-900">
+            <span className="text-lg sm:text-base font-medium text-white">
               My Cart
             </span>
-            <ShoppingCart className="w-5 h-5 text-gray-600" />
           </div>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 transition-colors hover:rotate-90 transform duration-200"
+            className="text-white transition-colors hover:rotate-90 transform duration-200"
           >
             <X className="w-6 h-6 sm:w-5 sm:h-5" />
           </button>
@@ -129,25 +129,43 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
               ))
             )}
           </div>
+          <div className="flex justify-between px-5 text-gray-900">
+            <span className="text-[14px]">Delivery fee</span>
+            <span>
+              {hasFreeDelivery ? (
+                <>
+                  <span className="line-through text-[14px] text-gray-400">
+                    Rwf 5,000
+                  </span>
+                  <span className="ml-2 text-[14px] text-green-600">Free</span>
+                </>
+              ) : deliveryFee > 0 ? (
+                `Rwf ${deliveryFee.toLocaleString()}`
+              ) : (
+                "Free"
+              )}
+            </span>
+          </div>
 
           {/* Total and checkout button */}
           {cartItems.length > 0 && (
             <div className="sticky bottom-0 bg-white border-t border-gray-200 pt-4 pb-6 px-2 sm:px-1">
               <div className="flex justify-between items-center mb-2 sm:mb-1">
-                <span className="text-lg sm:text-sm font-semibold">Subtotal:</span>
+                <span className="text-lg sm:text-sm font-semibold">Total:</span>
+                {hasFreeDelivery ? (
                 <span className="text-lg sm:text-sm font-bold">
                   {totalAmount} Rwf
                 </span>
+                ) : (
+                <span className="text-lg sm:text-sm font-bold">
+                  {totalAmount + deliveryFee} Rwf
+                </span>
+                )}
               </div>
-              {/* Only show delivery fee message if user doesn't have free delivery subscription */}
-              {!hasFreeDelivery && totalAmount < 100000 && (
-                <div className="text-xs text-gray-600 mb-2">
-                  + 5,000 Rwf delivery fee (orders under 100,000 Rwf)
-                </div>
-              )}
+
               <a href="/restaurant/checkout">
                 <Button className="w-full sm:py-2 py-1 text-sm sm:text-xs bg-green-600 hover:bg-green-700 rounded-none">
-                  Buy Now 
+                  Buy Now
                 </Button>
               </a>
             </div>
@@ -179,15 +197,15 @@ function CartItem({
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    if (value === "" || /^\d+$/.test(value)) {
+    if (value === "" || /^\d*\.?\d*$/.test(value)) {
       setInputValue(value);
-      const numValue = Number.parseInt(value) || 0;
+      const numValue = Number.parseFloat(value) || 0;
       if (numValue > 0) setQuantity(numValue);
     }
   };
 
   const handleQuantityUpdate = async () => {
-    const finalQuantity = Number.parseInt(inputValue) || 1;
+    const finalQuantity = Number.parseFloat(inputValue) || 1;
     setIsUpdating(true);
     await onQuantityUpdate(item.id, finalQuantity);
     setIsUpdating(false);
@@ -247,8 +265,8 @@ function CartItem({
                     type="button"
                     onClick={() => {
                       const newValue = Math.max(
-                        1,
-                        (Number.parseInt(inputValue) || 1) - 1
+                        0.1,
+                        (Number.parseFloat(inputValue) || 1) - 1
                       );
                       setInputValue(newValue.toString());
                       setQuantity(newValue);
@@ -266,7 +284,8 @@ function CartItem({
                     onKeyDown={async (e) => {
                       if (e.key === "Enter") await handleQuantityUpdate();
                     }}
-                    min={1}
+                    step="0.01"
+                    min="0.1"
                     disabled={isUpdating}
                     className="w-12 text-center text-sm font-semibold focus:outline-none disabled:bg-gray-100 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                   />
@@ -274,7 +293,7 @@ function CartItem({
                   <button
                     type="button"
                     onClick={() => {
-                      const newValue = (Number.parseInt(inputValue) || 0) + 1;
+                      const newValue = (Number.parseFloat(inputValue) || 0) + 1;
                       setInputValue(newValue.toString());
                       setQuantity(newValue);
                     }}
@@ -289,7 +308,7 @@ function CartItem({
                 <Button
                   onClick={handleQuantityUpdate}
                   disabled={
-                    isUpdating || Number.parseInt(inputValue) === item.quantity
+                    isUpdating || Number.parseFloat(inputValue) === item.quantity
                   }
                   size="sm"
                   className="w-12 h-6 text-xs bg-green-500 hover:bg-green-600 text-white disabled:opacity-50 flex items-center justify-center rounded-full cursor-pointer"
