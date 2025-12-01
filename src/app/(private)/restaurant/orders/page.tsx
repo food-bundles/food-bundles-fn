@@ -39,8 +39,8 @@ export default function RestaurantOrdersPage() {
 
   // WebSocket integration - use user.id as restaurantId for restaurant users
   const { isConnected, orderUpdates, reconnect } = useWebSocket(
-    user?.id || "", // User ID from auth
-    user?.id || "" // For restaurant users, user.id is the restaurant ID
+    user?.id || "", 
+    user?.id || "" 
   );
 
 
@@ -75,7 +75,7 @@ export default function RestaurantOrdersPage() {
     if (orderUpdates.length > 0) {
       const latestUpdate = orderUpdates[orderUpdates.length - 1];
       toast.success(
-        `Order ${latestUpdate.orderId} status: ${latestUpdate.status}`,
+        `Order ${latestUpdate.orderNumber} status: ${latestUpdate.status}`,
         {
           duration: 5000,
         }

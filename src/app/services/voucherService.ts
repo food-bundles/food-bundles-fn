@@ -164,6 +164,18 @@ export const voucherService = {
     return response.data;
   },
 
+  // Voucher Credit Repayment
+  repayVoucherCredit: async (voucherId: string, paymentData: {
+    amount: number;
+    paymentMethod: "MOBILE_MONEY" | "CARD" | "BANK_TRANSFER";
+    paymentReference?: string;
+    phoneNumber?: string;
+  }) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(`/vouchers/${voucherId}/repay`, paymentData);
+    return response.data;
+  },
+
   getOutstandingBalance: async (voucherId: string) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.get(`/vouchers/${voucherId}/outstanding`);
