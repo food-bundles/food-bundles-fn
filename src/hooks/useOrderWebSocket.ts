@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 
 interface OrderUpdate {
   orderId: string;
+  orderNumber: string;
   status: string;
   paymentStatus?: string;
   timestamp: string;
@@ -165,7 +166,6 @@ export const useWebSocket = (userId: string, restaurantId?: string) => {
     isConnected,
     orderUpdates,
     productUpdates,
-    // Function to manually reconnect if needed
     reconnect: connectWebSocket,
   };
 };

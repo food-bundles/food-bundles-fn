@@ -71,6 +71,27 @@ export const createVoucherColumns = ({ onPayment, payingVoucherId }: VoucherColu
   },
   {
     accessorKey: "expiryDate",
+    header: "Days",
+    cell: ({ row }) => {
+      const voucher = row.original;
+      const formatDate = (date: string | Date) => {
+        return new Date(date).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        });
+      };
+      return (
+        <div className="flex items-center gap-1.5">
+          <div className="text-sm text-gray-600">
+            {/* {voucher.voucherDays}{" "} */} 1 day
+          </div>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "expiryDate",
     header: "Expires",
     cell: ({ row }) => {
       const voucher = row.original;
@@ -138,14 +159,14 @@ export const createVoucherColumns = ({ onPayment, payingVoucherId }: VoucherColu
         return daysDifference > loan.voucherDays;
       };
       
-      const needsPayment = loan && loan.status !== "DISBURSED";
+      const needsPayment = voucher.usedCredit > 0;
       const paymentOverdue = isOverdue();
 
       return (
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-start gap-2">
           {needsPayment && (
             <button
-              // onClick={() => onPayment(voucher.id)}
+              onClick={() => onPayment(voucher.id)}
               disabled={payingVoucherId === voucher.id}
               className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
                 payingVoucherId === voucher.id

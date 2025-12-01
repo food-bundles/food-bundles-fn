@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, CheckCircle, XCircle, Clock, AlertCircle, Copy, Check } from "lucide-react";
+import { CheckCircle, XCircle, Clock, AlertCircle, Copy, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useVoucherUtils } from "@/hooks/useVoucher";
 import {  VoucherStatus } from "@/lib/types";
@@ -144,7 +144,9 @@ export default function VouchersList() {
                 <div className="space-y-4 ">
                   <div className="flex justify-center text-center">
                     <div className="">
-                      <p className="text-xs text-gray-500">FoodBundles Credit</p>
+                      <p className="text-xs text-gray-500">
+                        FoodBundles Credit
+                      </p>
                       <p className="flex items-center text-xs text-gray-500">
                         <span className="font-semibold text-blue-600 text-sm pr-1">
                           {getDiscountPercentage(voucher.voucherType)}%
@@ -162,25 +164,30 @@ export default function VouchersList() {
                     <div>
                       <p className="text-xs text-gray-700">Used Credit</p>
                       <p className="font-semibold text-orange-600 text-sm">
-                        {voucher.transactions && Array.isArray(voucher.transactions) && voucher.transactions.length > 0 
+                        {voucher.transactions &&
+                        Array.isArray(voucher.transactions) &&
+                        voucher.transactions.length > 0
                           ? voucher.transactions[0].originalAmount.toLocaleString()
-                          : voucher.usedCredit.toLocaleString()
-                        } RWF
+                          : voucher.usedCredit.toLocaleString()}{" "}
+                        RWF
                       </p>
                     </div>
                   </div>
 
                   <div className="space-y-2 text-xs text-gray-700 text-center">
                     <div className="flex items-center justify-center gap-1">
-                      <Calendar className="h-3 w-3" />
                       Issued:{" "}
                       {new Date(voucher.issuedDate).toLocaleDateString()}
                     </div>
                     {voucher.expiryDate && (
                       <div className="flex items-center justify-center gap-1">
-                        <Calendar className="h-3 w-3" />
                         Expires:{" "}
                         {new Date(voucher.expiryDate).toLocaleDateString()}
+                      </div>
+                    )}
+                    {voucher.status === "USED" && (
+                      <div className="flex items-center justify-center gap-1">
+                        Pay before given days
                       </div>
                     )}
                   </div>
@@ -198,8 +205,6 @@ export default function VouchersList() {
                     </div>
                   )}
                 </div>
-
-          
               </Card>
             );
           })}
