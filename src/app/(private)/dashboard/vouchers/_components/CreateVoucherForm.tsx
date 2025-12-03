@@ -47,7 +47,7 @@ const CreateVoucherForm = forwardRef<{ openModal: () => void }, CreateVoucherFor
   useEffect(() => {
     if (open && restaurants.length === 0) {
       const fetchRestaurants = async () => {
-        const response = await getAllRestaurants();
+        const response = await getAllRestaurants({ limit: 100 });
         if (response.success) {
           setRestaurants(response.data);
         }

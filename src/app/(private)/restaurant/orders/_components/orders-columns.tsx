@@ -10,13 +10,23 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, Copy, Check, RefreshCw, Download } from "lucide-react";
 
 export type OrderStatus =
-  | "pending"
-  | "confirmed"
-  | "processing"
-  | "ready"
-  | "delivered"
-  | "cancelled"
-  | "refunded";
+  | "PENDING"
+  | "CONFIRMED"
+  | "PREPARING"
+  | "READY"
+  | "IN_TRANSIT"
+  | "DELIVERED"
+  | "CANCELLED"
+  | "REFUNDED";
+
+export type PaymentStatus =
+  | "PENDING"
+  | "PROCESSING"
+  | "COMPLETED"
+  | "FAILED"
+  | "CANCELLED"
+  | "REFUNDED"
+  | "VOUCHER_CREDIT";
 
 export type Order = {
   id: string;
@@ -24,30 +34,99 @@ export type Order = {
   customerName: string;
   orderedDate: string;
   items: string;
+  itemsArray?: any[];
   totalAmount: number;
   deliveryAddress: string;
   status: OrderStatus;
+  paymentStatus: PaymentStatus;
   originalData?: any;
 };
 
 const getStatusColor = (status: OrderStatus) => {
   switch (status) {
-    case "pending":
+    case "PENDING":
       return "bg-yellow-100 text-yellow-800 hover:bg-yellow-200";
-    case "confirmed":
+    case "CONFIRMED":
       return "bg-blue-100 text-blue-800 hover:bg-blue-200";
-    case "processing":
+    case "PREPARING":
       return "bg-orange-100 text-orange-800 hover:bg-orange-200";
-    case "ready":
+    case "READY":
       return "bg-purple-100 text-purple-800 hover:bg-purple-200";
-    case "delivered":
+    case "IN_TRANSIT":
+      return "bg-indigo-100 text-indigo-800 hover:bg-indigo-200";
+    case "DELIVERED":
       return "bg-green-100 text-green-800 hover:bg-green-200";
-    case "cancelled":
+    case "CANCELLED":
       return "bg-red-100 text-red-800 hover:bg-red-200";
-    case "refunded":
+    case "REFUNDED":
       return "bg-gray-100 text-gray-800 hover:bg-gray-200";
     default:
       return "bg-gray-100 text-gray-800 hover:bg-gray-200";
+  }
+};
+
+const getPaymentStatusColor = (status: PaymentStatus) => {
+  switch (status) {
+    case "PENDING":
+      return "bg-yellow-100 text-yellow-800 hover:bg-yellow-200";
+    case "PROCESSING":
+      return "bg-blue-100 text-blue-800 hover:bg-blue-200";
+    case "COMPLETED":
+      return "bg-green-100 text-green-800 hover:bg-green-200";
+    case "FAILED":
+      return "bg-red-100 text-red-800 hover:bg-red-200";
+    case "CANCELLED":
+      return "bg-gray-100 text-gray-800 hover:bg-gray-200";
+    case "REFUNDED":
+      return "bg-orange-100 text-orange-800 hover:bg-orange-200";
+    case "VOUCHER_CREDIT":
+      return "bg-purple-100 text-purple-800 hover:bg-purple-200";
+    default:
+      return "bg-gray-100 text-gray-800 hover:bg-gray-200";
+  }
+};
+
+const getPaymentStatusLabel = (status: PaymentStatus) => {
+  switch (status) {
+    case "COMPLETED":
+      return "Paid";
+    case "PENDING":
+      return "Pending";
+    case "PROCESSING":
+      return "Processing";
+    case "FAILED":
+      return "Failed";
+    case "CANCELLED":
+      return "Cancelled";
+    case "REFUNDED":
+      return "Refunded";
+    case "VOUCHER_CREDIT":
+      return "Voucher credit";
+    default:
+      return status;
+  }
+};
+
+const getOrderStatusLabel = (status: OrderStatus) => {
+  switch (status) {
+    case "PENDING":
+      return "Pending";
+    case "CONFIRMED":
+      return "Confirmed";
+    case "PREPARING":
+      return "Preparing";
+    case "READY":
+      return "Ready";
+    case "IN_TRANSIT":
+      return "In Transit";
+    case "DELIVERED":
+      return "Delivered";
+    case "CANCELLED":
+      return "Cancelled";
+    case "REFUNDED":
+      return "Refunded";
+    default:
+      return status;
   }
 };
 
@@ -343,11 +422,7 @@ export const ordersColumns = (
         </Button>
       );
     },
-    cell: ({ row }) => (
-      <div className="">
-        {row.getValue("orderId")}
-      </div>
-    ),
+    cell: ({ row }) => <div className="">{row.getValue("orderId")}</div>,
   },
   {
     accessorKey: "customerName",
@@ -362,36 +437,47 @@ export const ordersColumns = (
         </Button>
       );
     },
-    cell: ({ row }) => (
-      <div className="">{row.getValue("customerName")}</div>
-    ),
+    cell: ({ row }) => <div className="">{row.getValue("customerName")}</div>,
   },
   {
-    accessorKey: "orderedDate",
+    accessorKey: "items",
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0  text-[13px]"
+          className="h-auto p-0 text-[13px]"
         >
-          Order Date
+          Date & Items
         </Button>
       );
     },
-    cell: ({ row }) => <div>{row.getValue("orderedDate")}</div>,
-  },
-  {
-    accessorKey: "items",
-    header: "Items",
-    cell: ({ row }) => (
-      <div
-        className=" max-w-[200px] truncate"
-        title={row.getValue("items")}
-      >
-        {row.getValue("items")}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const order = row.original;
+      const itemsArray = order.itemsArray || [];
+      const itemsText = order.items || "";
+
+      let displayText = "";
+      if (itemsArray.length > 0) {
+        const firstItem =
+          itemsArray[0]?.productName || itemsArray[0]?.name || "Item";
+        displayText =
+          itemsArray.length > 1
+            ? `${firstItem} +${itemsArray.length - 1} items`
+            : firstItem;
+      } else {
+        displayText = itemsText;
+      }
+
+      return (
+        <div className="max-w-[200px]">
+          <div className="text-xs text-gray-500 mb-1">{order.orderedDate}</div>
+          <div className="truncate text-sm" title={displayText}>
+            {displayText}
+          </div>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "totalAmount",
@@ -413,38 +499,25 @@ export const ordersColumns = (
     ),
   },
   {
-    accessorKey: "deliveryAddress",
-    header: "Delivery Address",
-    cell: ({ row }) => {
-      const address = row.getValue("deliveryAddress") as string;
-      const isCoordinates = isMapCoordinates(address);
-      const coordinates = isCoordinates ? extractCoordinates(address) : "";
-
-      return (
-        <div className="flex items-center gap-2 max-w-[200px]">
-          <div
-            className="truncate"
-            title={isCoordinates ? coordinates : address}
-          >
-            {isCoordinates ? (
-              <span className="text-[13px]">Map Location</span>
-            ) : (
-              address
-            )}
-          </div>
-          {isCoordinates && <CopyButton coordinates={coordinates} />}
-        </div>
-      );
-    },
-  },
-  {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
       const status = row.getValue("status") as OrderStatus;
       return (
         <Badge className={getStatusColor(status)}>
-          {status.charAt(0).toUpperCase() + status.slice(1)}
+          {getOrderStatusLabel(status)}
+        </Badge>
+      );
+    },
+  },
+  {
+    accessorKey: "paymentStatus",
+    header: "Payment Status",
+    cell: ({ row }) => {
+      const paymentStatus = row.original.paymentStatus;
+      return (
+        <Badge className={getPaymentStatusColor(paymentStatus)}>
+          {getPaymentStatusLabel(paymentStatus)}
         </Badge>
       );
     },

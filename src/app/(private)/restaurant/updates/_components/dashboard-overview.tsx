@@ -134,7 +134,7 @@ export function DashboardOverview({
         border: "border-amber-200",
       },
       CONFIRMED: {
-        label: "Paid",
+        label: "Confirmed",
         bg: "bg-blue-50",
         text: "text-blue-700",
         border: "border-blue-200",
@@ -206,7 +206,7 @@ export function DashboardOverview({
       status: "PENDING",
     },
     {
-      label: "paid",
+      label: "Confirmed",
       icon: Package,
       status: "CONFIRMED",
     },

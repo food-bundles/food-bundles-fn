@@ -58,6 +58,8 @@ const getPaymentStatusColor = (status: string) => {
       return 'bg-blue-100 text-blue-700 border-blue-200';
     case 'COMPLETED':
       return 'bg-green-100 text-green-700 border-green-200';
+    case 'VOUCHER_CREDIT':
+      return 'bg-purple-100 text-purple-700 border-purple-200';
     case 'FAILED':
       return 'bg-red-100 text-red-700 border-red-200';
     case 'CANCELLED':
@@ -101,8 +103,8 @@ export interface Order {
   restaurantId: string;
   totalAmount: number;
   status: "PENDING" | "CONFIRMED" | "PREPARING" | "READY" |"IN_TRANSIT" | "DELIVERED" | "CANCELLED" | "REFUNDED";
-  paymentStatus: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | "CANCELLED" | "REFUNDED";
-  paymentMethod: "CASH" | "MOBILE_MONEY" | "CARD" | "BANK_TRANSFER";
+  paymentStatus: "PENDING" | "PROCESSING" | "COMPLETED" | "VOUCHER_CREDIT" | "FAILED" | "CANCELLED" | "REFUNDED";
+  paymentMethod: "CASH" | "MOBILE_MONEY" | "CARD" | "BANK_TRANSFER"| "VOUCHER";
   billingName: string;
   billingPhone: string;
   billingEmail: string;
@@ -267,6 +269,7 @@ function PaymentStatusDropdown({ currentStatus, orderId, onUpdate }: {
             <SelectItem value="PENDING">Pending</SelectItem>
             <SelectItem value="PROCESSING">Processing</SelectItem>
             <SelectItem value="COMPLETED">Completed</SelectItem>
+            <SelectItem value="VOUCHER_CREDIT">V Credit</SelectItem>
             <SelectItem value="FAILED">Failed</SelectItem>
             <SelectItem value="CANCELLED">Cancelled</SelectItem>
             <SelectItem value="REFUNDED">Refunded</SelectItem>
@@ -354,7 +357,7 @@ export const createOrdersColumns = (actions: {
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: "Order Status",
     cell: ({ row }) => {
       const order = row.original;
       return (
@@ -368,7 +371,7 @@ export const createOrdersColumns = (actions: {
   },
   {
     accessorKey: "paymentStatus",
-    header: "Payment",
+    header: "Payment Status",
     cell: ({ row }) => {
       const order = row.original;
       return (
