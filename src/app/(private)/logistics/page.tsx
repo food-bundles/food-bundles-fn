@@ -22,6 +22,7 @@ import {
   X
 } from "lucide-react";
 import { toast } from "sonner";
+import { Spinner } from "@/components/ui/shadcn-io/spinner";
 
 type DeliveryStatus = 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'IN_TRANSIT' | 'DELIVERED' | 'CANCELLED';
 
@@ -331,13 +332,8 @@ export default function LogisticsPage() {
 
   if (loading) {
     return (
-      <div className="p-4 sm:p-6">
-        <div className="flex items-center justify-center h-64 sm:h-96">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-b-4 border-green-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 text-sm sm:text-base font-medium">Loading orders...</p>
-          </div>
-        </div>
+      <div className="h-screen flex items-center justify-center">
+      <Spinner variant="ring" />
       </div>
     );
   }

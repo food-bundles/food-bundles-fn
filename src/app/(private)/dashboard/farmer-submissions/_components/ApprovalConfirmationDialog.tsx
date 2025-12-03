@@ -22,7 +22,7 @@ const ConfirmationDialog = ({
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <AlertTriangle className="h-8 w-8 text-amber-500" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900">

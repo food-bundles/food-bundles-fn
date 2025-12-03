@@ -12,12 +12,9 @@ import {
   TableFilters,
 } from "../../../../components/filters";
 import { toast } from "sonner";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import { RefreshCw, AlertCircle, Wifi, WifiOff } from "lucide-react";
+import {  AlertCircle } from "lucide-react";
 import { useWebSocket } from "@/hooks/useOrderWebSocket";
 import { useRouter } from "next/navigation";
-import { Spinner } from "@/components/ui/shadcn-io/spinner";
 
 export default function RestaurantOrdersPage() {
   const [searchValue, setSearchValue] = useState("");
@@ -58,9 +55,11 @@ export default function RestaurantOrdersPage() {
               (item: any) => `${item.product?.productName} (${item.quantity})`
             )
             .join(", ") || "No items",
+        itemsArray: order.orderItems || [],
         totalAmount: order.totalAmount || 0,
         deliveryAddress: order.billingAddress || "No address provided",
-        status: mapBackendStatus(order.status),
+        status: order.status,
+        paymentStatus: order.paymentStatus,
         originalData: order,
       }));
 
@@ -133,13 +132,14 @@ export default function RestaurantOrdersPage() {
 
   const statusOptions = [
     { label: "All Status", value: "all" },
-    { label: "Pending", value: "pending" },
-    { label: "Confirmed", value: "confirmed" },
-    { label: "preparing", value: "preparing" },
-    { label: "Ready", value: "ready" },
-    { label: "Delivered", value: "delivered" },
-    { label: "Cancelled", value: "cancelled" },
-    { label: "Refunded", value: "refunded" },
+    { label: "Pending", value: "PENDING" },
+    { label: "Confirmed", value: "CONFIRMED" },
+    { label: "Preparing", value: "PREPARING" },
+    { label: "Ready", value: "READY" },
+    { label: "In Transit", value: "IN_TRANSIT" },
+    { label: "Delivered", value: "DELIVERED" },
+    { label: "Cancelled", value: "CANCELLED" },
+    { label: "Refunded", value: "REFUNDED" },
   ];
 
   const filters = [

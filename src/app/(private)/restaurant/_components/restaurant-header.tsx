@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { Bell,UserPlus, Home, ShoppingCart } from "lucide-react";
@@ -32,7 +33,6 @@ interface RestaurantHeaderProps {
 export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderProps) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  // const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(true);
   const { user, getUserProfileImage } = useAuth();
@@ -121,7 +121,7 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
               onClick={() => setIsNotificationsOpen(true)}
             >
               <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
-              {unreadCount=== 0 ? (
+              {!unreadCount ? (
                 <Skeleton className="absolute top-0 right-3 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-green-600/60" />
               ) : (
                 unreadCount > 0 && (

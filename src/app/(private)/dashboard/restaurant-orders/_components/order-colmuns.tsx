@@ -354,7 +354,7 @@ export const createOrdersColumns = (actions: {
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: "Order Status",
     cell: ({ row }) => {
       const order = row.original;
       return (
