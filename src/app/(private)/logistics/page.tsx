@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -23,6 +24,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
+import Image from "next/image";
 
 type DeliveryStatus = 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'IN_TRANSIT' | 'DELIVERED' | 'CANCELLED';
 
@@ -250,7 +252,7 @@ export default function LogisticsPage() {
             {order.productImages && order.productImages.length > 0 && (
               <div className="flex gap-2 mt-3 flex-wrap">
                 {order.productImages.slice(0, 4).map((image, index) => (
-                  <img
+                  <Image
                     key={index}
                     src={image}
                     alt="Product"

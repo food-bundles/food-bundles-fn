@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { useOrders } from "@/app/contexts/orderContext";
-import { useAuth } from "@/app/contexts/auth-context"; // Import your auth context
+import { useAuth } from "@/app/contexts/auth-context";
 import { DataTable } from "@/components/data-table";
 import { ordersColumns } from "./_components/orders-columns";
 import {
@@ -12,62 +12,98 @@ import {
   TableFilters,
 } from "../../../../components/filters";
 import { toast } from "sonner";
-import {  AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { useWebSocket } from "@/hooks/useOrderWebSocket";
 import { useRouter } from "next/navigation";
+import { orderService } from "@/app/services/orderService";
+import { ViewOrderModal } from "./_components/view-order-modal";
 
 export default function RestaurantOrdersPage() {
   const [searchValue, setSearchValue] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
 
-  const { user } = useAuth(); // Get current user
-  const {
-    orders: backendOrders,
-    loading,
-    error,
-    refreshOrders,
-    reorderOrder,
-  } = useOrders();
+  const { user } = useAuth();
+  const { reorderOrder } = useOrders();
 
   const [formattedOrders, setFormattedOrders] = useState<any[]>([]);
   const [reorderingId, setReorderingId] = useState<string | null>(null);
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const router = useRouter();
 
-  // WebSocket integration - use user.id as restaurantId for restaurant users
+  // WebSocket integration
   const { isConnected, orderUpdates, reconnect } = useWebSocket(
     user?.id || "", 
     user?.id || "" 
   );
 
+  // Fetch orders with pagination
+  const fetchOrders = async (page = pagination.page, limit = pagination.limit) => {
+    try {
+      setLoading(true);
 
-  // Format backend orders to frontend format
-  useEffect(() => {
-    if (backendOrders && backendOrders.length > 0) {
-      const formatted = backendOrders.map((order: any) => ({
-        id: order.id,
-        orderId: order.orderNumber,
-        customerName: order.restaurant?.name || "Unknown Restaurant",
-        orderedDate: new Date(order.createdAt).toLocaleDateString(),
-        items:
-          order.orderItems
-            ?.map(
-              (item: any) => `${item.product?.productName} (${item.quantity})`
-            )
+      const params: any = {
+        page,
+        limit,
+      };
+
+      if (selectedStatus !== "all") params.status = selectedStatus;
+      if (selectedDate) params.dateFrom = selectedDate.toISOString().split("T")[0];
+
+      const response = await orderService.getMyOrders(params);
+
+      if (response.success) {
+        const formatted = response.data.map((order: any) => ({
+          id: order.id,
+          orderId: order.orderNumber,
+          customerName: order.billingName || "Unknown Customer",
+          orderedDate: new Date(order.createdAt).toLocaleDateString(),
+          items: order.orderItems
+            ?.map((item: any) => `${item.productName} (${item.quantity})`)
             .join(", ") || "No items",
-        itemsArray: order.orderItems || [],
-        totalAmount: order.totalAmount || 0,
-        deliveryAddress: order.billingAddress || "No address provided",
-        status: order.status,
-        paymentStatus: order.paymentStatus,
-        originalData: order,
-      }));
+          orderItems: order.orderItems || [],
+          totalAmount: order.totalAmount || 0,
+          deliveryAddress: order.billingAddress || "No address provided",
+          status: order.status,
+          paymentStatus: order.paymentStatus,
+          phoneNumber: order.billingPhone,
+          paymentMethod: order.paymentMethod,
+          originalData: order,
+        }));
 
-      setFormattedOrders(formatted);
-    } else {
-      setFormattedOrders([]);
+        setFormattedOrders(formatted);
+        setPagination({
+          page: response.pagination?.page || 1,
+          limit: response.pagination?.limit || 10,
+          total: response.pagination?.total || 0,
+          totalPages: response.pagination?.totalPages || 0,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch orders:", error);
+      toast.error("Failed to fetch orders");
+    } finally {
+      setLoading(false);
     }
-  }, [backendOrders]);
+  };
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchOrders(1, pagination.limit);
+    }
+  }, [selectedStatus, selectedDate, user?.id]);
+
+  const handlePaginationChange = (page: number, limit: number) => {
+    fetchOrders(page, limit);
+  };
 
   // Handle real-time order updates from WebSocket
   useEffect(() => {
@@ -81,9 +117,9 @@ export default function RestaurantOrdersPage() {
       );
 
       // Refresh orders to get updated data
-      refreshOrders();
+      fetchOrders();
     }
-  }, [orderUpdates, refreshOrders]);
+  }, [orderUpdates]);
 
   const mapBackendStatus = (status: string) => {
     const statusMap: Record<string, string> = {
@@ -108,25 +144,6 @@ export default function RestaurantOrdersPage() {
     ) {
       return false;
     }
-
-    if (selectedStatus !== "all" && order.status !== selectedStatus) {
-      return false;
-    }
-
-    // Date filtering
-    if (selectedDate) {
-      const orderDate = new Date(order.originalData.createdAt);
-      const filterDate = new Date(selectedDate);
-      
-      // Compare dates (ignoring time)
-      const orderDateOnly = new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
-      const filterDateOnly = new Date(filterDate.getFullYear(), filterDate.getMonth(), filterDate.getDate());
-      
-      if (orderDateOnly.getTime() !== filterDateOnly.getTime()) {
-        return false;
-      }
-    }
-
     return true;
   });
 
@@ -162,7 +179,8 @@ export default function RestaurantOrdersPage() {
 
 
   const handleViewOrder = (order: any) => {
-    router.push(`/restaurant/orders/${order.orderId}`);
+    setSelectedOrder(order);
+    setViewModalOpen(true);
   };
 
   const handleDownload = (order: any) => {
@@ -287,23 +305,6 @@ export default function RestaurantOrdersPage() {
     toast.info("Attempting to reconnect WebSocket...");
   };
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <main className="container mx-auto px-6 py-8">
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="text-center py-12">
-              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Failed to load orders
-              </h3>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="container mx-auto px-2 py-2">
@@ -328,16 +329,27 @@ export default function RestaurantOrdersPage() {
             columns={ordersColumns(handleViewOrder, handleDownload, handleReorder)}
             data={filteredData}
             title=""
+            description={`Total: ${pagination.total} orders`}
             showExport={false}
             onExport={handleExport}
             customFilters={<TableFilters filters={filters} />}
             showSearch={false}
             showColumnVisibility={true}
             showPagination={true}
+            pagination={pagination}
+            onPaginationChange={handlePaginationChange}
+            isLoading={loading}
             showRowSelection={true}
           />
         </div>
       </main>
+
+      {/* View Order Modal */}
+      <ViewOrderModal
+        open={viewModalOpen}
+        onOpenChange={setViewModalOpen}
+        order={selectedOrder}
+      />
     </div>
   );
 }

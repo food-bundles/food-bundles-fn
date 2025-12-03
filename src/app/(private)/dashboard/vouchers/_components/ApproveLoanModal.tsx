@@ -29,7 +29,7 @@ export default function ApproveLoanModal({ isOpen, onClose, selectedApp, onAppro
       setApprovalData({
         approvedAmount: selectedApp.requestedAmount.toString(),
         repaymentDays: (selectedApp.voucherDays || 30).toString(),
-        voucherType: "",
+        voucherType: VoucherType.DISCOUNT_100,
         notes: ""
       });
     }

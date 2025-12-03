@@ -706,7 +706,12 @@ export function Checkout() {
                         <SelectContent>
                           {availableVouchers.map((voucher) => (
                             <SelectItem key={voucher.id} value={voucher.voucherCode}>
-                              {voucher.voucherCode} - {voucher.discountPercentage}% OFF (Remaining: {voucher.remainingCredit.toLocaleString()} RWF)
+                              <span className="block sm:hidden">
+                                {voucher.voucherCode} - {voucher.discountPercentage}% OFF
+                              </span>
+                              <span className="hidden sm:block">
+                                {voucher.voucherCode} -  {voucher.remainingCredit.toLocaleString()} RWF
+                              </span>
                             </SelectItem>
                           ))}
                         </SelectContent>
