@@ -12,7 +12,6 @@ import {
 import { DataTable } from "@/components/data-table";
 import { toast } from "sonner";
 import { orderService } from "@/app/services/orderService";
-import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import { ViewOrderModal, CancelOrderModal } from "./_components/order-modals";
 import { useWebSocket } from "@/hooks/useOrderWebSocket";
 import { useAuth } from "@/app/contexts/auth-context";

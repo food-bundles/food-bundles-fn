@@ -1,42 +1,210 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { LogOut, Package } from "lucide-react";
+import { Bell, Home, UserPlus } from "lucide-react";
+import { MdMenuOpen, MdClose } from "react-icons/md";
+import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/app/contexts/auth-context";
+import Image from "next/image";
+import { Skeleton } from "@/components/ui/skeleton";
 import { authService } from "@/app/services/authService";
 import { toast } from "sonner";
+import NotificationsDrawer from "@/app/(private)/restaurant/_components/notificationDrawer";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { notificationService } from "@/app/services/notificationService";
+import { OptimizedImage } from "@/components/OptimizedImage";
 
-export function LogisticsHeader() {
+interface LogisticsHeaderProps {
+  onMenuClick?: () => void;
+  sidebarOpen?: boolean;
+}
+
+export function LogisticsHeader({ onMenuClick, sidebarOpen }: LogisticsHeaderProps) {
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(true);
+  const { user, getUserProfileImage } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        setIsLoadingNotifications(true);
+        const response = await notificationService.getUnreadCount();
+        setUnreadCount(response.data.unreadCount);
+      } catch (error) {
+        console.error('Failed to fetch unread count:', error);
+      } finally {
+        setIsLoadingNotifications(false);
+      }
+    };
+    fetchUnreadCount();
+  }, []);
+
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     try {
       await authService.logout();
+      await new Promise((resolve) => setTimeout(resolve, 500));
       window.location.href = "/";
     } catch (error) {
-      toast.error("Logout failed");
+      console.error("Logout error:", error);
+      toast.error("Something went wrong!");
     }
   };
 
+  const profileImage = getUserProfileImage();
+  const userName =  user?.username  || "";
+  
   return (
-    <div className="sticky top-0 z-50 bg-green-700 shadow-lg border-b-4 border-green-800">
-      <div className="container mx-auto px-4 py-3 sm:py-4 flex justify-between items-center">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-            <Package className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+    <>
+      <header className="bg-green-700 border-b border-green-800">
+        <div className="px-4 pt-2 pb-1 flex items-center justify-between">
+          {/* Left side */}
+          <div className="flex items-center space-x-4">
+            {onMenuClick && (
+              <button
+                onClick={onMenuClick}
+                className="md:hidden p-2 cursor-pointer text-white hover:bg-green-600 rounded transition-colors"
+              >
+                {sidebarOpen ? (
+                  <MdClose className="h-6 w-6" />
+                ) : (
+                  <MdMenuOpen className="h-6 w-6" />
+                )}
+              </button>
+            )}
+            <div className="flex items-center gap-2">
+              <OptimizedImage
+                src="/imgs/Food_bundle_logo.png"
+                alt="Logo"
+                width={40}
+                height={40}
+                className="w-9 h-9 md:w-10 md:h-10 rounded-full object-cover"
+              />
+              <div>
+                <h1 className="text-lg md:text-xl font-bold text-green-100">
+                  FoodBundles
+                </h1>
+                <span className="text-gray-100 text-[12px]">
+                  Welcome Dear Logistic
+                </span>
+              </div>
+            </div>
           </div>
-          <div>
-            <h1 className="text-lg sm:text-xl font-bold text-white">Logistics Management</h1>
-            <p className="text-xs text-white/80 hidden sm:block">Track and manage deliveries</p>
+
+          {/* Right side */}
+          <div className="flex items-center gap-2 sm:gap-4">
+            {/* Notifications Button */}
+            <button
+              className="relative cursor-pointer text-primary-foreground hover:text-primary-foreground h-8 w-8 sm:h-10 sm:w-10"
+              onClick={() => setIsNotificationsOpen(true)}
+            >
+              <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
+              {isLoadingNotifications ? (
+                <Skeleton className="absolute top-0 right-3 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-green-600/60" />
+              ) : (
+                unreadCount >= 0 && (
+                  <Badge className="absolute top-0 right-3 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 flex items-center justify-center bg-green-500 text-white text-xs">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </Badge>
+                )
+              )}
+            </button>
+
+            {/* User Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 hover:bg-transparent cursor-pointer text-primary-foreground hover:text-primary-foreground">
+                  {user ? (
+                    <>
+                      <span className="font-medium text-[13px] hidden md:inline">
+                        {userName}
+                      </span>
+                      <div className="rounded-full flex items-center justify-center">
+                        {user?.profileImage ? (
+                          <Image
+                            src={profileImage || "/placeholder.svg"}
+                            alt={`${userName}'s profile`}
+                            width={32}
+                            height={32}
+                            className="rounded-full object-cover w-6 h-6 sm:w-8 sm:h-8"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.src = "/placeholder.svg";
+                            }}
+                          />
+                        ) : (
+                          <div className="rounded-full bg-green-600 text-white flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 font-medium">
+                            {userName.substring(0, 2).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Skeleton className="h-5 w-20 md:h-6 md:w-24 hidden md:inline bg-green-600/60" />
+                      <Skeleton className="rounded-full h-8 w-8 sm:h-10 sm:w-10 bg-green-600/60" />
+                    </>
+                  )}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="w-52"
+                align="end"
+                alignOffset={-15}
+              >
+                <div className="px-2 py-1.5">
+                  <p className="text-[13px] font-medium text-gray-900 truncate">
+                    {user?.username}
+                  </p>
+                  <p className="text-[12px] text-gray-500 truncate">
+                    {user?.email}
+                  </p>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="#"
+                    className="flex items-center gap-2 text-[13px]"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    Profile
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/"
+                    className="flex items-center gap-2 text-[13px]"
+                  >
+                    <Home className="w-4 h-4" />
+                    Home
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="text-red-600 focus:text-red-600 text-[13px]"
+                >
+                  {isLoggingOut ? "Logging out..." : "Logout"}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
-        <Button
-          onClick={handleLogout}
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20 hover:text-white font-semibold shadow-md"
-        >
-          <LogOut className="h-4 w-4" />
-          <span className="hidden sm:inline">Logout</span>
-        </Button>
-      </div>
-    </div>
+      </header>
+      <NotificationsDrawer
+        isOpen={isNotificationsOpen}
+        onClose={() => setIsNotificationsOpen(false)}
+      />
+    </>
   );
 }
