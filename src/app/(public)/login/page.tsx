@@ -20,23 +20,35 @@ function LoginForm() {
   const [backendMessage, setBackendMessage] = useState("");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
 
   // Load saved credentials on mount
   useEffect(() => {
     const savedIdentifier = localStorage.getItem('loginIdentifier');
     const savedPassword = localStorage.getItem('loginPassword');
-    if (savedIdentifier) setIdentifier(savedIdentifier);
-    if (savedPassword) setPassword(savedPassword);
+    const savedRememberMe = localStorage.getItem('rememberMe') === 'true';
+    
+    if (savedIdentifier && savedRememberMe) {
+      setIdentifier(savedIdentifier);
+      setRememberMe(true);
+    }
+    if (savedPassword && savedRememberMe) {
+      setPassword(savedPassword);
+    }
   }, []);
 
-  // Save credentials as user types
+  // Save credentials when remember me is checked
   useEffect(() => {
-    localStorage.setItem('loginIdentifier', identifier);
-  }, [identifier]);
-
-  useEffect(() => {
-    localStorage.setItem('loginPassword', password);
-  }, [password]);
+    if (rememberMe) {
+      localStorage.setItem('loginIdentifier', identifier);
+      localStorage.setItem('loginPassword', password);
+      localStorage.setItem('rememberMe', 'true');
+    } else {
+      localStorage.removeItem('loginIdentifier');
+      localStorage.removeItem('loginPassword');
+      localStorage.removeItem('rememberMe');
+    }
+  }, [identifier, password, rememberMe]);
 
 
   useEffect(() => {
@@ -117,9 +129,12 @@ function LoginForm() {
         return;
       }
 
-      // Clear credentials from localStorage on successful login
-      localStorage.removeItem('loginIdentifier');
-      localStorage.removeItem('loginPassword');
+      // Clear credentials from localStorage on successful login if not remembering
+      if (!rememberMe) {
+        localStorage.removeItem('loginIdentifier');
+        localStorage.removeItem('loginPassword');
+        localStorage.removeItem('rememberMe');
+      }
       
       const userRole = response.data?.user?.role;
       if (userRole) {
@@ -227,6 +242,8 @@ function LoginForm() {
             <label className="flex items-center text-[13px] text-gray-600">
               <input
                 type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
                 className="w-4 h-4 text-green-700 border-gray-300 rounded focus:ring-green-700"
               />
               <span className="ml-2">Remember me</span>

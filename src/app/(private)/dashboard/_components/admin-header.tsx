@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bell, Settings, MessageSquareDot } from "lucide-react";
+import { Bell } from "lucide-react";
 import { MdMenuOpen, MdClose } from "react-icons/md";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
-import { notificationService, Notification } from "@/app/services/notificationService";
+import { notificationService } from "@/app/services/notificationService";
 import NotificationsDrawer from "@/app/(private)/restaurant/_components/notificationDrawer";
 
 interface AdminHeaderProps {
