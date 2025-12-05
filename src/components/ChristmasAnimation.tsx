@@ -54,7 +54,7 @@ export function ChristmasAnimation() {
       
       {/* Santa Hats */}
       {/* <div className="relative top-28 right-20 text-3xl animate-bounce">🎅</div> */}
-      <div className="absolute top-3 left-108 text-2xl animate-pulse" style={{ animationDelay: '1.5s' }}>🎅</div>
+      {/* <div className="absolute top-3 left-108 text-2xl animate-pulse" style={{ animationDelay: '1.5s' }}>🎅</div> */}
       
       {/* Snowflakes */}
       {snowflakes.map(flake => (

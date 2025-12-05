@@ -390,10 +390,10 @@ export function ProductsSection({
                   {/* Left: Greeting */}
                   <div className="flex flex-col justify-center text-center lg:text-left">
                     <h1 className="text-[20px] font-semibold text-gray-800 mb-1">
-                      Hello <span className="text-green-600">{userName}</span>!
+                      Hello <span className="text-green-600">{userName}</span>! <span className="text-2xl">🎄</span>
                     </h1>
                     <p className="text-gray-500 text-[16px]">
-                      Welcome to Our Farm
+                      Welcome to Our Farm <span className="text-2xl">🎅</span>
                     </p>
                   </div>
 
