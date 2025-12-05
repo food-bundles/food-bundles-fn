@@ -144,4 +144,10 @@ export const productService = {
     );
     return response.data;
   },
+
+  getDiscountedProducts: async () => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/products/discounted");
+    return response.data;
+  },
 };

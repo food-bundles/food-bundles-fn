@@ -26,6 +26,8 @@ import {
 import { useAuth } from "@/app/contexts/auth-context";
 import { useCart } from "@/app/contexts/cart-context";
 import { useProductSection } from "@/hooks/useProductSection";
+import { productService } from "@/app/services/productService";
+import { ChristmasAnimation } from "@/components/ChristmasAnimation";
 import Link from "next/link";
 
 interface ProductCardProps {
@@ -216,21 +218,22 @@ const ProductCard = memo(function ProductCard({
             {name}
           </h3>
           <div className="flex items-center gap-2 my-1">
-            <div className="flex">{renderStars(rating)}</div>
-            <span className="text-gray-500 text-xs">({rating.toFixed(1)})</span>
+            <div className="flex">{renderStars(rating || 0)}</div>
+            <span className="text-gray-500 text-xs">({(rating || 0).toFixed(1)})</span>
           </div>
           <div className="flex items-center gap-2">
             {originalPrice ? (
-              <span className="font-bold text-gray-900 text-base">
-                {price.toLocaleString()} Rwf
-                {unit && <span className="text-sm font-normal text-gray-600">/{unit}</span>}
-                <span className="text-gray-500 line-through text-sm ml-2">
-                  {originalPrice.toLocaleString()} Rwf
+              <span className="font-bold text-green-500 text-base">
+                {(price || 0).toLocaleString()}/
+                <span className="text-gray-500 line-through text-base ml-2">
+                {(originalPrice || 0).toLocaleString()}
                 </span>
+                {unit && <span className="text-sm font-md text-gray-900"> Rwf/{unit}</span>}
+                
               </span>
             ) : (
               <span className="font-bold text-gray-900 text-base">
-                {price.toLocaleString()} Rwf
+                {(price || 0).toLocaleString()} Rwf
                 {unit && <span className="text-sm font-normal text-gray-600">/{unit}</span>}
               </span>
             )}
@@ -292,7 +295,7 @@ interface SortingProps {
 interface ProductsSectionProps {
   products: Product[];
   categories: Category[];
-  onCategorySelect?: (categoryName: string) => void;
+  onCategorySelect?: (categoryName: string, discountedProducts?: any[]) => void;
   pagination?: PaginationProps;
   search?: SearchProps;
   sorting?: SortingProps;
@@ -310,6 +313,7 @@ export function ProductsSection({
   const { user, isAuthenticated } = useAuth();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [showDiscounted, setShowDiscounted] = useState(false);
+  const [discountedProducts, setDiscountedProducts] = useState<Product[]>([]);
   const { totalItems, totalQuantity, totalAmount, isLoading } = useCartSummary();
 
 
@@ -333,21 +337,14 @@ export function ProductsSection({
     setLocalSearchQuery(searchQuery);
   }, [searchQuery]);
 
- const filteredAndSortedProducts = useMemo(() => {
-  let filtered = products;
-
-  // Filter discounted products
-  if (showDiscounted) {
-    filtered = products.filter(product => 
-      product.discountedPrice !== null && 
-      product.bonus > 0
-    );
-  }
-
+ const sortedProducts = useMemo(() => {
+  // Use discounted products if available, otherwise use regular products
+  const productsToSort = showDiscounted && discountedProducts.length > 0 ? discountedProducts : products;
+  
   // Sorting logic
-  if (!sorting?.sortBy || sorting.sortBy === "random") return filtered;
+  if (!sorting?.sortBy || sorting.sortBy === "random") return productsToSort;
 
-  return [...filtered].sort((a, b) => {
+  return [...productsToSort].sort((a, b) => {
     switch (sorting.sortBy) {
       case "price_asc":
         return a.price - b.price;
@@ -365,7 +362,7 @@ export function ProductsSection({
         return 0;
     }
   });
-}, [products, showDiscounted, sorting?.sortBy]);
+}, [products, discountedProducts, showDiscounted, sorting?.sortBy]);
 
 
   // Show all categories (backend handles filtering)
@@ -381,8 +378,9 @@ export function ProductsSection({
   return (
     <section
       id="products"
-      className="flex justify-center items-start  border py-0"
+      className="flex justify-center items-start  border py-0 relative"
     >
+      <ChristmasAnimation />
       <div className="container">
         <div className="flex gap-0 relative">
           <div className="  w-full">
@@ -392,10 +390,10 @@ export function ProductsSection({
                   {/* Left: Greeting */}
                   <div className="flex flex-col justify-center text-center lg:text-left">
                     <h1 className="text-[20px] font-semibold text-gray-800 mb-1">
-                      Hello <span className="text-green-600">{userName}</span>!
+                      Hello <span className="text-green-600">{userName}</span>! <span className="text-2xl">🎄</span>
                     </h1>
                     <p className="text-gray-500 text-[16px]">
-                      Welcome to Our Farm
+                      Welcome to Our Farm <span className="text-2xl">🎅</span>
                     </p>
                   </div>
 
@@ -525,9 +523,37 @@ export function ProductsSection({
                     })}
 
                     <button 
-                      onClick={() => {
+                      onClick={async () => {
                         setShowDiscounted(!showDiscounted);
                         setSelectedCategory("All Categories");
+                        if (!showDiscounted) {
+                          try {
+                            console.log('Fetching discounted products...');
+                            const data = await productService.getDiscountedProducts();
+                            console.log('Discounted products response:', data);
+                            const transformedProducts = data.data.map((product: any) => ({
+                              id: product.id,
+                              name: product.productName,
+                              price: product.discountedPrice,
+                              originalPrice: product.unitPrice,
+                              image: product.images[0] || '/placeholder.svg',
+                              category: product.category,
+                              inStock: product.quantity > 0,
+                              rating: 4.5,
+                              discountPercent: product.bonus,
+                              createdAt: new Date().toISOString(),
+                              unit: product.unit,
+                              discountedPrice: product.discountedPrice,
+                              bonus: product.bonus
+                            }));
+                            console.log('Transformed products:', transformedProducts);
+                            setDiscountedProducts(transformedProducts);
+                          } catch (error) {
+                            console.error('Failed to fetch discounted products:', error);
+                          }
+                        } else {
+                          setDiscountedProducts([]);
+                        }
                       }}
                       className={`px-4 py-[3px] rounded-full text-[13px] font-medium transition-all ${showDiscounted
                         ? "bg-green-600 text-white shadow-md"
@@ -594,9 +620,9 @@ export function ProductsSection({
             {/* Products Grid */}
             <div className="px-4 sm:px-6 overflow-y-auto">
               <div className="mb-12">
-                {filteredAndSortedProducts.length > 0 ? (
+                {sortedProducts.length > 0 ? (
                   <div className="grid gap-4 justify-items-center grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-                    {filteredAndSortedProducts.map((product) => (
+                    {sortedProducts.map((product) => (
                       <ProductCard
                         key={product.id}
                         id={product.id}
