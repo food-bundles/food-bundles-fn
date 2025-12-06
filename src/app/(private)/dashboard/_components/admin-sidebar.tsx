@@ -17,6 +17,7 @@ import {
   Soup,
   Crown,
   Ticket,
+  UserPlus,
 } from "lucide-react";
 import NotificationsDrawer from "@/app/(private)/restaurant/_components/notificationDrawer";
 import { usePathname } from "next/navigation";
@@ -47,6 +48,11 @@ const menuItems = [
     icon: Ticket,
     label: "Voucher Management",
     href: "/dashboard/vouchers",
+  },
+  {
+    icon: UserPlus,
+    label: "Invitations",
+    href: "/dashboard/invitations",
   },
   {
     icon: Users,
