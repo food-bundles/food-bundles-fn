@@ -16,7 +16,6 @@ interface AdminHeaderProps {
 export function AdminHeader({ onMenuClick, sidebarOpen }: AdminHeaderProps) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const unreadMessages = 2;
 
   useEffect(() => {
     const fetchUnreadCount = async () => {
@@ -59,7 +58,7 @@ export function AdminHeader({ onMenuClick, sidebarOpen }: AdminHeaderProps) {
             className="relative p-1.5 md:p-2 hover:bg-green-600 cursor-pointer rounded-full text-white"
           >
             <Bell className="h-4 w-4 md:h-5 md:w-5" />
-            {unreadNotifications > 0 && (
+            {unreadNotifications >= 0 && (
               <Badge className="absolute top-0 right-1 h-4 w-4 rounded-full p-0 flex items-center justify-center bg-orange-400 text-white text-xs">
                 {unreadNotifications}
               </Badge>
