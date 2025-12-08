@@ -16,7 +16,7 @@ interface CartDrawerProps {
 
 export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const {
-    cart,
+    // cart,
     cartItems,
     updateCartItem,
     removeCartItem,
@@ -27,16 +27,16 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   } = useCart();
 
   // Check subscription benefits
-  const cartWithRestaurant = cart as any;
-  const hasActiveSubscription = cartWithRestaurant?.restaurant?.subscriptions?.some(
-    (sub: any) => sub.status === 'ACTIVE' && sub.plan
-  );
-  const subscriptionPlan = hasActiveSubscription 
-    ? cartWithRestaurant?.restaurant?.subscriptions?.find((sub: any) => sub.status === 'ACTIVE')?.plan 
-    : null;
+  // const cartWithRestaurant = cart as any;
+  // const hasActiveSubscription = cartWithRestaurant?.restaurant?.subscriptions?.some(
+  //   (sub: any) => sub.status === 'ACTIVE' && sub.plan
+  // );
+  // const subscriptionPlan = hasActiveSubscription 
+  //   ? cartWithRestaurant?.restaurant?.subscriptions?.find((sub: any) => sub.status === 'ACTIVE')?.plan 
+  //   : null;
   
-  const hasFreeDelivery = subscriptionPlan?.freeDelivery || false;
-  const deliveryFee = hasFreeDelivery ? 0 : totalAmount < 100000 ? 5000 : 0;
+  // const hasFreeDelivery = subscriptionPlan?.freeDelivery || false;
+  // const deliveryFee = hasFreeDelivery ? 0 : totalAmount < 100000 ? 5000 : 0;
 
   // Handle escape key
   useEffect(() => {
@@ -68,7 +68,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
           ${isOpen ? "translate-x-0" : "translate-x-full"}`}
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-green-600  flex justify-between items-center px-4 sm:px-6 py-4">
+        <div className="sticky top-0 z-10 bg-green-700  flex justify-between items-center px-4 sm:px-6 py-4">
           <div className="flex items-center gap-2">
             <span className="text-lg sm:text-base font-medium text-white">
               My Cart
@@ -135,38 +135,19 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
             <div className="sticky bottom-0 bg-white border-t border-gray-200 pt-4 pb-6 px-2 sm:px-1">
               <div className="flex justify-between text-gray-900">
                 <span className="text-[14px]">Delivery fee</span>
-                <span>
-                  {hasFreeDelivery ? (
-                    <>
-                      <span className="line-through text-[14px] text-gray-400">
-                        Rwf 5,000
-                      </span>
-                      <span className="ml-2 text-[14px] text-green-600">
-                        Free
-                      </span>
-                    </>
-                  ) : deliveryFee > 0 ? (
-                    `Rwf ${deliveryFee.toLocaleString()}`
-                  ) : (
-                    "Free"
-                  )}
+                <span className="line-through text-[14px] text-gray-400">
+                  Rwf 5,000
                 </span>
               </div>
               <div className="flex justify-between items-center mb-2 sm:mb-1">
                 <span className="text-lg sm:text-sm font-semibold">Total:</span>
-                {hasFreeDelivery ? (
-                  <span className="text-lg sm:text-sm font-bold">
-                    {totalAmount} Rwf
-                  </span>
-                ) : (
-                  <span className="text-lg sm:text-sm font-bold">
-                    {totalAmount + deliveryFee} Rwf
-                  </span>
-                )}
+                <span className="text-lg sm:text-sm font-bold">
+                  {totalAmount} Rwf
+                </span>
               </div>
 
               <a href="/restaurant/checkout">
-                <Button className="w-full sm:py-2 py-1 text-sm sm:text-xs bg-green-600 hover:bg-green-700 rounded-none">
+                <Button className="w-full sm:py-2 py-1 text-sm sm:text-xs bg-green-700 hover:bg-green-800 rounded-none">
                   Buy Now
                 </Button>
               </a>
@@ -313,7 +294,7 @@ function CartItem({
                     isUpdating || Number.parseFloat(inputValue) === item.quantity
                   }
                   size="sm"
-                  className="w-12 h-6 text-xs bg-green-500 hover:bg-green-600 text-white disabled:opacity-50 flex items-center justify-center rounded-full cursor-pointer"
+                  className="w-12 h-6 text-xs bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 flex items-center justify-center rounded-full cursor-pointer"
                 >
                   🗸
                 </Button>

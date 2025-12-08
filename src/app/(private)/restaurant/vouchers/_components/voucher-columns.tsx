@@ -84,7 +84,7 @@ export const createVoucherColumns = ({ onPayment, payingVoucherId }: VoucherColu
       return (
         <div className="flex items-center gap-1.5">
           <div className="text-sm text-gray-600">
-            {/* {voucher.voucherDays}{" "} */} 1 day
+            {/* {voucher.voucherDays}{" "} */} N/A
           </div>
         </div>
       );
@@ -122,7 +122,7 @@ export const createVoucherColumns = ({ onPayment, payingVoucherId }: VoucherColu
           USED: "bg-blue-100 text-blue-700 border-blue-200",
           EXPIRED: "bg-red-100 text-red-700 border-red-200",
           SUSPENDED: "bg-yellow-100 text-yellow-700 border-yellow-200",
-          SETTLED: "bg-gray-100 text-gray-700 border-gray-200",
+          SETTLED: "bg-green-100 text-green-700 border-green-200",
         };
         return colors[status as keyof typeof colors] || "bg-gray-100 text-gray-700 border-gray-200";
       };
@@ -159,7 +159,7 @@ export const createVoucherColumns = ({ onPayment, payingVoucherId }: VoucherColu
         return daysDifference > loan.voucherDays;
       };
       
-      const needsPayment = voucher.usedCredit > 0;
+      const needsPayment = voucher.usedCredit > 0 && voucher.status !== "SETTLED"; ;
       const paymentOverdue = isOverdue();
 
       return (
