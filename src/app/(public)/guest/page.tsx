@@ -21,7 +21,7 @@ function GuestRequirementsNotice() {
               </span>
               <br />
               Orders below this amount will have additional{" "}
-              <span className="text-red-500 font-bold">delivery fees</span>{" "}
+              <span className="text-red-500 font-bold">delivery fees 2</span>{" "}
               applied.
             </p>
           </div>

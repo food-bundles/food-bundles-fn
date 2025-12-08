@@ -87,6 +87,7 @@ export function Checkout() {
   const [formData, setFormData] = useState({
     fullName: "",
     phoneNumber: "",
+    momoPhoneNumber: "",
     deliveryAddress: "",
     deliveryInstructions: "",
     location: null as LocationData | null,
@@ -120,6 +121,7 @@ export function Checkout() {
         ...prev,
         fullName: user.name || "",
         phoneNumber: user.phone || "",
+        momoPhoneNumber: user.phone || "",
         deliveryAddress: fullAddress,
         deliveryInstructions: "",
         location: null,
@@ -194,9 +196,9 @@ export function Checkout() {
   const hasOtherServices = subscriptionPlan?.otherServices || false;
 
   // Calculate fees
-  const deliveryFee = hasFreeDelivery ? 0 : (totalAmount < 100000 ? 5000 : 0);
-  const packagingFee = (!hasOtherServices || otherServices) ? 15000 : 0;
-  const finalTotal = totalAmount + deliveryFee + packagingFee;
+  const deliveryFee = 0; // Currently free for all users
+  const packagingFee = hasOtherServices ? 0 : (otherServices ? 15000 : 0);
+  const finalTotal = totalAmount + packagingFee;
 
   const summaryData = {
     totalItems,
@@ -292,6 +294,11 @@ export function Checkout() {
       newErrors.phoneNumber = "Phone number is required";
     }
 
+    // MoMo phone validation
+    if (method === "momo" && !formData.momoPhoneNumber.trim()) {
+      newErrors.momoPhoneNumber = "Phone number is required for MoMo payment";
+    }
+
     if (!formData.useMapLocation && !formData.deliveryAddress.trim()) {
       newErrors.deliveryAddress =
         "Please select location on map or enter address";
@@ -332,7 +339,7 @@ export function Checkout() {
         billingName: formData.fullName,
         billingEmail: method === "card" ? user?.email || "" : undefined,
         billingPhone:
-          method === "card" ? formData.phoneNumber : formData.phoneNumber,
+          method === "momo" ? formData.momoPhoneNumber : formData.phoneNumber,
         billingAddress:
           formData.useMapLocation && formData.location
             ? `${formData.location.lat},${formData.location.lng}`
@@ -361,16 +368,18 @@ export function Checkout() {
           return;
         }
 
-        // Check if redirect is required for any payment method
+        // Check payment provider and handle accordingly
         const responseData = response.data as any;
         const requiresRedirect = responseData?.requiresRedirect;
         const redirectUrl = responseData?.redirectUrl;
         const paymentProvider = responseData?.checkout?.paymentProvider;
 
-        if (requiresRedirect && redirectUrl) {
+        if (requiresRedirect && redirectUrl && paymentProvider === "FLUTTERWAVE") {
+          // Flutterwave requires redirect - show modal
           setFlutterwaveRedirectUrl(redirectUrl);
           setShowFlutterwaveInfo(true);
-        } else if (method === "momo" && paymentProvider === "PAYPACK") {
+        } else if (paymentProvider === "PAYPACK") {
+          // Paypack sends USSD to phone - redirect to orders
           window.location.href = "/restaurant";
         } else {
           window.location.href = "/restaurant";
@@ -455,17 +464,14 @@ export function Checkout() {
             </div>
             <div className="flex justify-between text-gray-900">
               <span>Delivery fee</span>
-              <span>
-                {hasFreeDelivery ? (
-                  <>
-                    <span className="line-through text-gray-400">Rwf 5,000</span>
-                    <span className="ml-2 text-green-600">Free</span>
-                  </>
-                ) : (
-                  deliveryFee > 0 ? `Rwf ${deliveryFee.toLocaleString()}` : 'Free'
-                )}
-              </span>
+              <span className="line-through text-gray-400">Rwf 5,000</span>
             </div>
+            {packagingFee > 0 && (
+              <div className="flex justify-between text-gray-900">
+                <span>Other services</span>
+                <span>Rwf {packagingFee.toLocaleString()}</span>
+              </div>
+            )}
             <div className="border-t pt-3">
               <div className="flex justify-between font-medium text-gray-900">
                 <span>Total</span>
@@ -584,8 +590,13 @@ export function Checkout() {
                     disabled={true}
                     className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
                   />
-                  <label htmlFor="otherServices" className="text-sm text-gray-700">
-                    <span className="line-through text-gray-400">Add other services (+15,000 RWF)</span>
+                  <label
+                    htmlFor="otherServices"
+                    className="text-sm text-gray-700"
+                  >
+                    <span className="line-through text-gray-400">
+                      Add other services: +15,000 RWF
+                    </span>
                     <span className="ml-2 text-green-600">Included</span>
                   </label>
                 </div>
@@ -599,8 +610,11 @@ export function Checkout() {
                     className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
                     disabled={isSubmitting}
                   />
-                  <label htmlFor="otherServices" className="text-sm text-gray-700">
-                    Add other services (+15,000 RWF)
+                  <label
+                    htmlFor="otherServices"
+                    className="text-sm text-gray-700"
+                  >
+                    Add other services: +15,000 RWF
                   </label>
                 </div>
               )}
@@ -647,7 +661,7 @@ export function Checkout() {
                       }`}
                       disabled={isSubmitting}
                     >
-                      Card
+                      Card/MoMo
                     </button>
                     <button
                       type="button"
@@ -665,7 +679,36 @@ export function Checkout() {
                 </div>
               </div>
 
+              {method === "momo" && (
+                <div className="space-y-2 mt-3">
+                  <label className="flex items-center text-sm font-medium text-gray-700">
+                    Phone Number (MTN or TIGO)
+                  </label>
 
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-900" />
+                    <input
+                      type="tel"
+                      placeholder="250788123456"
+                      value={formData.momoPhoneNumber}
+                      onChange={(e) =>
+                        handleInputChange("momoPhoneNumber", e.target.value)
+                      }
+                      className={`w-full pl-10 h-10 border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none text-[14px] ${
+                        errors.momoPhoneNumber
+                          ? "border-red-500"
+                          : "border-gray-300"
+                      }`}
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                  {errors.momoPhoneNumber && (
+                    <p className="text-red-600 text-xs">
+                      {errors.momoPhoneNumber}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {method === "wallet" && (
                 <div className="space-y-2 mt-3">
@@ -695,29 +738,42 @@ export function Checkout() {
                       </label>
                       <Select
                         value={formData.voucherCode}
-                        onValueChange={(value) => handleInputChange("voucherCode", value)}
+                        onValueChange={(value) =>
+                          handleInputChange("voucherCode", value)
+                        }
                         disabled={isSubmitting}
                       >
-                        <SelectTrigger className={`w-full h-10 text-[14px] ${
-                          errors.voucherCode ? "border-red-500" : "border-gray-300"
-                        }`}>
+                        <SelectTrigger
+                          className={`w-full h-10 text-[14px] ${
+                            errors.voucherCode
+                              ? "border-red-500"
+                              : "border-gray-300"
+                          }`}
+                        >
                           <SelectValue placeholder="Select a voucher" />
                         </SelectTrigger>
                         <SelectContent>
                           {availableVouchers.map((voucher) => (
-                            <SelectItem key={voucher.id} value={voucher.voucherCode}>
+                            <SelectItem
+                              key={voucher.id}
+                              value={voucher.voucherCode}
+                            >
                               <span className="block sm:hidden">
-                                {voucher.voucherCode} - {voucher.discountPercentage}% OFF
+                                {voucher.voucherCode} -{" "}
+                                {voucher.discountPercentage}% OFF
                               </span>
                               <span className="hidden sm:block">
-                                {voucher.voucherCode} -  {voucher.remainingCredit.toLocaleString()} RWF
+                                {voucher.voucherCode} -{" "}
+                                {voucher.remainingCredit.toLocaleString()} RWF
                               </span>
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                       {errors.voucherCode && (
-                        <p className="text-red-600 text-xs">{errors.voucherCode}</p>
+                        <p className="text-red-600 text-xs">
+                          {errors.voucherCode}
+                        </p>
                       )}
                     </div>
                   ) : (
@@ -725,7 +781,7 @@ export function Checkout() {
                       <p className="text-sm text-gray-600 mb-3">
                         You don&rsquo;t have any active vouchers
                       </p>
-                      <Link 
+                      <Link
                         href="/restaurant/vouchers"
                         className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md transition-colors"
                       >
@@ -810,6 +866,61 @@ export function Checkout() {
         </div>
       </div>
 
+      {/* Flutterwave Redirect Modal */}
+      {showFlutterwaveInfo && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-md w-full max-w-md flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 className="text-[16px] font-medium text-gray-900 flex items-center gap-2">
+                <Info className="h-4 w-4 text-green-500" />
+                Complete Payment
+              </h3>
+              <button
+                onClick={() => setShowFlutterwaveInfo(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4">
+              <p className="text-sm text-gray-700">
+                You will be redirected to complete your payment. Choose your
+                preferred payment method:
+              </p>
+              <div className="bg-gray-50 p-4 rounded-md">
+                <ul className="text-[13px] text-gray-900 space-y-2">
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-green-600 rounded-full"></span>
+                    Mobile Money (MTN/TIGO)
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-green-600 rounded-full"></span>
+                    Card Payment
+                  </li>
+                </ul>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowFlutterwaveInfo(false)}
+                  className="flex-1 h-10 border border-gray-300 hover:border-gray-400 text-gray-900 text-[14px] font-medium cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleFlutterwaveRedirect}
+                  className="flex-1 h-10 bg-green-600 hover:bg-green-700 text-white text-[14px] font-medium cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Voucher OTP Verification Modal */}
       {showVoucherOTPModal && (
         <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -861,43 +972,6 @@ export function Checkout() {
                   {isVerifyingVoucherOTP ? "Verifying..." : "Verify & Pay"}
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showFlutterwaveInfo && (
-        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-md w-full max-w-md flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h3 className="text-[16px] font-medium text-gray-900 flex items-center gap-2">
-                <Info className="h-4 w-4 text-green-500" />
-                Complete Payment
-              </h3>
-              <button
-                onClick={() => setShowFlutterwaveInfo(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            <div className="p-4 space-y-4">
-              <div className="p-4">
-                <ul className="text-[13px] text-gray-900 space-y-1 list-decimal">
-                  <li>Click Continue</li>
-                  <li>Enter the OTP sent to your WhatsApp</li>
-                  <li>Press *182*7*1# then Track your Order</li>
-                </ul>
-              </div>
-
-              <button
-                onClick={handleFlutterwaveRedirect}
-                className="w-full h-10 bg-green-600 hover:bg-green-700 text-white text-[14px] font-medium cursor-pointer flex items-center justify-center gap-2"
-              >
-                <ExternalLink className="h-4 w-4" />
-                Continue
-              </button>
             </div>
           </div>
         </div>
