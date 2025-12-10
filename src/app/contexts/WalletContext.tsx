@@ -1,37 +1,61 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { createContext, useContext, useCallback, useState } from "react";
-import { walletService, ICreateWalletData, ITopUpData, IWalletUpdateData, IWalletAdjustmentData } from "@/app/services/walletService";
+import React, { createContext, useContext, useCallback, useState, useEffect } from "react";
+import { walletService, TopUpWalletData, WalletTransactionFilters } from "@/app/services/walletService";
+import { useWalletWebSocket } from "@/hooks/useWalletWebSocket";
+import { useAuth } from "@/app/contexts/auth-context";
+
+export interface Wallet {
+  id: string;
+  restaurantId: string;
+  balance: number;
+  currency: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  restaurant: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+  };
+  _count: {
+    transactions: number;
+  };
+}
+
+export interface WalletTransaction {
+  id: string;
+  walletId: string;
+  type: string;
+  amount: number;
+  previousBalance: number;
+  newBalance: number;
+  description: string;
+  reference?: string;
+  status: string;
+  paymentMethod?: string;
+  flwRef?: string;
+  flwStatus?: string;
+  externalTxId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface WalletContextType {
   // State
-  myWallet: any;
-  transactions: any[];
-  allWallets: any[];
+  wallet: Wallet | null;
+  transactions: WalletTransaction[];
   loading: boolean;
   error: string | null;
 
-  // Wallet Methods
-  createWallet: (walletData: ICreateWalletData) => Promise<any>;
+  // Methods
   getMyWallet: () => Promise<any>;
-  topUpWallet: (topUpData: ITopUpData) => Promise<any>;
-  refreshMyWallet: () => Promise<void>;
-
-  // Transaction Methods
-  getTransactions: (params?: { page?: number; limit?: number }) => Promise<any>;
-  getTransactionById: (transactionId: string) => Promise<any>;
-  verifyTopUp: (transactionId: string) => Promise<any>;
-  refreshTransactions: () => Promise<void>;
-
-  // Admin Methods
-  getAllWallets: (params?: { page?: number; limit?: number }) => Promise<any>;
-  getWalletById: (walletId: string) => Promise<any>;
-  updateWalletStatus: (walletId: string, updateData: IWalletUpdateData) => Promise<any>;
-  adjustWalletBalance: (walletId: string, adjustmentData: IWalletAdjustmentData) => Promise<any>;
-
-  // Utility Methods
+  createWallet: () => Promise<any>;
+  topUpWallet: (data: TopUpWalletData) => Promise<any>;
+  getTransactions: (filters?: WalletTransactionFilters) => Promise<any>;
+  refreshWallet: () => Promise<void>;
   clearError: () => void;
 }
 
@@ -42,213 +66,137 @@ interface WalletProviderProps {
 }
 
 export function WalletProvider({ children }: WalletProviderProps) {
-  const [myWallet, setMyWallet] = useState<any>(null);
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [allWallets, setAllWallets] = useState<any[]>([]);
+  const [wallet, setWallet] = useState<Wallet | null>(null);
+  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+  const { walletUpdates } = useWalletWebSocket(user?.id || "", user?.id);
 
   const clearError = useCallback(() => {
     setError(null);
-  }, []);
-
-  // ==================== WALLET METHODS ====================
-
-  const createWallet = useCallback(async (walletData: ICreateWalletData) => {
-    try {
-      setLoading(true);
-      const response = await walletService.createWallet(walletData);
-      if (response && response.data) {
-        setMyWallet(response.data);
-      }
-      return response;
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to create wallet");
-      throw err;
-    } finally {
-      setLoading(false);
-    }
   }, []);
 
   const getMyWallet = useCallback(async () => {
     try {
       setLoading(true);
       const response = await walletService.getMyWallet();
-      if (response && response.data) {
-        setMyWallet(response.data);
+      if (response.data) {
+        setWallet(response.data);
       }
       return response;
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to fetch wallet");
+      const errorMessage = err.response?.data?.message || "Failed to fetch wallet";
+      setError(errorMessage);
       throw err;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const topUpWallet = useCallback(async (topUpData: ITopUpData) => {
+  const createWallet = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await walletService.topUpWallet(topUpData);
-      if (response.success) {
-        await refreshMyWallet();
-        await refreshTransactions();
+      const response = await walletService.createWallet({ currency: "RWF" });
+      if (response.data) {
+        setWallet(response.data);
       }
       return response;
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to top up wallet");
+      const errorMessage = err.response?.data?.message || "Failed to create wallet";
+      setError(errorMessage);
       throw err;
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const refreshMyWallet = useCallback(async () => {
+  const topUpWallet = useCallback(async (data: TopUpWalletData) => {
+    try {
+      setLoading(true);
+      const response = await walletService.topUpWallet(data);
+      
+      // Only refresh wallet for completed transactions (mobile money success)
+      // Card payments will be updated via webhook/websocket
+      if (response.data && !response.data.requiresRedirect) {
+        await getMyWallet();
+      }
+      
+      return response;
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || "Failed to top up wallet";
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [getMyWallet]);
+
+  const getTransactions = useCallback(async (filters?: WalletTransactionFilters) => {
+    try {
+      setLoading(true);
+      const response = await walletService.getWalletTransactions(filters);
+      if (response.data) {
+        setTransactions(response.data);
+      }
+      return response;
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || "Failed to fetch transactions";
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const refreshWallet = useCallback(async () => {
     await getMyWallet();
   }, [getMyWallet]);
 
-  // ==================== TRANSACTION METHODS ====================
-
-  const getTransactions = useCallback(async (params?: { page?: number; limit?: number }) => {
-    try {
-      setLoading(true);
-      const response = await walletService.getTransactions(params);
-      if (response && response.data) {
-        setTransactions(response.data || []);
+  // Handle WebSocket wallet updates
+  useEffect(() => {
+    if (walletUpdates.length > 0) {
+      const latestUpdate = walletUpdates[walletUpdates.length - 1];
+      
+      // Refresh wallet and transactions when we receive any wallet update
+      if (latestUpdate.action === "TOP_UP") {
+        // Refresh wallet balance
+        walletService.getMyWallet()
+          .then(response => {
+            if (response.data) {
+              setWallet(response.data);
+            }
+          })
+          .catch(console.error);
+        
+        // Refresh transactions
+        walletService.getWalletTransactions({ limit: 10 })
+          .then(response => {
+            if (response.data) {
+              setTransactions(response.data);
+            }
+          })
+          .catch(console.error);
+        
+        // Dispatch custom event for deposits page to refresh its transactions
+        window.dispatchEvent(new CustomEvent('walletTransactionUpdate'));
       }
-      return response;
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to fetch transactions");
-      throw err;
-    } finally {
-      setLoading(false);
     }
-  }, []);
-
-  const getTransactionById = useCallback(async (transactionId: string) => {
-    try {
-      setLoading(true);
-      const response = await walletService.getTransactionById(transactionId);
-      return response;
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to fetch transaction");
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const verifyTopUp = useCallback(async (transactionId: string) => {
-    try {
-      setLoading(true);
-      const response = await walletService.verifyTopUp(transactionId);
-      if (response.success) {
-        await refreshMyWallet();
-        await refreshTransactions();
-      }
-      return response;
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to verify top up");
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const refreshTransactions = useCallback(async () => {
-    await getTransactions();
-  }, [getTransactions]);
-
-  // ==================== ADMIN METHODS ====================
-
-  const getAllWallets = useCallback(async (params?: { page?: number; limit?: number }) => {
-    try {
-      setLoading(true);
-      const response = await walletService.getAllWallets(params);
-      if (response && response.data) {
-        setAllWallets(response.data || []);
-      }
-      return response;
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to fetch all wallets");
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const getWalletById = useCallback(async (walletId: string) => {
-    try {
-      setLoading(true);
-      const response = await walletService.getWalletById(walletId);
-      return response;
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to fetch wallet");
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const updateWalletStatus = useCallback(async (walletId: string, updateData: IWalletUpdateData) => {
-    try {
-      setLoading(true);
-      const response = await walletService.updateWalletStatus(walletId, updateData);
-      if (response.success) {
-        await getAllWallets();
-      }
-      return response;
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to update wallet status");
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const adjustWalletBalance = useCallback(async (walletId: string, adjustmentData: IWalletAdjustmentData) => {
-    try {
-      setLoading(true);
-      const response = await walletService.adjustWalletBalance(walletId, adjustmentData);
-      if (response.success) {
-        await getAllWallets();
-      }
-      return response;
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to adjust wallet balance");
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  }, [walletUpdates]);
 
   const contextValue: WalletContextType = {
     // State
-    myWallet,
+    wallet,
     transactions,
-    allWallets,
     loading,
     error,
 
-    // Wallet Methods
-    createWallet,
+    // Methods
     getMyWallet,
+    createWallet,
     topUpWallet,
-    refreshMyWallet,
-
-    // Transaction Methods
     getTransactions,
-    getTransactionById,
-    verifyTopUp,
-    refreshTransactions,
-
-    // Admin Methods
-    getAllWallets,
-    getWalletById,
-    updateWalletStatus,
-    adjustWalletBalance,
-
-    // Utility Methods
+    refreshWallet,
     clearError,
   };
 

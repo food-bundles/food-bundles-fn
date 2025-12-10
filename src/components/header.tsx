@@ -503,7 +503,7 @@ export function Header() {
                     </div>
                   ) : (
                     <Link href="/login">
-                      <button className="bg-green-50 text-sm text-black hover:bg-green-100 px-3 sm:px-4 rounded-full py-1 flex items-center gap-1">
+                      <button className="bg-green-50 text-sm text-black hover:bg-green-100 px-3 sm:px-4 rounded-full py-1 flex items-center gap-1 cursor-pointer">
                         <User className="w-4 h-4" />
                         Login
                       </button>

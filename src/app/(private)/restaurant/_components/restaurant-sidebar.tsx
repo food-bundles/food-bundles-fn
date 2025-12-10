@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Bell, HelpCircle, Crown, Ticket, Home, ShoppingCart} from "lucide-react";
+import { Bell, HelpCircle, Crown, Ticket, Home, ShoppingCart, Wallet} from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { OptimizedImage } from "@/components/OptimizedImage";
@@ -10,6 +10,7 @@ const menuItems = [
   { icon: Home, label: "Shop", href: "/restaurant" },
   { icon: Bell, label: "Updates", href: "/restaurant/updates" },
   { icon: ShoppingCart, label: "orders", href: "/restaurant/orders" },
+  { icon: Wallet, label: "Deposits", href: "/restaurant/deposits" },
   { icon: Crown, label: "Subscription", href: "/restaurant/subscribe" },
   { icon: Ticket, label: "Vouchers", href: "/restaurant/vouchers" },
   { icon: HelpCircle, label: "Help & Support", href: "/restaurant/help" },

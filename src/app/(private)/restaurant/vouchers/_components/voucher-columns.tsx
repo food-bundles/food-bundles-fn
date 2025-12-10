@@ -10,7 +10,10 @@ interface VoucherColumnsProps {
   payingVoucherId: string | null;
 }
 
-export const createVoucherColumns = ({ onPayment, payingVoucherId }: VoucherColumnsProps): ColumnDef<IVoucher>[] => [
+export const createVoucherColumns = ({
+  onPayment,
+  payingVoucherId,
+}: VoucherColumnsProps): ColumnDef<IVoucher>[] => [
   {
     accessorKey: "voucherCode",
     header: "Voucher",
@@ -18,7 +21,6 @@ export const createVoucherColumns = ({ onPayment, payingVoucherId }: VoucherColu
       const voucher = row.original;
       return (
         <div className="flex items-center gap-3">
-       
           <div className="min-w-0">
             <div className="font-medium text-gray-900 text-sm truncate">
               {voucher.voucherCode}
@@ -60,10 +62,53 @@ export const createVoucherColumns = ({ onPayment, payingVoucherId }: VoucherColu
           year: "numeric",
         });
       };
+        const formatTime = (date: string | Date) => {
+          return new Date(date).toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+          });
+        };
       return (
         <div className="flex items-center gap-1.5">
           <div className="text-sm text-gray-600">
             {formatDate(voucher.issuedDate)}
+            <p className="text-xs text-gray-500">
+              {formatTime((voucher as any).issuedDate)}
+            </p>
+          </div>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "usedAt",
+    header: "UsedAt",
+    cell: ({ row }) => {
+      const voucher = row.original;
+      const formatDate = (date: string | Date) => {
+        return new Date(date).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        });
+      };
+      const formatTime = (date: string | Date) => {
+        return new Date(date).toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        });
+      };
+      return (
+        <div className="flex items-center gap-1.5">
+          <div className="text-sm text-gray-600">
+            {(voucher as any).usedAt ? (
+              <>
+                {formatDate((voucher as any).usedAt)}
+                <p className="text-xs text-gray-500">{formatTime((voucher as any).usedAt)}</p>
+              </>
+            ) : "Not used"}
           </div>
         </div>
       );
@@ -84,7 +129,7 @@ export const createVoucherColumns = ({ onPayment, payingVoucherId }: VoucherColu
       return (
         <div className="flex items-center gap-1.5">
           <div className="text-sm text-gray-600">
-            {/* {voucher.voucherDays}{" "} */} N/A
+            {(voucher as any).loan?.voucherDays}
           </div>
         </div>
       );
@@ -102,10 +147,24 @@ export const createVoucherColumns = ({ onPayment, payingVoucherId }: VoucherColu
           year: "numeric",
         });
       };
+      const formatTime = (date: string | Date) => {
+        return new Date(date).toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        });
+      };
       return (
         <div className="flex items-center gap-1.5">
           <div className="text-sm text-gray-600">
-            {voucher.expiryDate ? formatDate(voucher.expiryDate) : "Never"}
+            {voucher.expiryDate ? (
+              <>
+                {formatDate(voucher.expiryDate)}
+                <p className="text-xs text-gray-500">
+                  {formatTime(voucher.expiryDate)}
+                </p>
+              </>
+            ) : "Never"}
           </div>
         </div>
       );
@@ -124,12 +183,17 @@ export const createVoucherColumns = ({ onPayment, payingVoucherId }: VoucherColu
           SUSPENDED: "bg-yellow-100 text-yellow-700 border-yellow-200",
           SETTLED: "bg-green-100 text-green-700 border-green-200",
         };
-        return colors[status as keyof typeof colors] || "bg-gray-100 text-gray-700 border-gray-200";
+        return (
+          colors[status as keyof typeof colors] ||
+          "bg-gray-100 text-gray-700 border-gray-200"
+        );
       };
 
       return (
         <span
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full border ${getStatusColor(voucher.status)}`}
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full border ${getStatusColor(
+            voucher.status
+          )}`}
         >
           <span
             className={`w-1.5 h-1.5 rounded-full ${
@@ -147,19 +211,23 @@ export const createVoucherColumns = ({ onPayment, payingVoucherId }: VoucherColu
     cell: ({ row }) => {
       const voucher = row.original;
       const loan = (voucher as any).loan;
-      
+
       // Check if payment is overdue based on voucherDays and usedAt date
       const isOverdue = () => {
-        if (!loan || !(voucher as any).usedAt || !loan.voucherDays) return false;
-        
+        if (!loan || !(voucher as any).usedAt || !loan.voucherDays)
+          return false;
+
         const usedDate = new Date((voucher as any).usedAt);
         const currentDate = new Date();
-        const daysDifference = Math.floor((currentDate.getTime() - usedDate.getTime()) / (1000 * 60 * 60 * 24));
-        
+        const daysDifference = Math.floor(
+          (currentDate.getTime() - usedDate.getTime()) / (1000 * 60 * 60 * 24)
+        );
+
         return daysDifference > loan.voucherDays;
       };
-      
-      const needsPayment = voucher.usedCredit > 0 && voucher.status !== "SETTLED"; ;
+
+      const needsPayment =
+        voucher.usedCredit > 0 && voucher.status !== "SETTLED";
       const paymentOverdue = isOverdue();
 
       return (
