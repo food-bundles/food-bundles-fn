@@ -26,7 +26,7 @@ interface VoucherContextType {
 
   // Admin Methods
   getAllLoanApplications: () => Promise<any>;
-  getAllVouchers: () => Promise<any>;
+  getAllVouchers: (params?: { page?: number; limit?: number }) => Promise<any>;
   approveLoan: (loanId: string, approvalData: any) => Promise<any>;
   rejectLoan: (loanId: string, reason: string) => Promise<any>;
   disburseLoan: (loanId: string) => Promise<any>;
@@ -137,10 +137,10 @@ export function VoucherProvider({ children }: VoucherProviderProps) {
     }
   }, []);
 
-  const getAllVouchers = useCallback(async () => {
+  const getAllVouchers = useCallback(async (params?: { page?: number; limit?: number }) => {
     try {
       setLoading(true);
-      const response = await voucherService.getAllVouchers();
+      const response = await voucherService.getAllVouchers(params);
       if (response && response.data) {
         setAllVouchers(response.data || []);
       }

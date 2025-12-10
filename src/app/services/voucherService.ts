@@ -47,7 +47,7 @@ export const voucherService = {
     return response.data;
   },
 
-  getAllVouchers: async (params?: { status?: string; restaurantId?: string }) => {
+  getAllVouchers: async (params?: { status?: string; restaurantId?: string; page?: number; limit?: number }) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.get("/vouchers", { params });
     return response.data;
