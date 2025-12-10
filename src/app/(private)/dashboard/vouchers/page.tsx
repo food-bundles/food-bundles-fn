@@ -12,10 +12,15 @@ type ActiveTab = "loans" | "vouchers";
 
 export default function VoucherManagementPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("loans");
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const createVoucherRef = useRef<{ openModal: () => void }>(null);
 
   const handleCreateVoucher = () => {
     createVoucherRef.current?.openModal();
+  };
+
+  const handleVoucherCreated = () => {
+    setRefreshTrigger(prev => prev + 1);
   };
 
   return (
@@ -66,12 +71,15 @@ export default function VoucherManagementPage() {
             {activeTab === "loans" ? (
               <LoanApplicationsTable />
             ) : (
-              <VouchersTable onCreateVoucher={handleCreateVoucher} />
+              <VouchersTable 
+                onCreateVoucher={handleCreateVoucher} 
+                key={refreshTrigger}
+              />
             )}
           </div>
           
           {/* Hidden Create Voucher Form */}
-          <CreateVoucherForm ref={createVoucherRef} onSuccess={() => {}} />
+          <CreateVoucherForm ref={createVoucherRef} onSuccess={handleVoucherCreated} />
         </div>
       </RestaurantProvider>
     </VoucherProvider>

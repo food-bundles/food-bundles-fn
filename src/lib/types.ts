@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { PaymentMethod } from "@/app/services/subscriptionService";
 
 export interface IUssdRequest {
@@ -143,6 +144,7 @@ export enum VoucherStatus {
   ACTIVE = "ACTIVE",
   USED = "USED",
   EXPIRED = "EXPIRED",
+  MATURED = "MATURED",
   SUSPENDED = "SUSPENDED",
   SETTLED = "SETTLED",
 }

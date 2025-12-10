@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -13,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Eye, Trash2, Edit, CreditCard, MoreHorizontal, Plus } from "lucide-react";
+import { Eye, Trash2,  MoreHorizontal, Plus } from "lucide-react";
 import { DataTable } from "@/components/data-table";
 import { useVouchers } from "@/app/contexts/VoucherContext";
 import { IVoucher, VoucherStatus, VoucherType } from "@/lib/types";
@@ -28,16 +30,53 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
   const { allVouchers, getAllVouchers, updateVoucher, deactivateVoucher } = useVouchers();
   const [selectedVoucher, setSelectedVoucher] = useState<IVoucher | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [paginationLoading, setPaginationLoading] = useState(false);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
+
+  const fetchVouchers = async (page = 1, limit = 10, isPagination = false) => {
+    try {
+      if (isPagination) {
+        setPaginationLoading(true);
+      } else {
+        setLoading(true);
+      }
+      const response = await getAllVouchers({ page, limit });
+      
+      if (response?.pagination) {
+        setPagination({
+          page: response.pagination.page,
+          limit: response.pagination.limit,
+          total: response.pagination.total,
+          totalPages: response.pagination.totalPages,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch vouchers:', error);
+    } finally {
+      setLoading(false);
+      setPaginationLoading(false);
+    }
+  };
+
+  const handlePaginationChange = (page: number, limit: number) => {
+    fetchVouchers(page, limit, true);
+  };
 
   useEffect(() => {
-    getAllVouchers();
-  }, [getAllVouchers]);
+    fetchVouchers(1, 10);
+  }, []);
 
   const handleDeactivate = async (id: string) => {
     try {
       await deactivateVoucher(id, "Deactivated by admin");
       toast.success("Voucher deactivated successfully");
-      await getAllVouchers();
+      await fetchVouchers(pagination.page, pagination.limit);
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || "Failed to deactivate voucher";
       toast.error(errorMessage);
@@ -47,6 +86,7 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
 
   const handleEdit = async (voucherId: string, updateData: any) => {
     await updateVoucher(voucherId, updateData);
+    await fetchVouchers(pagination.page, pagination.limit);
   };
 
   const getStatusBadge = (status: VoucherStatus) => {
@@ -54,13 +94,15 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
       case VoucherStatus.ACTIVE:
         return <Badge className="bg-green-500">Active</Badge>;
       case VoucherStatus.USED:
-        return <Badge className="bg-blue-500">Used</Badge>;
+        return <Badge className="bg-yellow-500">Used</Badge>;
       case VoucherStatus.EXPIRED:
-        return <Badge className="bg-red-500">Expired</Badge>;
+        return <Badge className="bg-red-300">Expired</Badge>;
+      case VoucherStatus.MATURED:
+        return <Badge className="bg-red-500">Matured</Badge>;
       case VoucherStatus.SUSPENDED:
-        return <Badge className="bg-yellow-500">Suspended</Badge>;
+        return <Badge className="bg-red-300">Suspended</Badge>;
       case VoucherStatus.SETTLED:
-        return <Badge className="bg-gray-500">Settled</Badge>;
+        return <Badge className="bg-orange-400">Settled</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -85,11 +127,19 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
 
   const columns: ColumnDef<IVoucher>[] = [
     {
+      accessorKey: "No",
+      header: "No",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-sm">{row.index + 1}</span>
+        </div>
+      )
+    },
+    {
       accessorKey: "voucherCode",
       header: "Code",
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
-          <CreditCard className="h-4 w-4 text-blue-600" />
           <span className="font-mono text-sm">{row.original.voucherCode}</span>
         </div>
       )
@@ -193,12 +243,15 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
         data={allVouchers}
         showColumnVisibility={true}
         showPagination={true}
+        pagination={pagination}
+        onPaginationChange={handlePaginationChange}
+        isLoading={paginationLoading}
       />
       <VoucherManagementModal
         voucher={selectedVoucher}
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
-        onUpdate={getAllVouchers}
+        onUpdate={() => fetchVouchers(pagination.page, pagination.limit)}
         onEdit={handleEdit}
       />
     </div>
