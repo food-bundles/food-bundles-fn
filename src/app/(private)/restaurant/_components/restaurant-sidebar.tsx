@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Bell, HelpCircle, Crown, Ticket, Home, ShoppingCart} from "lucide-react";
+import { Bell, HelpCircle, Crown, Ticket, Home, ShoppingCart, Settings} from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { OptimizedImage } from "@/components/OptimizedImage";
@@ -13,6 +13,7 @@ const menuItems = [
   { icon: Crown, label: "Subscription", href: "/restaurant/subscribe" },
   { icon: Ticket, label: "Vouchers", href: "/restaurant/vouchers" },
   { icon: HelpCircle, label: "Help & Support", href: "/restaurant/help" },
+  { icon: Settings, label: "Settings", href: "/restaurant/settings" },
 ];
 
 interface RestaurantSidebarProps {

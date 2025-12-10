@@ -5,8 +5,64 @@ import { HeroWithRestaurants } from "@/components/hero-section";
 import QuickTalkSection from "@/components/quck-talk-section";
 import { FoodBundlesConnect } from "@/components/showcase-section";
 
+interface FeaturedPost {
+  id: string;
+  restaurantId: string;
+  content: string;
+  images: string[];
+  videos: string[];
+  restaurant: {
+    id: string;
+    name: string;
+    email: string;
+  };
+}
+
+async function getFeaturedPosts() {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://server.food.rw'}/posts/featured`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.data || [];
+  } catch (error) {
+    console.error('Failed to fetch featured posts:', error);
+    return [];
+  }
+}
+
 export default async function HomePage() {
-  const restaurants = [
+  const featuredPosts: FeaturedPost[] = await getFeaturedPosts();
+  
+  // Group posts by restaurant and collect all images
+  const restaurantPostsMap = new Map<string, { name: string; images: string[]; content: string }>();
+  
+  featuredPosts.forEach(post => {
+    const existing = restaurantPostsMap.get(post.restaurantId);
+    if (existing) {
+      existing.images.push(...post.images);
+    } else {
+      restaurantPostsMap.set(post.restaurantId, {
+        name: post.restaurant.name,
+        images: post.images,
+        content: post.content,
+      });
+    }
+  });
+  
+  // Convert to array for featured restaurants
+  const featuredRestaurants = Array.from(restaurantPostsMap.values()).map(r => ({
+    name: r.name,
+    image: r.images[0] || '/placeholder.svg',
+    images: r.images,
+    featuredPost: r.content,
+    seen: true,
+  }));
+  
+  const numberOfFeaturedRestaurants = featuredRestaurants.length;
+  // Dummy restaurants data
+  const dummyRestaurants = [
     {
       name: "Imboni",
       image: "/restaurants/rest3.png",
@@ -122,6 +178,13 @@ export default async function HomePage() {
       seen: true,
     }
   ];
+  
+  // Calculate how many dummy restaurants to add (16 - featured count)
+  const dummyCount = Math.max(0, 16 - numberOfFeaturedRestaurants);
+  const dummyToAdd = dummyRestaurants.slice(0, dummyCount);
+  
+  // Combine featured and dummy restaurants
+  const restaurants = [...featuredRestaurants, ...dummyToAdd];
 
   return (
     <div className="min-h-screen bg-background">

@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react";
 interface Restaurant {
   name: string;
   image: string;
+  images?: string[];
   featuredPost: string;
   seen: boolean;
 }
@@ -81,9 +82,9 @@ function CircularRestaurantAnimation({
   };
 
   const handleRestaurantClick = (restaurantName: string) => {
-    // window.location.href = `/stories?restaurant=${encodeURIComponent(
-    //   restaurantName
-    // )}`;
+    window.location.href = `/stories?restaurant=${encodeURIComponent(
+      restaurantName
+    )}`;
     window.location.href ="#";
   };
 

@@ -114,7 +114,6 @@ function AdministrationPageContent() {
         showExport={true}
         onExport={handleExport}
         showAddButton={true}
-        addButtonLabel="Add Admin"
         onAddButton={handleCreateAdmin}
         customFilters={mounted ? <TableFilters filters={filters} /> : <div />}
         showSearch={false}
