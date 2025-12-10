@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -171,6 +172,15 @@ export default function VouchersList() {
                           : voucher.usedCredit.toLocaleString()}{" "}
                         RWF
                       </p>
+                      {voucher.status === "USED" && (
+                      <p className="text-xs text-gray-500">
+                        pay before{" "}
+                        <span className="text-blue-500 font-bold">
+                          {(voucher as any).loan?.voucherDays}
+                        </span>{" "}
+                        days
+                      </p>
+                     )} 
                     </div>
                   </div>
 

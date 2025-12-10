@@ -1,3 +1,6 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -7,16 +10,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Wallet, Plus, ArrowUpRight, ArrowDownRight, Loader2, CreditCard, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 
 export default function DepositsPage() {
-  const { wallet, transactions, loading, getMyWallet, createWallet, topUpWallet, getTransactions } = useWallet();
-  const [showTopUpModal, setShowTopUpModal] = useState(false);
-  const [isCreatingWallet, setIsCreatingWallet] = useState(false);
+  const { wallet, transactions, getMyWallet, createWallet, topUpWallet, getTransactions } = useWallet();
+  const [showDepositForm, setShowDepositForm] = useState(false);
   const [isTopUpLoading, setIsTopUpLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const [topUpData, setTopUpData] = useState({
     amount: "",
@@ -32,22 +34,14 @@ export default function DepositsPage() {
         await getTransactions({ limit: 10 });
       } catch (error) {
         console.log("Error fetching wallet data");
+      } finally {
+        setInitialLoading(false);
       }
     };
     fetchData();
-  }, [getMyWallet, getTransactions]);
+  }, []);
 
-  const handleCreateWallet = async () => {
-    setIsCreatingWallet(true);
-    try {
-      await createWallet();
-      toast.success("Prepaid account created successfully!");
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to create prepaid account");
-    } finally {
-      setIsCreatingWallet(false);
-    }
-  };
+
 
   const handleTopUp = async () => {
     if (!topUpData.amount || parseFloat(topUpData.amount) <= 0) {
@@ -62,6 +56,11 @@ export default function DepositsPage() {
 
     setIsTopUpLoading(true);
     try {
+      // Create wallet if it doesn't exist
+      if (!wallet) {
+        await createWallet();
+      }
+      
       const response = await topUpWallet({
         amount: parseFloat(topUpData.amount),
         paymentMethod: topUpData.paymentMethod,
@@ -75,8 +74,11 @@ export default function DepositsPage() {
           window.location.href = response.data.redirectUrl;
         } else {
           toast.success("Top-up initiated successfully!");
-          setShowTopUpModal(false);
+          setShowDepositForm(false);
           setTopUpData({ amount: "", paymentMethod: "MOBILE_MONEY", phoneNumber: "", description: "" });
+          // Silently refresh data without causing UI reload
+          getMyWallet();
+          getTransactions({ limit: 10 });
         }
       }
     } catch (error: any) {
@@ -112,181 +114,218 @@ export default function DepositsPage() {
     }
   };
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
-
-  if (!wallet) {
-    return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="text-center py-12">
-          <Wallet className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Create Your Prepaid Account</h2>
-          <p className="text-gray-600 mb-6">
-            Create a prepaid account to make faster payments and manage your balance.
-          </p>
-          <Button onClick={handleCreateWallet} disabled={isCreatingWallet} className="bg-green-600 hover:bg-green-700">
-            {isCreatingWallet && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-            Create Prepaid Account
-          </Button>
-        </div>
+        <Loader2 className="h-16 w-16 animate-spin text-green-600" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Prepaid Account</h1>
-          <p className="text-gray-600">Manage your prepaid balance and transactions</p>
-        </div>
-        <Button onClick={() => setShowTopUpModal(true)} className="bg-green-600 hover:bg-green-700">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Funds
-        </Button>
-      </div>
-
-      {/* Balance Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Wallet className="h-5 w-5" />
-            Account Balance
-          </CardTitle>
-          <CardDescription>Your current prepaid balance</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold text-green-600">
-            {wallet.balance.toLocaleString()} RWF
-          </div>
-          <p className="text-sm text-gray-600 mt-1">
-            Account Status: {wallet.isActive ? "Active" : "Inactive"}
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Recent Transactions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Transactions</CardTitle>
-          <CardDescription>Your latest prepaid account activity</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {transactions.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No transactions yet
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <div className="w-full max-w-md space-y-6">
+        {/* Main Balance Card */}
+        <Card className="bg-white border-yellow-200 shadow-[4px_4px_4px_rgba(0,0,0,0.1)]">
+          <CardContent className="px-8">
+            <div className="text-center mb-4">
+              <Wallet className="h-12 w-12 mx-auto mb-3 text-green-600" />
+              <h2 className="text-[18px] font-semibold mb-1 text-gray-800">
+                Account Balance
+              </h2>
+              <p className="text-gray-600 text-[16px]">
+                Your current prepaid balance
+              </p>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {transactions.map((transaction) => (
-                <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    {getTransactionIcon(transaction.type)}
-                    <div>
-                      <p className="font-medium text-gray-900">{transaction.description}</p>
-                      <p className="text-sm text-gray-600">
-                        {new Date(transaction.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className={`font-medium ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {transaction.amount > 0 ? '+' : ''}{transaction.amount.toLocaleString()} RWF
-                    </p>
-                    {getStatusBadge(transaction.status)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
-      {/* Top-up Modal */}
-      <Dialog open={showTopUpModal} onOpenChange={setShowTopUpModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Add Funds to Prepaid Account</DialogTitle>
-            <DialogDescription>
-              Choose your payment method and amount to add funds
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="amount">Amount (RWF)</Label>
-              <Input
-                id="amount"
-                type="number"
-                placeholder="10000"
-                value={topUpData.amount}
-                onChange={(e) => setTopUpData(prev => ({ ...prev, amount: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label htmlFor="paymentMethod">Payment Method</Label>
-              <Select
-                value={topUpData.paymentMethod}
-                onValueChange={(value: "MOBILE_MONEY" | "CARD") => 
-                  setTopUpData(prev => ({ ...prev, paymentMethod: value }))
-                }
+            <div className="text-center mb-4">
+              <div
+                className="text-3xl font-bold mb-2 text-gray-900"
+                style={{ fontFamily: "Roboto Mono, monospace" }}
               >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="MOBILE_MONEY">
-                    <div className="flex items-center gap-2">
-                      <Smartphone className="h-4 w-4" />
-                      Mobile Money
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="CARD">
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4" />
-                      Card Payment
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                {wallet?.balance?.toLocaleString() || '0'} RWF
+              </div>
+              <p className="text-gray-600 text-[16px]">
+                Account Status{" "}
+                {wallet?.isActive ? (
+                  <span className="text-green-600 font-medium">Active</span>
+                ) : (
+                  <span className="text-red-600 font-medium">Inactive</span>
+                )}
+              </p>
             </div>
-            {topUpData.paymentMethod === "MOBILE_MONEY" && (
-              <div>
-                <Label htmlFor="phoneNumber">Phone Number</Label>
-                <Input
-                  id="phoneNumber"
-                  type="tel"
-                  placeholder="250788123456"
-                  value={topUpData.phoneNumber}
-                  onChange={(e) => setTopUpData(prev => ({ ...prev, phoneNumber: e.target.value }))}
-                />
+
+            {!showDepositForm ? (
+              <Button
+                onClick={() => setShowDepositForm(true)}
+                className="w-full bg-yellow-500 text-white hover:bg-yellow-600 font-semibold"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Deposit Funds
+              </Button>
+            ) : (
+              <div className="space-y-4 mt-6">
+                <div>
+                  <Label htmlFor="amount" className="text-gray-800 text-[14px]">
+                    Amount (RWF)
+                  </Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    placeholder="0000"
+                    value={topUpData.amount}
+                    onChange={(e) =>
+                      setTopUpData((prev) => ({
+                        ...prev,
+                        amount: e.target.value,
+                      }))
+                    }
+                    className=" focus:border-yellow-400 text-gray-800"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="paymentMethod" className="text-gray-800">
+                    Payment Method
+                  </Label>
+                  <Select
+                    value={topUpData.paymentMethod}
+                    onValueChange={(value: "MOBILE_MONEY" | "CARD") =>
+                      setTopUpData((prev) => ({
+                        ...prev,
+                        paymentMethod: value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="  focus:border-yellow-400 text-gray-800">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MOBILE_MONEY">
+                        <div className="flex items-center gap-2">
+                          <Smartphone className="h-4 w-4 text-green-600" />
+                          Mobile Money
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="CARD">
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="h-4 w-4 text-green-600" />
+                          Card Payment
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {topUpData.paymentMethod === "MOBILE_MONEY" && (
+                  <div>
+                    <Label htmlFor="phoneNumber" className="text-gray-800">
+                      Phone Number
+                    </Label>
+                    <Input
+                      id="phoneNumber"
+                      type="tel"
+                      placeholder="250788123456"
+                      value={topUpData.phoneNumber}
+                      onChange={(e) =>
+                        setTopUpData((prev) => ({
+                          ...prev,
+                          phoneNumber: e.target.value,
+                        }))
+                      }
+                      className=" focus:border-yellow-400 text-gray-800"
+                    />
+                  </div>
+                )}
+                <div>
+                  <Label htmlFor="description" className="text-gray-800">
+                    Description (Optional)
+                  </Label>
+                  <Input
+                    id="description"
+                    placeholder="Account top-up"
+                    value={topUpData.description}
+                    onChange={(e) =>
+                      setTopUpData((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
+                    }
+                    className="  focus:border-yellow-400 text-gray-800"
+                  />
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowDepositForm(false)}
+                    className="flex-1  text-gray-700 bg-green-100 hover:bg-green-200"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleTopUp}
+                    disabled={isTopUpLoading}
+                    className="flex-1 bg-yellow-500 hover:bg-yellow-600 font-semibold"
+                  >
+                    {isTopUpLoading && (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    )}
+                    Deposit Now
+                  </Button>
+                </div>
               </div>
             )}
-            <div>
-              <Label htmlFor="description">Description (Optional)</Label>
-              <Input
-                id="description"
-                placeholder="Account top-up"
-                value={topUpData.description}
-                onChange={(e) => setTopUpData(prev => ({ ...prev, description: e.target.value }))}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowTopUpModal(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleTopUp} disabled={isTopUpLoading} className="bg-green-600 hover:bg-green-700">
-              {isTopUpLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Add Funds
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </CardContent>
+        </Card>
+
+        {/* Recent Transactions */}
+        <Card className="bg-gray-100 shadow-lg">
+          <CardHeader className="text-center">
+            <CardTitle className="text-gray-900">Recent Transactions</CardTitle>
+            <CardDescription>Your latest account activity</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {transactions.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Wallet className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                <p>No transactions yet</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {transactions.slice(0, 5).map((transaction) => (
+                  <div
+                    key={transaction.id}
+                    className="flex items-center justify-between p-3 bg-gray-200 rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      {getTransactionIcon(transaction.type)}
+                      <div>
+                        <p className="font-medium text-gray-900 text-sm">
+                          {transaction.description}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          {new Date(transaction.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p
+                        className={`font-medium text-sm ${
+                          transaction.amount > 0
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {transaction.amount > 0 ? "+" : ""}
+                        {transaction.amount.toLocaleString()} RWF
+                      </p>
+                      {getStatusBadge(transaction.status)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
