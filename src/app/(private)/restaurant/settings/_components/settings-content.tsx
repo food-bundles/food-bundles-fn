@@ -11,6 +11,7 @@ import {
   Users,
   Settings,
   ShoppingCart,
+  Image as ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { PostManagement } from "./post-management";
+import { PostProvider } from "@/app/contexts/post-context";
 
 type RestaurantSettings = {
   accountInfo: {
@@ -701,6 +704,21 @@ export function SettingsContent({ settings: initialSettings }: Props) {
               )}
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Post Management Section */}
+      <Card>
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <ImageIcon className="h-5 w-5" />
+            Post Management
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PostProvider>
+            <PostManagement />
+          </PostProvider>
         </CardContent>
       </Card>
     </div>

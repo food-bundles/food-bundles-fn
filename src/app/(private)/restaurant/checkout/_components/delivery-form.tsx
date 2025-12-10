@@ -478,11 +478,6 @@ export function Checkout() {
                 <span>Rwf {summaryData.total.toLocaleString()}</span>
               </div>
             </div>
-            {!hasFreeDelivery && totalAmount < 100000 && (
-              <div className="text-xs text-gray-600 mt-2">
-                * Delivery fee applies for orders under 100,000 RWF
-              </div>
-            )}
           </div>
         </div>
 
