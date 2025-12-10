@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { CartProvider } from "@/app/contexts/cart-context";
 import { CheckoutProvider } from "@/app/contexts/checkout-context";
 import { OrderProvider } from "@/app/contexts/orderContext";
+import { WalletProvider } from "@/app/contexts/WalletContext";
 import { RestaurantSidebar } from "./_components/restaurant-sidebar";
 import { RestaurantHeader } from "./_components/restaurant-header";
 
@@ -31,6 +32,7 @@ export default function RestaurantLayout({ children }: LayoutProps) {
     <CartProvider>
       <CheckoutProvider>
         <OrderProvider>
+          <WalletProvider>
           <div className="flex h-screen bg-white">
             {/* Sidebar */}
             <div
@@ -65,6 +67,7 @@ export default function RestaurantLayout({ children }: LayoutProps) {
               </main>
             </div>
           </div>
+          </WalletProvider>
         </OrderProvider>
       </CheckoutProvider>
     </CartProvider>
