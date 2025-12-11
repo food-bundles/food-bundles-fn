@@ -2,18 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// Removed shadcn imports - using native HTML elements
 
 import { orderService } from "@/app/services/orderService";
 import {
@@ -120,14 +109,19 @@ export default function LogisticsPage() {
   const handleRefresh = () => {
     fetchOrders(true);
   };
-  console.log("Rendering LogisticsPage with orders:", orders);
 
   const fetchOrderDetails = async (orderId: string) => {
     try {
-      const response = await orderService.getDeliveryOrderDetails(orderId);
-      console.log(`Response from fetchOrderDetails:`, response);
-      if (response.success) {
-        setSelectedOrderDetails(response.data);
+      const response = await fetch(`https://server.food.rw/deliveries/${orderId}`, {
+        headers: {
+          'Authorization': `Bearer ${document.cookie.split('auth-token=')[1]?.split(';')[0]}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      console.log(`Response from fetchOrderDetails:`, data);
+      if (response.ok) {
+        setSelectedOrderDetails(data);
         setShowDetailsModal(true);
       } else {
         toast.error("Failed to fetch order details");
@@ -189,11 +183,16 @@ export default function LogisticsPage() {
   ) => {
     try {
       setUpdatingStatus(orderId);
-      const response = await orderService.updateDeliveryStatus(
-        orderId,
-        newStatus
-      );
-      if (response.success) {
+      const response = await fetch(`https://server.food.rw/deliveries/${orderId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${document.cookie.split('auth-token=')[1]?.split(';')[0]}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+      const data = await response.json();
+      if (response.ok) {
         setOrders((prev) =>
           prev.map((order) =>
             order.id === orderId
@@ -201,13 +200,9 @@ export default function LogisticsPage() {
               : order
           )
         );
-        toast.success(
-          `Order status updated to ${newStatus
-            .toLowerCase()
-            .replace("_", " ")}!`
-        );
+        toast.success(data.message || `Order status updated to ${newStatus.toLowerCase().replace("_", " ")}!`);
       } else {
-        toast.error(response.error || "Failed to update order status");
+        toast.error(data.message || "Failed to update order status");
       }
     } catch (error) {
       console.error("Failed to update order:", error);
@@ -248,33 +243,81 @@ export default function LogisticsPage() {
     }
   };
 
-  const SmallOrderCard = ({ order }: { order: LogisticsOrder }) => {
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const [expandedOrderDetails, setExpandedOrderDetails] = useState<any>(null);
+  const [showQuickModal, setShowQuickModal] = useState(false);
+  const [quickModalOrder, setQuickModalOrder] = useState<LogisticsOrder | null>(null);
+  const [quickModalDetails, setQuickModalDetails] = useState<any>(null);
+
+  const handleCardClick = async (order: LogisticsOrder) => {
+    if (expandedOrderId === order.id) {
+      setExpandedOrderId(null);
+      setExpandedOrderDetails(null);
+    } else {
+      setExpandedOrderId(order.id);
+      await fetchOrderDetailsForCard(order.id);
+    }
+  };
+
+  const fetchOrderDetailsForCard = async (orderId: string) => {
+    try {
+      const response = await fetch(`https://server.food.rw/deliveries/${orderId}`, {
+        headers: {
+          'Authorization': `Bearer ${document.cookie.split('auth-token=')[1]?.split(';')[0]}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setExpandedOrderDetails(data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch order details:', error);
+    }
+  };
+
+  const handleQuickModalOpen = async (order: LogisticsOrder) => {
+    setQuickModalOrder(order);
+    setShowQuickModal(true);
+    await fetchQuickModalDetails(order.id);
+  };
+
+  const fetchQuickModalDetails = async (orderId: string) => {
+    try {
+      const response = await fetch(`https://server.food.rw/deliveries/${orderId}`, {
+        headers: {
+          'Authorization': `Bearer ${document.cookie.split('auth-token=')[1]?.split(';')[0]}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setQuickModalDetails(data.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch order details:', error);
+    }
+  };
+
+  const SimpleOrderCard = ({ order }: { order: LogisticsOrder }) => {
     return (
-      <Card
-        className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-green-500 bg-white overflow-hidden"
-        onClick={() => fetchOrderDetails(order.id)}
-      >
-        <div className="absolute top-0 left-0 w-full "></div>
-        <CardContent className="p-4 sm:p-5">
+      <div className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-green-500 bg-white overflow-hidden rounded-lg" onClick={() => handleQuickModalOpen(order)}>
+        <div className="p-4">
           <div className="flex justify-between items-start gap-3">
             <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-sm sm:text-base truncate text-gray-900 group-hover:text-green-700 transition-colors">
+              <h3 className="font-bold text-sm truncate text-gray-900 group-hover:text-green-700 transition-colors">
                 {order.restaurantName}
               </h3>
-              <p className="text-xs sm:text-sm text-gray-600 font-medium mt-1">
+              <p className="text-xs text-gray-600 font-medium mt-1">
                 {order.orderNumber}
               </p>
               <p className="text-xs text-gray-500 mt-1 truncate">
-                {order.customerName}
+                {order.customerPhone}
               </p>
             </div>
-            <Badge
-              className={`${getStatusColor(
-                order.status
-              )} text-xs px-2 py-1 border font-semibold whitespace-nowrap`}
-            >
+            <span className={`${getStatusColor(order.status)} text-xs px-2 py-1 border font-semibold whitespace-nowrap rounded`}>
               {order.status.replace("_", " ")}
-            </Badge>
+            </span>
           </div>
           <div className="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between">
             <span className="text-sm font-bold text-green-700">
@@ -282,144 +325,133 @@ export default function LogisticsPage() {
             </span>
             <Eye className="h-4 w-4 text-gray-400 group-hover:text-green-600 transition-colors" />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   };
 
-  const FullOrderCard = ({ order }: { order: LogisticsOrder }) => {
+  const ExpandableOrderCard = ({ order }: { order: LogisticsOrder }) => {
+    const isExpanded = expandedOrderId === order.id;
     const nextStatus = getNextStatus(order.status);
-
+    
     return (
-      <Card className="group hover:shadow-xl transition-all duration-300 border-2 hover:border-green-500 bg-white">
-        <div className="absolute top-0 left-0 w-full h-1 bg-green-600"></div>
-        <CardContent className="p-4 sm:p-5">
-          <div className="flex justify-between items-start mb-3">
-            <div className="flex-1">
-              <h3 className="font-bold text-sm sm:text-base text-gray-900">
-                {order.orderNumber}
-              </h3>
-              <p className="text-xs sm:text-sm text-gray-700 mt-1 font-medium">
-                {order.customerName}
-              </p>
-              <p className="text-xs text-gray-500 mt-0.5">
-                {order.restaurantName}
-              </p>
-            </div>
-            <div className="flex flex-col gap-2 items-end">
-              <Badge
-                className={`${getStatusColor(
-                  order.status
-                )} text-xs px-3 py-1 border font-semibold`}
-              >
+      <div className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-green-500 bg-white overflow-hidden rounded-lg">
+        <div className="p-0">
+          {/* Main Card Content */}
+          <div className="p-4 sm:p-5" onClick={() => handleCardClick(order)}>
+            <div className="flex justify-between items-start gap-3">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-sm sm:text-base truncate text-gray-900 group-hover:text-green-700 transition-colors">
+                  {order.restaurantName}
+                </h3>
+                <p className="text-xs sm:text-sm text-gray-600 font-medium mt-1">
+                  {order.orderNumber}
+                </p>
+                <p className="text-xs text-gray-500 mt-1 truncate">
+                  {order.customerPhone}
+                </p>
+              </div>
+              <span className={`${getStatusColor(order.status)} text-xs px-2 py-1 border font-semibold whitespace-nowrap rounded`}>
                 {order.status.replace("_", " ")}
-              </Badge>
+              </span>
+            </div>
+            <div className="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between">
               <span className="text-sm font-bold text-green-700">
                 {order.totalAmount.toLocaleString()} Rwf
               </span>
+              <div className={`transform transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
+                <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-green-600 transition-colors" />
+              </div>
             </div>
           </div>
 
-          <div className="space-y-2 text-xs sm:text-sm mb-4">
-            <div className="flex items-start gap-2 p-2 bg-blue-50 rounded-lg">
-              <MapPin className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
-              <span className="text-gray-700 flex-1">
-                {order.deliveryAddress}
-              </span>
-            </div>
-            <div className="flex items-start gap-2 p-2 bg-orange-50 rounded-lg">
-              <Package className="h-4 w-4 text-orange-600 flex-shrink-0 mt-0.5" />
-              <span className="text-gray-700 flex-1">{order.items}</span>
-            </div>
-            {order.productImages && order.productImages.length > 0 && (
-              <div className="flex gap-2 mt-3 flex-wrap">
-                {order.productImages.slice(0, 4).map((image, index) => (
-                  <Image
-                    key={index}
-                    src={image}
-                    alt="Product"
-                    className="w-12 h-12 sm:w-14 sm:h-14 object-cover rounded-lg border-2 border-white shadow-md hover:scale-110 transition-transform"
-                  />
-                ))}
-                {order.productImages.length > 4 && (
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 bg-green-500 rounded-lg border-2 border-white shadow-md flex items-center justify-center text-xs font-bold text-white">
-                    +{order.productImages.length - 4}
-                  </div>
+          {/* Expanded Content */}
+          {isExpanded && expandedOrderDetails && (
+            <div className="border-t bg-gray-50 p-4 sm:p-5 space-y-4 animate-in slide-in-from-top-2 duration-300">
+              {/* Address */}
+              <div className="bg-white p-3 rounded-lg border">
+                <label className="text-xs font-medium text-gray-600">Delivery Address</label>
+                <p className="text-sm text-gray-900 mt-1">{expandedOrderDetails.order?.billingAddress || expandedOrderDetails.billingAddress || 'N/A'}</p>
+              </div>
+
+              {/* Order Items */}
+              <div className="bg-white p-3 rounded-lg border">
+                <label className="text-xs font-medium text-gray-600 mb-2 block">Order Items</label>
+                <div className="space-y-2">
+                  {(expandedOrderDetails.order?.orderItems || expandedOrderDetails.orderItems)?.map((item: any, index: number) => (
+                    <div key={index} className="flex justify-between items-center text-sm">
+                      <span className="text-gray-900">{item.productName} x{item.quantity}</span>
+                      <span className="font-medium text-green-700">{item.subtotal?.toLocaleString() || '0'} RWF</span>
+                    </div>
+                  )) || <p className="text-sm text-gray-500">No items available</p>}
+                </div>
+              </div>
+
+              {/* Total Amount */}
+              <div className="bg-white p-3 rounded-lg border">
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-medium text-gray-600">Total Amount</label>
+                  <span className="text-lg font-bold text-green-700">
+                    {(expandedOrderDetails.order?.totalAmount || expandedOrderDetails.totalAmount || 0).toLocaleString()} RWF
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-2">
+                {nextStatus && order.status !== "DELIVERED" && order.status !== "CANCELLED" && order.status !== "IN_TRANSIT" && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      updateOrderStatus(order.id, nextStatus as "PREPARING" | "READY" | "IN_TRANSIT" | "CANCELLED");
+                    }}
+                    disabled={updatingStatus === order.id}
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm px-4 py-2 rounded disabled:opacity-50"
+                  >
+                    {updatingStatus === order.id ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mx-auto" />
+                    ) : (
+                      `Mark as ${nextStatus.replace("_", " ")}`
+                    )}
+                  </button>
+                )}
+
+                {order.status === "IN_TRANSIT" && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedOrder(order);
+                      setShowOtpModal(true);
+                    }}
+                    className="flex-1 bg-green-700 hover:bg-green-800 text-white text-xs sm:text-sm px-4 py-2 rounded"
+                  >
+                    Mark as Delivered
+                  </button>
                 )}
               </div>
-            )}
-          </div>
-
-          <div className="flex gap-2 flex-wrap">
-            {nextStatus &&
-              order.status !== "DELIVERED" &&
-              order.status !== "CANCELLED" && (
-                <Button
-                  size="sm"
-                  onClick={() =>
-                    updateOrderStatus(
-                      order.id,
-                      nextStatus as
-                        | "PREPARING"
-                        | "READY"
-                        | "IN_TRANSIT"
-                        | "CANCELLED"
-                    )
-                  }
-                  disabled={updatingStatus === order.id}
-                  className="flex-1 min-w-[120px] h-9 text-xs sm:text-sm font-semibold bg-green-600 hover:bg-green-700 shadow-md"
-                >
-                  {updatingStatus === order.id ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                  ) : (
-                    <>
-                      <ArrowRight className="h-4 w-4 mr-1" />
-                      {nextStatus.replace("_", " ")}
-                    </>
-                  )}
-                </Button>
-              )}
-
-            {(order.status === "CONFIRMED" ||
-              order.status === "PREPARING" ||
-              order.status === "READY") && (
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => updateOrderStatus(order.id, "CANCELLED")}
-                disabled={updatingStatus === order.id}
-                className="flex-1 min-w-[100px] h-9 text-xs sm:text-sm font-semibold shadow-md"
-              >
-                Cancel
-              </Button>
-            )}
-
-            {order.status === "IN_TRANSIT" && (
-              <Button
-                size="sm"
-                onClick={() => {
-                  setSelectedOrder(order);
-                  setShowOtpModal(true);
-                }}
-                className="flex-1 min-w-[120px] h-9 text-xs sm:text-sm font-semibold bg-green-700 hover:bg-green-800 shadow-md"
-              >
-                <CheckCircle className="h-4 w-4 mr-1" />
-                Delivered
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          )}
+        </div>
+      </div>
     );
   };
+
+
 
   const renderOrderGrid = (
     orderList: LogisticsOrder[],
     emptyMessage: string
   ) => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
       {orderList.map((order) => (
-        <SmallOrderCard key={order.id} order={order} />
+        <div key={order.id}>
+          <div className="sm:hidden">
+            <ExpandableOrderCard order={order} />
+          </div>
+          <div className="hidden sm:block">
+            <SimpleOrderCard order={order} />
+          </div>
+        </div>
       ))}
       {orderList.length === 0 && (
         <div className="col-span-full text-center py-12 sm:py-16">
@@ -458,9 +490,9 @@ export default function LogisticsPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6">
-        <Card className="h-32 lg:h-36 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
-          <CardContent className="flex items-center justify-center gap-2 p-3 sm:p-5 text-center text-blue-600">
-            <div className="w-20 h-15 bg-blue-300 flex items-center justify-center rounded-lg">
+        <div className="h-32 lg:h-36 text-white border-0 shadow-lg hover:shadow-xl transition-shadow rounded-lg bg-white">
+          <div className="flex items-center justify-center gap-2 p-3 sm:p-5 text-center text-blue-600 h-full">
+            <div className="w-20 h-15  flex items-center justify-center rounded-lg">
               <Clock className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 opacity-90" />
             </div>
             <div>
@@ -471,11 +503,11 @@ export default function LogisticsPage() {
                 Unfollowed
               </div>
             </div>
-          </CardContent>
-        </Card>
-        <Card className="h-32 lg:h-36 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
-          <CardContent className="flex items-center justify-center gap-2 p-3 sm:p-5 text-center text-orange-600">
-            <div className="w-20 h-15 bg-orange-300 flex items-center justify-center rounded-lg">
+          </div>
+        </div>
+        <div className="h-32 lg:h-36 text-white border-0 shadow-lg hover:shadow-xl transition-shadow rounded-lg bg-white">
+          <div className="flex items-center justify-center gap-2 p-3 sm:p-5 text-center text-orange-600 h-full">
+            <div className="w-20 h-15 flex items-center justify-center rounded-lg">
               <Truck className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 opacity-90" />
             </div>
             <div>
@@ -486,11 +518,11 @@ export default function LogisticsPage() {
                 followed
               </div>
             </div>
-          </CardContent>
-        </Card>
-        <Card className="h-32 lg:h-36 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
-          <CardContent className="flex items-center justify-center gap-2 p-3 sm:p-5 text-center text-green-600">
-            <div className="w-20 h-15 bg-green-300 flex items-center justify-center rounded-lg">
+          </div>
+        </div>
+        <div className="h-32 lg:h-36 text-white border-0 shadow-lg hover:shadow-xl transition-shadow rounded-lg bg-white">
+          <div className="flex items-center justify-center gap-2 p-3 sm:p-5 text-center text-green-600 h-full">
+            <div className="w-20 h-15  flex items-center justify-center rounded-lg">
               <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 opacity-90" />
             </div>
             <div>
@@ -501,103 +533,115 @@ export default function LogisticsPage() {
                 Delivered
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* Navigation Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full ">
-        <TabsList className="grid w-full grid-cols-3 mb-6 h-10 ">
-          <TabsTrigger
-            value="unfollowed"
-            className="flex items-center gap-2 text-xs sm:text-sm  h-8   data-[state=active]:text-green-400 data-[state=active]:shadow-md"
+      <div className="w-full">
+        <div className="grid w-full grid-cols-3 mb-6 h-10 bg-gray-100 rounded-lg p-1">
+          <button
+            onClick={() => setActiveTab("unfollowed")}
+            className={`flex items-center justify-center gap-2 text-xs sm:text-sm h-8 rounded transition-all ${
+              activeTab === "unfollowed" ? "bg-white text-green-600 shadow-md" : "text-gray-600 hover:text-gray-800"
+            }`}
           >
             <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Unfollowed</span>
             <span className="sm:hidden">New</span>
-            <span className="ml-1 ">[{unfollowedOrders.length}]</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="followed"
-            className="flex items-center gap-2 text-xs sm:text-sm h-8  data-[state=active]:text-green-400 data-[state=active]:shadow-md"
+            <span className="ml-1">[{unfollowedOrders.length}]</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("followed")}
+            className={`flex items-center justify-center gap-2 text-xs sm:text-sm h-8 rounded transition-all ${
+              activeTab === "followed" ? "bg-white text-green-600 shadow-md" : "text-gray-600 hover:text-gray-800"
+            }`}
           >
             <Truck className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Followed</span>
             <span className="sm:hidden">Active</span>
-            <span className="ml-1 ">[{followedOrders.length}]</span>
-          </TabsTrigger>
-          <TabsTrigger
-            value="delivered"
-            className="flex items-center gap-2 text-xs sm:text-sm h-8 data-[state=active]:text-green-400 data-[state=active]:shadow-none"
+            <span className="ml-1">[{followedOrders.length}]</span>
+          </button>
+          <button
+            onClick={() => setActiveTab("delivered")}
+            className={`flex items-center justify-center gap-2 text-xs sm:text-sm h-8 rounded transition-all ${
+              activeTab === "delivered" ? "bg-white text-green-600 shadow-md" : "text-gray-600 hover:text-gray-800"
+            }`}
           >
             <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Delivered</span>
             <span className="sm:hidden">Done</span>
-            <span className="ml-1 ">[{deliveredOrders.length}]</span>
-          </TabsTrigger>
-        </TabsList>
+            <span className="ml-1">[{deliveredOrders.length}]</span>
+          </button>
+        </div>
 
-        <TabsContent value="unfollowed" className="mt-0">
-          <Card className="border-none shadow-none">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base sm:text-lg">
-                Unfollowed Orders (CONFIRMED)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {renderOrderGrid(unfollowedOrders, "No unfollowed orders")}
-            </CardContent>
-          </Card>
-        </TabsContent>
+        {activeTab === "unfollowed" && (
+          <div className="mt-0">
+            <div className="border-none shadow-none">
+              <div className="pb-4">
+                <h3 className="text-base sm:text-lg text-gray-500 font-semibold">
+                  Unfollowed Orders
+                </h3>
+              </div>
+              <div>
+                {renderOrderGrid(unfollowedOrders, "No unfollowed orders")}
+              </div>
+            </div>
+          </div>
+        )}
 
-        <TabsContent value="followed" className="mt-0">
-          <Card className="border-none shadow-none">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base sm:text-lg">
-                Followed Orders (PREPARING, READY, IN-TRANSIT)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {renderOrderGrid(followedOrders, "No followed orders")}
-            </CardContent>
-          </Card>
-        </TabsContent>
+        {activeTab === "followed" && (
+          <div className="mt-0">
+            <div className="border-none shadow-none">
+              <div className="pb-4">
+                <h3 className="text-base sm:text-lg text-gray-500 font-semibold">
+                  Followed Orders 
+                </h3>
+              </div>
+              <div>
+                {renderOrderGrid(followedOrders, "No followed orders")}
+              </div>
+            </div>
+          </div>
+        )}
 
-        <TabsContent value="delivered" className="mt-0">
-          <Card className="border-none shadow-none">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-base sm:text-lg">
-                Delivered Orders
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {renderOrderGrid(deliveredOrders, "No delivered orders")}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+        {activeTab === "delivered" && (
+          <div className="mt-0">
+            <div className="border-none shadow-none">
+              <div className="pb-4">
+                <h3 className="text-base sm:text-lg text-gray-500 font-semibold">
+                  Delivered Orders
+                </h3>
+              </div>
+              <div>
+                {renderOrderGrid(deliveredOrders, "No delivered orders")}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Order Details Modal */}
-      <Dialog open={showDetailsModal} onOpenChange={setShowDetailsModal}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 sm:p-6">
-          <DialogHeader className="p-4 sm:p-0 pb-4 border-b sm:border-0">
-            <DialogTitle className="text-lg sm:text-xl flex items-center justify-between">
-              Order Details
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowDetailsModal(false)}
-                className="sm:hidden h-8 w-8 p-0"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </DialogTitle>
-          </DialogHeader>
+      {showDetailsModal && (
+        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] overflow-y-auto w-full">
+            <div className="p-4 sm:p-6 pb-4 border-b sm:border-0">
+              <div className="text-lg sm:text-xl flex items-center justify-between font-semibold">
+                Order Details
+                <button
+                  onClick={() => setShowDetailsModal(false)}
+                  className="sm:hidden h-8 w-8 p-0 hover:bg-gray-100 rounded"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
           {selectedOrderDetails &&
             selectedOrderDetails.data &&
             (() => {
-              const orderData = selectedOrderDetails.data.order;
-              const currentOrder = orders.find((o) => o.id === orderData.id);
+              const orderData = selectedOrderDetails.data;
+              console.log("Rendering order details for:", orderData);
+              const currentOrder = orderData ? orders.find((o) => o.id === orderData.id) : null;
               const nextStatus = currentOrder
                 ? getNextStatus(currentOrder.status)
                 : null;
@@ -619,13 +663,13 @@ export default function LogisticsPage() {
                         Status
                       </label>
                       <div className="mt-1">
-                        <Badge
+                        <span
                           className={`${getStatusColor(
-                            selectedOrderDetails.data.status
-                          )} border font-semibold`}
+                            orderData.status
+                          )} border font-semibold px-2 py-1 rounded text-xs`}
                         >
-                          {selectedOrderDetails.data.status}
-                        </Badge>
+                          {orderData.status}
+                        </span>
                       </div>
                     </div>
                     <div className="p-3 bg-gray-50 rounded-lg">
@@ -633,7 +677,7 @@ export default function LogisticsPage() {
                         Total Amount
                       </label>
                       <p className="text-sm sm:text-base text-green-700 font-bold mt-1">
-                        {orderData.totalAmount.toLocaleString()} RWF
+                        {orderData.totalAmount ? orderData.totalAmount.toLocaleString() : '0'} RWF
                       </p>
                     </div>
                     <div className="p-3 bg-gray-50 rounded-lg">
@@ -641,9 +685,9 @@ export default function LogisticsPage() {
                         Payment Status
                       </label>
                       <div className="mt-1">
-                        <Badge variant="outline" className="font-semibold">
+                        <span className="border border-gray-300 px-2 py-1 rounded text-xs font-semibold">
                           {orderData.paymentStatus}
-                        </Badge>
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -653,8 +697,9 @@ export default function LogisticsPage() {
                     <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 p-4 bg-green-50 rounded-lg border-2 border-green-200">
                       {nextStatus &&
                         currentOrder.status !== "DELIVERED" &&
-                        currentOrder.status !== "CANCELLED" && (
-                          <Button
+                        currentOrder.status !== "CANCELLED" &&
+                        currentOrder.status !== "IN_TRANSIT" && (
+                          <button
                             onClick={() => {
                               updateOrderStatus(
                                 currentOrder.id,
@@ -667,47 +712,35 @@ export default function LogisticsPage() {
                               setShowDetailsModal(false);
                             }}
                             disabled={updatingStatus === currentOrder.id}
-                            className="flex-1 bg-green-600 hover:bg-green-700 font-semibold shadow-md"
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold shadow-md px-4 py-2 rounded disabled:opacity-50"
                           >
                             {updatingStatus === currentOrder.id ? (
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mx-auto" />
                             ) : (
-                              <>
+                              <div className="flex items-center justify-center">
                                 <ArrowRight className="h-4 w-4 mr-2" />
                                 Mark as {nextStatus.replace("_", " ")}
-                              </>
+                              </div>
                             )}
-                          </Button>
+                          </button>
                         )}
 
-                      {(currentOrder.status === "CONFIRMED" ||
-                        currentOrder.status === "PREPARING" ||
-                        currentOrder.status === "READY") && (
-                        <Button
-                          variant="destructive"
-                          onClick={() => {
-                            updateOrderStatus(currentOrder.id, "CANCELLED");
-                            setShowDetailsModal(false);
-                          }}
-                          disabled={updatingStatus === currentOrder.id}
-                          className="flex-1 font-semibold shadow-md"
-                        >
-                          Cancel Order
-                        </Button>
-                      )}
+                    
 
                       {currentOrder.status === "IN_TRANSIT" && (
-                        <Button
+                        <button
                           onClick={() => {
                             setSelectedOrder(currentOrder);
                             setShowDetailsModal(false);
                             setShowOtpModal(true);
                           }}
-                          className="flex-1 bg-green-700 hover:bg-green-800 font-semibold shadow-md"
+                          className="flex-1 bg-green-700 hover:bg-green-800 text-white font-semibold shadow-md px-4 py-2 rounded"
                         >
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                          Mark as Delivered
-                        </Button>
+                          <div className="flex items-center justify-center">
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Mark as Delivered
+                          </div>
+                        </button>
                       )}
                     </div>
                   )}
@@ -766,7 +799,7 @@ export default function LogisticsPage() {
                           Name
                         </label>
                         <p className="text-sm sm:text-base text-gray-900 mt-1">
-                          {orderData.restaurant.name}
+                          {orderData.restaurant?.name || 'N/A'}
                         </p>
                       </div>
                       <div className="p-3 bg-gray-50 rounded-lg">
@@ -774,7 +807,7 @@ export default function LogisticsPage() {
                           Phone
                         </label>
                         <p className="text-sm sm:text-base text-gray-900 mt-1">
-                          {orderData.restaurant.phone}
+                          {orderData.restaurant?.phone || 'N/A'}
                         </p>
                       </div>
                       <div className="p-3 bg-gray-50 rounded-lg">
@@ -782,7 +815,7 @@ export default function LogisticsPage() {
                           Location
                         </label>
                         <p className="text-sm sm:text-base text-gray-900 mt-1">
-                          {orderData.restaurant.location}
+                          {orderData.restaurant?.location || 'N/A'}
                         </p>
                       </div>
                       <div className="p-3 bg-gray-50 rounded-lg">
@@ -790,7 +823,7 @@ export default function LogisticsPage() {
                           Province
                         </label>
                         <p className="text-sm sm:text-base text-gray-900 mt-1">
-                          {orderData.restaurant.province}
+                          {orderData.restaurant?.province || 'N/A'}
                         </p>
                       </div>
                     </div>
@@ -802,7 +835,7 @@ export default function LogisticsPage() {
                       Order Items
                     </h3>
                     <div className="space-y-3">
-                      {orderData.orderItems.map((item: any, index: number) => (
+                      {orderData.orderItems?.map((item: any, index: number) => (
                         <div
                           key={index}
                           className="flex items-center gap-3 sm:gap-4 p-3 border-2 rounded-lg bg-white hover:border-green-400 transition-colors"
@@ -922,64 +955,154 @@ export default function LogisticsPage() {
                 </div>
               );
             })()}
-        </DialogContent>
-      </Dialog>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Order Modal */}
+      {showQuickModal && quickModalOrder && (
+        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-4 border-b flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Order Details</h3>
+              <button onClick={() => setShowQuickModal(false)} className="p-1 hover:bg-gray-100 rounded">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-4 space-y-4">
+              {quickModalDetails && (
+                <>
+                  {/* Address */}
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <label className="text-xs font-medium text-gray-600">Delivery Address</label>
+                    <p className="text-sm text-gray-900 mt-1">{quickModalDetails.order?.billingAddress || quickModalDetails.billingAddress || 'N/A'}</p>
+                  </div>
+
+                  {/* Order Items */}
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <label className="text-xs font-medium text-gray-600 mb-2 block">Order Items</label>
+                    <div className="space-y-2">
+                      {(quickModalDetails.order?.orderItems || quickModalDetails.orderItems)?.map((item: any, index: number) => (
+                        <div key={index} className="flex justify-between items-center text-sm">
+                          <span className="text-gray-900">{item.productName} x{item.quantity}</span>
+                          <span className="font-medium text-green-700">{item.subtotal?.toLocaleString() || '0'} RWF</span>
+                        </div>
+                      )) || <p className="text-sm text-gray-500">No items available</p>}
+                    </div>
+                  </div>
+
+                  {/* Total Amount */}
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <label className="text-sm font-medium text-gray-600">Total Amount</label>
+                      <span className="text-lg font-bold text-green-700">
+                        {(quickModalDetails.order?.totalAmount || quickModalDetails.totalAmount || 0).toLocaleString()} RWF
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-col gap-2">
+                    {(() => {
+                      const nextStatus = getNextStatus(quickModalOrder.status);
+                      return (
+                        <>
+                          {nextStatus && quickModalOrder.status !== "DELIVERED" && quickModalOrder.status !== "CANCELLED" && quickModalOrder.status !== "IN_TRANSIT" && (
+                            <button
+                              onClick={() => {
+                                updateOrderStatus(quickModalOrder.id, nextStatus as "PREPARING" | "READY" | "IN_TRANSIT" | "CANCELLED");
+                                setShowQuickModal(false);
+                              }}
+                              disabled={updatingStatus === quickModalOrder.id}
+                              className="w-full bg-green-600 hover:bg-green-700 text-white text-sm px-4 py-2 rounded disabled:opacity-50"
+                            >
+                              {updatingStatus === quickModalOrder.id ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mx-auto" />
+                              ) : (
+                                `Mark as ${nextStatus.replace("_", " ")}`
+                              )}
+                            </button>
+                          )}
+
+                          {quickModalOrder.status === "IN_TRANSIT" && (
+                            <button
+                              onClick={() => {
+                                setSelectedOrder(quickModalOrder);
+                                setShowQuickModal(false);
+                                setShowOtpModal(true);
+                              }}
+                              className="w-full bg-green-700 hover:bg-green-800 text-white text-sm px-4 py-2 rounded"
+                            >
+                              Mark as Delivered
+                            </button>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* OTP Verification Modal */}
-      <Dialog open={showOtpModal} onOpenChange={setShowOtpModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
-              <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
-              Verify Delivery OTP
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Please enter the OTP provided by the customer to confirm delivery.
-            </p>
-            <div>
-              <label className="text-sm font-medium text-gray-700">
-                OTP Code
-              </label>
-              <Input
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                placeholder="Enter 6-digit OTP"
-                maxLength={6}
-                className="mt-2 text-center text-lg sm:text-xl font-bold tracking-widest h-12"
-                autoFocus
-              />
-            </div>
-            {selectedOrder && (
-              <div className="bg-green-50 p-4 rounded-lg border-2 border-green-200">
-                <p className="text-sm text-gray-800">
-                  <strong className="text-green-800">Order:</strong>{" "}
-                  {selectedOrder.orderNumber}
-                  <br />
-                  <strong className="text-green-800">Customer:</strong>{" "}
-                  {selectedOrder.customerName}
-                </p>
+      {showOtpModal && (
+        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            <div className="mb-4">
+              <div className="flex items-center gap-2 text-lg sm:text-xl font-semibold">
+                <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
+                Verify Delivery OTP
               </div>
-            )}
+            </div>
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Please enter the OTP provided by the customer to confirm delivery.
+              </p>
+              <div>
+                <label className="text-sm font-medium text-gray-700">
+                  OTP Code
+                </label>
+                <input
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  placeholder="Enter 6-digit OTP"
+                  maxLength={6}
+                  className="mt-2 w-full text-center text-lg sm:text-xl font-bold tracking-widest h-12 border border-gray-300 rounded px-3"
+                  autoFocus
+                />
+              </div>
+              {selectedOrder && (
+                <div className="bg-green-50 p-4 rounded-lg border-2 border-green-200">
+                  <p className="text-sm text-gray-800">
+                    <strong className="text-green-800">Order:</strong>{" "}
+                    {selectedOrder.orderNumber}
+                    <br />
+                    <strong className="text-green-800">Customer:</strong>{" "}
+                    {selectedOrder.customerName}
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 mt-6">
+              <button
+                onClick={() => setShowOtpModal(false)}
+                className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleOtpVerification}
+                className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded"
+              >
+                Verify & Deliver
+              </button>
+            </div>
           </div>
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowOtpModal(false)}
-              className="w-full sm:w-auto"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleOtpVerification}
-              className="w-full sm:w-auto bg-green-600 hover:bg-green-700 font-semibold"
-            >
-              Verify & Deliver
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
     </div>
   );
 }
