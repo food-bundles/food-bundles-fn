@@ -623,7 +623,7 @@ export default function LogisticsPage() {
 
       {/* Order Details Modal */}
       {showDetailsModal && (
-        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] overflow-y-auto w-full">
             <div className="p-4 sm:p-6 pb-4 border-b sm:border-0">
               <div className="text-lg sm:text-xl flex items-center justify-between font-semibold">
@@ -961,7 +961,7 @@ export default function LogisticsPage() {
 
       {/* Quick Order Modal */}
       {showQuickModal && quickModalOrder && (
-        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="p-4 border-b flex items-center justify-between">
               <h3 className="text-lg font-semibold">Order Details</h3>
@@ -1049,7 +1049,7 @@ export default function LogisticsPage() {
 
       {/* OTP Verification Modal */}
       {showOtpModal && (
-        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <div className="mb-4">
               <div className="flex items-center gap-2 text-lg sm:text-xl font-semibold">
