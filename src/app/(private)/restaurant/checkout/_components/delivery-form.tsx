@@ -23,6 +23,7 @@ import {
 import { useCart } from "@/app/contexts/cart-context";
 import { useAuth } from "@/app/contexts/auth-context";
 import { useVouchers } from "@/app/contexts/VoucherContext";
+import { useWallet } from "@/app/contexts/WalletContext";
 import {
   checkoutService,
   CheckoutRequest,
@@ -70,12 +71,13 @@ const getUserFullAddress = (user: any): string => {
   return addressParts.join(", ");
 };
 
-type PaymentMethod = "wallet" | "momo" | "card" | "voucher";
+type PaymentMethod = "prepaid" | "momo" | "card" | "voucher";
 
 export function Checkout() {
   const { cart, totalItems, totalQuantity, totalAmount, isLoading } = useCart();
   const { user, isAuthenticated } = useAuth();
   const { myVouchers, getMyVouchers } = useVouchers();
+  const { wallet, getMyWallet } = useWallet();
   const [showFlutterwaveInfo, setShowFlutterwaveInfo] = useState(false);
   const [flutterwaveRedirectUrl, setFlutterwaveRedirectUrl] =
     useState<string>("");
@@ -83,6 +85,7 @@ export function Checkout() {
   const [isLoadingVouchers, setIsLoadingVouchers] = useState(false);
 
   const [method, setMethod] = useState<PaymentMethod>("momo");
+  const [walletBalance, setWalletBalance] = useState(0);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -115,6 +118,16 @@ export function Checkout() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
+      // Fetch wallet data
+      const fetchWallet = async () => {
+        try {
+          await getMyWallet();
+        } catch (error) {
+          console.log("No wallet found or error fetching wallet");
+        }
+      };
+      fetchWallet();
+      
       const fullAddress = getUserFullAddress(user);
 
       setFormData((prev) => ({
@@ -152,7 +165,14 @@ export function Checkout() {
         );
       }
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, getMyWallet]);
+
+  // Update wallet balance when wallet data changes
+  useEffect(() => {
+    if (wallet) {
+      setWalletBalance(wallet.balance);
+    }
+  }, [wallet]);
 
   useEffect(() => {
     if (method === "voucher" && isAuthenticated) {
@@ -327,11 +347,23 @@ export function Checkout() {
 
     try {
       const paymentMethodMap = {
-        wallet: "CASH" as const,
+        prepaid: "CASH" as const,
         momo: "MOBILE_MONEY" as const,
         card: "CARD" as const,
         voucher: "VOUCHER" as const,
       };
+
+      // Validate prepaid balance
+      if (method === "prepaid") {
+        if (!wallet) {
+          setErrors({ submit: "Prepaid account not found. Please create one first." });
+          return;
+        }
+        if (walletBalance < finalTotal) {
+          setErrors({ submit: `Insufficient prepaid balance. Available: ${walletBalance.toLocaleString()} RWF, Required: ${finalTotal.toLocaleString()} RWF` });
+          return;
+        }
+      }
 
       const checkoutPayload: CheckoutRequest = {
         cartId: cart!.id,
@@ -478,11 +510,6 @@ export function Checkout() {
                 <span>Rwf {summaryData.total.toLocaleString()}</span>
               </div>
             </div>
-            {!hasFreeDelivery && totalAmount < 100000 && (
-              <div className="text-xs text-gray-600 mt-2">
-                * Delivery fee applies for orders under 100,000 RWF
-              </div>
-            )}
           </div>
         </div>
 
@@ -629,15 +656,15 @@ export function Checkout() {
                   <div className="flex flex-wrap justify-center gap-2 ">
                     <button
                       type="button"
-                      onClick={() => setMethod("wallet")}
-                      className={`hidden rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal px-4 border transition-colors cursor-pointer ${
-                        method === "wallet"
+                      onClick={() => setMethod("prepaid")}
+                      className={`rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal px-4 border transition-colors cursor-pointer ${
+                        method === "prepaid"
                           ? "bg-green-700 text-white border-green-700"
                           : "bg-white text-gray-900 border-gray-300 hover:border-green-500"
-                      }`}
-                      disabled={isSubmitting}
+                      } ${!wallet || walletBalance < finalTotal ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      disabled={isSubmitting || !wallet || walletBalance < finalTotal}
                     >
-                      Wallet
+                      Prepaid
                     </button>
                     <button
                       type="button"
@@ -679,6 +706,28 @@ export function Checkout() {
                 </div>
               </div>
 
+              {/* Prepaid Balance Display */}
+              {method === "prepaid" && (
+                <div className="mt-3 p-3 bg-gray-50 rounded border">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-700">Available Balance:</span>
+                    <span className="font-medium text-green-600">
+                      {walletBalance.toLocaleString()} RWF
+                    </span>
+                  </div>
+                  {walletBalance < finalTotal && (
+                    <p className="text-xs text-red-600 mt-1">
+                      Insufficient balance. Need {(finalTotal - walletBalance).toLocaleString()} RWF more.
+                    </p>
+                  )}
+                  {!wallet && (
+                    <p className="text-xs text-red-600 mt-1">
+                      No prepaid account found. Please create one first.
+                    </p>
+                  )}
+                </div>
+              )}
+
               {method === "momo" && (
                 <div className="space-y-2 mt-3">
                   <label className="flex items-center text-sm font-medium text-gray-700">
@@ -710,22 +759,7 @@ export function Checkout() {
                 </div>
               )}
 
-              {method === "wallet" && (
-                <div className="space-y-2 mt-3">
-                  <input
-                    type="text"
-                    placeholder="Wallet ID"
-                    value={""}
-                    onChange={(e) =>
-                      handleInputChange("walletId", e.target.value)
-                    }
-                    className="w-full h-10 px-3 border text-gray-900 focus:border-green-500 
-                 focus:ring-green-500 focus:ring-1 focus:outline-none  
-                 text-[14px] border-gray-300"
-                    disabled={isSubmitting}
-                  />
-                </div>
-              )}
+
 
               {method === "voucher" && (
                 <div className="space-y-3 mt-3">
