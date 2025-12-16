@@ -18,6 +18,7 @@ import {
   Crown,
   Ticket,
   UserPlus,
+  LayoutDashboard,
 } from "lucide-react";
 import NotificationsDrawer from "@/app/(private)/restaurant/_components/notificationDrawer";
 import { usePathname } from "next/navigation";
@@ -27,7 +28,7 @@ import { authService } from "@/app/services/authService";
 import { OptimizedImage } from "@/components/OptimizedImage";
 
 const menuItems = [
-  // { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+  { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   {
     icon: FileText,
     label: "Farmer Submission",

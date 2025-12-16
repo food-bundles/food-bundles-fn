@@ -161,7 +161,7 @@ export default function NotificationsDrawer({
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700 transition-colors hover:rotate-90 transform duration-200"
           >
-            <X className="w-6 h-6 text-white" />
+            <X className="w-6 h-6 text-white cursor-pointer" />
           </button>
         </div>
 
