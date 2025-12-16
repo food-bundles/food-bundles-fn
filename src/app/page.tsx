@@ -4,6 +4,8 @@ import { Header } from "@/components/header";
 import { HeroWithRestaurants } from "@/components/hero-section";
 import QuickTalkSection from "@/components/quck-talk-section";
 import { FoodBundlesConnect } from "@/components/showcase-section";
+import { SantaClaus } from "@/components/santa-claus";
+import { ChristmasAnimation } from "@/components/ChristmasAnimation";
 
 export default async function HomePage() {
   const restaurants = [
@@ -142,6 +144,16 @@ export default async function HomePage() {
         </div>
         <Footer />
       </div>
+      {/* <SantaClaus /> */}
+      <div className="fixed bottom-4 right-4 z-50">
+        <img 
+          src="https://res.cloudinary.com/dwv5pqkgd/image/upload/v1765878468/bg-removed_o0ogcx.png" 
+          alt="Santa Claus" 
+          className="w-20 h-20 object-contain animate-bounce"
+        />
+      </div>
+      <ChristmasAnimation />
+      
     </div>
   );
 }
