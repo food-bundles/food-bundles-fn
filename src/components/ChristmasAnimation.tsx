@@ -48,9 +48,9 @@ export function ChristmasAnimation() {
   return (
     <div className="fixed inset-0 pointer-events-none z-10">
       {/* Christmas Trees */}
-      <div className="absolute bottom-0 left-4 text-6xl animate-pulse">🎄</div>
-      <div className="absolute bottom-0 right-8 text-4xl animate-bounce" style={{ animationDelay: '1s' }}>🎄</div>
-      <div className="absolute bottom-0 left-1/3 text-5xl animate-pulse" style={{ animationDelay: '2s' }}>🎄</div>
+      <div className="absolute bottom-0 left-4 text-4xl md:text-9xl animate-pulse">🎄</div>
+      <div className="absolute bottom-0 right-0 text-4xl md:text-9xl animate-pulse" style={{ animationDelay: '1s' }}>🎄</div>
+      <div className="absolute bottom-0 left-1/3 text-4xl md:text-9xl animate-pulse " style={{ animationDelay: '2s' }}>🎄</div>
       
       {/* Santa Hats */}
       {/* <div className="relative top-28 right-20 text-3xl animate-bounce">🎅</div> */}

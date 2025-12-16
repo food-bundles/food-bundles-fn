@@ -266,7 +266,7 @@ export function Header() {
                   <span className="text-2sm font-bold text-black whitespace-nowrap">
                     FoodBundles 
                   </span>
-                  <span className="text-2xl">🎅</span>
+                  <span className="text-2xl hidden md:inline">🎅</span>
                 </div>
               </Link>
 
@@ -415,7 +415,7 @@ export function Header() {
 
               {/* Right actions */}
               <div className="flex items-center gap-2">
-                <span className="font-bold text-2xl">🎄</span>
+                <span className="font-bold text-2xl md:text-4xl">🎄</span>
                 {/* Desktop User Menu - Shadcn DropdownMenu */}
                 <div className="hidden md:block">
                   {isAuthenticated ? (
