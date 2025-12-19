@@ -26,9 +26,10 @@ export default function RestaurantPage() {
   const [totalProducts, setTotalProducts] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("random");
+  const [isSearching, setIsSearching] = useState(false);
+  const [itemsPerPage, setItemsPerPage] = useState(30);
   const { selectedCategory, setSelectedCategory } = useProductSection();
   
-  const PRODUCTS_PER_PAGE = 15;
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -52,14 +53,19 @@ export default function RestaurantPage() {
   const fetchProducts = useCallback(async (
     page = 1, 
     category = "All Categories", 
-    search = ""
+    search = "",
+    showSearching = false
   ) => {
     try {
-      setLoading(true);
+      if (showSearching) {
+        setIsSearching(true);
+      } else {
+        setLoading(true);
+      }
       
       const params: any = {
         page,
-        limit: PRODUCTS_PER_PAGE,
+        limit: itemsPerPage,
       };
       
       if (category !== "All Categories") {
@@ -121,8 +127,9 @@ export default function RestaurantPage() {
       return { products: [], totalPages: 1, totalProducts: 0 };
     } finally {
       setLoading(false);
+      setIsSearching(false);
     }
-  }, [categories]);
+  }, [categories, itemsPerPage]);
 
   useEffect(() => {
     const initializeData = async () => {
@@ -135,7 +142,18 @@ export default function RestaurantPage() {
     if (categories.length > 0) {
       fetchProducts(currentPage, selectedCategory, searchQuery);
     }
-  }, [selectedCategory, currentPage, searchQuery, fetchProducts, categories]);
+  }, [selectedCategory, currentPage, fetchProducts, categories]);
+
+  // Separate effect for search to avoid unnecessary reloads
+  useEffect(() => {
+    if (categories.length > 0) {
+      const timer = setTimeout(() => {
+        fetchProducts(1, selectedCategory, searchQuery, searchQuery !== "");
+        setCurrentPage(1);
+      }, searchQuery === "" ? 0 : 300);
+      return () => clearTimeout(timer);
+    }
+  }, [searchQuery, selectedCategory, fetchProducts, categories]);
 
   const handleCategorySelect = useCallback((categoryName: string) => {
     setSelectedCategory(categoryName);
@@ -147,7 +165,7 @@ export default function RestaurantPage() {
     if (currentPage !== 1) {
       setCurrentPage(1);
     }
-  }, [selectedCategory, searchQuery]);
+  }, [selectedCategory]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -156,6 +174,13 @@ export default function RestaurantPage() {
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
+    // Don't fetch immediately, let the useEffect handle it with debouncing
+  };
+
+  const handleItemsPerPageChange = (newLimit: number) => {
+    setItemsPerPage(newLimit);
+    setCurrentPage(1);
+    fetchProducts(1, selectedCategory, searchQuery);
   };
 
   const handleSortChange = (newSortBy: string) => {
@@ -181,11 +206,14 @@ export default function RestaurantPage() {
               totalPages,
               totalProducts,
               onPageChange: handlePageChange,
-              isLoading: loading
+              isLoading: loading,
+              itemsPerPage,
+              onItemsPerPageChange: handleItemsPerPageChange
             }}
             search={{
               query: searchQuery,
-              onSearch: handleSearch
+              onSearch: handleSearch,
+              isSearching
             }}
             sorting={{
               sortBy,

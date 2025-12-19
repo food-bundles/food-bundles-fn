@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useCallback, useState, useEffect } from "react";
-import { walletService, TopUpWalletData, WalletTransactionFilters } from "@/app/services/walletService";
+import { walletService, TopUpWalletData, WalletTransactionFilters, AdminWalletFilters, AdjustWalletData } from "@/app/services/walletService";
 import { useWalletWebSocket } from "@/hooks/useWalletWebSocket";
 import { useAuth } from "@/app/contexts/auth-context";
 
@@ -57,6 +57,12 @@ interface WalletContextType {
   getTransactions: (filters?: WalletTransactionFilters) => Promise<any>;
   refreshWallet: () => Promise<void>;
   clearError: () => void;
+
+  // Admin methods
+  getAllWallets: (filters?: AdminWalletFilters) => Promise<any>;
+  getWalletById: (walletId: string) => Promise<any>;
+  updateWalletStatus: (walletId: string, isActive: boolean) => Promise<any>;
+  adjustWalletBalance: (walletId: string, data: AdjustWalletData) => Promise<any>;
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -153,6 +159,63 @@ export function WalletProvider({ children }: WalletProviderProps) {
     await getMyWallet();
   }, [getMyWallet]);
 
+  // Admin functions
+  const getAllWallets = useCallback(async (filters?: AdminWalletFilters) => {
+    try {
+      setLoading(true);
+      const response = await walletService.getAllWallets(filters);
+      return response;
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || "Failed to fetch wallets";
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const getWalletById = useCallback(async (walletId: string) => {
+    try {
+      setLoading(true);
+      const response = await walletService.getWalletById(walletId);
+      return response;
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || "Failed to fetch wallet";
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const updateWalletStatus = useCallback(async (walletId: string, isActive: boolean) => {
+    try {
+      setLoading(true);
+      const response = await walletService.updateWalletStatus(walletId, isActive);
+      return response;
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || "Failed to update wallet status";
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const adjustWalletBalance = useCallback(async (walletId: string, data: AdjustWalletData) => {
+    try {
+      setLoading(true);
+      const response = await walletService.adjustWalletBalance(walletId, data);
+      return response;
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || "Failed to adjust wallet balance";
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Handle WebSocket wallet updates
   useEffect(() => {
     if (walletUpdates.length > 0) {
@@ -198,6 +261,12 @@ export function WalletProvider({ children }: WalletProviderProps) {
     getTransactions,
     refreshWallet,
     clearError,
+
+    // Admin methods
+    getAllWallets,
+    getWalletById,
+    updateWalletStatus,
+    adjustWalletBalance,
   };
 
   return (

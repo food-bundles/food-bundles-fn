@@ -61,7 +61,12 @@ export const productService = {
     sortOrder?: 'asc' | 'desc';
   }) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.get("/products", { params });
+    // Set default limit to 30 if not provided
+    const requestParams = {
+      ...params,
+      limit: params?.limit || 30
+    };
+    const response = await axiosClient.get("/products", { params: requestParams });
     return response.data;
   },
 
@@ -75,7 +80,12 @@ export const productService = {
   }) => {
     try {
       const axiosClient = createAxiosClient();
-      const response = await axiosClient.get("/products/role-based", { params });
+      // Set default limit to 30 if not provided
+      const requestParams = {
+        ...params,
+        limit: params?.limit || 30
+      };
+      const response = await axiosClient.get("/products/role-based", { params: requestParams });
       return response.data;
     } catch (error: any) {
       toast.error("Error fetching role-based products:", error);

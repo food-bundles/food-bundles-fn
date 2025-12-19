@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,11 +15,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Eye, Trash2,  MoreHorizontal, Plus } from "lucide-react";
+import { Eye, Trash2, MoreHorizontal, Plus, Search } from "lucide-react";
 import { DataTable } from "@/components/data-table";
 import { useVouchers } from "@/app/contexts/VoucherContext";
 import { IVoucher, VoucherStatus, VoucherType } from "@/lib/types";
 import { VoucherManagementModal } from "./VoucherManagementModal";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
 interface VouchersTableProps {
@@ -32,6 +33,7 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [paginationLoading, setPaginationLoading] = useState(false);
+  const [restaurantFilter, setRestaurantFilter] = useState("");
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -71,6 +73,35 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
   useEffect(() => {
     fetchVouchers(1, 10);
   }, []);
+
+  const calculateRemainingDays = (voucher: any) => {
+    if (!voucher.loan || !(voucher as any).usedAt || !voucher.loan.voucherDays) {
+      return "N/A";
+    }
+
+    const usedDate = new Date((voucher as any).usedAt);
+    const voucherDays = voucher.loan.voucherDays;
+    const paymentDueDate = new Date(usedDate.getTime() + (voucherDays * 24 * 60 * 60 * 1000));
+    const today = new Date();
+    const remainingTime = paymentDueDate.getTime() - today.getTime();
+    const remainingDays = Math.ceil(remainingTime / (24 * 60 * 60 * 1000));
+
+    if (remainingDays < 0) {
+      return `Overdue by ${Math.abs(remainingDays)} days`;
+    } else if (remainingDays === 0) {
+      return "Due today";
+    } else {
+      return `${remainingDays} days left`;
+    }
+  };
+
+  const filteredVouchers = useMemo(() => {
+    if (!restaurantFilter) return allVouchers;
+    return allVouchers.filter((voucher: any) => {
+      const restaurantName = voucher.restaurant?.name || "";
+      return restaurantName.toLowerCase().includes(restaurantFilter.toLowerCase());
+    });
+  }, [allVouchers, restaurantFilter]);
 
   const handleDeactivate = async (id: string) => {
     try {
@@ -127,13 +158,15 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
 
   const columns: ColumnDef<IVoucher>[] = [
     {
-      accessorKey: "No",
-      header: "No",
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-sm">{row.index + 1}</span>
-        </div>
-      )
+      id: "index",
+      header: "#",
+      cell: ({ row }) => {
+        const index =
+          filteredVouchers.findIndex(
+            (voucher: any) => voucher.id === row.original.id
+          ) + 1;
+        return <div className="text-sm font-medium">{index}</div>;
+      },
     },
     {
       accessorKey: "voucherCode",
@@ -142,33 +175,73 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
         <div className="flex items-center gap-2">
           <span className="font-mono text-sm">{row.original.voucherCode}</span>
         </div>
-      )
+      ),
+    },
+    {
+      id: "restaurant",
+      header: "Restaurant",
+      cell: ({ row }) => {
+        const restaurantName = (row.original as any).restaurant?.name || "N/A";
+        return <div className="text-sm font-medium">{restaurantName}</div>;
+      },
     },
     {
       accessorKey: "voucherType",
       header: "Type",
       cell: ({ row }) => (
-        <Badge variant="outline">{getVoucherTypeLabel(row.original.voucherType)}</Badge>
-      )
+        <Badge variant="outline">
+          {getVoucherTypeLabel(row.original.voucherType)}
+        </Badge>
+      ),
     },
     {
       accessorKey: "creditLimit",
       header: "Credit Limit",
-      cell: ({ row }) => `${row.original.creditLimit.toLocaleString()} RWF`
+      cell: ({ row }) => `${row.original.creditLimit.toLocaleString()} RWF`,
     },
     {
       id: "usage",
       header: "Used Credit",
       cell: ({ row }) => (
         <div className="text-sm">
-          <div ><span className="font-medium text-green-600">{row.original.usedCredit.toLocaleString()}</span> RWF</div>
+          <div>
+            <span className="font-medium text-green-600">
+              {row.original.usedCredit.toLocaleString()}
+            </span>{" "}
+            RWF
+          </div>
         </div>
-      )
+      ),
+    },
+    {
+      id: "remainingDays",
+      header: "Days to Pay",
+      cell: ({ row }) => {
+        const remainingDays = calculateRemainingDays(row.original);
+        const isOverdue = remainingDays.includes("Overdue");
+        const isDueToday = remainingDays === "Due today";
+
+        return (
+          <div
+            className={`text-sm font-medium ${
+              isOverdue
+                ? "text-red-600"
+                : isDueToday
+                ? "text-orange-600"
+                : remainingDays !== "N/A"
+                ? "text-blue-600"
+                : "text-gray-500"
+            }`}
+          >
+            {remainingDays}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => getStatusBadge(row.original.status)
+      cell: ({ row }) => getStatusBadge(row.original.status),
     },
     {
       accessorKey: "issuedDate",
@@ -176,8 +249,13 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
       cell: ({ row }) => (
         <div className="flex items-center gap-1 text-sm text-gray-800">
           {new Date(row.original.issuedDate).toLocaleDateString()}
+          {(row.original as any).usedAt && (
+            <span className="text-[12px] text-gray-600">
+              {new Date((row.original as any).usedAt).toLocaleDateString()}
+            </span>
+          )}
         </div>
-      )
+      ),
     },
     {
       id: "actions",
@@ -207,7 +285,7 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
                 {voucher.status === VoucherStatus.ACTIVE && (
                   <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       className="text-red-600"
                       onClick={() => handleDeactivate(voucher.id)}
                     >
@@ -220,8 +298,8 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
             </DropdownMenu>
           </div>
         );
-      }
-    }
+      },
+    },
   ];
 
   return (
@@ -238,9 +316,31 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
           </Button>
         </div>
       </div>
+      
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Filter by restaurant name..."
+            value={restaurantFilter}
+            onChange={(e) => setRestaurantFilter(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        {restaurantFilter && (
+          <Button
+            variant="outline"
+            onClick={() => setRestaurantFilter("")}
+            className="text-sm"
+          >
+            Clear Filter
+          </Button>
+        )}
+      </div>
+      
       <DataTable
         columns={columns}
-        data={allVouchers}
+        data={filteredVouchers}
         showColumnVisibility={true}
         showPagination={true}
         pagination={pagination}

@@ -182,7 +182,7 @@ export default function VoucherPaymentModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md rounded-none">
+      <DialogContent className="sm:max-w-md border-2 border-green-500">
         <DialogHeader>
           <DialogTitle className="text-[14px] font-normal">
             Pay Voucher Credit - {voucher?.voucherCode || ""}
@@ -193,14 +193,14 @@ export default function VoucherPaymentModal({
           <Button
             variant={method === "momo" ? "default" : "outline"}
             onClick={() => setMethod("momo")}
-            className="rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal"
+            className="rounded flex-1 sm:flex-initial h-8 w-30 text-[14px] font-normal"
           >
             MoMo
           </Button>
           <Button
             variant={method === "card" ? "default" : "outline"}
             onClick={() => setMethod("card")}
-            className="rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal"
+            className="rounded flex-1 sm:flex-initial h-8 w-30 text-[14px] font-normal"
           >
             Card
           </Button>

@@ -298,6 +298,21 @@ function PaymentStatusDropdown({ currentStatus, orderId, onUpdate }: {
   );
 }
 
+const formatDate = (date: string | Date) =>
+  new Date(date).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+const formatTime = (date: string | Date) =>
+  new Date(date).toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+
 export const createOrdersColumns = (actions: {
   onView: (order: Order) => void;
   onDownloadPDF: (order: Order) => void;
@@ -343,7 +358,11 @@ export const createOrdersColumns = (actions: {
     cell: ({ row }) => (
       <div className="font-medium">
         RWF {row.getValue<number>("totalAmount").toLocaleString()}
-        <div className={`text-[12px]  lowercase rounded-full border px-2 ${getPaymentMethodColor(row.original.paymentMethod)}`}>
+        <div
+          className={`text-[12px]  lowercase rounded-full border px-2 ${getPaymentMethodColor(
+            row.original.paymentMethod
+          )}`}
+        >
           {row.original.paymentMethod}
         </div>
       </div>
@@ -380,11 +399,16 @@ export const createOrdersColumns = (actions: {
   {
     accessorKey: "createdAt",
     header: "Date",
-    cell: ({ row }) => (
-      <div className="text-sm">
-        {new Date(row.getValue("createdAt")).toLocaleDateString()}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const date = row.original.createdAt;
+
+      return (
+        <div className="text-sm text-gray-700">
+          {formatDate(date)}
+          <p className="text-xs text-gray-500">{formatTime(date)}</p>
+        </div>
+      );
+    },
   },
   {
     id: "actions",

@@ -350,37 +350,20 @@ export const generateReceiptHTML = (order: Order) => {
   `;
 };
 
-// Component for copy button with state
-const CopyButton = ({ coordinates }: { coordinates: string }) => {
-  const [copied, setCopied] = useState(false);
+const formatDate = (date: string | Date) =>
+  new Date(date).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(coordinates);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy coordinates");
-    }
-  };
+const formatTime = (date: string | Date) =>
+  new Date(date).toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
 
-  return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="h-6 w-6 p-0 hover:bg-gray-100 shrink-0"
-      onClick={handleCopy}
-    >
-      {copied ? (
-        <div className="flex items-center ml-3">
-          <Check className="h-3 w-3 text-green-600" />{" "}
-        </div>
-      ) : (
-        <Copy className="h-3 w-3" />
-      )}
-    </Button>
-  );
-};
 
 export const ordersColumns = (
   onView: (order: Order) => void,
@@ -448,33 +431,17 @@ export const ordersColumns = (
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 text-[13px]"
         >
-          Date & Items
+          Date
         </Button>
       );
     },
     cell: ({ row }) => {
-      const order = row.original;
-      const itemsArray = order.itemsArray || [];
-      const itemsText = order.items || "";
-
-      let displayText = "";
-      if (itemsArray.length > 0) {
-        const firstItem =
-          itemsArray[0]?.productName || itemsArray[0]?.name || "Item";
-        displayText =
-          itemsArray.length > 1
-            ? `${firstItem} +${itemsArray.length - 1} items`
-            : firstItem;
-      } else {
-        displayText = itemsText;
-      }
+      const date = row.original.orderedDate;
 
       return (
-        <div className="max-w-[200px]">
-          <div className="text-xs text-gray-500 mb-1">{order.orderedDate}</div>
-          <div className="truncate text-sm" title={displayText}>
-            {displayText}
-          </div>
+        <div className="text-sm text-gray-700">
+          {formatDate(date)}
+          <p className="text-xs text-gray-500">{formatTime(date)}</p>
         </div>
       );
     },
