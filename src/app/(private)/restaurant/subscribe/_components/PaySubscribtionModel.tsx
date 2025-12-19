@@ -29,9 +29,8 @@ export default function PaymentModal({
   const [method, setMethod] = useState<PaymentMethod>("momo");
   const [loading, setLoading] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiryDate, setExpiryDate] = useState("");
-  const [cvv, setCvv] = useState("");
+  const [showRedirectInfo, setShowRedirectInfo] = useState(false);
+  const [redirectUrl, setRedirectUrl] = useState("");
 
   const handlePayment = async () => {
     if (!plan) return;
@@ -56,20 +55,17 @@ export default function PaymentModal({
         subscriptionData.phoneNumber = phoneNumber;
       }
 
-      // Add card details for card payment
-      if (method === "card" && cardNumber && expiryDate && cvv) {
-        subscriptionData.cardDetails = {
-          cardNumber,
-          expiryDate,
-          cvv
-        };
-      }
-
       const response = await subscriptionService.createRestaurantSubscription(subscriptionData);
       
-      if (response.success) {
-        toast.success("Subscription created successfully!");
-        onClose();
+      if (response.success || response.data) {
+        // Check if redirect is required (for Flutterwave)
+        if ((response as any).data?.requiresRedirect && (response as any).data?.redirectUrl) {
+          setRedirectUrl((response as any).data.redirectUrl);
+          setShowRedirectInfo(true);
+        } else {
+          toast.success("Subscription created successfully!");
+          onClose();
+        }
       }
     } catch (error: any) {
       console.error("Payment error:", error);
@@ -120,31 +116,13 @@ export default function PaymentModal({
       case "card":
         return (
           <div className="space-y-3">
-            <Input 
-              placeholder="Card Number" 
-              type="text" 
-              value={cardNumber}
-              onChange={(e) => setCardNumber(e.target.value)}
-              className="text-[13px] text-gray-900 rounded"
-            />
-            <Input 
-              placeholder="Expiry Date (MM/YY)" 
-              type="text" 
-              value={expiryDate}
-              onChange={(e) => setExpiryDate(e.target.value)}
-              className="text-[13px] text-gray-900 rounded" 
-            />
-            <Input 
-              placeholder="CVV" 
-              type="password" 
-              value={cvv}
-              onChange={(e) => setCvv(e.target.value)}
-              className="text-[13px] text-gray-900 rounded"
-            />
+            <p className="text-gray-900 text-[13px] text-center">
+              Pay using your card.
+            </p>
             <Button 
               onClick={handlePayment}
-              disabled={loading || !cardNumber || !expiryDate || !cvv}
-              className="w-full bg-green-600 text-white hover:bg-green-700 rounded-none text-[13px] font-normal"
+              disabled={loading}
+              className="w-full h-10 bg-green-600 text-white hover:bg-green-700 rounded text-[14px] font-normal"
             >
               {loading ? "Processing..." : `Pay ${price}`}
             </Button>
@@ -155,9 +133,49 @@ export default function PaymentModal({
     }
   };
 
+  const handleRedirect = () => {
+    if (redirectUrl) {
+      window.location.href = redirectUrl;
+    }
+  };
+
+  if (showRedirectInfo) {
+    return (
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-md rounded-none">
+          <DialogHeader>
+            <DialogTitle className="text-[14px] font-normal">
+              Complete Payment
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-[14px] text-gray-700">
+              Click Continue to complete your payment on Flutterwave.
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={onClose}
+                className="flex-1 h-10 text-white"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleRedirect}
+                className="flex-1 h-10 bg-green-600 hover:bg-green-700 text-white"
+              >
+                Continue
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md rounded-none">
+      <DialogContent className="sm:max-w-md border-2 border-green-500">
         <DialogHeader>
           <DialogTitle className="text-[14px] font-normal">
             Pay for {plan?.name || ""}
@@ -175,14 +193,14 @@ export default function PaymentModal({
           <Button
             variant={method === "momo" ? "default" : "outline"}
             onClick={() => setMethod("momo")}
-            className="rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal"
+            className="rounded flex-1 sm:flex-initial h-8 w-20 text-[14px] font-normal"
           >
             MoMo
           </Button>
           <Button
             variant={method === "card" ? "default" : "outline"}
             onClick={() => setMethod("card")}
-            className="rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal"
+            className="rounded flex-1 sm:flex-initial h-8 w-20 text-[14px] font-normal"
           >
             Card
           </Button>

@@ -9,6 +9,7 @@ export interface TopUpWalletData {
   paymentMethod: "MOBILE_MONEY" | "CARD";
   phoneNumber?: string;
   description?: string;
+  walletId?: string;
 }
 
 export interface WalletTransactionFilters {
@@ -18,6 +19,19 @@ export interface WalletTransactionFilters {
   endDate?: string;
   page?: number;
   limit?: number;
+}
+
+export interface AdminWalletFilters {
+  page?: number;
+  limit?: number;
+  isActive?: boolean;
+  restaurantName?: string;
+}
+
+export interface AdjustWalletData {
+  amount: number;
+  type: "credit" | "debit";
+  description: string;
 }
 
 export const walletService = {
@@ -60,6 +74,45 @@ export const walletService = {
   verifyTopUp: async (transactionId: string) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.get(`/wallets/verify-topup/${transactionId}`);
+    return response.data;
+  },
+
+  // Get all wallets (admin)
+  getAllWallets: async () => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/wallets/all");
+    return response.data;
+  },
+
+  // Get all transactions (admin)
+  getAllTransactions: async (filters?: WalletTransactionFilters) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/wallets/all-transactions", { params: filters });
+    return response.data;
+  },
+
+  // Admin functions
+  getAllWallets: async (filters?: AdminWalletFilters) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/wallets", { params: filters });
+    return response.data;
+  },
+
+  getWalletById: async (walletId: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get(`/wallets/${walletId}`);
+    return response.data;
+  },
+
+  updateWalletStatus: async (walletId: string, isActive: boolean) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(`/wallets/${walletId}/status`, { isActive });
+    return response.data;
+  },
+
+  adjustWalletBalance: async (walletId: string, data: AdjustWalletData) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(`/wallets/${walletId}/adjust`, data);
     return response.data;
   },
 };

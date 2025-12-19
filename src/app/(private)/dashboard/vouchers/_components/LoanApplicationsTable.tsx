@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CheckCircle, XCircle, Trash2, MoreHorizontal } from "lucide-react";
+import { CheckCircle, XCircle, Trash2, MoreHorizontal, Search } from "lucide-react";
 import { DataTable } from "@/components/data-table";
 import { useVouchers } from "@/app/contexts/VoucherContext";
 import { ILoanApplication, LoanStatus } from "@/lib/types";
@@ -45,11 +45,20 @@ export default function LoanApplicationsTable() {
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [restaurantFilter, setRestaurantFilter] = useState("");
 
 
   useEffect(() => {
     getAllLoanApplications();
   }, [getAllLoanApplications]);
+
+  const filteredApplications = useMemo(() => {
+    if (!restaurantFilter) return allLoanApplications;
+    return allLoanApplications.filter((app: any) => {
+      const restaurantName = app.restaurant?.name || app.restaurantName || "";
+      return restaurantName.toLowerCase().includes(restaurantFilter.toLowerCase());
+    });
+  }, [allLoanApplications, restaurantFilter]);
 
   const handleApprove = async (approvalData: any) => {
     if (!selectedApp) return;
@@ -122,6 +131,14 @@ export default function LoanApplicationsTable() {
 
   const columns: ColumnDef<ILoanApplication>[] = [
     {
+      id: "index",
+      header: "#",
+      cell: ({ row }) => {
+        const index = filteredApplications.findIndex((app: any) => app.id === row.original.id) + 1;
+        return <div className="text-sm font-medium">{index}</div>;
+      },
+    },
+    {
       accessorKey: "restaurantName",
       header: "Restaurant",
       cell: ({ row }) =>
@@ -135,9 +152,48 @@ export default function LoanApplicationsTable() {
       cell: ({ row }) => `${row.original.requestedAmount.toLocaleString()} RWF`,
     },
     {
-      accessorKey: "purpose",
-      header: "Purpose",
-      cell: ({ row }) => row.original.purpose || "N/A",
+      accessorKey: "voucherDays",
+      header: "Voucher Days",
+      cell: ({ row }) => {
+        const days = row.original.voucherDays;
+        return (
+          <div className="text-sm">
+            {days ? `${days} days` : "N/A"}
+          </div>
+        );
+      },
+    },
+    {
+      id: "approvedVouchers",
+      header: "Approved Vouchers",
+      cell: ({ row }) => {
+        const vouchers = (row.original as any).vouchers || [];
+        const approvedVouchers = vouchers.filter((v: any) => v.status === "ACTIVE" || v.status === "USED" || v.status === "SETTLED");
+        
+        if (approvedVouchers.length === 0) {
+          return <div className="text-sm text-gray-500">No vouchers</div>;
+        }
+        
+        return (
+          <div className="text-sm space-y-1">
+            {approvedVouchers.map((voucher: any, index: number) => (
+              <div key={voucher.id} className="flex items-center gap-2">
+                <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                  {voucher.voucherCode}
+                </span>
+                <span className={`text-xs px-2 py-1 rounded ${
+                  voucher.status === "ACTIVE" ? "bg-green-100 text-green-700" :
+                  voucher.status === "USED" ? "bg-blue-100 text-blue-700" :
+                  voucher.status === "SETTLED" ? "bg-gray-100 text-gray-700" :
+                  "bg-red-100 text-red-700"
+                }`}>
+                  {voucher.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "status",
@@ -210,13 +266,36 @@ export default function LoanApplicationsTable() {
 
   return (
     <>
-      <DataTable
-        columns={columns}
-        data={allLoanApplications}
-        title="Loan Applications"
-        showColumnVisibility={true}
-        showPagination={true}
-      />
+      <div className="space-y-4">
+        <div className="flex items-center gap-4">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Filter by restaurant name..."
+              value={restaurantFilter}
+              onChange={(e) => setRestaurantFilter(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          {restaurantFilter && (
+            <Button
+              variant="outline"
+              onClick={() => setRestaurantFilter("")}
+              className="text-sm"
+            >
+              Clear Filter
+            </Button>
+          )}
+        </div>
+        
+        <DataTable
+          columns={columns}
+          data={filteredApplications}
+          title={`Loan Applications ${restaurantFilter ? `(Filtered: ${filteredApplications.length})` : `(${allLoanApplications.length})`}`}
+          showColumnVisibility={true}
+          showPagination={true}
+        />
+      </div>
       <ApproveLoanModal
         isOpen={isApproveModalOpen}
         onClose={() => {

@@ -201,7 +201,7 @@ export default function AdminOrdersPage() {
         <html>
         <head>
           <meta charset="utf-8">
-          <title>Order Invoice - ${order.orderNumber}</title>
+          <title>${order.billingName}-Order Invoice-${order.orderNumber}</title>
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { font-family: Arial, sans-serif; padding: 20px; }

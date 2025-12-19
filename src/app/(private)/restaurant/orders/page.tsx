@@ -196,11 +196,11 @@ export default function RestaurantOrdersPage() {
         <html>
         <head>
           <meta charset="utf-8">
-          <title>Order Receipt - ${order.orderId}</title>
+          <title>${order.originalData?.billingName || order.customerName}-Order Invoice-${order.originalData?.orderNumber || order.orderId}</title>
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { font-family: Arial, sans-serif; padding: 20px; }
-            .receipt { max-width: 600px; margin: 0 auto; border: 2px solid #22c55e; border-radius: 8px; padding: 20px; }
+            .invoice { max-width: 700px; margin: 0 auto; border: 2px solid #22c55e; border-radius: 8px; padding: 20px; }
             .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #22c55e; padding-bottom: 15px; }
             .logo { width: 50px; height: 50px; margin: 0 auto 10px; background: #22c55e; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; }
             .header h1 { color: #22c55e; margin-bottom: 5px; }
@@ -210,56 +210,82 @@ export default function RestaurantOrdersPage() {
             .info-label { font-size: 11px; color: #64748b; text-transform: uppercase; margin-bottom: 3px; }
             .info-value { font-weight: 600; color: #1f2937; }
             .items { margin: 20px 0; }
-            .item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #e5e7eb; }
-            .total { background: #f0fdf4; font-weight: bold; color: #22c55e; }
+            .items table { width: 100%; border-collapse: collapse; }
+            .items th, .items td { padding: 8px; border: 1px solid #e5e7eb; text-align: left; }
+            .items th { background: #22c55e; color: white; }
+            .total { background: #f0fdf4; font-weight: bold; color: #22c55e; text-align: right; padding: 15px; margin-top: 10px; border-radius: 5px; }
             .footer { text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #e5e7eb; color: #64748b; font-size: 12px; }
           </style>
         </head>
         <body>
-          <div class="receipt">
+          <div class="invoice">
             <div class="header">
-              <div class="logo">FB</div>
-              <h1>Food Bundle</h1>
-              <p>Order Receipt</p>
+              <img src="https://res.cloudinary.com/dzxyelclu/image/upload/v1760111270/Food_bundle_logo_cfsnsw.png" alt="Logo" style="width: 50px; height: 50px; margin: 0 auto 10px; border-radius: 50%;">
+              <h1>FoodBundles</h1>
+              <p>Order Invoice</p>
             </div>
             <div class="info-section">
               <h3>Order Information</h3>
               <div class="info-grid">
                 <div class="info-item">
                   <div class="info-label">Order Number</div>
-                  <div class="info-value">${order.orderId}</div>
+                  <div class="info-value">${order.originalData?.orderNumber || order.orderId}</div>
                 </div>
                 <div class="info-item">
                   <div class="info-label">Order Date</div>
-                  <div class="info-value">${order.orderedDate}</div>
+                  <div class="info-value">${order.originalData?.createdAt ? new Date(order.originalData.createdAt).toLocaleDateString() : order.orderedDate}</div>
                 </div>
                 <div class="info-item">
-                  <div class="info-label">Customer</div>
-                  <div class="info-value">${order.customerName}</div>
+                  <div class="info-label">Restaurant</div>
+                  <div class="info-value">${order.originalData?.restaurant?.name || 'N/A'}</div>
                 </div>
                 <div class="info-item">
                   <div class="info-label">Status</div>
-                  <div class="info-value">${order.status.charAt(0).toUpperCase() + order.status.slice(1)}</div>
+                  <div class="info-value">${order.originalData?.status || order.status}</div>
                 </div>
               </div>
               <div class="info-item">
+                <div class="info-label">Customer</div>
+                <div class="info-value">${order.originalData?.billingName || order.customerName} - ${order.originalData?.billingPhone || 'N/A'}</div>
+              </div>
+              <div class="info-item">
                 <div class="info-label">Delivery Address</div>
-                <div class="info-value">${order.deliveryAddress}</div>
+                <div class="info-value">${order.originalData?.billingAddress || order.deliveryAddress}</div>
               </div>
             </div>
             <div class="items">
               <h3>Order Items</h3>
-              <div class="item">
-                <span>${order.items}</span>
-                <span>${order.totalAmount} Rwf</span>
-              </div>
-              <div class="item total">
-                <span>Total</span>
-                <span>${order.totalAmount} Rwf</span>
-              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Unit Price</th>
+                    <th>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${order.originalData?.orderItems?.map((item: any) => `
+                    <tr>
+                      <td>${item.productName}</td>
+                      <td>${item.quantity} ${item.unit}</td>
+                      <td>${item.unitPrice.toLocaleString()} RWF</td>
+                      <td>${item.subtotal.toLocaleString()} RWF</td>
+                    </tr>
+                  `).join('') || `
+                    <tr>
+                      <td colspan="3">${order.items}</td>
+                      <td>${order.totalAmount} RWF</td>
+                    </tr>
+                  `}
+                </tbody>
+              </table>
+            </div>
+            <div class="total">
+              <strong>Total Amount: ${order.originalData?.totalAmount?.toLocaleString() || order.totalAmount} RWF</strong>
             </div>
             <div class="footer">
-              <p>Thank you for choosing Food Bundle!</p>
+              <p>Thank you for your order!</p>
               <p>Generated on ${new Date().toLocaleString()}</p>
             </div>
           </div>
@@ -306,7 +332,7 @@ export default function RestaurantOrdersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen w-full bg-gray-50">
       <main className="container mx-auto px-2 py-2">
         <div className="bg-white rounded shadow-sm p-4">
           <div className="flex items-center justify-between mb-4">

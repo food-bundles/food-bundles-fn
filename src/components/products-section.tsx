@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
@@ -280,11 +281,14 @@ interface PaginationProps {
   totalProducts?: number;
   onPageChange: (page: number) => void;
   isLoading?: boolean;
+  itemsPerPage?: number;
+  onItemsPerPageChange?: (limit: number) => void;
 }
 
 interface SearchProps {
   query: string;
   onSearch: (query: string) => void;
+  isSearching?: boolean;
 }
 
 interface SortingProps {
@@ -327,7 +331,7 @@ export function ProductsSection({
       if (localSearchQuery !== searchQuery) {
         setSearchQuery(localSearchQuery);
       }
-    }, 500);
+    }, 500); 
 
     return () => clearTimeout(timer);
   }, [localSearchQuery, searchQuery, setSearchQuery]);
@@ -378,7 +382,7 @@ export function ProductsSection({
   return (
     <section
       id="products"
-      className="flex justify-center items-start  border py-0 relative"
+      className="flex justify-center items-start  py-0 relative"
     >
       <ChristmasAnimation />
       <div className="container">
@@ -579,6 +583,11 @@ export function ProductsSection({
                         onChange={(e) => setLocalSearchQuery(e.target.value)}
                         className="w-40 px-4 py-2 placeholder:text-[12px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
                       />
+                      {search.isSearching && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                          <div className="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -620,7 +629,14 @@ export function ProductsSection({
             {/* Products Grid */}
             <div className="px-4 sm:px-6 overflow-y-auto">
               <div className="mb-12">
-                {sortedProducts.length > 0 ? (
+                {search?.isSearching ? (
+                  <div className="flex items-center justify-center py-16">
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-gray-600">Searching products...</span>
+                    </div>
+                  </div>
+                ) : sortedProducts.length > 0 ? (
                   <div className="grid gap-4 justify-items-center grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                     {sortedProducts.map((product) => (
                       <ProductCard
@@ -643,34 +659,52 @@ export function ProductsSection({
                     <h3 className="text-[14px] font-medium text-gray-900 mb-2">
                       No products found
                     </h3>
-                    <p className="text-gray-800 text-[13px] text-center max-w-md">
+                    <p className="text-gray-800 text-[13px] text-center max-w-md mb-4">
                       {searchQuery
-                        ? `No products found matching "${searchQuery}".`
+                        ? `No products found matching.`
                         : selectedCategory === "All Categories"
                           ? "There are no products available at the moment."
-                          : `No products found in the "${selectedCategory.replace(
-                            /_/g,
-                            " "
-                          )}" category.`}
+                          : `No products found in the ${selectedCategory} category.`}
                     </p>
-                    {searchQuery && (
-                      <Button
-                        onClick={() => {
-                          setSearchQuery("");
-                          setLocalSearchQuery("");
-                        }}
-                        variant="outline"
-                        className="mt-4"
-                      >
-                        Clear Search
-                      </Button>
-                    )}
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      {pagination && pagination.currentPage < pagination.totalPages && (
+                        <Button
+                          onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
+                          variant="outline"
+                          className="text-sm"
+                        >
+                          Try Next Page
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 )}
 
                 {/* Pagination */}
                 {pagination && pagination.totalPages > 1 && (
-                  <div className="flex flex-col sm:flex-row items-center justify-end gap-4 mt-8 ">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-8">
+                    {/* Items per page selector */}
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <span>Show:</span>
+                      <Select
+                        value={(pagination.itemsPerPage || 30).toString()}
+                        onValueChange={(value) => {
+                          if (pagination.onItemsPerPageChange) {
+                            pagination.onItemsPerPageChange(parseInt(value));
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="w-20 h-8 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="30">30</SelectItem>
+                          <SelectItem value="100">100</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <span>per page</span>
+                    </div>
+                    
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() =>

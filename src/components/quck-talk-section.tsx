@@ -86,7 +86,7 @@ function ContactInfo() {
 
         <div className="pt-1 border-t space-y-2">
           <p className="text-xs font-bold">
-            Call center: <span className="text-green-600">*6054#</span>
+            Call center: <span className="text-green-600">6054</span>
           </p>
           <p className="text-xs font-bold">
             Emergency:{" "}
