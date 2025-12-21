@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+import { OptimizedImage } from "@/components/OptimizedImage";
 
 export default function Unauthorized() {
   const router = useRouter();
@@ -29,18 +29,18 @@ export default function Unauthorized() {
         <div className="flex justify-center">
           <div className="p-6">
             <Avatar className="w-24 h-24 mx-auto mb-4">
-              <Image
-                src="/imgs/401-vector.svg"
+              <OptimizedImage
+                src="/imgs/page_not-found.svg"
                 alt="Logo"
                 width={100}
                 height={100}
               />
             </Avatar>
             <div className="space-y-2">
-              <h1 className="text-6xl font-bold text-[#EF4444] font-[family-name:var(--font-playfair)]">
+              <h1 className="text-6xl font-bold text-[#EF4444] font-(family-name:--font-playfair)">
                 401
               </h1>
-              <h2 className="text-2xl font-semibold text-foreground font-[family-name:var(--font-playfair)]">
+              <h2 className="text-2xl font-semibold text-foreground font-(family-name:--font-playfair)">
                 Access Denied
               </h2>
             </div>
@@ -48,7 +48,7 @@ export default function Unauthorized() {
         </div>
 
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground font-[family-name:var(--font-source-sans)]">
+          <p className="text-sm text-muted-foreground font-(family-name:--font-source-sans)">
             You don't have permission to access this resource. Please log in
             with an authorized account or contact support if you believe this is
             an error.
@@ -60,21 +60,21 @@ export default function Unauthorized() {
             <Button
               onClick={handleGoBack}
               variant="outline"
-              className="flex items-center gap-2 font-[family-name:var(--font-source-sans)] bg-transparent cursor-pointer text-green-500 border border-green-500"
+              className="flex items-center gap-2 font-(family-name:--font-source-sans) bg-transparent cursor-pointer text-green-500 border border-green-500"
             >
               <ArrowLeft className="w-4 h-4" />
               Go Back
             </Button>
             <Button
               onClick={handleLogin}
-              className="flex items-center gap-2 font-[family-name:var(--font-source-sans)] bg-green-500 hover:bg-green-600 text-white"
+              className="flex items-center gap-2 font-(family-name:--font-source-sans) bg-green-500 hover:bg-green-600 text-white"
             >
               Login
             </Button>
             <Button
               onClick={handleGoHome}
               variant="outline"
-              className="flex items-center gap-2 font-[family-name:var(--font-source-sans)] bg-transparent cursor-pointer text-green-500 border border-green-500"
+              className="flex items-center gap-2 font-(family-name:--font-source-sans) bg-transparent cursor-pointer text-green-500 border border-green-500"
             >
               Go Home
               <ArrowRight className="w-4 h-4" />
