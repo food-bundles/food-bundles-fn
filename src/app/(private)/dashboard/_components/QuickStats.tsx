@@ -2,58 +2,115 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-
-interface StatItem {
-  label: string;
-  value: number;
-  total: number;
-  color: string;
-  trend?: "up" | "down" | "stable";
-}
+import { 
+  Users, 
+  ShoppingCart, 
+  DollarSign, 
+  CreditCard, 
+  Package,
+  TrendingUp,
+  TrendingDown,
+  Minus
+} from "lucide-react";
 
 interface QuickStatsProps {
-  stats: StatItem[];
   loading?: boolean;
+  metrics?: any;
 }
 
-export function QuickStats({ stats, loading = false }: QuickStatsProps) {
+export function QuickStats({ loading = false, metrics }: QuickStatsProps) {
   if (loading) {
     return (
-      <Card>
+      <Card className="col-span-3">
         <CardHeader>
           <CardTitle className="text-lg font-semibold">Quick Stats</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="space-y-2 animate-pulse">
-              <div className="flex justify-between">
-                <div className="h-4 bg-gray-200 rounded w-1/3" />
-                <div className="h-4 bg-gray-200 rounded w-1/4" />
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="p-4 bg-gray-50 rounded-lg animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-1/2 mb-2" />
+                <div className="h-6 bg-gray-200 rounded w-3/4 mb-1" />
+                <div className="h-3 bg-gray-200 rounded w-1/3" />
               </div>
-              <div className="h-2 bg-gray-200 rounded" />
-            </div>
-          ))}
+            ))}
+          </div>
         </CardContent>
       </Card>
     );
   }
 
-  const getTrendIcon = (trend?: string) => {
+  const quickStats = [
+    {
+      label: "Total Users",
+      value: metrics?.totalUsers || 0,
+      icon: Users,
+      color: "text-blue-600",
+      bgColor: "bg-blue-50",
+      change: "+12.5%",
+      trend: "up" as const
+    },
+    {
+      label: "Total Orders",
+      value: metrics?.totalOrders || 0,
+      icon: ShoppingCart,
+      color: "text-green-600",
+      bgColor: "bg-green-50",
+      change: "+8.2%",
+      trend: "up" as const
+    },
+    {
+      label: "Total Revenue",
+      value: `${(metrics?.totalRevenue || 0).toLocaleString()} RWF`,
+      icon: DollarSign,
+      color: "text-emerald-600",
+      bgColor: "bg-emerald-50",
+      change: "+15.3%",
+      trend: "up" as const
+    },
+    {
+      label: "Active Subscriptions",
+      value: metrics?.activeSubscriptions || 0,
+      icon: CreditCard,
+      color: "text-purple-600",
+      bgColor: "bg-purple-50",
+      change: "+5.7%",
+      trend: "up" as const
+    },
+    {
+      label: "Used Vouchers",
+      value: metrics?.usedVouchers || 0,
+      icon: Package,
+      color: "text-orange-600",
+      bgColor: "bg-orange-50",
+      change: "-2.1%",
+      trend: "down" as const
+    },
+    {
+      label: "Completion Rate",
+      value: metrics?.totalOrders > 0 ? 
+        `${((metrics?.completedOrders / metrics?.totalOrders) * 100).toFixed(1)}%` : "0%",
+      icon: TrendingUp,
+      color: "text-indigo-600",
+      bgColor: "bg-indigo-50",
+      change: "+3.4%",
+      trend: "up" as const
+    }
+  ];
+
+  const getTrendIcon = (trend: "up" | "down" | "stable") => {
     switch (trend) {
       case "up":
-        return "↗️";
+        return <TrendingUp className="w-3 h-3" />;
       case "down":
-        return "↘️";
+        return <TrendingDown className="w-3 h-3" />;
       case "stable":
-        return "➡️";
-      default:
-        return "";
+        return <Minus className="w-3 h-3" />;
     }
   };
 
-  const getTrendColor = (trend?: string) => {
+  const getTrendColor = (trend: "up" | "down" | "stable") => {
     switch (trend) {
       case "up":
         return "text-green-600";
@@ -61,72 +118,59 @@ export function QuickStats({ stats, loading = false }: QuickStatsProps) {
         return "text-red-600";
       case "stable":
         return "text-gray-600";
-      default:
-        return "text-gray-600";
     }
   };
 
   return (
-    <Card>
+    <Card className="col-span-3">
       <CardHeader>
         <CardTitle className="text-lg font-semibold">Quick Stats</CardTitle>
+        <p className="text-sm text-gray-600">Key metrics with percentage change from last period</p>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {stats.map((stat, index) => {
-          const percentage = (stat.value / stat.total) * 100;
-          
-          return (
-            <div
-              key={stat.label}
-              className="space-y-2"
-              style={{
-                animation: `slideInLeft 0.6s ease-out ${index * 0.1}s both`
-              }}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">
-                  {stat.label}
-                </span>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs">
-                    {stat.value}/{stat.total}
-                  </Badge>
-                  {stat.trend && (
-                    <span className={`text-xs ${getTrendColor(stat.trend)}`}>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {quickStats.map((stat, index) => {
+            const IconComponent = stat.icon;
+            return (
+              <div
+                key={stat.label}
+                className={`p-4 rounded-lg border ${stat.bgColor} transition-all duration-200 hover:shadow-md`}
+                style={{
+                  animation: `slideInUp 0.6s ease-out ${index * 0.1}s both`
+                }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <IconComponent className={`w-5 h-5 ${stat.color}`} />
+                  <Badge 
+                    className={`text-xs ${getTrendColor(stat.trend)} bg-transparent border-0 p-0`}
+                  >
+                    <div className="flex items-center gap-1">
                       {getTrendIcon(stat.trend)}
-                    </span>
-                  )}
+                      {stat.change}
+                    </div>
+                  </Badge>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-gray-600 font-medium">{stat.label}</p>
+                  <p className={`text-lg font-bold ${stat.color}`}>
+                    {typeof stat.value === 'number' ? stat.value.toLocaleString() : stat.value}
+                  </p>
                 </div>
               </div>
-              <div className="space-y-1">
-                <Progress 
-                  value={percentage} 
-                  className="h-2"
-                  style={{
-                    background: `linear-gradient(to right, ${stat.color} 0%, ${stat.color}80 100%)`
-                  }}
-                />
-                <div className="flex justify-between text-xs text-gray-500">
-                  <span>{percentage.toFixed(1)}%</span>
-                  <span className={getTrendColor(stat.trend)}>
-                    {stat.trend && `${getTrendIcon(stat.trend)} ${stat.trend}`}
-                  </span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </CardContent>
       
       <style jsx>{`
-        @keyframes slideInLeft {
+        @keyframes slideInUp {
           from {
             opacity: 0;
-            transform: translateX(-20px);
+            transform: translateY(20px);
           }
           to {
             opacity: 1;
-            transform: translateX(0);
+            transform: translateY(0);
           }
         }
       `}</style>

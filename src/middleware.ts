@@ -4,36 +4,37 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import jwt from "jsonwebtoken";
 
-
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const token = req.cookies.get("auth-token")?.value;
   const pathname = req.nextUrl.pathname;
 
-  // Routes foe logged-in users only
-  const protectedRoutes = ["/dashboard", "/restaurant", "/farmers"];
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route)
-  );
+  // Role-based route protection
+  const roleRoutes = {
+    "/dashboard": "ADMIN",
+    "/restaurant": "RESTAURANT", 
+    "/farmers": "FARMER",
+    "/aggregator": "AGGREGATOR",
+    "/logistics": "LOGISTICS"
+  };
+
+  const protectedRoutes = Object.keys(roleRoutes);
+  const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route));
+  
   const guestOnlyRoutes = ["/guest"];
-  const isGuestOnlyRoute = guestOnlyRoutes.some((route) =>
-    pathname.startsWith(route)
-  );
+  const isGuestOnlyRoute = guestOnlyRoutes.some((route) => pathname.startsWith(route));
   
   // Auth pages that logged-in users shouldn't access
   const authPages = ["/login", "/signup", "/forgot-password", "/reset-password"];
   const isAuthPage = authPages.includes(pathname);
+
   // Handle auth pages - redirect logged-in users to home
   if (isAuthPage) {
     if (token) {
       try {
         const decoded: any = jwt.decode(token);
-        
-        // If token is expired, allow access to auth pages
         if (decoded.exp && decoded.exp * 1000 < Date.now()) {
           return NextResponse.next();
         }
-        
-        // Redirect to home if user is authenticated
         return NextResponse.redirect(new URL("/", req.url));
       } catch (error) {
         return NextResponse.next();
@@ -47,7 +48,6 @@ export function middleware(req: NextRequest) {
     if (token) {
       try {
         const decoded: any = jwt.decode(token);
-
         if (decoded.exp && decoded.exp * 1000 < Date.now()) {
           return NextResponse.next();
         }
@@ -61,20 +61,44 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // Handle protected routes with role checking
   if (isProtectedRoute) {
     if (!token) {
-      const redirectUrl = new URL("/", req.url);
-      return NextResponse.redirect(redirectUrl);
+      return NextResponse.redirect(new URL("/", req.url));
     }
 
     try {
       const decoded: any = jwt.decode(token);
-
+      
       if (decoded.exp && decoded.exp * 1000 < Date.now()) {
         const redirectUrl = new URL("/login", req.url);
         redirectUrl.searchParams.set("redirect", pathname);
         redirectUrl.searchParams.set("reason", "expired");
         return NextResponse.redirect(redirectUrl);
+      }
+
+      // Check user role via API
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        return NextResponse.redirect(new URL("/login", req.url));
+      }
+
+      const userData = await response.json();
+      const userRole = userData.user?.role;
+
+      // Find required role for current route
+      const requiredRole = Object.entries(roleRoutes).find(([route]) => 
+        pathname.startsWith(route)
+      )?.[1];
+
+      if (!userRole || userRole !== requiredRole) {
+        return NextResponse.redirect(new URL("/unauthorized", req.url));
       }
 
       return NextResponse.next();
@@ -93,7 +117,7 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/aggregator/:path*",
-    "/logistics/:path*",
+    "/logistics/:path*", 
     "/restaurant/:path*",
     "/farmers/:path*",
     "/guest/:path*",
