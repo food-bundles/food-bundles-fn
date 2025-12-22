@@ -22,6 +22,7 @@ interface User {
   profileImage?: string;
   location?: string;
   restaurantId?: string;
+  userType?: string;
 }
 
 interface AuthContextType {
@@ -59,10 +60,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setIsLoading(true);
       const response = await authService.getCurrentUser();
 
-      if (response.success && response.user) {
-        setUser(response.user);
-        setIsAuthenticated(true);
-      setIsLoading(false);
+      if (response && response.success) {
+        // Handle both old and new response structures
+        const user = response.user || response.data?.user;
+        if (user) {
+          setUser(user);
+          setIsAuthenticated(true);
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+        }
       } else {
         setUser(null);
         setIsAuthenticated(false);

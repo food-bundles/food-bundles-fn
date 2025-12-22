@@ -16,6 +16,12 @@ export const authService = {
       if (typeof window !== "undefined") {
         setToken(response.data.token);
         document.cookie = `auth-token=${response.data.token}; path=/; max-age=86400; secure; samesite=strict`;
+        
+        // Store restaurantId for affiliators
+        const user = response.data.user || response.data.data?.user;
+        if (user?.restaurantId) {
+          localStorage.setItem('restaurantId', user.restaurantId);
+        }
       }
     }
 
@@ -65,9 +71,14 @@ export const authService = {
   },
 
   getCurrentUser: async () => {
-    const axiosClient = createAxiosClient();
-    const response = await axiosClient.get("/me");
-    return response.data;
+    try {
+      const axiosClient = createAxiosClient();
+      const response = await axiosClient.get("/me");
+      return response.data;
+    } catch (error) {
+      console.warn("getCurrentUser failed, user may not be authenticated");
+      return null;
+    }
   },
 
   logout: async () => {

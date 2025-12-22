@@ -28,6 +28,13 @@ export const productColumns = (
   {
     accessorKey: "category",
     header: "Category",
+    cell: ({ row }) => (
+      <span className="text-sm">
+        {typeof row.original.category === 'string' 
+          ? row.original.category 
+          : row.original.category.name}
+      </span>
+    ),
   },
 {
   accessorKey: "location",

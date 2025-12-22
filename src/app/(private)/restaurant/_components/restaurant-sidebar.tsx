@@ -1,10 +1,11 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Bell, HelpCircle, Crown, Ticket, Home, ShoppingCart, Wallet} from "lucide-react";
+import { Bell, HelpCircle, Crown, Ticket, Home, ShoppingCart, Wallet, Users } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { OptimizedImage } from "@/components/OptimizedImage";
+import { useAuth } from "@/app/contexts/auth-context";
 
 const menuItems = [
   { icon: Home, label: "Shop", href: "/restaurant" },
@@ -12,6 +13,7 @@ const menuItems = [
   { icon: ShoppingCart, label: "orders", href: "/restaurant/orders" },
   { icon: Wallet, label: "Deposits", href: "/restaurant/deposits" },
   { icon: Crown, label: "Subscription", href: "/restaurant/subscribe" },
+  { icon: Users, label: "Affiliators", href: "/restaurant/affiliators" },
   { icon: Ticket, label: "Vouchers", href: "/restaurant/vouchers" },
   { icon: HelpCircle, label: "Help & Support", href: "/restaurant/help" },
 ];
@@ -23,7 +25,16 @@ interface RestaurantSidebarProps {
 
 export function RestaurantSidebar({ isOpen, onClose }: RestaurantSidebarProps) {
   const pathname = usePathname();
+  const { user } = useAuth();
 
+  // Filter menu items based on user role
+  const filteredMenuItems = menuItems.filter(item => {
+    // Hide Affiliators menu for affiliator users
+    if (item.href === "/restaurant/affiliators" && user?.role === "AFFILIATOR") {
+      return false;
+    }
+    return true;
+  });
 
   const isItemActive = (href: string) => {
     return pathname === href;
@@ -79,7 +90,7 @@ export function RestaurantSidebar({ isOpen, onClose }: RestaurantSidebarProps) {
         {/* Navigation */}
         <nav className="flex-1 py-6 px-4 overflow-auto scrollbar-hide">
           <ul className="space-y-2">
-            {menuItems.map((item, index) => {
+            {filteredMenuItems.map((item, index) => {
               const isActive = isItemActive(item.href);
               return (
                 <li key={index}>
