@@ -32,7 +32,7 @@ export default function DepositsPage() {
     amount: "",
     paymentMethod: "MOBILE_MONEY" as "MOBILE_MONEY" | "CARD",
     phoneNumber: "",
-    description: "",
+    description: "Top Up",
   });
 
   const fetchTransactions = async (page = 1) => {
@@ -125,7 +125,7 @@ export default function DepositsPage() {
         amount: parseFloat(topUpData.amount),
         paymentMethod: topUpData.paymentMethod,
         phoneNumber: topUpData.paymentMethod === "MOBILE_MONEY" ? topUpData.phoneNumber : undefined,
-        description: topUpData.description || "Prepaid account top-up",
+        description: "Top Up",
       });
 
       if (response.success) {
@@ -236,7 +236,6 @@ export default function DepositsPage() {
                   <Plus className="h-4 w-4 mr-2" />
                   Deposit Funds
                 </Button>
-              
               </>
             ) : (
               <div className="space-y-4 mt-6">
@@ -310,23 +309,7 @@ export default function DepositsPage() {
                     />
                   </div>
                 )}
-                <div>
-                  <Label htmlFor="description" className="text-gray-800">
-                    Description (Optional)
-                  </Label>
-                  <Input
-                    id="description"
-                    placeholder="Account top-up"
-                    value={topUpData.description}
-                    onChange={(e) =>
-                      setTopUpData((prev) => ({
-                        ...prev,
-                        description: e.target.value,
-                      }))
-                    }
-                    className="  focus:border-yellow-400 text-gray-800"
-                  />
-                </div>
+
                 <div className="flex gap-2 pt-2">
                   <Button
                     variant="outline"
@@ -374,27 +357,61 @@ export default function DepositsPage() {
                       <div className="flex items-center gap-3">
                         {getTransactionIcon(transaction.type)}
                         <div>
-                          <p className="font-medium text-gray-900 text-sm">
-                            {transaction.description}
-                          </p>
-                          <p className="text-xs text-gray-600">
+                          {transaction.type === "TOP_UP" ? (
+                            <p className=" text-gray-900 text-sm">
+                              You have deposited{" "}
+                              <span
+                                className={`font-bold text-sm ${
+                                  transaction.amount > 0
+                                    ? "text-green-600"
+                                    : "text-red-800"
+                                }`}
+                              >
+                                {transaction.amount > 0 ? "+" : ""}
+                                {transaction.amount.toLocaleString()} RWF
+                              </span>
+                            </p>
+                          ) : (
+                            <p className=" text-gray-900 text-sm">
+                              You have made a payment of{" "}
+                              <span
+                                className={`font-bold text-sm ${
+                                  transaction.amount > 0
+                                    ? "text-green-600"
+                                    : "text-red-800"
+                                }`}
+                              >
+                                {transaction.amount > 0 ? "+" : ""}
+                                {transaction.amount.toLocaleString()}
+                              </span>{" "}
+                              RWF for {" "}
+                              <span className="text-gray-800 font-medium">
+                                {transaction.description}
+                              </span>
+                            </p>
+                          )}
+                          <p className="text-xs text-gray-700">
                             {new Date(
                               transaction.createdAt
                             ).toLocaleDateString()}
                           </p>
+                          <div className="text-xs text-gray-700 mt-1">
+                            <span>
+                              Prev:{" "}
+                              {transaction.previousBalance?.toLocaleString() ||
+                                "0"}{" "}
+                              RWF
+                            </span>
+                            <span className="mx-2">→</span>
+                            <span>
+                              New:{" "}
+                              {transaction.newBalance?.toLocaleString() || "0"}{" "}
+                              RWF
+                            </span>
+                          </div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p
-                          className={`font-bold text-sm ${
-                            transaction.amount > 0
-                              ? "text-green-600"
-                              : "text-red-800"
-                          }`}
-                        >
-                          {transaction.amount > 0 ? "+" : ""}
-                          {transaction.amount.toLocaleString()} RWF
-                        </p>
                         {getStatusBadge(transaction.status.toLowerCase())}
                       </div>
                     </div>
@@ -404,7 +421,6 @@ export default function DepositsPage() {
                 {/* Pagination */}
                 {pagination.totalPages > 1 && (
                   <div className="flex justify-center items-center gap-2 mt-4 pt-4 border-t border-gray-300">
-
                     <div className="flex gap-1">
                       {Array.from(
                         { length: pagination.totalPages },

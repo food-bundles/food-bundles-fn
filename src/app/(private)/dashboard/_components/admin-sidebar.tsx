@@ -156,8 +156,8 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
               height={40}
               className="w-7 h-7 md:w-8 md:h-8 rounded-full object-cover"
             />
-            <h1 className="text-lg md:text-xl font-bold text-green-100">
-              FoodBundles
+            <h1 className="text-sm font-bold text-green-100">
+              Food Bundles Ltd
             </h1>
           </div>
           <NotificationsDrawer 
@@ -181,7 +181,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                       <button
                         onClick={() => toggleExpanded(index)}
                         className={cn(
-                          "w-full flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap justify-between",
+                          "w-full flex items-center px-3 py-2 rounded-md text-xs transition-colors whitespace-nowrap justify-between",
                           isActive
                             ? "bg-green-500 hover:bg-green-600 text-white"
                             : "text-green-200 "
@@ -212,7 +212,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                                   href={subItem.href}
                                   onClick={() => onClose()}
                                   className={cn(
-                                    "flex items-center px-2 md:px-3 py-2 rounded text-xs md:text-sm font-medium transition-colors whitespace-nowrap",
+                                    "flex items-center px-2 md:px-3 py-2 rounded text-xs md:text-xs transition-colors whitespace-nowrap",
                                     isSubActive
                                       ? "bg-transparent text-green-600 "
                                       : "text-gray-600 "
@@ -234,7 +234,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                       href={item.href}
                       onClick={() => onClose()}
                       className={cn(
-                        "flex items-center px-2 md:px-3 py-2 text-xs md:text-sm font-medium transition-colors whitespace-nowrap rounded-md",
+                        "flex items-center px-2 md:px-3 py-2 text-xs md:text-xs transition-colors whitespace-nowrap rounded-md",
                         isActive ? "bg-green-700 hover:bg-green-600" : ""
                       )}
                     >
@@ -259,7 +259,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                 onClick={handleLogout}
                 disabled={isLoggingOut}
                 className={cn(
-                  "w-full flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap",
+                  "w-full flex items-center px-3 py-2 rounded-md text-xs  transition-colors whitespace-nowrap",
                   "text-red-300  hover:text-red-400",
                   isLoggingOut && "opacity-50 cursor-not-allowed"
                 )}
@@ -279,7 +279,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                 </div>
               </div>
 
-              <h3 className="text-sm font-medium text-gray-800 mb-1">
+              <h3 className="text-xs text-gray-800 mb-1">
                 Help center
               </h3>
               <Link href="/dashboard/contact-submissions">

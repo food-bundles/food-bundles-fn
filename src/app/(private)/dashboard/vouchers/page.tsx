@@ -29,10 +29,10 @@ export default function VoucherManagementPage() {
         <div className="p-6 max-w-7xl mx-auto">
           <div className="mb-8">
             <div>
-              <h1 className="text-sm lg:text-[16px] font-medium text-gray-900 mb-2">
+              <h1 className="text-sm font-medium text-gray-900 mb-2">
                 Voucher Management 
               </h1>
-              <p className="hidden lg:block text-gray-800 text-[13px]">
+              <p className="hidden lg:block text-gray-800 text-xs">
                 Manage loan applications, vouchers, and credit systems
               </p>
             </div>

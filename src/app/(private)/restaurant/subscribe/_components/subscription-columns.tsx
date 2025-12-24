@@ -2,9 +2,12 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { RestaurantSubscription } from "@/app/services/subscriptionService";
 
-export const createSubscriptionColumns = (): ColumnDef<RestaurantSubscription>[] => [
+export const createSubscriptionColumns = (
+  onRenew?: (subscriptionId: string) => void
+): ColumnDef<RestaurantSubscription>[] => [
   {
     accessorKey: "plan.name",
     header: "Plan",
@@ -80,5 +83,25 @@ export const createSubscriptionColumns = (): ColumnDef<RestaurantSubscription>[]
     cell: ({ row }) => (
       <div>{row.getValue("autoRenew") ? "Yes" : "No"}</div>
     ),
+  },
+  {
+    id: "actions",
+    header: "Actions",
+    cell: ({ row }) => {
+      const subscription = row.original;
+      const isExpired = subscription.status === "EXPIRED";
+      
+      if (!isExpired || !onRenew) return null;
+      
+      return (
+        <Button
+          size="sm"
+          onClick={() => onRenew(subscription.id)}
+          className="bg-green-600 hover:bg-green-700 text-white"
+        >
+          Renew
+        </Button>
+      );
+    },
   },
 ];

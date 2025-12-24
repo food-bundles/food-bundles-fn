@@ -264,7 +264,7 @@ export function Header() {
                     ]}
                   />
                   <span className="text-2sm font-bold text-black whitespace-nowrap">
-                    FoodBundles 
+                    Food Bundles Ltd
                   </span>
                   <span className="text-2xl hidden md:inline">🎅</span>
                 </div>

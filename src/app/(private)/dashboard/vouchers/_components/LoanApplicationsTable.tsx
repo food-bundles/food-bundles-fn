@@ -48,6 +48,21 @@ export default function LoanApplicationsTable() {
   const [restaurantFilter, setRestaurantFilter] = useState("");
 
 
+  const formatDate = (date: string | Date) =>
+    new Date(date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+
+  const formatTime = (date: string | Date) =>
+    new Date(date).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+
   useEffect(() => {
     getAllLoanApplications();
   }, [getAllLoanApplications]);
@@ -134,7 +149,10 @@ export default function LoanApplicationsTable() {
       id: "index",
       header: "#",
       cell: ({ row }) => {
-        const index = filteredApplications.findIndex((app: any) => app.id === row.original.id) + 1;
+        const index =
+          filteredApplications.findIndex(
+            (app: any) => app.id === row.original.id
+          ) + 1;
         return <div className="text-sm font-medium">{index}</div>;
       },
     },
@@ -155,12 +173,8 @@ export default function LoanApplicationsTable() {
       accessorKey: "voucherDays",
       header: "Voucher Days",
       cell: ({ row }) => {
-        const days = row.original.voucherDays;
-        return (
-          <div className="text-sm">
-            {days ? `${days} days` : "N/A"}
-          </div>
-        );
+        const days = row.original.repaymentDays;
+        return <div className="text-sm">{days ? `${days} days` : "N/A"}</div>;
       },
     },
     {
@@ -168,12 +182,17 @@ export default function LoanApplicationsTable() {
       header: "Approved Vouchers",
       cell: ({ row }) => {
         const vouchers = (row.original as any).vouchers || [];
-        const approvedVouchers = vouchers.filter((v: any) => v.status === "ACTIVE" || v.status === "USED" || v.status === "SETTLED");
-        
+        const approvedVouchers = vouchers.filter(
+          (v: any) =>
+            v.status === "ACTIVE" ||
+            v.status === "USED" ||
+            v.status === "SETTLED"
+        );
+
         if (approvedVouchers.length === 0) {
           return <div className="text-sm text-gray-500">No vouchers</div>;
         }
-        
+
         return (
           <div className="text-sm space-y-1">
             {approvedVouchers.map((voucher: any, index: number) => (
@@ -181,12 +200,16 @@ export default function LoanApplicationsTable() {
                 <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
                   {voucher.voucherCode}
                 </span>
-                <span className={`text-xs px-2 py-1 rounded ${
-                  voucher.status === "ACTIVE" ? "bg-green-100 text-green-700" :
-                  voucher.status === "USED" ? "bg-blue-100 text-blue-700" :
-                  voucher.status === "SETTLED" ? "bg-gray-100 text-gray-700" :
-                  "bg-red-100 text-red-700"
-                }`}>
+                <span
+                  className={`text-xs px-2 py-1 rounded ${voucher.status === "ACTIVE"
+                      ? "bg-green-100 text-green-700"
+                      : voucher.status === "USED"
+                        ? "bg-blue-100 text-blue-700"
+                        : voucher.status === "SETTLED"
+                          ? "bg-gray-100 text-gray-700"
+                          : "bg-red-100 text-red-700"
+                    }`}
+                >
                   {voucher.status}
                 </span>
               </div>
@@ -203,11 +226,17 @@ export default function LoanApplicationsTable() {
     {
       accessorKey: "createdAt",
       header: "Date",
-      cell: ({ row }) => (
-        <div className="flex items-center gap-1 text-sm text-gray-700">
-          {new Date(row.original.createdAt).toLocaleDateString()}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const date = row.original.createdAt;
+      
+        return (
+        
+          <div className="flex items-center gap-1 text-sm text-gray-700" >
+            {formatDate(date)}
+            < p className="text-xs text-gray-500" > {formatTime(date)}</p>
+          </div >
+        );
+      }
     },
     {
       id: "actions",
@@ -224,38 +253,38 @@ export default function LoanApplicationsTable() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem
-                disabled={app.status !== LoanStatus.PENDING}
-                onClick={() => {
-                  setSelectedApp(app);
-                  setIsApproveModalOpen(true);
-                }}
-              >
-                <CheckCircle className="mr-2 h-4 w-4" />
-                Approve
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={app.status !== LoanStatus.PENDING}
-                onClick={() => {
-                  setSelectedApp(app);
-                  setIsRejectModalOpen(true);
-                }}
-              >
-                <XCircle className="mr-2 h-4 w-4" />
-                Reject
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                className="text-red-600"
-                onClick={() => {
-                  setSelectedApp(app);
-                  setIsDeleteModalOpen(true);
-                }}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuItem
+                  disabled={app.status !== LoanStatus.PENDING}
+                  onClick={() => {
+                    setSelectedApp(app);
+                    setIsApproveModalOpen(true);
+                  }}
+                >
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Approve
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={app.status !== LoanStatus.PENDING}
+                  onClick={() => {
+                    setSelectedApp(app);
+                    setIsRejectModalOpen(true);
+                  }}
+                >
+                  <XCircle className="mr-2 h-4 w-4" />
+                  Reject
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-red-600"
+                  onClick={() => {
+                    setSelectedApp(app);
+                    setIsDeleteModalOpen(true);
+                  }}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

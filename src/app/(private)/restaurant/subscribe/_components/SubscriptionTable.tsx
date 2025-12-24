@@ -28,7 +28,10 @@ export default function SubscriptionTable() {
         page: 1,
         limit: 10,
       });
-      setSubscriptions(response.data || []);
+      const completedPaymentSubscriptions = (response.data || []).filter(
+        (subscription) => subscription.paymentStatus === "COMPLETED"
+      );
+      setSubscriptions(completedPaymentSubscriptions);
     } catch (error: any) {
       console.error("Failed to load subscriptions:", error);
       setError(error.message || "Failed to load subscriptions");

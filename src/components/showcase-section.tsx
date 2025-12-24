@@ -1,5 +1,4 @@
 "use client";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -79,7 +78,7 @@ export function FoodBundlesConnect() {
             </div>
 
             <p className="text-[12px] lg:text-[14px] text-[#0A3B1B] leading-relaxed max-w-lg">
-              FoodBundles connects restaurants with local farms to deliver fresh
+              Food Bundles Ltd connects restaurants with local farms to deliver fresh
               ingredients efficiently. It offers real-time order tracking,
               simple inventory management, and promotes sustainability in the
               food supply chain.

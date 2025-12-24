@@ -228,9 +228,13 @@ export function DataTable<TData, TValue>({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           {title && (
             <div className="flex-1 min-w-0">
-              <h1 className="text-sm sm:text-base md:text-lg font-medium text-gray-800 truncate">{title}</h1>
+              <h1 className="text-sm text-gray-800 truncate">
+                {title}
+              </h1>
               {description && (
-                <p className="text-gray-600 text-xs sm:text-sm mt-1 line-clamp-2">{description}</p>
+                <p className="text-gray-600 text-xs sm:text-sm mt-1 line-clamp-2">
+                  {description}
+                </p>
               )}
             </div>
           )}
@@ -299,19 +303,13 @@ export function DataTable<TData, TValue>({
 
       {/* Table */}
       <div className="rounded-md border">
-        <Table >
+        <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow
-                key={headerGroup.id}
-                className=""
-              >
+              <TableRow key={headerGroup.id} className="">
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead
-                      key={header.id}
-                      className=" py-0 text-[13px]"
-                    >
+                    <TableHead key={header.id} className=" py-0 text-[13px]">
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -325,44 +323,42 @@ export function DataTable<TData, TValue>({
             ))}
           </TableHeader>
           <TableBody>
-            {isLoading ? (
-              [...Array(10)].map((_, i) => (
-                <TableRow key={i}>
-                  {columns.map((_, colIndex) => (
-                    <TableCell key={colIndex}>
-                      <Skeleton className="h-4 w-full" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="hover:bg-green-50 text-[13px]"
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              [...Array(5)].map((_, i) => (
-                <TableRow key={i}>
-                  {columns.map((_, colIndex) => (
-                    <TableCell key={colIndex}>
-                      <Skeleton className="h-4 w-full" />
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            )}
+            {isLoading
+              ? [...Array(10)].map((_, i) => (
+                  <TableRow key={i}>
+                    {columns.map((_, colIndex) => (
+                      <TableCell key={colIndex}>
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              : table.getRowModel().rows?.length
+              ? table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className="hover:bg-green-50 text-[13px]"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              : [...Array(5)].map((_, i) => (
+                  <TableRow key={i}>
+                    {columns.map((_, colIndex) => (
+                      <TableCell key={colIndex}>
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
           </TableBody>
         </Table>
       </div>
@@ -381,20 +377,32 @@ export function DataTable<TData, TValue>({
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => {
-                  const currentPage = pagination?.page || (table.getState().pagination.pageIndex + 1);
+                  const currentPage =
+                    pagination?.page ||
+                    table.getState().pagination.pageIndex + 1;
                   if (currentPage > 1) handlePageChange(currentPage - 1);
                 }}
-                disabled={pagination ? pagination.page <= 1 : !table.getCanPreviousPage()}
+                disabled={
+                  pagination
+                    ? pagination.page <= 1
+                    : !table.getCanPreviousPage()
+                }
                 className={`p-1 rounded ${
-                  pagination ? (pagination.page > 1 ? "text-gray-900 hover:bg-gray-100" : "text-gray-400 cursor-not-allowed") :
-                  (table.getCanPreviousPage() ? "text-gray-900 hover:bg-gray-100" : "text-gray-400 cursor-not-allowed")
+                  pagination
+                    ? pagination.page > 1
+                      ? "text-gray-900 hover:bg-gray-100"
+                      : "text-gray-400 cursor-not-allowed"
+                    : table.getCanPreviousPage()
+                    ? "text-gray-900 hover:bg-gray-100"
+                    : "text-gray-400 cursor-not-allowed"
                 }`}
               >
                 <ChevronsLeft className="h-6 w-6" />
               </button>
 
               {getPageNumbers().map((pageNumber) => {
-                const currentPage = pagination?.page || (table.getState().pagination.pageIndex + 1);
+                const currentPage =
+                  pagination?.page || table.getState().pagination.pageIndex + 1;
                 return (
                   <button
                     key={pageNumber}
@@ -411,14 +419,27 @@ export function DataTable<TData, TValue>({
               })}
               <button
                 onClick={() => {
-                  const currentPage = pagination?.page || (table.getState().pagination.pageIndex + 1);
-                  const totalPages = pagination?.totalPages || table.getPageCount();
-                  if (currentPage < totalPages) handlePageChange(currentPage + 1);
+                  const currentPage =
+                    pagination?.page ||
+                    table.getState().pagination.pageIndex + 1;
+                  const totalPages =
+                    pagination?.totalPages || table.getPageCount();
+                  if (currentPage < totalPages)
+                    handlePageChange(currentPage + 1);
                 }}
-                disabled={pagination ? pagination.page >= pagination.totalPages : !table.getCanNextPage()}
+                disabled={
+                  pagination
+                    ? pagination.page >= pagination.totalPages
+                    : !table.getCanNextPage()
+                }
                 className={`p-1 rounded ${
-                  pagination ? (pagination.page < pagination.totalPages ? "text-gray-900 hover:bg-gray-100" : "text-gray-400 cursor-not-allowed") :
-                  (table.getCanNextPage() ? "text-gray-900 hover:bg-gray-100" : "text-gray-400 cursor-not-allowed")
+                  pagination
+                    ? pagination.page < pagination.totalPages
+                      ? "text-gray-900 hover:bg-gray-100"
+                      : "text-gray-400 cursor-not-allowed"
+                    : table.getCanNextPage()
+                    ? "text-gray-900 hover:bg-gray-100"
+                    : "text-gray-400 cursor-not-allowed"
                 }`}
               >
                 <ChevronsRight className="h-6 w-6" />
@@ -429,17 +450,23 @@ export function DataTable<TData, TValue>({
           {showPagination && (
             <div className="flex items-center space-x-2">
               <Select
-                value={`${pagination?.limit || table.getState().pagination.pageSize}`}
+                value={`${
+                  pagination?.limit || table.getState().pagination.pageSize
+                }`}
                 onValueChange={(value) => handlePageSizeChange(Number(value))}
               >
-                <SelectTrigger className="h-8 w-20">
+                <SelectTrigger className="h-8 min-w-[90px] w-auto">
                   <SelectValue
-                    placeholder={pagination?.limit || table.getState().pagination.pageSize}
+                    placeholder={
+                      pagination?.limit || table.getState().pagination.pageSize
+                    }
                   />
                 </SelectTrigger>
                 <SelectContent side="top">
-                  {[5, 10, 20, 30, 40, 50, 100].map((pageSize) => (
-                    <SelectItem key={pageSize} value={`${pageSize}`} >
+                  {[
+                    5, 10, 20, 30, 40, 50, 100, 200, 500, 1000, 5000, 10000000,
+                  ].map((pageSize) => (
+                    <SelectItem key={pageSize} value={`${pageSize}`}>
                       {pageSize}
                     </SelectItem>
                   ))}

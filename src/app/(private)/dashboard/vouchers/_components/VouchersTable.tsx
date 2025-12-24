@@ -74,25 +74,44 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
     fetchVouchers(1, 10);
   }, []);
 
+  const formatDate = (date: string | Date) =>
+    new Date(date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+
+  const formatTime = (date: string | Date) =>
+    new Date(date).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+
   const calculateRemainingDays = (voucher: any) => {
-    if (!voucher.loan || !(voucher as any).usedAt || !voucher.loan.voucherDays) {
-      return "N/A";
+    // For vouchers that haven't been used yet, show repayment days from voucher or loan
+    if (!voucher.usedAt) {
+      const repaymentDays = voucher.repaymentDays || voucher.loan?.repaymentDays;
+      return repaymentDays ? `${repaymentDays} days given` : "N/A";
     }
 
-    const usedDate = new Date((voucher as any).usedAt);
-    const voucherDays = voucher.loan.voucherDays;
-    const paymentDueDate = new Date(usedDate.getTime() + (voucherDays * 24 * 60 * 60 * 1000));
-    const today = new Date();
-    const remainingTime = paymentDueDate.getTime() - today.getTime();
-    const remainingDays = Math.ceil(remainingTime / (24 * 60 * 60 * 1000));
+    // For used vouchers, calculate remaining days based on loan repayment due date
+    if (voucher.loan?.repaymentDueDate) {
+      const dueDate = new Date(voucher.loan.repaymentDueDate);
+      const today = new Date();
+      const remainingTime = dueDate.getTime() - today.getTime();
+      const remainingDays = Math.ceil(remainingTime / (24 * 60 * 60 * 1000));
 
-    if (remainingDays < 0) {
-      return `Overdue by ${Math.abs(remainingDays)} days`;
-    } else if (remainingDays === 0) {
-      return "Due today";
-    } else {
-      return `${remainingDays} days left`;
+      if (remainingDays < 0) {
+        return `Overdue by ${Math.abs(remainingDays)} days`;
+      } else if (remainingDays === 0) {
+        return "Due today";
+      } else {
+        return `${remainingDays} days left`;
+      }
     }
+
+    return "N/A";
   };
 
   const filteredVouchers = useMemo(() => {
@@ -123,17 +142,25 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
   const getStatusBadge = (status: VoucherStatus) => {
     switch (status) {
       case VoucherStatus.ACTIVE:
-        return <Badge className="bg-green-500">Active</Badge>;
+        return (
+          <p className="text-green-500 text-xs font-normal">Active</p>
+        );
       case VoucherStatus.USED:
-        return <Badge className="bg-yellow-500">Used</Badge>;
+        return (
+          <p className="text-yellow-500 text-xs font-normal">Used</p>
+        );
       case VoucherStatus.EXPIRED:
-        return <Badge className="bg-red-300">Expired</Badge>;
+        return (
+          <p className="text-red-300 text-xs font-normal">Expired</p>
+        );
       case VoucherStatus.MATURED:
-        return <Badge className="bg-red-500">Matured</Badge>;
+        return <p className="text-red-500 text-xs font-normal">Matured</p>;
       case VoucherStatus.SUSPENDED:
-        return <Badge className="bg-red-300">Suspended</Badge>;
+        return (
+          <p className="text-red-300 text-xs font-normal">Suspended</p>
+        );
       case VoucherStatus.SETTLED:
-        return <Badge className="bg-orange-400">Settled</Badge>;
+        return <p className="text-orange-400 text-xs font-normal">Settled</p>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -165,7 +192,7 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
           filteredVouchers.findIndex(
             (voucher: any) => voucher.id === row.original.id
           ) + 1;
-        return <div className="text-sm font-medium">{index}</div>;
+        return <div className="text-xs">{index}</div>;
       },
     },
     {
@@ -173,7 +200,7 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
       header: "Code",
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
-          <span className="font-mono text-sm">{row.original.voucherCode}</span>
+          <span className=" text-xs">{row.original.voucherCode}</span>
         </div>
       ),
     },
@@ -182,30 +209,40 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
       header: "Restaurant",
       cell: ({ row }) => {
         const restaurantName = (row.original as any).restaurant?.name || "N/A";
-        return <div className="text-sm font-medium">{restaurantName}</div>;
+        return <div className="text-xs">{restaurantName}</div>;
       },
     },
     {
       accessorKey: "voucherType",
       header: "Type",
       cell: ({ row }) => (
-        <Badge variant="outline">
-          {getVoucherTypeLabel(row.original.voucherType)}
-        </Badge>
+        <div>
+          <Badge variant="outline">
+            <p className="text-xs font-normal">
+              {getVoucherTypeLabel(row.original.voucherType)}
+            </p>
+          </Badge>
+        </div>
       ),
     },
     {
       accessorKey: "creditLimit",
       header: "Credit Limit",
-      cell: ({ row }) => `${row.original.creditLimit.toLocaleString()} RWF`,
+      cell: ({ row }) => (
+        <div>
+          <p className="text-xs">
+            {row.original.creditLimit.toLocaleString()} RWF
+          </p>
+        </div>
+      ),
     },
     {
       id: "usage",
       header: "Used Credit",
       cell: ({ row }) => (
-        <div className="text-sm">
+        <div className="text-xs">
           <div>
-            <span className="font-medium text-green-600">
+            <span className=" text-green-600">
               {row.original.usedCredit.toLocaleString()}
             </span>{" "}
             RWF
@@ -215,25 +252,84 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
     },
     {
       id: "remainingDays",
-      header: "Days to Pay",
+      header: "Days",
       cell: ({ row }) => {
-        const remainingDays = calculateRemainingDays(row.original);
-        const isOverdue = remainingDays.includes("Overdue");
-        const isDueToday = remainingDays === "Due today";
+        const voucher = row.original as any;
+        const repaymentDays =
+          voucher.repaymentDays || voucher.loan?.repaymentDays || 0;
+        const status = voucher.status;
+
+        let remainingInfo = "N/A";
+        let remainingColor = "text-gray-500";
+
+        // Handle different voucher statuses
+        if (status === "USED" || status === "MATURED") {
+          // Only show remaining days for USED or MATURED vouchers
+          if (voucher.loan?.repaymentDueDate) {
+            const dueDate = new Date(voucher.loan.repaymentDueDate);
+            const today = new Date();
+            const remainingTime = dueDate.getTime() - today.getTime();
+            const remainingDays = Math.ceil(
+              remainingTime / (24 * 60 * 60 * 1000)
+            );
+
+            if (remainingDays < 0) {
+              remainingInfo = `Overdue by ${Math.abs(remainingDays)} days`;
+              remainingColor = "text-red-600";
+            } else if (remainingDays === 0) {
+              remainingInfo = "Due today";
+              remainingColor = "text-orange-600";
+            } else {
+              remainingInfo = `${remainingDays} days left`;
+              remainingColor = "text-blue-600";
+            }
+          } else {
+            remainingInfo = "No due date";
+          }
+        } else if (status === "ACTIVE") {
+          // For ACTIVE vouchers, show expiry time (48 hours from issued)
+          const issuedDate = new Date(voucher.issuedDate);
+          const expiryDate = new Date(voucher.expiryDate);
+          const today = new Date();
+          const timeToExpiry = expiryDate.getTime() - today.getTime();
+          const hoursToExpiry = Math.ceil(timeToExpiry / (1000 * 60 * 60));
+
+          if (hoursToExpiry < 0) {
+            remainingInfo = "Expired";
+            remainingColor = "text-red-600";
+          } else {
+            const totalMinutes = Math.floor(timeToExpiry / (1000 * 60));
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+
+            if (hours > 0) {
+              remainingInfo = `${hours}h ${minutes}m to expire`;
+            } else {
+              remainingInfo = `${minutes}m to expire`;
+            }
+
+            remainingColor =
+              hours < 1
+                ? "text-red-600"
+                : hours < 12
+                ? "text-orange-600"
+                : "text-blue-600";
+          }
+        } else if (status === "EXPIRED") {
+          remainingInfo = "Expired";
+          remainingColor = "text-red-600";
+        } else if (status === "SUSPENDED") {
+          remainingInfo = "Suspended";
+          remainingColor = "text-red-600";
+        } else if (status === "SETTLED") {
+          remainingInfo = "Paid";
+          remainingColor = "text-green-600";
+        }
 
         return (
-          <div
-            className={`text-sm font-medium ${
-              isOverdue
-                ? "text-red-600"
-                : isDueToday
-                ? "text-orange-600"
-                : remainingDays !== "N/A"
-                ? "text-blue-600"
-                : "text-gray-500"
-            }`}
-          >
-            {remainingDays}
+          <div className="text-xs">
+            <div className=" text-gray-700">Given: {repaymentDays} days</div>
+            <div className={`text-xs ${remainingColor}`}>{remainingInfo}</div>
           </div>
         );
       },
@@ -241,21 +337,57 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => getStatusBadge(row.original.status),
+      cell: ({ row }) => (
+        <div>
+          <p className="text-xs">{getStatusBadge(row.original.status)}</p>
+        </div>
+      ),
     },
     {
       accessorKey: "issuedDate",
-      header: "Issued",
+      header: "Issued Date",
       cell: ({ row }) => (
-        <div className="flex items-center gap-1 text-sm text-gray-800">
-          {new Date(row.original.issuedDate).toLocaleDateString()}
-          {(row.original as any).usedAt && (
-            <span className="text-[12px] text-gray-600">
-              {new Date((row.original as any).usedAt).toLocaleDateString()}
-            </span>
-          )}
+        <div className="text-xs">
+          <div className=" text-gray-800">
+            {formatDate(row.original.issuedDate)}
+          </div>
+          <div className="text-xs text-gray-500">
+            {formatTime(row.original.issuedDate)}
+          </div>
         </div>
       ),
+    },
+    {
+      id: "usedAt",
+      header: "Used At/Repay Date",
+      cell: ({ row }) => {
+        const usedAt = (row.original as any).usedAt;
+        const loan = (row.original as any).loan;
+        if (!usedAt) {
+          return <div className="text-sm text-gray-400">Not used</div>;
+        }
+        if (!loan?.repaymentDueDate) {
+          return <div className="text-sm text-gray-400">N/A</div>;
+        }
+        return (
+          <>
+            <div className="flex items-center gap-2 text-xs">
+              <div className=" text-gray-800">
+                {formatDate(usedAt)}
+              </div>
+              <div className="text-xs text-gray-500">{formatTime(usedAt)}</div>
+            </div>
+            <div className="flex items-center gap-2 text-xs ">
+              <div className=" text-green-600">
+                {formatDate(loan.repaymentDueDate)}
+              </div>
+              <div className="text-xs text-green-500">
+                {formatTime(loan.repaymentDueDate)}
+              </div>
+            </div>
+          </>
+        );
+      },
     },
     {
       id: "actions",
