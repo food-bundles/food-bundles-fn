@@ -210,6 +210,8 @@ export interface ILoanApplication {
   purpose?: string;
   status: LoanStatus;
   approvedAmount?: number;
+  ILoanApplication: string;
+  repaymentDays: number;
   approvedBy?: string;
   disbursementDate?: Date;
   repaymentDueDate?: Date;

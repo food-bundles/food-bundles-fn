@@ -121,15 +121,13 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
               onClick={() => setIsNotificationsOpen(true)}
             >
               <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
-              {!unreadCount ? (
-                <Skeleton className="absolute top-0 right-3 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-green-600/60" />
-              ) : (
-                unreadCount > 0 && (
+              {
+                unreadCount >= 0 && (
                   <Badge className="absolute top-0 right-3 h-4 w-4 sm:h-5 sm:w-5 rounded-full p-0 flex items-center justify-center bg-green-500 text-white text-xs">
                     {unreadCount > 99 ? "99+" : unreadCount}
                   </Badge>
                 )
-              )}
+              }
             </button>
 
             {/* User Menu */}

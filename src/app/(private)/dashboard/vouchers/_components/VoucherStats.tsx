@@ -57,37 +57,37 @@ export default function VoucherStats() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       {/* Row 1: Individual Status Cards */}
-      <Card className="h-40  border-blue-200 shadow-[4px_4px_8px_rgba(0,0,0,0.1)]">
+      <Card className="h-34  border-blue-200 shadow-[4px_4px_8px_rgba(0,0,0,0.1)]">
         <CardContent className="p-4 relative">
           <Ticket className="h-8 w-8 text-yellow-500 absolute -top-5 right-2" />
           <div className="text-center">
-            <p className="text-gray-800 text-[16px] font-bold">
+            <p className="text-gray-800 text-xs font-bold">
               Total Vouchers
             </p>
             {loading ? (
               <Skeleton className="h-7 w-12 mx-auto" />
             ) : (
               <>
-                <p className="text-4xl font-bold  text-green-600">
+                <p className="text-xl font-bold  text-green-600">
                   {stats.totalVouchers}
                 </p>
                 <div>
                   <div className="flex items-center justify-center  gap-2">
-                    <p className="text-sm font-medium ">
+                    <p className="text-xs font-medium ">
                       Act:{" "}
-                      <span className="text-green-500 text-xl font-bold">
+                      <span className="text-green-500 text-sm font-bold">
                         {stats.activeVouchers}
                       </span>
                     </p>
-                    <p className="text-sm font-medium ">
+                    <p className="text-xs font-medium ">
                       Susp:{" "}
-                      <span className="text-yellow-600 text-xl font-bold">
+                      <span className="text-yellow-600 text-sm font-bold">
                         {stats.suspendedVouchers}
                       </span>
                     </p>
-                    <p className=" text-sm font-medium ">
+                    <p className=" text-xs font-medium ">
                       Exp:{" "}
-                      <span className="text-red-600 text-xl font-bold">
+                      <span className="text-red-600 text-sm font-bold">
                         {stats.expiredVouchers}
                       </span>
                     </p>
@@ -104,15 +104,15 @@ export default function VoucherStats() {
         <CardContent className="p-4 relative">
           <TrendingUp className="h-8 w-8 text-blue-600 absolute -top-5 right-2" />
           <div className="text-center">
-            <p className="text-blue-600 text-[16px] font-bold">Used Vouchers</p>
+            <p className="text-blue-600 text-xs font-bold">Used Vouchers</p>
             {loading ? (
               <Skeleton className="h-7 w-12 mx-auto" />
             ) : (
               <>
-                <p className="text-3xl font-bold text-blue-900">
+                <p className="text-xl font-bold text-blue-900">
                   {stats.usedVouchers.count}
                 </p>
-                <p className="text-sm text-blue-700">
+                <p className="text-xs text-blue-700">
                   {stats.usedVouchers.totalAmount.toLocaleString()} RWF
                 </p>
               </>
@@ -127,7 +127,7 @@ export default function VoucherStats() {
           <div className="flex">
             <div className="text-center">
 
-              <p className="text-red-500 text-[15px] font-bold">
+              <p className="text-red-500 text-xs font-bold">
                 Matured Vouchers
               </p>
 
@@ -135,10 +135,10 @@ export default function VoucherStats() {
                 <Skeleton className="h-7 w-16 mx-auto mt-2" />
               ) : (
                 <>
-                  <p className="text-3xl font-bold text-red-800">
-                    {stats.maturedVouchers.count}
+                  <p className="text-xl font-bold text-red-800">
+                    {stats.maturedVouchers.count} 
                   </p>
-                  <p className="text-sm text-red-600">
+                  <p className="text-xs text-red-600">
                     {stats.maturedVouchers.totalAmount.toLocaleString()} RWF
                   </p>
                 </>
@@ -146,8 +146,8 @@ export default function VoucherStats() {
             </div>
 
             {/* Settled Vouchers */}
-            <div className="relative text-center md:pl-4">
-              <p className="text-green-600 text-[15px] font-bold">
+            <div className="relative text-center ">
+              <p className="text-green-600 text-xs font-bold">
                 Settled Vouchers
               </p>
 
@@ -155,10 +155,10 @@ export default function VoucherStats() {
                 <Skeleton className="h-7 w-16 mx-auto mt-2" />
               ) : (
                 <>
-                  <p className="text-3xl font-bold text-green-900">
+                  <p className="text-xl font-bold text-green-900">
                     {stats.settledVouchers.count}
                   </p>
-                  <p className="text-sm text-green-700">
+                  <p className="text-xs text-green-700">
                     {stats.settledVouchers.totalAmount.toLocaleString()} RWF
                   </p>
                 </>
@@ -172,13 +172,13 @@ export default function VoucherStats() {
         <CardContent className="p-4 relative">
           <AlertCircle className="h-8 w-8 text-orange-600 absolute -top-5 right-2" />
           <div className="text-center">
-            <p className="text-orange-600 text-[16px] font-medium">
+            <p className="text-orange-600 text-xs font-medium">
               Pending Loans
             </p>
             {loading ? (
               <Skeleton className="h-7 w-12 mx-auto" />
             ) : (
-              <p className="text-3xl font-bold text-orange-900">
+              <p className="text-xl font-bold text-orange-900">
                 {stats.pendingLoans}
               </p>
             )}

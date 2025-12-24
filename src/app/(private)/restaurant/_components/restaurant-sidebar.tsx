@@ -35,7 +35,7 @@ export function RestaurantSidebar({ isOpen, onClose }: RestaurantSidebarProps) {
         "fixed md:relative",
         isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         "z-50 md:z-auto",
-        "w-60 min-w-60 h-screen flex flex-col shrink-0",
+        "w-72 min-w-72 h-screen flex flex-col shrink-0",
         "transition-transform duration-300 ease-in-out",
         "relative overflow-hidden"
       )}
@@ -72,7 +72,7 @@ export function RestaurantSidebar({ isOpen, onClose }: RestaurantSidebarProps) {
                 />
               </div>
               <h1 className="text-white text-lg font-semibold tracking-wide">
-                FOODBUNDLES
+                Food Bundles Ltd
               </h1>
             </div>
           </Link>

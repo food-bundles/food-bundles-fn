@@ -4,7 +4,6 @@ import { Header } from "@/components/header";
 import { HeroWithRestaurants } from "@/components/hero-section";
 import QuickTalkSection from "@/components/quck-talk-section";
 import { FoodBundlesConnect } from "@/components/showcase-section";
-import { SantaClaus } from "@/components/santa-claus";
 import { ChristmasAnimation } from "@/components/ChristmasAnimation";
 
 export default async function HomePage() {

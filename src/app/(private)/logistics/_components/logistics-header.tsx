@@ -91,7 +91,7 @@ export function LogisticsHeader({ onMenuClick, sidebarOpen }: LogisticsHeaderPro
               />
               <div>
                 <h1 className="text-lg md:text-xl font-bold text-green-100">
-                  FoodBundles
+                  Food Bundles Ltd
                 </h1>
                 <span className="text-gray-100 text-[12px]">
                   Welcome Dear Logistic
