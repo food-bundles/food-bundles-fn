@@ -59,9 +59,11 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const refreshCategories = useCallback(async () => {
+  const refreshCategories = useCallback(async (showLoading = true) => {
     try {
-      setIsLoading(true);
+      if (showLoading) {
+        setIsLoading(true);
+      }
       setError(null);
 
       const response = await categoryService.getAllCategories();
@@ -81,7 +83,9 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
       setError("Failed to load categories");
       setCategories([]);
     } finally {
-      setIsLoading(false);
+      if (showLoading) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
@@ -118,8 +122,6 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
         const response = await categoryService.createCategory(categoryData);
 
         if (response.success) {
-          await refreshCategories();
-          await refreshActiveCategories();
           return true;
         } else {
           setError(response.message || "Failed to create category");
@@ -131,7 +133,7 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
         return false;
       }
     },
-    [refreshCategories, refreshActiveCategories]
+    []
   );
 
   const updateCategory = useCallback(
@@ -147,8 +149,6 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
         );
 
         if (response.success) {
-          await refreshCategories();
-          await refreshActiveCategories();
           return true;
         } else {
           setError(response.message || "Failed to update category");
@@ -160,7 +160,7 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
         return false;
       }
     },
-    [refreshCategories, refreshActiveCategories]
+    []
   );
 
   const deleteCategory = useCallback(
@@ -170,8 +170,6 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
         const response = await categoryService.deleteCategory(categoryId);
 
         if (response.success) {
-          await refreshCategories();
-          await refreshActiveCategories();
           return true;
         } else {
           setError(response.message || "Failed to delete category");
@@ -183,7 +181,7 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
         return false;
       }
     },
-    [refreshCategories, refreshActiveCategories]
+    []
   );
 
   const getCategoryById = useCallback(
@@ -217,7 +215,7 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
         });
 
         if (response.success) {
-          await refreshCategories();
+          await refreshCategories(false);
           await refreshActiveCategories();
           return true;
         } else {

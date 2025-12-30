@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { toast } from "sonner";
-import type { ProductFormData } from "../(private)/dashboard/inventory/_components/create-product-modal";
 import createAxiosClient from "../hooks/axiosClient";
+import { ProductFormData } from "../(private)/dashboard/stock/products/_components/CreateProductDrawer";
 
 export interface CreateProductData {
   productName: string;
@@ -109,6 +109,13 @@ export const productService = {
         message: error.response?.data?.message || "Failed to fetch products",
       };
     }
+  },
+
+  // update product category
+  updateProductCategory: async (productId: string, categoryId: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(`/category/${categoryId}`,{ categoryId });
+    return response.data;
   },
 
   getProductById: async (productId: string) => {

@@ -20,6 +20,8 @@ import {
   UserPlus,
   LayoutDashboard,
   Wallet,
+  Box,
+  Tags,
 } from "lucide-react";
 import NotificationsDrawer from "@/app/(private)/restaurant/_components/notificationDrawer";
 import { usePathname } from "next/navigation";
@@ -40,7 +42,18 @@ const menuItems = [
     label: "Restaurant Orders",
     href: "/dashboard/restaurant-orders",
   },
-  { icon: Package, label: "Inventory", href: "/dashboard/inventory" },
+  { icon: Package, label: "Stock", href: "/dashboard/stock", subItems: [
+    {
+      icon: Box,
+      label: "Products",
+      href: "/dashboard/stock/products",
+    },
+    {
+      icon: Tags,
+      label: "Categories",
+      href: "/dashboard/stock/categories",
+    },
+  ] },
   {
     icon: Crown,
     label: "Subscriptions",
@@ -119,12 +132,16 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
 
   const isItemActive = (item: any) => {
     if (item.subItems) {
-      return (
-        item.subItems.some((subItem: any) => pathname === subItem.href) ||
-        pathname === item.href
-      );
+      return pathname === item.href;
     }
     return pathname === item.href;
+  };
+
+  const hasActiveSubItem = (item: any) => {
+    if (item.subItems) {
+      return item.subItems.some((subItem: any) => pathname === subItem.href);
+    }
+    return false;
   };
 
   const isSubItemActive = (subItem: any) => {
@@ -171,6 +188,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
           <ul className="space-y-1 px-2 md:px-3 pb-4">
             {menuItems.map((item, index) => {
               const isActive = isItemActive(item);
+              const hasActiveSub = hasActiveSubItem(item);
               const isExpanded = expandedItems.has(index);
               const hasSubItems = item.subItems && item.subItems.length > 0;
 
@@ -182,16 +200,16 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                         onClick={() => toggleExpanded(index)}
                         className={cn(
                           "w-full flex items-center px-3 py-2 rounded-md text-xs transition-colors whitespace-nowrap justify-between",
-                          isActive
+                          isActive && !hasActiveSub
                             ? "bg-green-500 hover:bg-green-600 text-white"
-                            : "text-green-200 "
+                            : "text-green-200 hover:bg-green-500 hover:text-white"
                         )}
                       >
-                        <div className="flex items-center hover:text-green-500">
+                        <div className="flex items-center">
                           <item.icon
                             className={cn(
                               "mr-2 md:mr-3 h-4 w-4 md:h-5 md:w-5",
-                              isActive ? "text-white" : " text-green-500"
+                              isActive && !hasActiveSub ? "text-white" : "text-green-500"
                             )}
                           />
                           {item.label}
@@ -214,12 +232,12 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                                   className={cn(
                                     "flex items-center px-2 md:px-3 py-2 rounded text-xs md:text-xs transition-colors whitespace-nowrap",
                                     isSubActive
-                                      ? "bg-transparent text-green-600 "
-                                      : "text-gray-600 "
+                                      ? "bg-green-600 text-white"
+                                      : "text-green-200 hover:bg-green-600 hover:text-white"
                                   )}
                                 >
-                                  <subItem.icon className="mr-2 md:mr-3 h-2 w-2 md:h-3 md:w-3 text-green-500" />
-                                  <span className="truncate text-[12px] text-green-200 hover:text-green-500">
+                                  <subItem.icon className="mr-2 md:mr-3 h-2 w-2 md:h-3 md:w-3" />
+                                  <span className="truncate text-[12px]">
                                     {subItem.label}
                                   </span>
                                 </Link>
@@ -235,16 +253,16 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                       onClick={() => onClose()}
                       className={cn(
                         "flex items-center px-2 md:px-3 py-2 text-xs md:text-xs transition-colors whitespace-nowrap rounded-md",
-                        isActive ? "bg-green-700 hover:bg-green-600" : ""
+                        isActive ? "bg-green-700 hover:bg-green-600" : "text-green-200 hover:bg-green-500 hover:text-white"
                       )}
                     >
                       <item.icon
                         className={cn(
                           "mr-2 md:mr-3 h-4 w-4 md:h-5 md:w-5",
-                          isActive ? "text-white" : " text-green-500"
+                          isActive ? "text-white" : "text-green-500"
                         )}
                       />
-                      <span className="truncate text-green-200 hover:text-green-500">
+                      <span className="truncate">
                         {item.label}
                       </span>
                     </Link>

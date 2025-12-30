@@ -7,9 +7,9 @@ import { DataTable } from "@/components/data-table";
 import { getInventoryColumns } from "./inventory-columns";
 import { createCommonFilters, TableFilters } from "@/components/filters";
 import {
-  CreateProductModal,
+  CreateProductDrawer,
   type ProductFormData,
-} from "./create-product-modal";
+} from "./CreateProductDrawer";
 import { ProductManagementModal } from "./product-management-modal";
 import { ProductStatusModal } from "./product-status-modal";
 import type { Product } from "@/app/contexts/product-context";
@@ -244,9 +244,9 @@ export function InventoryManagement({
       />
 
       {/* Modals */}
-      <CreateProductModal
-        open={isCreateOpen}
-        onOpenChange={setIsCreateOpen}
+      <CreateProductDrawer
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
         onSubmit={handleProductCreate}
       />
 

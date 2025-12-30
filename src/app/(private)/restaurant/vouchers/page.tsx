@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { subscriptionService, RestaurantSubscription } from "@/app/services/subscriptionService";
-
 import LoanApplicationForm from "./_components/LoanApplicationForm";
 import LoanApplicationsList from "./_components/LoanApplicationsList";
 import VouchersList from "./_components/VouchersList";

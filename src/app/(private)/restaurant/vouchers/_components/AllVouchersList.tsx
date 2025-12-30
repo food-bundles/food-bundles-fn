@@ -9,7 +9,7 @@ import VoucherPaymentModal from "./VoucherPaymentModal";
 
 export default function AllVouchersList() {
   const { myVouchers, getMyVouchers, loading } = useVouchers();
-  const [payingVoucherId, setPayingVoucherId] = useState<string | null>(null);
+  const [payingVoucherId] = useState<string | null>(null);
   const [selectedVoucher, setSelectedVoucher] = useState<any>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
 

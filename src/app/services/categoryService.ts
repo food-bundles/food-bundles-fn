@@ -27,7 +27,7 @@ export const categoryService = {
     isActive?: boolean;
   }) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.get("/category/active", { params });
+    const response = await axiosClient.get("/category", { params });
     return response.data;
   },
 
