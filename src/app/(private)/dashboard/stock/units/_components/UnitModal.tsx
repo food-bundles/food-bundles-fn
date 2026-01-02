@@ -12,28 +12,32 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Category } from "@/app/contexts/category-context";
+import { UnitFormData } from "@/app/services/unitService";
 
-interface CategoryFormData {
+interface Unit {
+  id: string;
+  tableTronicId: string;
   name: string;
-  description?: string;
+  description: string;
   isActive: boolean;
+  createdAt: string;
 }
 
-interface CategoryModalProps {
+interface UnitModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  category?: Category | null;
-  onSubmit: (data: CategoryFormData) => Promise<void>;
+  unit?: Unit | null;
+  onSubmit: (data: UnitFormData) => Promise<void>;
 }
 
-export function CategoryModal({
+export function UnitModal({
   open,
   onOpenChange,
-  category,
+  unit,
   onSubmit,
-}: CategoryModalProps) {
-  const [formData, setFormData] = useState<CategoryFormData>({
+}: UnitModalProps) {
+  const [formData, setFormData] = useState<UnitFormData>({
+    tableTronicId: "",
     name: "",
     description: "",
     isActive: true,
@@ -41,24 +45,26 @@ export function CategoryModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (category) {
+    if (unit) {
       setFormData({
-        name: category.name,
-        description: category.description || "",
-        isActive: category.isActive ?? true,
+        tableTronicId: unit.tableTronicId,
+        name: unit.name,
+        description: unit.description || "",
+        isActive: unit.isActive ?? true,
       });
     } else {
       setFormData({
+        tableTronicId: "",
         name: "",
         description: "",
         isActive: true,
       });
     }
-  }, [category, open]);
+  }, [unit, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim()) return;
+    if (!formData.name.trim() || !formData.tableTronicId.trim()) return;
 
     try {
       setIsSubmitting(true);
@@ -74,11 +80,24 @@ export function CategoryModal({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {category ? "Edit Category" : "Create New Category"}
+            {unit ? "Edit Unit" : "Create New Unit"}
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="tableTronicId">Table Tronic ID *</Label>
+            <Input
+              id="tableTronicId"
+              value={formData.tableTronicId}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, tableTronicId: e.target.value }))
+              }
+              placeholder="Enter table tronic ID"
+              required
+            />
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="name">Name *</Label>
             <Input
@@ -87,7 +106,7 @@ export function CategoryModal({
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, name: e.target.value }))
               }
-              placeholder="Enter category name"
+              placeholder="Enter unit name"
               required
             />
           </div>
@@ -103,7 +122,7 @@ export function CategoryModal({
                   description: e.target.value,
                 }))
               }
-              placeholder="Enter category description"
+              placeholder="Enter unit description"
               rows={3}
               required
             />
@@ -129,7 +148,7 @@ export function CategoryModal({
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : category ? "Update" : "Create"}
+              {isSubmitting ? "Saving..." : unit ? "Update" : "Create"}
             </Button>
           </div>
         </form>

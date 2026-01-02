@@ -472,7 +472,7 @@ export function DataTable<TData, TValue>({
                   ))}
                 </SelectContent>
               </Select>
-              <span className="text-[13px] text-gray-900">rows per page</span>
+              <span className="hidden sm:inline text-xs text-gray-900">rows per page</span>
             </div>
           )}
         </div>

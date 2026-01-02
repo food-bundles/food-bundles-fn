@@ -53,6 +53,11 @@ const menuItems = [
       label: "Categories",
       href: "/dashboard/stock/categories",
     },
+    {
+      icon: Tags,
+      label: "Units",
+      href: "/dashboard/stock/units",
+    },
   ] },
   {
     icon: Crown,

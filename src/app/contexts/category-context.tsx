@@ -15,6 +15,7 @@ import {
 
 export interface Category {
   id: string;
+  tableTronicId?: number;
   name: string;
   description?: string;
   isActive?: boolean;

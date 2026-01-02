@@ -1,4 +1,5 @@
 import createAxiosClient from "../hooks/axiosClient";
+import { tableTronicService } from "./tableTronicService";
 
 export interface CreateCategoryData {
   name: string;
@@ -12,11 +13,35 @@ export interface UpdateCategoryData {
 }
 
 export const categoryService = {
-  // ✅ Create a new category (Admin only)
+  // ✅ Create a new category (Admin only) - Creates in both Table Tronic and Food Bundles
   createCategory: async (categoryData: CreateCategoryData) => {
-    const axiosClient = createAxiosClient();
-    const response = await axiosClient.post("/category", categoryData);
-    return response.data;
+    try {
+      // Step 1: Create category in Table Tronic first
+      const tableTronicCategory = await tableTronicService.createCategory({
+        name: categoryData.name,
+        description: categoryData.description,
+      });
+
+      // Step 2: Create category in Food Bundles with Table Tronic ID mapping
+      const axiosClient = createAxiosClient();
+      const foodBundlesData = {
+        ...categoryData,
+        tableTronicId: tableTronicCategory.id,
+      };
+      
+      const response = await axiosClient.post("/category", foodBundlesData);
+      return response.data;
+    } catch (error: any) {
+      console.error('Category creation error:', error);
+      // If Table Tronic fails, still try to create in Food Bundles without mapping
+      if (error.message?.includes('Table Tronic')) {
+        console.warn('Table Tronic creation failed, creating in Food Bundles only');
+        const axiosClient = createAxiosClient();
+        const response = await axiosClient.post("/category", categoryData);
+        return response.data;
+      }
+      throw error;
+    }
   },
 
   // ✅ Get all categories (with filters/pagination — Admin, Aggregator, Logistics)

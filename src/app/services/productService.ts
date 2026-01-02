@@ -112,9 +112,9 @@ export const productService = {
   },
 
   // update product category
-  updateProductCategory: async (productId: string, categoryId: string) => {
+  updateProductCategory: async (categoryId: string, data: { name: string; description: string; isActive: boolean }) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.patch(`/category/${categoryId}`,{ categoryId });
+    const response = await axiosClient.patch(`/category/${categoryId}`, data);
     return response.data;
   },
 
