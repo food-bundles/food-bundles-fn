@@ -16,12 +16,13 @@ import {
 
 interface ActivityItem {
   id: string;
-  type: "user_signup" | "order_placed" | "subscription" | "voucher" | "payment";
+  type: string;
   title: string;
   description: string;
   timestamp: string;
-  status?: "success" | "pending" | "failed";
+  status?: string;
   amount?: number;
+  metadata?: any;
 }
 
 interface RecentActivityProps {

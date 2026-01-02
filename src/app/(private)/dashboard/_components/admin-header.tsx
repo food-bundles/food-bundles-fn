@@ -3,10 +3,17 @@
 import { useState, useEffect } from "react";
 import { Bell } from "lucide-react";
 import { MdMenuOpen, MdClose } from "react-icons/md";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { notificationService } from "@/app/services/notificationService";
 import NotificationsDrawer from "@/app/(private)/restaurant/_components/notificationDrawer";
+import { usePathname } from "next/navigation";
 
 interface AdminHeaderProps {
   onMenuClick: () => void;
@@ -16,6 +23,36 @@ interface AdminHeaderProps {
 export function AdminHeader({ onMenuClick, sidebarOpen }: AdminHeaderProps) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const pathname = usePathname();
+
+  const getPageTitle = () => {
+    const pathSegments = pathname.split('/').filter(Boolean);
+    const pathMap: { [key: string]: string } = {
+      'dashboard': 'Dashboard',
+      'farmer-submissions': 'Farmer Submissions',
+      'restaurant-orders': 'Restaurant Orders',
+      'stock': 'Stock Management',
+      'products': 'Products',
+      'categories': 'Categories',
+      'units': 'Units',
+      'subscriptions': 'Subscriptions',
+      'vouchers': 'Voucher Management',
+      'deposits': 'Deposit Management',
+      'invitations': 'Invitations',
+      'users': 'Users',
+      'farmers': 'Farmers',
+      'restaurants': 'Restaurants',
+      'administration': 'Administration',
+      'contact-submissions': 'Messages'
+    };
+
+    if (pathSegments.length === 1) {
+      return pathMap[pathSegments[0]] || 'Dashboard';
+    }
+
+    const breadcrumbs = pathSegments.slice(1).map(segment => pathMap[segment] || segment);
+    return breadcrumbs.join(' > ');
+  };
 
   useEffect(() => {
     const fetchUnreadCount = async () => {
@@ -34,26 +71,29 @@ export function AdminHeader({ onMenuClick, sidebarOpen }: AdminHeaderProps) {
   }, []);
 
   return (
-    <header className="bg-green-700 border-b border-green-800">
+    <header className="bg-green-800 border-b border-green-800">
       <div className="px-4 pt-2 pb-1 flex items-center justify-between">
         {/* Left side */}
         <div className="flex items-center space-x-4">
-          <button 
+          <button
             onClick={onMenuClick}
             className="md:hidden p-2 cursor-pointer text-white hover:bg-green-600 rounded transition-colors"
           >
-            {sidebarOpen ? <MdClose className="h-6 w-6" /> : <MdMenuOpen className="h-6 w-6" />}
+            {sidebarOpen ? (
+              <MdClose className="h-6 w-6" />
+            ) : (
+              <MdMenuOpen className="h-6 w-6" />
+            )}
           </button>
           <div className="flex items-center gap-2 md:gap-4">
-            <h1 className="text-sm md:text-md font-semibold text-white">Dashboard</h1>
-            <p className="hidden sm:block text-[13px] text-green-100">
-              Welcome back
-            </p>
+            <h1 className="text-sm md:text-md font-semibold text-white">
+              {getPageTitle()}
+            </h1>
           </div>
         </div>
 
         <div className="flex items-center space-x-1 md:space-x-3">
-          <button 
+          <button
             onClick={() => setIsNotificationsOpen(true)}
             className="relative p-1.5 md:p-2 hover:bg-green-600 cursor-pointer rounded-full text-white"
           >
@@ -66,16 +106,19 @@ export function AdminHeader({ onMenuClick, sidebarOpen }: AdminHeaderProps) {
           </button>
 
           <div className="flex items-center space-x-2">
-            <Avatar className="h-7 w-7 md:h-8 md:w-8 border-2 border-green-500 hover:border-green-300 cursor-pointer">
-              <AvatarImage src="/imgs/profile.jpg?height=32&width=32" />
-              <AvatarFallback className="text-green-700 bg-white text-xs md:text-sm">
-                BS
-              </AvatarFallback>
-            </Avatar>
+            <Select defaultValue="en">
+              <SelectTrigger className="h-5 w-20 text-xs bg-green-700 text-white border border-green-600 hover:bg-green-600 focus:ring-2 focus:ring-green-600 [&_svg]:text-white">
+                <SelectValue placeholder="ENG" />
+              </SelectTrigger>
+
+              <SelectContent className="flex">
+                <SelectItem value="en">ENG</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
-      
+
       <NotificationsDrawer
         isOpen={isNotificationsOpen}
         onClose={() => setIsNotificationsOpen(false)}

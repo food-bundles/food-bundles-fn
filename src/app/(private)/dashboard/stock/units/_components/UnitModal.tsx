@@ -16,7 +16,7 @@ import { UnitFormData } from "@/app/services/unitService";
 
 interface Unit {
   id: string;
-  tableTronicId: string;
+  tableTronicId: number;
   name: string;
   description: string;
   isActive: boolean;
@@ -37,7 +37,7 @@ export function UnitModal({
   onSubmit,
 }: UnitModalProps) {
   const [formData, setFormData] = useState<UnitFormData>({
-    tableTronicId: "",
+    tableTronicId: 0,
     name: "",
     description: "",
     isActive: true,
@@ -54,7 +54,7 @@ export function UnitModal({
       });
     } else {
       setFormData({
-        tableTronicId: "",
+        tableTronicId: 0,
         name: "",
         description: "",
         isActive: true,
@@ -64,7 +64,7 @@ export function UnitModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.tableTronicId.trim()) return;
+    if (!formData.name.trim() || !formData.tableTronicId) return;
 
     try {
       setIsSubmitting(true);
@@ -79,9 +79,7 @@ export function UnitModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {unit ? "Edit Unit" : "Create New Unit"}
-          </DialogTitle>
+          <DialogTitle>{unit ? "Edit Unit" : "Create New Unit"}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -89,9 +87,13 @@ export function UnitModal({
             <Label htmlFor="tableTronicId">Table Tronic ID *</Label>
             <Input
               id="tableTronicId"
+              type="number"
               value={formData.tableTronicId}
               onChange={(e) =>
-                setFormData((prev) => ({ ...prev, tableTronicId: e.target.value }))
+                setFormData((prev) => ({
+                  ...prev,
+                  tableTronicId: Number(e.target.value) || 0,
+                }))
               }
               placeholder="Enter table tronic ID"
               required

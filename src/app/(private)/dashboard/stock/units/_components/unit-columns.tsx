@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 
 interface Unit {
   id: string;
-  tableTronicId: string;
+  tableTronicId: number;
   name: string;
   description: string;
   isActive: boolean;

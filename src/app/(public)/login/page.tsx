@@ -162,10 +162,10 @@ function LoginForm() {
   return (
     <div className="w-full max-w-3xl flex">
       <div className="hidden lg:flex w-1/2 bg-white p-8 flex-col justify-center rounded-none shadow">
-        <h2 className="text-[16px] font-medium text-gray-900 mb-4">
+        <h2 className="text-ms font-medium text-gray-900 mb-4">
           Welcome Back!
         </h2>
-        <p className="text-[14px] text-gray-900">
+        <p className="text-xs text-gray-900">
           Sign in to access your Food Bundles account.
         </p>
       </div>
@@ -183,7 +183,7 @@ function LoginForm() {
           </div>
         )}
 
-        <h2 className="text-[18px] font-bold text-gray-900 mb-4">
+        <h2 className="text-ms font-bold text-gray-900 mb-4">
           Sign in to your account
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -246,11 +246,11 @@ function LoginForm() {
                 onChange={(e) => setRememberMe(e.target.checked)}
                 className="w-4 h-4 text-green-700 border-gray-300 rounded focus:ring-green-700"
               />
-              <span className="ml-2">Remember me</span>
+              <span className="ml-2 text-xs">Remember me</span>
             </label>
             <Link
               href="/forgot-password"
-              className="text-green-600 hover:text-green-700 text-[13px]"
+              className="text-green-600 hover:text-green-700 text-xs"
             >
               Forgot password?
             </Link>
@@ -267,7 +267,7 @@ function LoginForm() {
         </form>
 
         <div className="mt-6 text-center">
-          <p className="text-[13px] text-gray-900">
+          <p className="text-xs text-gray-900">
             Don't have an account?{" "}
             <Link
               href="/signup"
@@ -286,7 +286,7 @@ export default function LoginPage() {
   return (
     <div className=" bg-white">
       <div className="md:h-32 h-20 mt-12 w-full flex items-center justify-center bg-gray-100">
-        <h1 className="text-2xl font-bold text-black">My Account</h1>
+        <h1 className="text-xl font-bold text-black">My Account</h1>
       </div>
       <div className="flex items-center justify-center py-6  px-6 lg:px-8">
         <LoginForm />

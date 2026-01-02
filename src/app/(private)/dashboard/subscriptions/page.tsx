@@ -50,13 +50,25 @@ const paymentStatusOptions = [
 
 export default function AdminSubscriptionsPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("subscriptions");
-  const [subscriptionPlans, setSubscriptionPlans] = useState<
-    SubscriptionPlan[]
-  >([]);
-  const [restaurantSubscriptions, setRestaurantSubscriptions] = useState<
-    RestaurantSubscription[]
-  >([]);
+  const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
+  const [restaurantSubscriptions, setRestaurantSubscriptions] = useState<RestaurantSubscription[]>([]);
   const [loading, setLoading] = useState(true);
+  const [paginationLoading, setPaginationLoading] = useState(false);
+
+  // Pagination states
+  const [subscriptionPagination, setSubscriptionPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
+  
+  const [planPagination, setPlanPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
 
   // Filter states for subscriptions
   const [searchValue, setSearchValue] = useState("");
@@ -84,41 +96,76 @@ export default function AdminSubscriptionsPage() {
   });
   const [currentFeature, setCurrentFeature] = useState("");
 
-  // Load data
-  const loadSubscriptionPlans = async () => {
+  // Load data with pagination
+  const loadSubscriptionPlans = async (page = 1, limit = 10, isPagination = false) => {
     try {
-      const params: any = {};
+      if (isPagination) {
+        setPaginationLoading(true);
+      }
+      
+      const params: any = {
+        page,
+        limit
+      };
       if (planStatusFilter !== "all") {
         params.isActive = planStatusFilter === "active";
       }
+      if (planSearchValue) {
+        params.search = planSearchValue;
+      }
 
-      const response = await subscriptionService.getAllSubscriptionPlans(
-        params
-      );
+      const response = await subscriptionService.getAllSubscriptionPlans(params);
 
       if (response.data && Array.isArray(response.data)) {
         setSubscriptionPlans(response.data);
+        if (response.pagination) {
+          setPlanPagination({
+            page: response.pagination.page,
+            limit: response.pagination.limit,
+            total: response.pagination.total,
+            totalPages: response.pagination.totalPages,
+          });
+        }
       }
     } catch (error) {
       console.error("Failed to load subscription plans:", error);
       toast.error("Failed to load subscription plans");
+    } finally {
+      setPaginationLoading(false);
     }
   };
 
-  const loadRestaurantSubscriptions = async () => {
+  const loadRestaurantSubscriptions = async (page = 1, limit = 10, isPagination = false) => {
     try {
-      const params: any = {};
+      if (isPagination) {
+        setPaginationLoading(true);
+      }
+      
+      const params: any = {
+        page,
+        limit
+      };
       if (selectedStatus !== "all") params.status = selectedStatus;
-      if (selectedPaymentStatus !== "all")
-        params.paymentStatus = selectedPaymentStatus;
+      if (selectedPaymentStatus !== "all") params.paymentStatus = selectedPaymentStatus;
+      if (searchValue) params.search = searchValue;
 
       const response = await subscriptionService.getAllSubscriptions(params);
       if (response.data && Array.isArray(response.data)) {
         setRestaurantSubscriptions(response.data);
+        if (response.pagination) {
+          setSubscriptionPagination({
+            page: response.pagination.page,
+            limit: response.pagination.limit,
+            total: response.pagination.total,
+            totalPages: response.pagination.totalPages,
+          });
+        }
       }
     } catch (error) {
       console.error("Failed to load subscriptions:", error);
       toast.error("Failed to load subscriptions");
+    } finally {
+      setPaginationLoading(false);
     }
   };
 
@@ -126,49 +173,38 @@ export default function AdminSubscriptionsPage() {
     setLoading(true);
     try {
       await Promise.all([
-        loadSubscriptionPlans(),
-        loadRestaurantSubscriptions(),
+        loadSubscriptionPlans(1, 10),
+        loadRestaurantSubscriptions(1, 10),
       ]);
     } finally {
       setLoading(false);
     }
   };
 
+  // Pagination handlers
+  const handleSubscriptionPaginationChange = (page: number, limit: number) => {
+    loadRestaurantSubscriptions(page, limit, true);
+  };
+
+  const handlePlanPaginationChange = (page: number, limit: number) => {
+    loadSubscriptionPlans(page, limit, true);
+  };
+
   useEffect(() => {
     loadAllData();
   }, []);
 
-  // Filter data
-  const filteredSubscriptionPlans = useMemo(() => {
-    let filtered = subscriptionPlans;
-
-    if (planSearchValue) {
-      const searchLower = planSearchValue.toLowerCase();
-      filtered = filtered.filter(
-        (plan) =>
-          plan.name.toLowerCase().includes(searchLower) ||
-          plan.description?.toLowerCase().includes(searchLower)
-      );
+  useEffect(() => {
+    if (activeTab === "subscriptions") {
+      loadRestaurantSubscriptions(1, subscriptionPagination.limit);
+    } else {
+      loadSubscriptionPlans(1, planPagination.limit);
     }
+  }, [searchValue, selectedStatus, selectedPaymentStatus, planSearchValue, planStatusFilter]);
 
-    return filtered;
-  }, [subscriptionPlans, planSearchValue]);
-
-  const filteredRestaurantSubscriptions = useMemo(() => {
-    let filtered = restaurantSubscriptions;
-
-    if (searchValue) {
-      const searchLower = searchValue.toLowerCase();
-      filtered = filtered.filter(
-        (subscription) =>
-          subscription.restaurant.name.toLowerCase().includes(searchLower) ||
-          subscription.restaurant.email.toLowerCase().includes(searchLower) ||
-          subscription.plan.name.toLowerCase().includes(searchLower)
-      );
-    }
-
-    return filtered;
-  }, [restaurantSubscriptions, searchValue]);
+  // Remove frontend filtering since we're using backend pagination
+  const filteredSubscriptionPlans = subscriptionPlans;
+  const filteredRestaurantSubscriptions = restaurantSubscriptions;
 
   // Create new plan
   const handleCreatePlan = async () => {
@@ -213,7 +249,7 @@ export default function AdminSubscriptionsPage() {
           otherServices: false,
         });
         setCurrentFeature("");
-        await loadSubscriptionPlans();
+        await loadSubscriptionPlans(1, 10);
       }
     } catch (error: any) {
       console.error("Failed to create plan:", error);
@@ -285,11 +321,11 @@ export default function AdminSubscriptionsPage() {
   );
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-2 space-y-2">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-[15px] font-medium text-gray-900">
             Subscription Management
           </h1>
         </div>
@@ -297,8 +333,8 @@ export default function AdminSubscriptionsPage() {
           {activeTab === "plans" && (
             <Dialog open={createPlanOpen} onOpenChange={setCreatePlanOpen}>
               <DialogTrigger asChild>
-                <Button variant="green">
-                  <Plus className="h-4 w-4" />
+                <Button variant="green" className="text-xs">
+                  <Plus className="h-2 w-2" />
                   Create Plan
                 </Button>
               </DialogTrigger>
@@ -356,9 +392,7 @@ export default function AdminSubscriptionsPage() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="duration">
-                        Duration *
-                      </Label>
+                      <Label htmlFor="duration">Duration *</Label>
                       <select
                         id="duration"
                         value={newPlan.duration}
@@ -399,7 +433,10 @@ export default function AdminSubscriptionsPage() {
                         </div>
                         {newPlan.voucherAccess && (
                           <div className="ml-6">
-                            <Label htmlFor="voucherPaymentDays" className="text-xs text-gray-600">
+                            <Label
+                              htmlFor="voucherPaymentDays"
+                              className="text-xs text-gray-600"
+                            >
                               Voucher Payment Days *
                             </Label>
                             <select
@@ -408,7 +445,8 @@ export default function AdminSubscriptionsPage() {
                               onChange={(e) =>
                                 setNewPlan((prev) => ({
                                   ...prev,
-                                  voucherPaymentDays: parseInt(e.target.value) || 0,
+                                  voucherPaymentDays:
+                                    parseInt(e.target.value) || 0,
                                 }))
                               }
                               className="w-full h-8 px-2 border border-gray-300 rounded text-xs focus:border-green-500 focus:ring-1 focus:ring-green-500"
@@ -420,7 +458,6 @@ export default function AdminSubscriptionsPage() {
                             </select>
                           </div>
                         )}
-
                       </div>
                       <div className="flex items-center space-x-2">
                         <input
@@ -531,12 +568,12 @@ export default function AdminSubscriptionsPage() {
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === "subscriptions"
                 ? "border-green-500 text-green-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                : "border-transparent text-gray-700 hover:text-gray-700 hover:border-gray-300"
             }`}
           >
             Restaurant Subscriptions
             <span className="ml-2 bg-gray-100 text-gray-900 py-0.5 px-2 rounded-full text-xs">
-              {restaurantSubscriptions.length}
+              {subscriptionPagination.total}
             </span>
           </button>
           <button
@@ -544,12 +581,12 @@ export default function AdminSubscriptionsPage() {
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === "plans"
                 ? "border-green-500 text-green-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                : "border-transparent text-gray-700 hover:text-gray-700 hover:border-gray-300"
             }`}
           >
             Subscription Plans
             <span className="ml-2 bg-gray-100 text-gray-900 py-0.5 px-2 rounded-full text-xs">
-              {subscriptionPlans.length}
+              {planPagination.total}
             </span>
           </button>
         </nav>
@@ -560,8 +597,8 @@ export default function AdminSubscriptionsPage() {
         <DataTable
           columns={restaurantSubscriptionsColumns}
           data={filteredRestaurantSubscriptions}
-          title="Restaurant Subscriptions"
-          description={""}
+          title=" "
+          description={``}
           showExport={true}
           onExport={handleExport}
           showAddButton={false}
@@ -570,13 +607,16 @@ export default function AdminSubscriptionsPage() {
           showColumnVisibility={true}
           showPagination={true}
           showRowSelection={true}
+          isLoading={paginationLoading}
+          pagination={subscriptionPagination}
+          onPaginationChange={handleSubscriptionPaginationChange}
         />
       ) : (
         <DataTable
           columns={subscriptionPlansColumns}
           data={filteredSubscriptionPlans}
-          title="Subscription Plans"
-          description={""}
+          title=" "
+          description={``}
           showExport={true}
           onExport={handleExport}
           showAddButton={false}
@@ -585,6 +625,9 @@ export default function AdminSubscriptionsPage() {
           showColumnVisibility={true}
           showPagination={true}
           showRowSelection={true}
+          isLoading={paginationLoading}
+          pagination={planPagination}
+          onPaginationChange={handlePlanPaginationChange}
         />
       )}
     </div>

@@ -5,6 +5,7 @@ export interface Invitation {
   email: string;
   role: 'ADMIN' | 'AGGREGATOR' | 'LOGISTICS';
   status: 'PENDING' | 'ACCEPTED' | 'EXPIRED';
+  isUsed: boolean;
   createdAt: string;
   updatedAt: string;
   expiresAt: string;

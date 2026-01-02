@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import createAxiosClient from "../hooks/axiosClient";
 import { tableTronicService } from "./tableTronicService";
 
@@ -13,16 +14,13 @@ export interface UpdateCategoryData {
 }
 
 export const categoryService = {
-  // ✅ Create a new category (Admin only) - Creates in both Table Tronic and Food Bundles
   createCategory: async (categoryData: CreateCategoryData) => {
     try {
-      // Step 1: Create category in Table Tronic first
       const tableTronicCategory = await tableTronicService.createCategory({
         name: categoryData.name,
         description: categoryData.description,
       });
 
-      // Step 2: Create category in Food Bundles with Table Tronic ID mapping
       const axiosClient = createAxiosClient();
       const foodBundlesData = {
         ...categoryData,
@@ -33,7 +31,6 @@ export const categoryService = {
       return response.data;
     } catch (error: any) {
       console.error('Category creation error:', error);
-      // If Table Tronic fails, still try to create in Food Bundles without mapping
       if (error.message?.includes('Table Tronic')) {
         console.warn('Table Tronic creation failed, creating in Food Bundles only');
         const axiosClient = createAxiosClient();
@@ -44,7 +41,6 @@ export const categoryService = {
     }
   },
 
-  // ✅ Get all categories (with filters/pagination — Admin, Aggregator, Logistics)
   getAllCategories: async (params?: {
     page?: number;
     limit?: number;
@@ -56,21 +52,18 @@ export const categoryService = {
     return response.data;
   },
 
-  // ✅ Get only active categories (for dropdowns, etc.)
   getActiveCategories: async () => {
     const axiosClient = createAxiosClient();
       const response = await axiosClient.get("/category/active");
       return response.data;
   },
 
-  // ✅ Get a single category by ID
   getCategoryById: async (categoryId: string) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.get(`/category/${categoryId}`);
     return response.data;
   },
 
-  // ✅ Update a category (Admin only)
   updateCategory: async (
     categoryId: string,
     categoryData: UpdateCategoryData

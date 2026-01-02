@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,13 +12,14 @@ import {
   TrendingDown,
   Minus
 } from "lucide-react";
+import { DashboardStats } from "@/app/services/statisticsService";
 
 interface QuickStatsProps {
   loading?: boolean;
-  metrics?: any;
+  stats?: DashboardStats | null;
 }
 
-export function QuickStats({ loading = false, metrics }: QuickStatsProps) {
+export function QuickStats({ loading = false, stats }: QuickStatsProps) {
   if (loading) {
     return (
       <Card className="col-span-3">
@@ -44,58 +44,57 @@ export function QuickStats({ loading = false, metrics }: QuickStatsProps) {
   const quickStats = [
     {
       label: "Total Users",
-      value: metrics?.totalUsers || 0,
+      value: stats?.quickStats?.totalUsers?.value || 0,
       icon: Users,
       color: "text-blue-600",
       bgColor: "bg-blue-50",
-      change: "+12.5%",
-      trend: "up" as const
+      change: `${stats?.quickStats?.totalUsers?.change?.toFixed(1) || 0}%`,
+      trend: (stats?.quickStats?.totalUsers?.change || 0) >= 0 ? "up" as const : "down" as const
     },
     {
       label: "Total Orders",
-      value: metrics?.totalOrders || 0,
+      value: stats?.quickStats?.totalOrders?.value || 0,
       icon: ShoppingCart,
       color: "text-green-600",
       bgColor: "bg-green-50",
-      change: "+8.2%",
-      trend: "up" as const
+      change: `${stats?.quickStats?.totalOrders?.change?.toFixed(1) || 0}%`,
+      trend: (stats?.quickStats?.totalOrders?.change || 0) >= 0 ? "up" as const : "down" as const
     },
     {
       label: "Total Revenue",
-      value: `${(metrics?.totalRevenue || 0).toLocaleString()} RWF`,
+      value: `${(stats?.quickStats?.totalRevenue?.value || 0).toLocaleString()} RWF`,
       icon: DollarSign,
       color: "text-emerald-600",
       bgColor: "bg-emerald-50",
-      change: "+15.3%",
-      trend: "up" as const
+      change: `${stats?.quickStats?.totalRevenue?.change?.toFixed(1) || 0}%`,
+      trend: (stats?.quickStats?.totalRevenue?.change || 0) >= 0 ? "up" as const : "down" as const
     },
     {
       label: "Active Subscriptions",
-      value: metrics?.activeSubscriptions || 0,
+      value: stats?.quickStats?.activeSubscriptions?.value || 0,
       icon: CreditCard,
       color: "text-purple-600",
       bgColor: "bg-purple-50",
-      change: "+5.7%",
-      trend: "up" as const
+      change: `${stats?.quickStats?.activeSubscriptions?.change?.toFixed(1) || 0}%`,
+      trend: (stats?.quickStats?.activeSubscriptions?.change || 0) >= 0 ? "up" as const : "down" as const
     },
     {
       label: "Used Vouchers",
-      value: metrics?.usedVouchers || 0,
+      value: stats?.quickStats?.usedVouchers?.value || 0,
       icon: Package,
       color: "text-orange-600",
       bgColor: "bg-orange-50",
-      change: "-2.1%",
-      trend: "down" as const
+      change: `${stats?.quickStats?.usedVouchers?.change?.toFixed(1) || 0}%`,
+      trend: (stats?.quickStats?.usedVouchers?.change || 0) >= 0 ? "up" as const : "down" as const
     },
     {
       label: "Completion Rate",
-      value: metrics?.totalOrders > 0 ? 
-        `${((metrics?.completedOrders / metrics?.totalOrders) * 100).toFixed(1)}%` : "0%",
+      value: `${stats?.quickStats?.completionRate?.value || 0}%`,
       icon: TrendingUp,
       color: "text-indigo-600",
       bgColor: "bg-indigo-50",
-      change: "+3.4%",
-      trend: "up" as const
+      change: `${stats?.quickStats?.completionRate?.change?.toFixed(1) || 0}%`,
+      trend: (stats?.quickStats?.completionRate?.change || 0) >= 0 ? "up" as const : "down" as const
     }
   ];
 
@@ -124,8 +123,8 @@ export function QuickStats({ loading = false, metrics }: QuickStatsProps) {
   return (
     <Card className="col-span-3">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold">Quick Stats</CardTitle>
-        <p className="text-sm text-gray-600">Key metrics with percentage change from last period</p>
+        <CardTitle className="text-ms font-semibold">Quick Stats</CardTitle>
+        <p className="text-xs text-gray-600">Key metrics with percentage change from last period</p>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -148,11 +147,11 @@ export function QuickStats({ loading = false, metrics }: QuickStatsProps) {
                       {getTrendIcon(stat.trend)}
                       {stat.change}
                     </div>
-                  </Badge>
+                  </Badge> 
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs text-gray-600 font-medium">{stat.label}</p>
-                  <p className={`text-lg font-bold ${stat.color}`}>
+                  <p className={`text-sm font-bold ${stat.color}`}>
                     {typeof stat.value === 'number' ? stat.value.toLocaleString() : stat.value}
                   </p>
                 </div>

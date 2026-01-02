@@ -1,7 +1,7 @@
 import createAxiosClient from "../hooks/axiosClient";
 
 export interface UnitFormData {
-  tableTronicId: string;
+  tableTronicId: number;
   name: string;
   description: string;
   isActive: boolean;
@@ -14,9 +14,9 @@ export const unitService = {
     return response.data;
   },
 
-  getAllUnits: async () => {
+  getAllUnits: async (params?: { page?: number; limit?: number }) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.get("/unit");
+    const response = await axiosClient.get("/unit", { params });
     return response.data;
   },
 

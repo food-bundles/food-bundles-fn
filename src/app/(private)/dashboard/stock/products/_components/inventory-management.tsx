@@ -203,7 +203,7 @@ export function InventoryManagement({
       setCategoryValue,
       categoryOptions
     ),
-    createCommonFilters.dateRange(dateRange, setDateRange, "Expiry Date Range"),
+    createCommonFilters.dateRange(dateRange, setDateRange, "Expiry Date"),
   ];
 
   const handleExport = () => {
@@ -220,8 +220,8 @@ export function InventoryManagement({
       <DataTable
         columns={columns}
         data={filteredData}
-        title="Inventory Management"
-        description={pagination ? `Total: ${pagination.total} products` : undefined}
+        title="Stock Management"
+        description={""}
         showExport={true}
         onExport={handleExport}
         showAddButton={true}

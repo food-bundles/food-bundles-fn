@@ -211,7 +211,6 @@ export const createSubscriptionPlansColumns = (
           className="h-auto p-0 font-medium"
         >
           Plan Name
-          <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
@@ -245,7 +244,6 @@ export const createSubscriptionPlansColumns = (
           className="h-auto p-0 font-medium"
         >
           Price
-          <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
@@ -288,7 +286,6 @@ export const createSubscriptionPlansColumns = (
           className="h-auto p-0 font-medium"
         >
           Created
-          <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
@@ -344,7 +341,7 @@ export const createRestaurantSubscriptionsColumns = (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-medium"
+          className="h-auto p-0"
         >
           Restaurant
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -353,7 +350,7 @@ export const createRestaurantSubscriptionsColumns = (
     },
     cell: ({ row }) => (
       <div>
-        <div className="font-medium">{row.original.restaurant.name}</div>
+        <div className="">{row.original.restaurant.name}</div>
         <div className="text-xs text-gray-500">
           {row.original.restaurant.email}
         </div>
@@ -362,23 +359,23 @@ export const createRestaurantSubscriptionsColumns = (
   },
   {
     accessorKey: "plan.name",
-    header: "Plan",
+    header: "Plan Type",
     cell: ({ row }) => (
-      <div className="font-medium">{row.original.plan.name}</div>
+      <div className="">{row.original.plan.name}</div>
     ),
   },
   {
     accessorKey: "plan.price",
     header: "Price",
     cell: ({ row }) => (
-      <div className="font-medium text-green-600">
+      <div className=" text-green-600">
         {formatCurrency(row.original.plan.price)}
       </div>
     ),
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: "Sbs Status",
     cell: ({ row }) => {
       const status = row.getValue("status") as RestaurantSubscription["status"];
       return (
@@ -426,21 +423,6 @@ export const createRestaurantSubscriptionsColumns = (
         </div>
       );
     },
-  },
-  {
-    accessorKey: "autoRenew",
-    header: "Auto Renew",
-    cell: ({ row }) => (
-      <Badge
-        className={
-          row.getValue("autoRenew")
-            ? "bg-green-100 text-green-800"
-            : "bg-gray-100 text-gray-800"
-        }
-      >
-        {row.getValue("autoRenew") ? "Yes" : "No"}
-      </Badge>
-    ),
   },
   {
     id: "actions",

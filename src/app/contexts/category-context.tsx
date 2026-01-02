@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import React, {
@@ -232,7 +233,6 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
     [refreshCategories, refreshActiveCategories]
   );
 
-  // Utility function to get category name by ID
   const getCategoryNameById = useCallback(
     (categoryId: string): string => {
       const category = [...categories, ...activeCategories].find(
@@ -243,21 +243,28 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
     [categories, activeCategories]
   );
 
-  // Load categories on mount
   useEffect(() => {
+    const isAdminPage = typeof window !== 'undefined' && 
+      (window.location.pathname.startsWith('/dashboard') || 
+       window.location.pathname.startsWith('/admin'));
+    
+    if (!isAdminPage) {
+      setIsLoading(false);
+      return;
+    }
+    
     const initializeCategories = async () => {
       try {
-        // First load active categories (most commonly used)
         await refreshActiveCategories();
-        // Then load all categories
         await refreshCategories();
       } catch (error) {
         console.error("Error initializing categories:", error);
+        setIsLoading(false);
       }
     };
 
     initializeCategories();
-  }, [refreshCategories, refreshActiveCategories]);
+  }, []);
 
   const value: CategoryContextType = {
     categories,
@@ -289,13 +296,11 @@ export function useCategory() {
   return context;
 }
 
-// Hook to get only active categories (commonly used in dropdowns)
 export function useActiveCategories() {
   const { activeCategories, isLoading, error } = useCategory();
   return { activeCategories, isLoading, error };
 }
 
-// Hook to find a specific category by ID
 export function useCategoryById(categoryId: string) {
   const { categories, activeCategories } = useCategory();
   const category = [...categories, ...activeCategories].find(

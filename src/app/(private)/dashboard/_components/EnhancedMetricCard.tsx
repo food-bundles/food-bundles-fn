@@ -4,6 +4,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SubMetric {
   label: string;
@@ -70,12 +76,12 @@ export function EnhancedMetricCard({
         <div className="flex items-center justify-between">
           <div className="space-y-2">
             <p className="text-sm font-medium text-gray-600">{title}</p>
-            <div className="flex items-center gap-2">
-              <p className="text-2xl font-bold text-gray-900">
+            <div className="">
+              <p className="text-sm font-bold text-gray-900">
                 {value.toLocaleString()}{suffix}
               </p>
               {previousValue !== undefined && (
-                <div className={`flex items-center text-xs ${
+                <div className={`flex  items-center text-xs ${
                   isPositive ? "text-green-600" : "text-red-600"
                 }`}>
                   {isPositive ? (
@@ -96,16 +102,39 @@ export function EnhancedMetricCard({
         {/* Sub-metrics */}
         {subMetrics.length > 0 && (
           <div className="mt-4 pt-4 border-t border-gray-100">
-            <div className="grid grid-cols-2 gap-2">
-              {subMetrics.map((subMetric, index) => (
-                <div key={index} className="flex justify-between items-center">
-                  <span className="text-xs text-gray-500">{subMetric.label}</span>
-                  <span className={`text-xs font-semibold ${subMetric.color}`}>
-                    {subMetric.value.toLocaleString()}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <TooltipProvider>
+              <div className="grid grid-cols-2 gap-2">
+                {subMetrics.map((subMetric, index) => {
+                  
+
+                  return (
+                    <div key={index} className="flex justify-between items-center">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-xs text-gray-500 cursor-help truncate">
+                            <span className="hidden lg:inline">{subMetric.label}</span>
+                            <span className="lg:hidden">{subMetric.label}</span>
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{subMetric.label}: {subMetric.value.toLocaleString()}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className={`text-xs ml-1 font-semibold ${subMetric.color} cursor-help`}>
+                           {subMetric.value.toLocaleString()}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                         <p>{subMetric.label}:  {subMetric.value.toLocaleString()}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  );
+                })}
+              </div>
+            </TooltipProvider>
           </div>
         )}
       </CardContent>

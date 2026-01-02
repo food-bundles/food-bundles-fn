@@ -17,12 +17,26 @@ interface InvitationColumnsProps {
   onCancel: (id: string) => void;
 }
 
+const formatDate = (date: string | Date) =>
+  new Date(date).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+const formatTime = (date: string | Date) =>
+  new Date(date).toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+
 export const createInvitationColumns = ({ onResend, onCancel }: InvitationColumnsProps): ColumnDef<Invitation>[] => [
   {
     accessorKey: "email",
     header: "Email",
     cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("email")}</div>
+      <div className="text-xs">{row.getValue("email")}</div>
     ),
   },
   {
@@ -31,9 +45,9 @@ export const createInvitationColumns = ({ onResend, onCancel }: InvitationColumn
     cell: ({ row }) => {
       const role = row.getValue("role") as string;
       return (
-        <Badge variant={role === "ADMIN" ? "destructive" : role === "AGGREGATOR" ? "default" : "secondary"}>
-          {role}
-        </Badge>
+        <div>
+          <p className="text-xs lowercase"> {role}</p>
+        </div>
       );
     },
   },
@@ -41,9 +55,22 @@ export const createInvitationColumns = ({ onResend, onCancel }: InvitationColumn
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const status = row.getValue("status") as string;
+      const invitation = row.original;
+      const isUsed = invitation.isUsed;
+      const isExpired = new Date(invitation.expiresAt) < new Date();
+      
+      let status = "PENDING";
+      let variant: "outline" | "default" | "destructive" | "secondary" = "outline";
+      
+      if (isUsed) {
+        status = "USED";
+        variant = "default";
+      } else if (isExpired) {
+        status = "Not Used";
+      }
+      
       return (
-        <Badge variant={status === "PENDING" ? "outline" : status === "ACCEPTED" ? "default" : "destructive"}>
+        <Badge variant={variant} className="text-xs font-normal">
           {status}
         </Badge>
       );
@@ -53,16 +80,24 @@ export const createInvitationColumns = ({ onResend, onCancel }: InvitationColumn
     accessorKey: "createdAt",
     header: "Created",
     cell: ({ row }) => {
-      const date = new Date(row.getValue("createdAt"));
-      return <div className="text-sm">{date.toLocaleDateString()}</div>;
+      const date = row.original.createdAt;
+      return <div className="flex gap-1 justify-center items-center text-sm">
+        {formatDate(date)}
+        <p className="text-xs text-gray-500">{formatTime(date)}</p>
+      </div>;
     },
   },
   {
     accessorKey: "expiresAt",
     header: "Expires",
     cell: ({ row }) => {
-      const date = new Date(row.getValue("expiresAt"));
-      return <div className="text-sm">{date.toLocaleDateString()}</div>;
+      const date = row.original.expiresAt;
+      return (
+        <div className="flex gap-1 justify-center items-center text-sm">
+          {formatDate(date)}
+          <p className="text-xs text-gray-500">{formatTime(date)}</p>
+        </div>
+      );
     },
   },
   {
@@ -70,7 +105,7 @@ export const createInvitationColumns = ({ onResend, onCancel }: InvitationColumn
     header: "Actions",
     cell: ({ row }) => {
       const invitation = row.original;
-      const isPending = invitation.status === "PENDING";
+      const isPending = !invitation.isUsed && new Date(invitation.expiresAt) > new Date();
 
       return (
         <DropdownMenu>
