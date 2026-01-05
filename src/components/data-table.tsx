@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import * as React from "react";
@@ -223,16 +222,14 @@ export function DataTable<TData, TValue>({
   };
 
   return (
-    <div className="space-y-2 h-full overflow-auto">
+    <div className="space-y-2 h-full overflow-auto ">
       {(title || showAddButton || showExport) && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           {title && (
             <div className="flex-1 min-w-0">
-              <h1 className="text-sm text-gray-800 truncate">
-                {title}
-              </h1>
+              <h1 className="text-sm font-semibold text-gray-800 ">{title}</h1>
               {description && (
-                <p className="text-gray-600 text-xs sm:text-sm mt-1 line-clamp-2">
+                <p className="text-gray-600 text-xs mt-1 line-clamp-2">
                   {description}
                 </p>
               )}
@@ -242,21 +239,20 @@ export function DataTable<TData, TValue>({
             {showAddButton && addButtonLabel && onAddButton && (
               <button
                 onClick={onAddButton}
-                className="bg-green-700 hover:bg-green-600 text-xs sm:text-sm px-2 sm:px-3 py-1.5 sm:py-2 text-white rounded cursor-pointer flex items-center gap-1 sm:gap-2 whitespace-nowrap"
+                className="bg-green-700 hover:bg-green-600 text-xs px-2 sm:px-3 py-2 text-white rounded cursor-pointer flex items-center gap-1 sm:gap-2 whitespace-nowrap"
               >
                 <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">{addButtonLabel}</span>
-                <span className="sm:hidden">Add</span>
+                <span className=" ">{addButtonLabel}</span>
               </button>
             )}
             {/* Export button */}
             {showExport && (
               <button
                 onClick={onExport}
-                className="flex items-center bg-green-700 hover:bg-green-600 text-xs sm:text-sm cursor-pointer px-2 sm:px-3 py-1.5 sm:py-2 text-white rounded gap-1 sm:gap-2 whitespace-nowrap"
+                className="flex items-center bg-green-700 hover:bg-green-600 text-xs cursor-pointer px-2 sm:px-3 py-2  text-white rounded gap-1 sm:gap-2 whitespace-nowrap"
               >
-                <Download className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">Export</span>
+                <Download className="h-3 w-3" />
+                <span className="">Export</span>
               </button>
             )}
           </div>
@@ -273,11 +269,10 @@ export function DataTable<TData, TValue>({
           {showColumnVisibility && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center justify-between bg-transparent rounded border-2 border-green-500 px-2 sm:px-3 py-1 text-xs sm:text-sm text-gray-900 hover:bg-green-100 whitespace-nowrap min-w-0">
-                  <span className="hidden sm:inline">Columns</span>
-                  <span className="sm:hidden">Cols</span>
+                <Button className="flex items-center justify-between bg-white rounded border-2 border-green-500 px-2 sm:px-3 py-1 text-xs sm:text-sm text-gray-900 hover:bg-gray-200 whitespace-nowrap min-w-0">
+                  <span className="">Columns</span>
                   <ChevronDown className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4" />
-                </button>
+                </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {table
@@ -302,7 +297,7 @@ export function DataTable<TData, TValue>({
       )}
 
       {/* Table */}
-      <div className="rounded-md border">
+      <div className="rounded-md border bg-white">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -472,7 +467,9 @@ export function DataTable<TData, TValue>({
                   ))}
                 </SelectContent>
               </Select>
-              <span className="text-[13px] text-gray-900">rows per page</span>
+              <span className="hidden sm:inline text-xs text-gray-900">
+                rows per page
+              </span>
             </div>
           )}
         </div>

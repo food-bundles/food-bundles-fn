@@ -29,7 +29,7 @@ function Calendar({
     <DayPicker
       showOutsideDays={showOutsideDays}
       className={cn(
-        "bg-background group/calendar p-3 [--cell-size:--spacing(8)] [[data-slot=card-content]_&]:bg-transparent [[data-slot=popover-content]_&]:bg-transparent",
+        "bg-background group/calendar p-2 [--cell-size:--spacing(6)]",
         String.raw`rtl:**:[.rdp-button\_next>svg]:rotate-180`,
         String.raw`rtl:**:[.rdp-button\_previous>svg]:rotate-180`,
         className
@@ -77,20 +77,21 @@ function Calendar({
           "absolute bg-popover inset-0 opacity-0",
           defaultClassNames.dropdown
         ),
-        caption_label: cn(
-          "select-none font-medium",
-          captionLayout === "label"
-            ? "text-sm"
-            : "rounded-md pl-2 pr-1 flex items-center gap-1 text-sm h-8 [&>svg]:text-muted-foreground [&>svg]:size-3.5",
-          defaultClassNames.caption_label
-        ),
+       caption_label: cn(
+  "select-none font-medium text-xs",
+  captionLayout === "label"
+    ? "text-xs"
+    : "rounded-md pl-1 pr-1 flex items-center gap-1 text-xs h-6 [&>svg]:size-3",
+  defaultClassNames.caption_label
+),
+
         table: "w-full border-collapse",
         weekdays: cn("flex", defaultClassNames.weekdays),
         weekday: cn(
-          "text-muted-foreground rounded-md flex-1 font-normal text-[0.8rem] select-none",
+          "text-muted-foreground rounded-md flex-1 font-normal text-[0.7rem] select-none",
           defaultClassNames.weekday
         ),
-        week: cn("flex w-full mt-2", defaultClassNames.week),
+        week: cn("flex w-full mt-1", defaultClassNames.week),
         week_number_header: cn(
           "select-none w-(--cell-size)",
           defaultClassNames.week_number_header
@@ -133,13 +134,13 @@ function Calendar({
               className={cn(className)}
               {...props}
             />
-          )
+          );
         },
         Chevron: ({ className, orientation, ...props }) => {
           if (orientation === "left") {
             return (
               <ChevronLeftIcon className={cn("size-4", className)} {...props} />
-            )
+            );
           }
 
           if (orientation === "right") {
@@ -148,12 +149,12 @@ function Calendar({
                 className={cn("size-4", className)}
                 {...props}
               />
-            )
+            );
           }
 
           return (
             <ChevronDownIcon className={cn("size-4", className)} {...props} />
-          )
+          );
         },
         DayButton: CalendarDayButton,
         WeekNumber: ({ children, ...props }) => {
@@ -163,13 +164,13 @@ function Calendar({
                 {children}
               </div>
             </td>
-          )
+          );
         },
         ...components,
       }}
       {...props}
     />
-  )
+  );
 }
 
 function CalendarDayButton({

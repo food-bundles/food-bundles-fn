@@ -7,9 +7,9 @@ import { DataTable } from "@/components/data-table";
 import { getInventoryColumns } from "./inventory-columns";
 import { createCommonFilters, TableFilters } from "@/components/filters";
 import {
-  CreateProductModal,
+  CreateProductDrawer,
   type ProductFormData,
-} from "./create-product-modal";
+} from "./CreateProductDrawer";
 import { ProductManagementModal } from "./product-management-modal";
 import { ProductStatusModal } from "./product-status-modal";
 import type { Product } from "@/app/contexts/product-context";
@@ -203,7 +203,7 @@ export function InventoryManagement({
       setCategoryValue,
       categoryOptions
     ),
-    createCommonFilters.dateRange(dateRange, setDateRange, "Expiry Date Range"),
+    createCommonFilters.dateRange(dateRange, setDateRange, "Expiry Date"),
   ];
 
   const handleExport = () => {
@@ -220,8 +220,8 @@ export function InventoryManagement({
       <DataTable
         columns={columns}
         data={filteredData}
-        title="Inventory Management"
-        description={pagination ? `Total: ${pagination.total} products` : undefined}
+        title="Stock Management"
+        description={""}
         showExport={true}
         onExport={handleExport}
         showAddButton={true}
@@ -244,9 +244,9 @@ export function InventoryManagement({
       />
 
       {/* Modals */}
-      <CreateProductModal
-        open={isCreateOpen}
-        onOpenChange={setIsCreateOpen}
+      <CreateProductDrawer
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
         onSubmit={handleProductCreate}
       />
 

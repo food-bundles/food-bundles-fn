@@ -1,4 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import createAxiosClient from "../hooks/axiosClient";
+import { tableTronicService } from "./tableTronicService";
 
 export interface CreateCategoryData {
   name: string;
@@ -12,14 +14,33 @@ export interface UpdateCategoryData {
 }
 
 export const categoryService = {
-  // ✅ Create a new category (Admin only)
   createCategory: async (categoryData: CreateCategoryData) => {
-    const axiosClient = createAxiosClient();
-    const response = await axiosClient.post("/category", categoryData);
-    return response.data;
+    try {
+      const tableTronicCategory = await tableTronicService.createCategory({
+        name: categoryData.name,
+        description: categoryData.description,
+      });
+
+      const axiosClient = createAxiosClient();
+      const foodBundlesData = {
+        ...categoryData,
+        tableTronicId: tableTronicCategory.id,
+      };
+      
+      const response = await axiosClient.post("/category", foodBundlesData);
+      return response.data;
+    } catch (error: any) {
+      console.error('Category creation error:', error);
+      if (error.message?.includes('Table Tronic')) {
+        console.warn('Table Tronic creation failed, creating in Food Bundles only');
+        const axiosClient = createAxiosClient();
+        const response = await axiosClient.post("/category", categoryData);
+        return response.data;
+      }
+      throw error;
+    }
   },
 
-  // ✅ Get all categories (with filters/pagination — Admin, Aggregator, Logistics)
   getAllCategories: async (params?: {
     page?: number;
     limit?: number;
@@ -27,25 +48,22 @@ export const categoryService = {
     isActive?: boolean;
   }) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.get("/category/active", { params });
+    const response = await axiosClient.get("/category", { params });
     return response.data;
   },
 
-  // ✅ Get only active categories (for dropdowns, etc.)
   getActiveCategories: async () => {
     const axiosClient = createAxiosClient();
       const response = await axiosClient.get("/category/active");
       return response.data;
   },
 
-  // ✅ Get a single category by ID
   getCategoryById: async (categoryId: string) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.get(`/category/${categoryId}`);
     return response.data;
   },
 
-  // ✅ Update a category (Admin only)
   updateCategory: async (
     categoryId: string,
     categoryData: UpdateCategoryData

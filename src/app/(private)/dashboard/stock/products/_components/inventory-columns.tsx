@@ -11,13 +11,24 @@ export const getInventoryColumns = (
   onStatusClick?: (product: Product) => void
 ): ColumnDef<Product>[] => [
   {
+    id: "index",
+    header: "#",
+    cell: ({ row }) => {
+      return (
+        <div className="text-xs text-gray-900">
+          {row.index + 1}
+        </div>
+      );
+    },
+  },
+  {
     accessorKey: "productName",
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-medium"
+          className="h-auto p-0 text-xs"
         >
           Product Name
         </Button>
@@ -39,10 +50,10 @@ export const getInventoryColumns = (
             />
           </div>
           <div className="flex flex-col">
-            <span className="font-medium text-gray-900">
+            <span className="text-xs text-gray-900">
               {product.productName}
             </span>
-            <span className=" text-[12px] text-gray-600">
+            <span className="text-xs text-gray-600">
               SKU: {product.sku}
             </span>
           </div>
@@ -57,7 +68,7 @@ export const getInventoryColumns = (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-medium"
+          className="h-auto p-0 text-xs"
         >
           Category
         </Button>
@@ -66,7 +77,7 @@ export const getInventoryColumns = (
     cell: ({ row }) => {
       const product = row.original;
       const categoryName = product.category?.name || "Unknown";
-      return <div>{categoryName}</div>;
+      return <div className="text-xs text-gray-900">{categoryName}</div>;
     },
   },
   {
@@ -76,7 +87,7 @@ export const getInventoryColumns = (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-medium"
+          className="h-auto p-0 text-xs"
         >
           Stock
         </Button>
@@ -101,10 +112,10 @@ export const getInventoryColumns = (
 
       return (
         <div className="flex flex-col">
-          <span className="font-medium">
+          <span className="text-xs text-gray-900">
             {quantity} {unit}
           </span>
-          <span className={`text-[12px] font-medium ${statusClasses}`}>
+          <span className={`text-xs ${statusClasses}`}>
             {status}
           </span>
         </div>
@@ -119,7 +130,7 @@ export const getInventoryColumns = (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-medium"
+          className="h-auto p-0 text-xs"
         >
           purchase Price
         </Button>
@@ -130,10 +141,10 @@ export const getInventoryColumns = (
       const unit = row.original.unit;
       return (
         <div className="flex flex-col">
-          <span className="font-medium">
+          <span className="text-xs text-gray-900">
             {purchasePrice.toLocaleString()} RWF
           </span>
-          <span className="text-sm  text-[12px] text-gray-600">per {unit}</span>
+          <span className="text-xs text-gray-600">per {unit}</span>
         </div>
       );
     },
@@ -145,7 +156,7 @@ export const getInventoryColumns = (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-medium"
+          className="h-auto p-0 text-xs"
         >
           Price
         </Button>
@@ -156,8 +167,8 @@ export const getInventoryColumns = (
       const unit = row.original.unit;
       return (
         <div className="flex flex-col">
-          <span className="font-medium">{price.toLocaleString()} RWF</span>
-          <span className="  text-[12px] text-gray-600">per {unit}</span>
+          <span className="text-xs text-gray-900">{price.toLocaleString()} RWF</span>
+          <span className="text-xs text-gray-600">per {unit}</span>
         </div>
       );
     },
@@ -169,7 +180,7 @@ export const getInventoryColumns = (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 font-medium"
+          className="h-auto p-0 text-xs"
         >
           Expiry Date 
         </Button>
@@ -178,7 +189,7 @@ export const getInventoryColumns = (
     cell: ({ row }) => {
       const expiryDate = row.getValue("expiryDate") as Date | null;
       if (!expiryDate)
-        return <span className=" text-[12px] text-gray-600">No expiry</span>;
+        return <span className="text-xs text-gray-600">No expiry</span>;
 
       const isExpiringSoon =
         new Date(expiryDate).getTime() - new Date().getTime() <
@@ -187,7 +198,7 @@ export const getInventoryColumns = (
 
       return (
         <span
-          className={`${
+          className={`text-xs ${
             isExpired
               ? "text-red-600"
               : isExpiringSoon
@@ -233,7 +244,7 @@ export const getInventoryColumns = (
              variant="ghost"
              size="sm"
              onClick={() => onManage(product)}
-             className="flex items-center gap-2"
+             className="flex items-center gap-2 text-xs"
            >
              view
            </Button>

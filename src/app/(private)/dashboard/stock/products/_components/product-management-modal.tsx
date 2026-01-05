@@ -190,7 +190,7 @@ export function ProductManagementModal({
     setImagesToKeep((prev) => prev.filter((img) => img !== imageUrl));
   };
 
-  const isDeleteConfirmValid = deleteConfirmText === product?.productName;
+  const isDeleteConfirmValid = deleteConfirmText.trim().toLowerCase() === product?.productName.trim().toLowerCase();
 
   if (!product) return null;
 
@@ -207,7 +207,7 @@ export function ProductManagementModal({
           </DialogTitle>
           <DialogDescription className="text-gray-600">
             {isDeleting
-              ? "Confirm deletion of this product"
+              ? "Confirm deletion of this product delete product "
               : "View and manage product details"}
           </DialogDescription>
         </DialogHeader>

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useRef } from "react";
@@ -297,7 +298,7 @@ export default function QuickTalkSection() {
     <div className="bg-transparent py-6 md:py-8 px-4">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-6">
-          <h2 className="text-xl md:text-2xl font-bold text-gray-800">
+          <h2 className="text-xl font-bold text-gray-800">
             Get Support
           </h2>
         </div>
