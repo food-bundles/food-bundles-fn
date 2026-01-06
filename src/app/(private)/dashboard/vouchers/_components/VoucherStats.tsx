@@ -51,9 +51,6 @@ export default function VoucherStats() {
       setLoading(false);
     }
   };
-
-  // if (loading) return <div className="p-6">Loading stats...</div>;
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       {/* Row 1: Individual Status Cards */}
@@ -75,19 +72,19 @@ export default function VoucherStats() {
                   <div className="flex items-center justify-center  gap-2">
                     <p className="text-xs font-medium ">
                       Act:{" "}
-                      <span className="text-green-500 text-sm font-bold">
+                      <span className="text-green-500 text-xs">
                         {stats.activeVouchers}
                       </span>
                     </p>
                     <p className="text-xs font-medium ">
                       Susp:{" "}
-                      <span className="text-yellow-600 text-sm font-bold">
+                      <span className=" text-xs ">
                         {stats.suspendedVouchers}
                       </span>
                     </p>
                     <p className=" text-xs font-medium ">
                       Exp:{" "}
-                      <span className="text-red-600 text-sm font-bold">
+                      <span className="text-red-600 text-xs ">
                         {stats.expiredVouchers}
                       </span>
                     </p>
@@ -104,15 +101,15 @@ export default function VoucherStats() {
         <CardContent className="p-4 relative">
           <TrendingUp className="h-8 w-8 text-blue-600 absolute -top-5 right-2" />
           <div className="text-center">
-            <p className="text-blue-600 text-xs font-bold">Used Vouchers</p>
+            <p className=" text-xs font-semibold">Used Vouchers</p>
             {loading ? (
               <Skeleton className="h-7 w-12 mx-auto" />
             ) : (
               <>
-                <p className="text-xl font-bold text-blue-900">
+                <p className="text-xl font-bold ">
                   {stats.usedVouchers.count}
                 </p>
-                <p className="text-xs text-blue-700">
+                <p className="text-xs ">
                   {stats.usedVouchers.totalAmount.toLocaleString()} RWF
                 </p>
               </>
@@ -124,10 +121,10 @@ export default function VoucherStats() {
       <Card className="h-34 border-gray-200 shadow-[4px_4px_8px_rgba(0,0,0,0.1)]">
         <CardContent className="relative ">
           <CreditCard className="h-8 w-8 text-green-600 absolute -top-5 right-2" />
-          <div className="flex">
+          <div className="flex gap-2">
             <div className="text-center">
 
-              <p className="text-red-500 text-xs font-bold">
+              <p className="text-xs font-semibold">
                 Matured Vouchers
               </p>
 
@@ -135,10 +132,10 @@ export default function VoucherStats() {
                 <Skeleton className="h-7 w-16 mx-auto mt-2" />
               ) : (
                 <>
-                  <p className="text-xl font-bold text-red-800">
+                  <p className="text-xl font-bold text-red-600">
                     {stats.maturedVouchers.count} 
                   </p>
-                  <p className="text-xs text-red-600">
+                  <p className="text-xs ">
                     {stats.maturedVouchers.totalAmount.toLocaleString()} RWF
                   </p>
                 </>
@@ -147,7 +144,7 @@ export default function VoucherStats() {
 
             {/* Settled Vouchers */}
             <div className="relative text-center ">
-              <p className="text-green-600 text-xs font-bold">
+              <p className=" text-xs font-semibold">
                 Settled Vouchers
               </p>
 
@@ -155,10 +152,10 @@ export default function VoucherStats() {
                 <Skeleton className="h-7 w-16 mx-auto mt-2" />
               ) : (
                 <>
-                  <p className="text-xl font-bold text-green-900">
+                  <p className="text-xl font-bold text-green-600">
                     {stats.settledVouchers.count}
                   </p>
-                  <p className="text-xs text-green-700">
+                  <p className="text-xs ">
                     {stats.settledVouchers.totalAmount.toLocaleString()} RWF
                   </p>
                 </>

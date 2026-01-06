@@ -303,7 +303,7 @@ export default function LoanApplicationsTable() {
               placeholder="Filter by restaurant name..."
               value={restaurantFilter}
               onChange={(e) => setRestaurantFilter(e.target.value)}
-              className="pl-10"
+              className="pl-10 bg-gray-50 border-gray-300 focus:border-green-500 focus:ring-green-500 text-sm"
             />
           </div>
           {restaurantFilter && (
@@ -316,11 +316,11 @@ export default function LoanApplicationsTable() {
             </Button>
           )}
         </div>
-        
+
         <DataTable
           columns={columns}
           data={filteredApplications}
-          title={`Loan Applications ${restaurantFilter ? `(Filtered: ${filteredApplications.length})` : `(${allLoanApplications.length})`}`}
+          title={``}
           showColumnVisibility={true}
           showPagination={true}
         />

@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer} from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Filter, RotateCcw, Users, TrendingUp, TrendingDown } from "lucide-react";
+import { Users, TrendingUp, TrendingDown } from "lucide-react";
 import { DashboardStats, statisticsService, StatsFilters } from "@/app/services/statisticsService";
 
 interface UsersChartProps {
@@ -18,7 +17,6 @@ export function UsersChart({ loading = false, data }: UsersChartProps) {
   const [localFilters, setLocalFilters] = useState<StatsFilters | null>(null);
   const [localData, setLocalData] = useState<DashboardStats['users'] | null>(null);
   const [localLoading, setLocalLoading] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 3 }, (_, i) => currentYear - i);
@@ -29,16 +27,6 @@ export function UsersChart({ loading = false, data }: UsersChartProps) {
     { value: 10, label: "Oct" }, { value: 11, label: "Nov" }, { value: 12, label: "Dec" }
   ];
 
-  const getFilterDisplay = () => {
-    if (!localFilters?.year && !localFilters?.month) return null;
-    const parts = [];
-    if (localFilters?.year) parts.push(localFilters.year.toString());
-    if (localFilters?.month) {
-      const monthName = months.find(m => m.value === localFilters.month)?.label;
-      parts.push(monthName);
-    }
-    return parts.length > 0 ? `(${parts.join(' ')})` : null;
-  };
 
   const fetchLocalData = async (filters: StatsFilters) => {
     setLocalLoading(true);
@@ -52,17 +40,6 @@ export function UsersChart({ loading = false, data }: UsersChartProps) {
     }
   };
 
-  const handleApplyFilters = () => {
-    if (localFilters) {
-      fetchLocalData(localFilters);
-    }
-  };
-
-  const handleResetFilters = () => {
-    setLocalFilters(null);
-    setLocalData(null);
-  };
-
   const activeData = localData || data;
   const isLoading = loading || localLoading;
 
@@ -70,10 +47,10 @@ export function UsersChart({ loading = false, data }: UsersChartProps) {
     return (
       <Card>
         <CardHeader>
-          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-4 w-48" />
         </CardHeader>
         <CardContent>
-          <Skeleton className="h-80 w-full" />
+          <Skeleton className="h-64 w-full" />
         </CardContent>
       </Card>
     );
@@ -99,9 +76,6 @@ export function UsersChart({ loading = false, data }: UsersChartProps) {
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-blue-600" />
               <CardTitle className="text-sm font-semibold">Users Growth</CardTitle>
-              {getFilterDisplay() && (
-                <span className="text-xs text-blue-600 font-medium">{getFilterDisplay()}</span>
-              )}
             </div>
             <div className="flex items-center gap-2 text-xs text-gray-600">
               <span>Total: {(activeData?.totalUsers || 0).toLocaleString()}</span>
@@ -111,64 +85,53 @@ export function UsersChart({ loading = false, data }: UsersChartProps) {
               </span>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowFilters(!showFilters)}
-            className="text-xs h-7 px-2"
-          >
-            <Filter className="h-3 w-3 mr-1" />
-            {showFilters ? 'Hide' : 'Filter'}
-          </Button>
-        </div>
-        
-        {showFilters && (
-          <div className="mt-3 pt-3 border-t">
-            <div className="grid grid-cols-4 gap-2">
-              <Select
-                value={localFilters?.year?.toString() || ''}
-                onValueChange={(value) => setLocalFilters(prev => ({ ...prev, year: parseInt(value) }))}
-              >
-                <SelectTrigger className="h-7 text-xs">
-                  <SelectValue placeholder="Year" />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map(year => (
-                    <SelectItem key={year} value={year.toString()} className="text-xs">{year}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Select
-                value={localFilters?.month?.toString() || ''}
-                onValueChange={(value) => setLocalFilters(prev => ({ ...prev, month: value === 'all' ? undefined : parseInt(value) }))}
-              >
-                <SelectTrigger className="h-7 text-xs">
-                  <SelectValue placeholder="Month" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all" className="text-xs">All</SelectItem>
-                  {months.map(month => (
-                    <SelectItem key={month.value} value={month.value.toString()} className="text-xs">{month.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <div className="flex gap-1">
-                <Button size="sm" onClick={handleApplyFilters} className="text-xs h-7 px-2">
-                  Apply
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleResetFilters} className="text-xs h-7 px-1">
-                  <RotateCcw className="h-3 w-3" />
-                </Button>
-              </div>
-            </div>
+          
+          <div className="flex items-center gap-2">
+            <Select
+              value={localFilters?.year?.toString() || currentYear.toString()}
+              onValueChange={(value) => {
+                const newFilters = { ...localFilters, year: parseInt(value) };
+                setLocalFilters(newFilters);
+                fetchLocalData(newFilters);
+              }}
+            >
+              <SelectTrigger className="h-7 text-xs w-20">
+                <SelectValue placeholder="Year" />
+              </SelectTrigger>
+              <SelectContent>
+                {years.map(year => (
+                  <SelectItem key={year} value={year.toString()} className="text-xs">{year}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Select
+              value={localFilters?.month?.toString() || 'all'}
+              onValueChange={(value) => {
+                const newFilters = { 
+                  ...localFilters, 
+                  month: value === 'all' ? undefined : parseInt(value) 
+                };
+                setLocalFilters(newFilters);
+                if (newFilters.year) fetchLocalData(newFilters);
+              }}
+            >
+              <SelectTrigger className="h-7 text-xs w-16">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="text-xs">All</SelectItem>
+                {months.map(month => (
+                  <SelectItem key={month.value} value={month.value.toString()} className="text-xs">{month.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        )}
+        </div>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <AreaChart data={chartData}>
+        <ResponsiveContainer width="100%" height={200}>
+          <AreaChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
             <defs>
               <linearGradient id="colorRestaurants" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
@@ -186,19 +149,28 @@ export function UsersChart({ loading = false, data }: UsersChartProps) {
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis 
               dataKey="period"
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 10 }}
               stroke="#666"
             />
             <YAxis 
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 10 }}
               stroke="#666"
             />
             <Tooltip 
               contentStyle={{
                 backgroundColor: 'white',
                 border: '1px solid #e5e7eb',
-                borderRadius: '8px',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                borderRadius: '6px',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                fontSize: '12px'
+              }}
+              labelStyle={{
+                fontSize: '12px',
+                marginBottom: '2px'
+              }}
+              itemStyle={{
+                fontSize: '12px',
+                padding: '1px 0'
               }}
               formatter={(value: number, name: string) => [
                 value,
@@ -207,39 +179,41 @@ export function UsersChart({ loading = false, data }: UsersChartProps) {
                 name === 'admins' ? 'Admins' : 'Affiliators'
               ]}
             />
-            <Legend />
             <Area
               type="monotone"
               dataKey="restaurants"
               stackId="1"
               stroke="#3B82F6"
-              strokeWidth={2}
+              strokeWidth={1}
               fill="url(#colorRestaurants)"
               name="Restaurants"
+              isAnimationActive={false}
             />
             <Area
               type="monotone"
               dataKey="farmers"
               stackId="1"
               stroke="#10B981"
-              strokeWidth={2}
+              strokeWidth={1}
               fill="url(#colorFarmers)"
               name="Farmers"
+              isAnimationActive={false}
             />
             <Area
               type="monotone"
               dataKey="admins"
               stackId="1"
               stroke="#F59E0B"
-              strokeWidth={2}
+              strokeWidth={1}
               fill="url(#colorAdmins)"
               name="Admins"
+              isAnimationActive={false}
             />
           </AreaChart>
         </ResponsiveContainer>
         
-        {/* User Type Summary */}
-        <div className="grid grid-cols-4 gap-4 mt-4 pt-4 border-t border-gray-100">
+        {/* c */}
+        <div className="grid grid-cols-4 gap-4 border-gray-100">
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>

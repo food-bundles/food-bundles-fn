@@ -384,7 +384,7 @@ export function ProductsSection({
       id="products"
       className="flex justify-center items-start  py-0 relative"
     >
-      <ChristmasAnimation />
+      {/* <ChristmasAnimation /> */}
       <div className="container">
         <div className="flex gap-0 relative">
           <div className="  w-full">
@@ -393,10 +393,10 @@ export function ProductsSection({
                 <div className="flex flex-col lg:flex-row items-center lg:items-stretch justify-between gap-4 w-full px-4">
                   {/* Left: Greeting */}
                   <div className="flex flex-col justify-center text-center lg:text-left">
-                    <h1 className="text-[20px] font-semibold text-gray-800 mb-1">
-                      Hello <span className="text-green-600">{userName}</span>! <span className="text-8xl">🎄</span>
+                    <h1 className="text-[16px] font-semibold text-gray-800">
+                      Hello <span className="text-green-600">{userName}</span>! 
                     </h1>
-                    <p className="text-gray-500 text-[16px]">
+                    <p className="text-gray-500 text-sm">
                       Welcome to Our Farm <span className="text-2xl"></span>
                     </p>
                   </div>
@@ -700,6 +700,8 @@ export function ProductsSection({
                         <SelectContent>
                           <SelectItem value="30">30</SelectItem>
                           <SelectItem value="100">100</SelectItem>
+                          <SelectItem value="100">500</SelectItem>
+                          <SelectItem value="100">1000000000</SelectItem>
                         </SelectContent>
                       </Select>
                       <span>per page</span>

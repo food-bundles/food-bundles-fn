@@ -3,6 +3,7 @@ import createAxiosClient from "../hooks/axiosClient";
 
 export interface CheckoutRequest {
   cartId: string;
+  paymentMethodId: string;
   paymentMethod: "CASH" | "MOBILE_MONEY" | "BANK_TRANSFER" | "CARD" | "VOUCHER";
   billingName?: string;
   billingEmail?: string;
