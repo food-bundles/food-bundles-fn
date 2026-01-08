@@ -436,40 +436,25 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-medium text-gray-800">All Vouchers</h2>
-        <div className="flex items-center gap-2">
-          <Button 
-            onClick={onCreateVoucher}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Create Voucher
-          </Button>
-        </div>
-      </div>
-      
-      <div className="flex items-center gap-4">
+      <div className="flex justify-between items-center gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
             placeholder="Filter by restaurant name..."
             value={restaurantFilter}
             onChange={(e) => setRestaurantFilter(e.target.value)}
-            className="pl-10"
+            className="pl-10 bg-gray-50 border-gray-300 focus:border-green-500 focus:ring-green-500 text-sm"
           />
         </div>
-        {restaurantFilter && (
-          <Button
-            variant="outline"
-            onClick={() => setRestaurantFilter("")}
-            className="text-sm"
-          >
-            Clear Filter
-          </Button>
-        )}
+        <Button
+          onClick={onCreateVoucher}
+          className="bg-green-600 hover:bg-green-700"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Create Voucher
+        </Button>
       </div>
-      
+
       <DataTable
         columns={columns}
         data={filteredVouchers}

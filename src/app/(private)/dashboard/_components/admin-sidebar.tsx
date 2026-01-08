@@ -207,6 +207,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       >
         {/* Logo */}
         <div className="p-3 md:p-4 flex items-center justify-between shrink-0 relative z-10 bg-green-900 backdrop-blur-sm">
+          <Link href="/">
           <div className="flex items-center gap-2">
             <OptimizedImage
               src="/imgs/Food_bundle_logo.png"
@@ -219,6 +220,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
               Food Bundles Ltd
             </h1>
           </div>
+          </Link>
           <NotificationsDrawer isOpen={false} onClose={() => {}} />
         </div>
 

@@ -16,6 +16,7 @@ import { AlertCircle } from "lucide-react";
 import { useWebSocket } from "@/hooks/useOrderWebSocket";
 import { useRouter } from "next/navigation";
 import { orderService } from "@/app/services/orderService";
+import { tableTronicService } from "@/app/services/tableTronicService";
 import { ViewOrderModal } from "./_components/view-order-modal";
 
 export default function RestaurantOrdersPage() {
@@ -323,6 +324,60 @@ export default function RestaurantOrdersPage() {
       toast.error(err.response?.data?.message || "Failed to reorder order");
     } finally {
       setReorderingId(null);
+    }
+  };
+
+  const handleInvoice = async (order: any) => {
+    const allowedStatuses = ['CONFIRMED', 'PREPARING', 'READY', 'SHIPPED', 'DELIVERED'];
+    
+    if (!allowedStatuses.includes(order.originalData?.status)) {
+      toast.error('No invoice available due to this status!');
+      return;
+    }
+
+    try {
+      const orderData = order.originalData;
+      
+      // Calculate total amount
+      const totalAmount = orderData.orderItems.reduce((sum: number, item: any) => 
+        sum + (item.quantity * item.unitPrice), 0
+      );
+
+      const invoiceNumber = Date.now();
+
+      const invoiceData = {
+        invoiceNumber: invoiceNumber,
+        date: new Date().toISOString(),
+        customerId: null,
+        customerName: orderData.restaurant?.name || orderData.billingName,
+        customerPhone: orderData.billingPhone,
+        customerTin: orderData.restaurant?.tin || orderData.billingPhone,
+        purchaseCode: '',
+        items: orderData.orderItems.map((item: any) => ({
+          name: item.productName,
+          id: item.product?.tableTronicProductId || 0,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice
+        })),
+        discount: 0,
+        status: 'completed',
+        terms: 'Thank you for your order. Please keep this invoice for your records.',
+        payments: [{
+          method: orderData.paymentMethodConfig?.tableTronicPaymentMethodId || 0,
+          amount: totalAmount
+        }],
+        paidAmount: totalAmount
+      };
+
+      const response = await tableTronicService.createInvoice(invoiceData);
+      
+      if (response) {
+        toast.success('Invoice created successfully!');
+        console.log('Invoice created:', response);
+      }
+    } catch (error: any) {
+      console.error('Invoice creation error:', error);
+      toast.error(error.message || 'Failed to create invoice');
     }
   };
 

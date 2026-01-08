@@ -41,7 +41,7 @@ export default function VoucherManagementPage() {
           <VoucherStats />
 
           {/* Tabs */}
-          <div className="border-b">
+          <div className="border-b border-gray-400">
             <nav className="-mb-px flex space-x-8">
               <button
                 onClick={() => setActiveTab("loans")}

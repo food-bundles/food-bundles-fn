@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
@@ -28,6 +29,7 @@ import {
   checkoutService,
   CheckoutRequest,
 } from "@/app/services/checkoutService";
+import { paymentMethodService, PaymentMethod as PaymentMethodType } from "@/app/services/paymentMethodService";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import "leaflet/dist/leaflet.css";
@@ -83,8 +85,9 @@ export function Checkout() {
     useState<string>("");
   const [availableVouchers, setAvailableVouchers] = useState<any[]>([]);
   const [isLoadingVouchers, setIsLoadingVouchers] = useState(false);
-
-  const [method, setMethod] = useState<PaymentMethod>("momo");
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodType[]>([]);
+  const [isLoadingPaymentMethods, setIsLoadingPaymentMethods] = useState(true);
+  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string>("");
   const [walletBalance, setWalletBalance] = useState(0);
 
   const [formData, setFormData] = useState({
@@ -115,6 +118,36 @@ export function Checkout() {
   const [checkoutSessionId, setCheckoutSessionId] = useState("");
   const [voucherOTPError, setVoucherOTPError] = useState("");
   const [otherServices, setOtherServices] = useState(false);
+  const [method, setMethod] = useState<PaymentMethod>("momo");
+
+  // Fetch payment methods on component mount
+  useEffect(() => {
+    const fetchPaymentMethods = async () => {
+      try {
+        const response = await paymentMethodService.getActivePaymentMethods();
+        if (response.data) {
+          // Filter out bank transfer methods
+          const filteredMethods = response.data.filter(
+            (pm: PaymentMethodType) => pm.name !== "BANK_TRANSFER"
+          );
+          setPaymentMethods(filteredMethods);
+          // Set default payment method to first available (preferably CASH for prepaid)
+          const cashMethod = filteredMethods.find((pm: PaymentMethodType) => pm.name === "CASH");
+          if (cashMethod) {
+            setSelectedPaymentMethodId(cashMethod.id);
+          } else if (filteredMethods.length > 0) {
+            setSelectedPaymentMethodId(filteredMethods[0].id);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching payment methods:", error);
+      } finally {
+        setIsLoadingPaymentMethods(false);
+      }
+    };
+
+    fetchPaymentMethods();
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -175,7 +208,8 @@ export function Checkout() {
   }, [wallet]);
 
   useEffect(() => {
-    if (method === "voucher" && isAuthenticated) {
+    const selectedMethod = paymentMethods.find(pm => pm.id === selectedPaymentMethodId);
+    if (selectedMethod?.name === "VOUCHER" && isAuthenticated) {
       const fetchVouchers = async () => {
         try {
           setIsLoadingVouchers(true);
@@ -365,8 +399,18 @@ export function Checkout() {
         }
       }
 
+      // Get the correct payment method ID based on selected method
+      let paymentMethodId = selectedPaymentMethodId;
+      if (method === "prepaid") {
+        const cashMethod = paymentMethods.find((pm: PaymentMethodType) => pm.name === "CASH");
+        if (cashMethod) {
+          paymentMethodId = cashMethod.id;
+        }
+      }
+
       const checkoutPayload: CheckoutRequest = {
         cartId: cart!.id,
+        paymentMethodId: paymentMethodId,
         paymentMethod: paymentMethodMap[method],
         billingName: formData.fullName,
         billingEmail: method === "card" ? user?.email || "" : undefined,

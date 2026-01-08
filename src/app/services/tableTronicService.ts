@@ -43,6 +43,30 @@ export interface TableTronicCategory {
   description?: string;
 }
 
+export interface TableTronicInvoiceData {
+  invoiceNumber: number;
+  date: string;
+  customerId: null;
+  customerName: string;
+  customerPhone: string;
+  customerTin: string;
+  purchaseCode: string;
+  items: Array<{
+    name: string;
+    id: number;
+    quantity: number;
+    unitPrice: number;
+  }>;
+  discount: number;
+  status: string;
+  terms: string;
+  payments: Array<{
+    method: number;
+    amount: number;
+  }>;
+  paidAmount: number;
+}
+
 export interface CreateTableTronicCategoryData {
   name: string;
   description?: string;
@@ -89,6 +113,23 @@ export const tableTronicService = {
   createProduct: async (data: TableTronicProductData) => {
     const response = await tableTronicClient.post('/api/products', data);
     return response.data;
+  },
+
+  // Create invoice
+  createInvoice: async (data: TableTronicInvoiceData) => {
+    try {
+      const response = await tableTronicClient.post('/api/sales', data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Table Tronic Invoice API Error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText
+      });
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to create invoice in Table Tronic';
+      throw new Error(errorMessage);
+    }
   },
 
   // Create category

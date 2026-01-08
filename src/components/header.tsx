@@ -4,7 +4,7 @@
 
 import { Button } from "@/components/ui/button";
 import { OptimizedImage } from "@/components/OptimizedImage";
-import { Menu, X, UserPlus, User, ShoppingCart, BrickWall, Home } from "lucide-react";
+import { Menu, X, UserPlus, User, ShoppingCart } from "lucide-react";
 import { useState, useCallback, useRef, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/contexts/auth-context";
@@ -74,6 +74,7 @@ export function Header() {
   const [activeSection, setActiveSection] = useState("home");
   const [isShopDropdownOpen, setIsShopDropdownOpen] = useState(false);
   const [isAuthTransitioning, setIsAuthTransitioning] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const lastScrollY = useRef(0);
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -224,10 +225,23 @@ export function Header() {
     if (typeof window !== "undefined") {
       window.addEventListener("scroll", handleScroll, { passive: true });
 
+      // Close user menu when clicking outside
+      const handleClickOutside = (event: MouseEvent) => {
+        const target = event.target as Element;
+        if (!target.closest('.user-menu-container')) {
+          setIsUserMenuOpen(false);
+        }
+      };
+      
+      if (isUserMenuOpen) {
+        document.addEventListener('click', handleClickOutside);
+      }
+
       detectActiveSection();
 
       return () => {
         window.removeEventListener("scroll", handleScroll);
+        document.removeEventListener('click', handleClickOutside);
         if (scrollTimeout.current) {
           clearTimeout(scrollTimeout.current);
         }
@@ -236,7 +250,7 @@ export function Header() {
         }
       };
     }
-  }, [handleScroll, detectActiveSection]);
+  }, [handleScroll, detectActiveSection, isUserMenuOpen]);
 
   // Get user profile data
   const profileImage = isAuthenticated ? getUserProfileImage() : null;
@@ -266,7 +280,6 @@ export function Header() {
                   <span className="text-2sm font-bold text-black whitespace-nowrap">
                     Food Bundles Ltd
                   </span>
-                  <span className="text-2xl hidden md:inline">🎅</span>
                 </div>
               </Link>
 
@@ -411,91 +424,71 @@ export function Header() {
                   </div>
                 </div>
               </div>
-              
 
               {/* Right actions */}
               <div className="flex items-center gap-2">
-                <span className="font-bold text-2xl md:text-4xl">🎄</span>
-                {/* Desktop User Menu - Shadcn DropdownMenu */}
+                {/* Desktop User Menu - Inline Links */}
                 <div className="hidden md:block">
                   {isAuthenticated ? (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="flex items-center gap-2 hover:bg-transparent py-2 px-3 cursor-pointer text-primary-foreground">
-                          <span className="font-medium text-sm max-w-32 truncate">
-                            {userName.slice(0, 8)}
-                          </span>
-                          <div className="rounded-full flex items-center justify-center">
-                            {profileImage ? (
-                              <OptimizedImage
-                                src={profileImage}
-                                alt={`${userName}'s profile`}
-                                width={24}
-                                height={24}
-                                className="rounded-full object-cover"
-                                transformation={[
-                                  {
-                                    width: 48,
-                                    height: 48,
-                                    crop: "fill",
-                                    quality: "80",
-                                  },
-                                ]}
-                              />
-                            ) : (
-                              <div className="rounded-full bg-green-600 text-white flex items-center justify-center w-6 h-6 text-xs font-bold">
-                                {userName.substring(0, 2).toUpperCase()}
-                              </div>
-                            )}
-                          </div>
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        className="w-48"
-                        align="end"
-                        alignOffset={-15}
-                      >
-                        <div className="px-2 py-1.5">
-                          <p className="text-[13px] font-medium text-gray-900 truncate">
-                            {userName}
-                          </p>
-                          <p className="text-[12px] text-gray-500 truncate">
-                            {user?.email}
-                          </p>
-                        </div>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={handleDashboardNavigation}
-                          className="flex items-center gap-2 text-[13px]"
-                        >
-                          <UserPlus className="w-4 h-4" />
-                          My Account
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={handleProfileNavigation}
-                          className="flex items-center gap-2 text-[13px]"
-                        >
-                          <User className="w-4 h-4" />
-                          Profile
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link
-                            href="/"
-                            className="flex items-center gap-2 text-[13px]"
+                    <div className="flex items-center gap-2">
+                      {/* Show My Account and Logout links when user menu is open */}
+                      {isUserMenuOpen && (
+                        <div className="flex items-center gap-2 mr-2">
+                          <button
+                            onClick={() => {
+                              handleDashboardNavigation();
+                              setIsUserMenuOpen(false);
+                            }}
+                            className="text-xs text-green-200 hover:text-white transition-colors cursor-pointer"
                           >
-                            <Home className="w-4 h-4" />
-                            Home
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={handleLogout}
-                          className="text-red-600 focus:text-red-600 text-[13px]"
-                        >
-                          Logout
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                            My Account
+                          </button>
+                          <span className="text-green-400">|</span>
+                          <button
+                            onClick={() => {
+                              handleLogout();
+                              setIsUserMenuOpen(false);
+                            }}
+                            className="text-xs text-green-200 hover:text-red-400 transition-colors cursor-pointer"
+                          >
+                            Logout
+                          </button>
+                        </div>
+                      )}
+                      
+                      {/* Username and Avatar */}
+                      <button 
+                        onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                        className="flex items-center gap-2 hover:bg-transparent py-2 px-3 cursor-pointer text-primary-foreground"
+                      >
+                        <span className="font-medium text-sm max-w-32 truncate">
+                          {userName.slice(0, 8)}
+                        </span>
+                        <div className="rounded-full flex items-center justify-center">
+                          {profileImage ? (
+                            <OptimizedImage
+                              src={profileImage}
+                              alt={`${userName}'s profile`}
+                              width={24}
+                              height={24}
+                              className="rounded-full object-cover"
+                              transformation={[
+                                {
+                                  width: 48,
+                                  height: 48,
+                                  crop: "fill",
+                                  quality: "80",
+                                },
+                              ]}
+                            />
+                          ) : (
+                            <div className="rounded-full bg-green-600 text-white flex items-center justify-center w-6 h-6 text-xs font-bold">
+                              {userName.substring(0, 2).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    </div>
                   ) : isAuthTransitioning || isLoading ? (
                     <div className="flex items-center gap-2 px-3">
                       <Skeleton className="h-6 w-20 rounded bg-green-600/60" />
@@ -580,7 +573,7 @@ export function Header() {
                           handleDashboardNavigation();
                         }}
                       >
-                        Dashboard
+                        My Account
                       </button>
                       <button
                         className="block w-full text-left px-2 py-1 text-sm text-green-200 hover:text-white transition-colors"

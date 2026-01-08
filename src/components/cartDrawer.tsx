@@ -147,7 +147,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
               </div>
 
               <a href="/restaurant/checkout">
-                <Button className="w-full sm:py-2 py-1 text-sm sm:text-xs bg-green-700 hover:bg-green-800 rounded-none">
+                <Button className="w-full sm:py-2 py-1 text-sm sm:text-xs bg-green-700 hover:bg-green-800 rounded-none cursor-pointer">
                   Buy Now
                 </Button>
               </a>

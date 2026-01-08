@@ -31,6 +31,19 @@ interface RecentActivityProps {
 }
 
 export function RecentActivity({ activities, loading = false }: RecentActivityProps) {
+const formatDate = (date: string | Date) =>
+  new Date(date).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+const formatTime = (date: string | Date) =>
+  new Date(date).toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
   const getActivityIcon = (type: string) => {
     switch (type) {
       case "user_signup":
@@ -57,7 +70,7 @@ export function RecentActivity({ activities, loading = false }: RecentActivityPr
       case "failed":
         return <AlertCircle className="h-3 w-3 text-red-600" />;
       default:
-        return null;
+        return null ;
     }
   };
 
@@ -96,26 +109,26 @@ export function RecentActivity({ activities, loading = false }: RecentActivityPr
   }
 
   return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle className="text-lg font-semibold flex items-center gap-2">
-          <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse" />
+    <Card className="h-full gap-0">
+      <CardHeader className="">
+        <CardTitle className="text-sm py-0  font-semibold flex items-center gap-2">
+          <div className="h-2 w-2 bg-yellow-700 rounded-full animate-pulse" />
           Recent Activity
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 max-h-96 overflow-y-auto">
+      <CardContent className="max-h-64 overflow-y-auto space-y-0 ">
         {activities.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <AlertCircle className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-            <p>No recent activity</p>
+            <p className="text-xs">No recent activity</p>
           </div>
         ) : (
           activities.map((activity, index) => (
             <div
               key={activity.id}
-              className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+              className="flex items-start space-x-1 p-2 rounded-lg hover:bg-gray-50 transition-colors duration-200"
               style={{
-                animation: `fadeInUp 0.5s ease-out ${index * 0.1}s both`
+                animation: `fadeInUp 0.5s ease-out ${index * 0.1}s both`,
               }}
             >
               <Avatar className="h-10 w-10">
@@ -125,11 +138,13 @@ export function RecentActivity({ activities, loading = false }: RecentActivityPr
               </Avatar>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className="text-sm font-medium text-gray-900">
                     {activity.title}
                   </p>
                   {activity.status && (
-                    <Badge className={`${getStatusColor(activity.status)} text-xs`}>
+                    <Badge
+                      className={`${getStatusColor(activity.status)} text-xs`}
+                    >
                       <div className="flex items-center gap-1">
                         {getStatusIcon(activity.status)}
                         {activity.status}
@@ -137,10 +152,13 @@ export function RecentActivity({ activities, loading = false }: RecentActivityPr
                     </Badge>
                   )}
                 </div>
-                <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
+                <p className="text-[12px] text-gray-600 mt-1">
+                  {activity.description}
+                </p>
                 <div className="flex items-center justify-between mt-2">
-                  <p className="text-xs text-gray-500">
-                    {new Date(activity.timestamp).toLocaleString()}
+                  <p className="text-xs text-gray-500 italic">
+                    {formatDate(activity.timestamp)} •{" "}
+                    {formatTime(activity.timestamp)}
                   </p>
                   {activity.amount && (
                     <span className="text-xs font-medium text-green-600">
@@ -153,7 +171,7 @@ export function RecentActivity({ activities, loading = false }: RecentActivityPr
           ))
         )}
       </CardContent>
-      
+
       <style jsx>{`
         @keyframes fadeInUp {
           from {
