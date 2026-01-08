@@ -69,6 +69,13 @@ export const walletService = {
     return response.data;
   },
 
+  // Get all wallet transactions (admin only)
+  getAllWalletTransactions: async (filters?: WalletTransactionFilters) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/wallets/transactions", { params: filters });
+    return response.data;
+  },
+
   // Get transaction by ID
   getTransactionById: async (transactionId: string) => {
     const axiosClient = createAxiosClient();

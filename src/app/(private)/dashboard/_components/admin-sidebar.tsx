@@ -23,6 +23,7 @@ import {
   Box,
   Tags,
   Boxes,
+  HelpCircle,
 } from "lucide-react";
 import NotificationsDrawer from "@/app/(private)/restaurant/_components/notificationDrawer";
 import { usePathname } from "next/navigation";
@@ -30,6 +31,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { authService } from "@/app/services/authService";
 import { OptimizedImage } from "@/components/OptimizedImage";
+import { Button } from "@/components/ui/button";
 
 const menuItems = [
   { icon: Users, label: "Affiliators", href: "/dashboard/users/affiliators" },

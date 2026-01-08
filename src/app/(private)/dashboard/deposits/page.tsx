@@ -71,7 +71,7 @@ export default function DepositsManagementPage() {
       if (transactionFilters.type) filters.type = transactionFilters.type;
       if (transactionFilters.restaurantName) filters.restaurantName = transactionFilters.restaurantName;
       
-      const response = await walletService.getWalletTransactions(filters);
+      const response = await walletService.getAllWalletTransactions(filters);
       if (response && response.data) {
         setTransactions(response.data);
         setPagination({
@@ -88,8 +88,8 @@ export default function DepositsManagementPage() {
 
   const fetchTransactionStats = async () => {
     try {
-      const topUpResponse = await walletService.getWalletTransactions({ type: 'TOP_UP', limit: 1000 });
-      const paymentResponse = await walletService.getWalletTransactions({ type: 'PAYMENT', limit: 1000 });
+      const topUpResponse = await walletService.getAllWalletTransactions({ type: 'TOP_UP', limit: 1000 });
+      const paymentResponse = await walletService.getAllWalletTransactions({ type: 'PAYMENT', limit: 1000 });
       
       setTransactionStats({ 
         topUp: topUpResponse?.pagination?.total || 0,
