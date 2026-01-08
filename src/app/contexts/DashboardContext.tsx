@@ -22,12 +22,15 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const [filters, setFilters] = useState<StatsFilters>({
     year: new Date().getFullYear(),
     month: new Date().getMonth() + 1
   });
 
   const fetchStats = async () => {
+    if (!mounted) return; // Don't fetch until mounted
+    
     try {
       setLoading(true);
       setError(null);
@@ -50,8 +53,14 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
   };
 
   useEffect(() => {
-    fetchStats();
-  }, [filters]);
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted) {
+      fetchStats();
+    }
+  }, [filters, mounted]);
 
   const value: DashboardContextType = {
     stats,

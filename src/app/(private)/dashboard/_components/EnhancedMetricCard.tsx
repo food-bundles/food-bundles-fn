@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown } from "lucide-react";
@@ -38,12 +39,18 @@ export function EnhancedMetricCard({
   loading = false,
   subMetrics = [],
 }: EnhancedMetricCardProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const percentageChange = previousValue
     ? ((value - previousValue) / previousValue) * 100
     : 0;
   const isPositive = percentageChange >= 0;
 
-  if (loading) {
+  if (loading || !mounted) {
     return (
       <Card className="relative overflow-hidden">
         <CardContent className="p-6">

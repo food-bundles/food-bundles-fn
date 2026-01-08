@@ -9,9 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { useDashboard } from "@/app/contexts/DashboardContext";
-import { StatsFilters } from "@/app/services/statisticsService";
 
 export function DashboardFilters() {
   const { filters, updateFilters } = useDashboard();

@@ -20,9 +20,13 @@ import {
 
 export function DashboardContent() {
   const { stats, loading, error, refreshStats } = useDashboard();
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+    setCurrentTime(new Date());
+    
     const timeInterval = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
@@ -30,12 +34,32 @@ export function DashboardContent() {
     return () => clearInterval(timeInterval);
   }, []);
 
+  // Prevent hydration mismatch by not rendering time until mounted
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 p-6 rounded-md">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="flex gap-3 justify-start items-center">
+            <div className="h-6 w-48 bg-gray-200 animate-pulse rounded"></div>
+            <div className="h-6 w-20 bg-gray-200 animate-pulse rounded"></div>
+          </div>
+          <div className="h-16 bg-gray-200 animate-pulse rounded"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-32 bg-gray-200 animate-pulse rounded"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (error) {
     return (
       <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 p-6 rounded-md">
         <div className="max-w-7xl mx-auto">
-          <div className="bg-red-50 border border-red-200 rounded-md p-4">
-            <p className="text-red-800">Error loading dashboard: {error}</p>
+          <div className="bg-red-50 border flex gap-4 items-center border-red-200 rounded-md p-4">
+            <p className="text-red-800">Something went wrong </p>
             <button 
               onClick={refreshStats}
               className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
@@ -54,7 +78,7 @@ export function DashboardContent() {
         {/* Header */}
         <div className="flex gap-3 justify-start items-center">
           <p className="text-gray-800 mt-1 flex items-center gap-2">
-            {currentTime.toLocaleDateString("en-US", {
+            {currentTime?.toLocaleDateString("en-US", {
               weekday: "long",
               year: "numeric",
               month: "long",
@@ -62,9 +86,9 @@ export function DashboardContent() {
             })}
           </p>
           <p className="flex mt-1 items-center text-green-600 font-semibold">
-            {currentTime.getHours().toString().padStart(2, "0")}:{" "}
-            {currentTime.getMinutes().toString().padStart(2, "0")}:{" "}
-            {currentTime.getSeconds().toString().padStart(2, "0")}
+            {currentTime?.getHours().toString().padStart(2, "0")}:{" "}
+            {currentTime?.getMinutes().toString().padStart(2, "0")}:{" "}
+            {currentTime?.getSeconds().toString().padStart(2, "0")}
           </p>
         </div>
 

@@ -90,6 +90,7 @@ export default function AdminOrdersPage() {
       };
 
       // Add filters only if they have values
+      if (searchValue.trim()) params.search = searchValue.trim();
       if (selectedStatus !== "all") params.status = selectedStatus;
       if (selectedPaymentStatus !== "all")
         params.paymentStatus = selectedPaymentStatus;
@@ -142,8 +143,13 @@ export default function AdminOrdersPage() {
   };
 
   useEffect(() => {
-    fetchOrders(1, pagination.limit);
+    const timeoutId = setTimeout(() => {
+      fetchOrders(1, pagination.limit);
+    }, 500); // Debounce search
+
+    return () => clearTimeout(timeoutId);
   }, [
+    searchValue,
     selectedStatus,
     selectedPaymentStatus,
     selectedRestaurantId,
@@ -171,16 +177,8 @@ export default function AdminOrdersPage() {
     }
   }, [orderUpdates]);
 
-  const filteredOrders = useMemo(() => {
-    if (!searchValue) return orders;
-
-    return orders.filter(
-      (order) =>
-        order.orderNumber.toLowerCase().includes(searchValue.toLowerCase()) ||
-        order.billingName.toLowerCase().includes(searchValue.toLowerCase()) ||
-        order.billingEmail.toLowerCase().includes(searchValue.toLowerCase())
-    );
-  }, [orders, searchValue]);
+  // Remove frontend filtering since we're using backend search
+  const displayOrders = orders;
 
   // Modal handlers
   const handleViewOrder = (order: Order) => {
@@ -542,7 +540,7 @@ export default function AdminOrdersPage() {
     <div className="p-4 space-y-2">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-[18px] font-medium">Restaurant Orders</h1>
+          <h1 className="text-[16px] font-medium">Restaurant Orders</h1>
         </div>
       </div>
 
@@ -551,7 +549,7 @@ export default function AdminOrdersPage() {
     
         <DataTable
           columns={ordersColumns}
-          data={filteredOrders}
+          data={displayOrders}
           description={`Total: ${pagination.total} orders`}
           showColumnVisibility={false}
           showPagination={true}

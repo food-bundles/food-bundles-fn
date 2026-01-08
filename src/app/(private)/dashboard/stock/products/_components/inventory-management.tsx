@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { DataTable } from "@/components/data-table";
 import { getInventoryColumns } from "./inventory-columns";
 import { createCommonFilters, TableFilters } from "@/components/filters";
@@ -26,6 +26,7 @@ interface InventoryManagementProps {
     totalPages: number;
   };
   onPaginationChange?: (page: number, limit: number) => void;
+  onFiltersChange?: (filters: { search: string; category: string }) => void;
   isLoading?: boolean;
 }
 
@@ -49,6 +50,7 @@ export function InventoryManagement({
   onRefresh,
   pagination,
   onPaginationChange,
+  onFiltersChange,
   isLoading = false,
 }: InventoryManagementProps) {
   // Filter states
@@ -124,22 +126,10 @@ export function InventoryManagement({
     return getInventoryColumns(handleManageProduct, handleStatusClick);
   }, []);
 
-  // Filter data
+  // Filter data - now only for frontend-only filters like status and date range
   const filteredData = useMemo(() => {
     return products.filter((product) => {
-      // Search filter
-      if (searchValue) {
-        const searchLower = searchValue.toLowerCase();
-        const matchesSearch =
-          product.productName.toLowerCase().includes(searchLower) ||
-          product.sku.toLowerCase().includes(searchLower) ||
-          (product.category &&
-            product.category.name.toLowerCase().includes(searchLower));
-
-        if (!matchesSearch) return false;
-      }
-
-      // Status filter
+      // Status filter (frontend only)
       if (statusValue !== "all") {
         const quantity = product.quantity;
         const status =
@@ -151,23 +141,7 @@ export function InventoryManagement({
         if (status !== statusValue) return false;
       }
 
-      // Category filter
-      if (categoryValue !== "all") {
-        // Map category values to actual category names
-        const categoryNameMap: { [key: string]: string } = {
-          VEGETABLES: "Fresh Vegetables",
-          FRUITS: "Fresh Fruits",
-          ANIMAL_PRODUCTS: "Animal Products",
-          OTHER: "Others",
-        };
-        
-        const expectedCategoryName = categoryNameMap[categoryValue] || categoryValue;
-        if (product.category?.name !== expectedCategoryName) {
-          return false;
-        }
-      }
-
-      // Date range filter (expiry date)
+      // Date range filter (expiry date) - frontend only
       if (dateRange.from || dateRange.to) {
         if (!product.expiryDate) return false;
 
@@ -188,7 +162,21 @@ export function InventoryManagement({
 
       return true;
     });
-  }, [products, searchValue, statusValue, categoryValue, dateRange]);
+  }, [products, statusValue, dateRange]);
+
+  // Handle backend filter changes with debouncing
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (onFiltersChange) {
+        onFiltersChange({
+          search: searchValue,
+          category: categoryValue === "all" ? "" : categoryValue,
+        });
+      }
+    }, 500); // Debounce for 500ms
+
+    return () => clearTimeout(timeoutId);
+  }, [searchValue, categoryValue, onFiltersChange]);
 
   // Create filters
   const filters = [

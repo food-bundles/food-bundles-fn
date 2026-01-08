@@ -60,7 +60,7 @@ interface ProductContextType {
   getAllProductsRoleBased: (params?: {
     page?: number;
     limit?: number;
-    categoryId?: string;
+    category?: string;
     search?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
@@ -123,7 +123,7 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
   const getAllProductsRoleBased = useCallback(async (params?: {
     page?: number;
     limit?: number;
-    categoryId?: string;
+    category?: string;
     search?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';

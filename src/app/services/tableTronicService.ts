@@ -132,6 +132,29 @@ export const tableTronicService = {
     }
   },
 
+  // Get FB sales report
+  getFBSalesReport: async (params: {
+    from: string;
+    to: string;
+    businessCode: string;
+  }) => {
+    try {
+      const response = await tableTronicClient.get('/api/orders/reports/fb-sales-report', {
+        params
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('Table Tronic FB Sales Report API Error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText
+      });
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to fetch FB sales report';
+      throw new Error(errorMessage);
+    }
+  },
+
   // Create category
   createCategory: async (data: CreateTableTronicCategoryData): Promise<TableTronicCategory> => {
     try {
