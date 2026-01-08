@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { Bell,UserPlus, Home, ShoppingCart } from "lucide-react";
+import { Bell, UserPlus, Home, ShoppingCart } from "lucide-react";
 import { MdMenuOpen, MdClose } from "react-icons/md";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -23,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { notificationService } from "@/app/services/notificationService";
+import { useNotifications } from "@/app/contexts/NotificationContext";
 
 
 interface RestaurantHeaderProps {
@@ -33,46 +34,32 @@ interface RestaurantHeaderProps {
 export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderProps) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [isLoadingNotifications, setIsLoadingNotifications] = useState(true);
+  const { unreadCount, loading: isLoadingNotifications } = useNotifications();
   const { user, getUserProfileImage } = useAuth();
   const { totalItems, isLoading } = useCartSummary();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const pathname = usePathname();
-  
+
   const showCartIcon = pathname !== "/restaurant";
 
-  useEffect(() => {
-    const fetchUnreadCount = async () => {
-      try {
-        setIsLoadingNotifications(true);
-        const response = await notificationService.getUnreadCount();
-        setUnreadCount(response.data.unreadCount);
-      } catch (error) {
-        console.error('Failed to fetch unread count:', error);
-      } finally {
-        setIsLoadingNotifications(false);
-      }
-    };
-    fetchUnreadCount();
-  }, []);
+  // Unread count is now managed by NotificationContext
 
 
-    const handleLogout = async () => {
-      setIsLoggingOut(true);
-      try {
-        await authService.logout();
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        window.location.href = "/";
-      } catch (error) {
-        console.error("Logout error:", error);
-        toast.error("Something went wrong!");
-      }
-    };
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await authService.logout();
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Something went wrong!");
+    }
+  };
 
   const profileImage = getUserProfileImage();
   const userName = user?.name || user?.name || "";
-  
+
   return (
     <>
       <header className="bg-green-700 border-b border-green-800">
@@ -136,9 +123,13 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
                 <button className="flex items-center gap-2 hover:bg-transparent cursor-pointer text-primary-foreground hover:text-primary-foreground">
                   {user ? (
                     <>
-                      <span className="font-medium text-[13px] hidden md:inline">
-                        {userName}
-                      </span>
+                      {userName ? (
+                        <span className="font-medium text-[13px] hidden md:inline">
+                          {userName}
+                        </span>
+                      ) : (
+                        <Skeleton className="h-5 w-20 md:h-6 md:w-24 hidden md:inline bg-green-600/60" />
+                      )}
                       <div className="rounded-full flex items-center justify-center">
                         {user?.profileImage ? (
                           <Image

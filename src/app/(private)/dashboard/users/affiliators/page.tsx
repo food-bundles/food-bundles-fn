@@ -20,7 +20,7 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash, Loader2, Eye, ShoppingBag } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash, Loader2, ShoppingBag } from "lucide-react";
 import { affiliatorService } from "@/app/services/affiliatorService";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -34,57 +34,38 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useAuth } from "@/app/contexts/auth-context";
-import { useRouter } from "next/navigation";
 
 interface Affiliator {
     id: string;
     name: string;
     email: string;
+    phone?: string | null;
     role: string;
     createdAt: string;
-    updatedAt: string;
-    password?: string;
-    phone?: string | null;
     restaurantId: string;
     restaurant?: {
         id: string;
         name: string;
-        email?: string;
     };
     orders?: any[];
 }
 
-export default function AffiliatorsPage() {
-    const { user } = useAuth();
-    const router = useRouter();
-
-    useEffect(() => {
-        // Redirect affiliators away from this page
-        if (user?.role === "AFFILIATOR") {
-            router.push("/restaurant");
-        }
-    }, [user, router]);
-
-    // Don't render content for affiliators
-    if (user?.role === "AFFILIATOR") {
-        return null;
-    }
+export default function AdminAffiliatorsPage() {
     const [data, setData] = useState<Affiliator[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [currentAffiliator, setCurrentAffiliator] = useState<Affiliator | null>(null);
-    const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [isOrdersDialogOpen, setIsOrdersDialogOpen] = useState(false);
     const [isLoadingOrders, setIsLoadingOrders] = useState(false);
     const [selectedAffiliatorOrders, setSelectedAffiliatorOrders] = useState<any[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
 
     const fetchAffiliators = async () => {
         try {
             setLoading(true);
-            const res = await affiliatorService.getMyAffiliators();
+            const res = await affiliatorService.getAllAffiliators();
             setData(res.data);
         } catch (error) {
             toast.error("Failed to fetch affiliators");
@@ -92,6 +73,10 @@ export default function AffiliatorsPage() {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        fetchAffiliators();
+    }, []);
 
     const fetchAffiliatorOrders = async (id: string) => {
         try {
@@ -106,34 +91,6 @@ export default function AffiliatorsPage() {
         }
     };
 
-    useEffect(() => {
-        fetchAffiliators();
-    }, []);
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSubmitting(true);
-        try {
-            if (currentAffiliator) {
-                await affiliatorService.updateAffiliator(currentAffiliator.id, {
-                    name: formData.name,
-                    phone: formData.phone,
-                });
-                toast.success("Affiliator updated successfully");
-            } else {
-                await affiliatorService.createAffiliator(formData);
-                toast.success("Affiliator created successfully");
-            }
-            setIsDialogOpen(false);
-            fetchAffiliators();
-            resetForm();
-        } catch (error) {
-            toast.error(currentAffiliator ? "Failed to update affiliator" : "Failed to create affiliator");
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
     const handleDelete = async () => {
         if (!currentAffiliator) return;
         setIsSubmitting(true);
@@ -143,16 +100,30 @@ export default function AffiliatorsPage() {
             setIsDeleteDialogOpen(false);
             fetchAffiliators();
         } catch (error) {
-            toast.error("Failed to delete affiliator");
+            toast.error("Failed to delete affiliator. Note: Affiliators with orders cannot be deleted.");
         } finally {
             setIsSubmitting(false);
             setCurrentAffiliator(null);
         }
     };
 
-    const resetForm = () => {
-        setFormData({ name: "", email: "", phone: "" });
-        setCurrentAffiliator(null);
+    const handleEditSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!currentAffiliator) return;
+        setIsSubmitting(true);
+        try {
+            await affiliatorService.updateAffiliator(currentAffiliator.id, {
+                name: formData.name,
+                phone: formData.phone,
+            });
+            toast.success("Affiliator updated successfully");
+            setIsEditDialogOpen(false);
+            fetchAffiliators();
+        } catch (error) {
+            toast.error("Failed to update affiliator");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const openEditDialog = (affiliator: Affiliator) => {
@@ -160,9 +131,9 @@ export default function AffiliatorsPage() {
         setFormData({
             name: affiliator.name,
             email: affiliator.email,
-            phone: affiliator.phone || ""
+            phone: affiliator.phone || "",
         });
-        setIsDialogOpen(true);
+        setIsEditDialogOpen(true);
     };
 
     const openDeleteDialog = (affiliator: Affiliator) => {
@@ -180,19 +151,23 @@ export default function AffiliatorsPage() {
             header: "Phone",
             cell: ({ row }: { row: any }) => row.original.phone || "N/A",
         },
-        user?.role === "ADMIN" ? {
+        {
+            accessorKey: "email",
+            header: "Email",
+        },
+        {
             accessorKey: "restaurant.name",
             header: "Restaurant",
             cell: ({ row }: { row: any }) => row.original.restaurant?.name || "N/A",
-        } : null,
+        },
         {
             accessorKey: "createdAt",
-            header: "Created At",
+            header: "Joined At",
             cell: ({ row }: { row: any }) => {
                 try {
                     return format(new Date(row.original.createdAt), "PPP");
                 } catch {
-                    return "Invalid Date";
+                    return "N/A";
                 }
             },
         },
@@ -229,20 +204,16 @@ export default function AffiliatorsPage() {
                     </DropdownMenu>
                 );
             },
-            size: 50,
         },
-    ].filter(Boolean) as ColumnDef<Affiliator>[];
+    ];
 
     return (
         <div className="p-6 space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight text-gray-900">Affiliators</h2>
-                    <p className="text-sm text-gray-500 mt-1">Manage your affiliators here.</p>
+                    <h2 className="text-2xl font-bold tracking-tight text-gray-900">Platform Affiliators</h2>
+                    <p className="text-sm text-gray-500 mt-1">Monitor all affiliators across all restaurants.</p>
                 </div>
-                <Button onClick={() => { resetForm(); setIsDialogOpen(true); }} className="bg-green-700 hover:bg-green-600">
-                    Add Affiliator
-                </Button>
             </div>
 
             <div className="bg-white rounded-lg border shadow-sm">
@@ -256,63 +227,6 @@ export default function AffiliatorsPage() {
                 />
             </div>
 
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{currentAffiliator ? "Edit Affiliator" : "Add Affiliator"}</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Name</Label>
-                            <Input
-                                id="name"
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                required
-                                placeholder="John Doe"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="phone">Phone Number</Label>
-                            <Input
-                                id="phone"
-                                value={formData.phone}
-                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                placeholder="+250 780 000 000"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input
-                                id="email"
-                                type="email"
-                                value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                required={!formData.phone}
-                                disabled={!!currentAffiliator}
-                                placeholder="john.doe@example.com"
-                                className={currentAffiliator ? "bg-gray-100" : ""}
-                            />
-                            {currentAffiliator && (
-                                <p className="text-xs text-muted-foreground">Email cannot be changed.</p>
-                            )}
-                            {!formData.phone && !currentAffiliator && (
-                                <p className="text-xs text-orange-600">Email is required if phone is not provided.</p>
-                            )}
-                        </div>
-                        <DialogFooter className="pt-4">
-                            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                                Cancel
-                            </Button>
-                            <Button type="submit" disabled={isSubmitting} className="bg-green-700 hover:bg-green-600">
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {currentAffiliator ? "Save Changes" : "Create Affiliator"}
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
-
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
@@ -320,6 +234,7 @@ export default function AffiliatorsPage() {
                         <AlertDialogDescription>
                             This action cannot be undone. This will permanently delete the affiliator
                             <span className="font-semibold text-gray-900"> {currentAffiliator?.name}</span>.
+                            Note: Affiliators with existing orders cannot be deleted for data integrity.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -336,6 +251,7 @@ export default function AffiliatorsPage() {
             </AlertDialog>
 
             <Dialog open={isOrdersDialogOpen} onOpenChange={setIsOrdersDialogOpen}>
+                {/* ... existing orders dialog content ... */}
                 <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Orders for {currentAffiliator?.name}</DialogTitle>
@@ -381,6 +297,52 @@ export default function AffiliatorsPage() {
                             </div>
                         )}
                     </div>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Affiliator</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleEditSubmit} className="space-y-4 pt-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Name</Label>
+                            <Input
+                                id="name"
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="phone">Phone Number</Label>
+                            <Input
+                                id="phone"
+                                value={formData.phone}
+                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="email">Email</Label>
+                            <Input
+                                id="email"
+                                value={formData.email}
+                                disabled
+                                className="bg-gray-100"
+                            />
+                            <p className="text-xs text-muted-foreground">Email cannot be changed.</p>
+                        </div>
+                        <DialogFooter className="pt-4">
+                            <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button type="submit" disabled={isSubmitting} className="bg-green-700 hover:bg-green-600">
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save Changes
+                            </Button>
+                        </DialogFooter>
+                    </form>
                 </DialogContent>
             </Dialog>
         </div>

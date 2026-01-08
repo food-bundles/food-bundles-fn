@@ -141,8 +141,7 @@ export function ProductVerificationModal({
       }
 
       onClose();
-      // Refresh the data or trigger parent component update
-      window.location.reload(); // Simple refresh, you might want to implement a more elegant solution
+      // Navigation or local state update would be better here than a hard reload
     } catch (error) {
       console.error("Error verifying submission:", error);
       toast.error("Failed to verify submission");
@@ -163,8 +162,6 @@ export function ProductVerificationModal({
 
       toast.success("Submission updated successfully!");
       onModeChange("view");
-      // Refresh data
-      window.location.reload();
     } catch (error) {
       console.error("Error updating submission:", error);
       toast.error("Failed to update submission");

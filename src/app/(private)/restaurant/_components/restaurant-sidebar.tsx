@@ -9,11 +9,11 @@ import { useAuth } from "@/app/contexts/auth-context";
 
 const menuItems = [
   { icon: Home, label: "Shop", href: "/restaurant" },
+  { icon: Users, label: "Affiliators", href: "/restaurant/affiliators" },
   { icon: Bell, label: "Updates", href: "/restaurant/updates" },
-  { icon: ShoppingCart, label: "orders", href: "/restaurant/orders" },
+  { icon: ShoppingCart, label: "Orders", href: "/restaurant/orders" },
   { icon: Wallet, label: "Deposits", href: "/restaurant/deposits" },
   { icon: Crown, label: "Subscription", href: "/restaurant/subscribe" },
-  { icon: Users, label: "Affiliators", href: "/restaurant/affiliators" },
   { icon: Ticket, label: "Vouchers", href: "/restaurant/vouchers" },
   { icon: HelpCircle, label: "Help & Support", href: "/restaurant/help" },
 ];

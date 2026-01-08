@@ -298,16 +298,22 @@ export default function AdminSubscriptionsPage() {
       setSearchValue,
       "Search by restaurant or plan..."
     ),
-    createCommonFilters.status(
-      selectedStatus,
-      setSelectedStatus,
-      statusOptions
-    ),
-    createCommonFilters.status(
-      selectedPaymentStatus,
-      setSelectedPaymentStatus,
-      paymentStatusOptions
-    ),
+    {
+      type: "select" as const,
+      key: "subscription-status",
+      label: "Status",
+      options: statusOptions,
+      value: selectedStatus,
+      onChange: setSelectedStatus,
+    },
+    {
+      type: "select" as const,
+      key: "payment-status",
+      label: "Payment Status",
+      options: paymentStatusOptions,
+      value: selectedPaymentStatus,
+      onChange: setSelectedPaymentStatus,
+    },
   ];
 
   const subscriptionPlansColumns = useMemo(

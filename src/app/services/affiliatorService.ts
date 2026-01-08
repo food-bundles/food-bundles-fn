@@ -1,14 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import createAxiosClient from "@/app/hooks/axiosClient";
 
-const axiosClient = createAxiosClient();
-const BASE_URL = "https://server.food.rw";
-
 export const affiliatorService = {
     // Create Affiliator
-    createAffiliator: async (data: { name: string; email: string }) => {
+    createAffiliator: async (data: { name: string; email?: string; phone?: string }) => {
         try {
-            const response = await axiosClient.post(`${BASE_URL}/affiliators`, data);
+            const axiosClient = createAxiosClient();
+            const response = await axiosClient.post("/affiliators", data);
             return {
                 success: true,
                 data: response.data.data,
@@ -23,7 +21,8 @@ export const affiliatorService = {
     // Get My Affiliators
     getMyAffiliators: async () => {
         try {
-            const response = await axiosClient.get(`${BASE_URL}/affiliators/my-affiliators`);
+            const axiosClient = createAxiosClient();
+            const response = await axiosClient.get("/affiliators/my-affiliators");
             return {
                 success: true,
                 data: response.data.data,
@@ -38,7 +37,8 @@ export const affiliatorService = {
     // Get Affiliator by ID
     getAffiliator: async (id: string) => {
         try {
-            const response = await axiosClient.get(`${BASE_URL}/affiliators/${id}`);
+            const axiosClient = createAxiosClient();
+            const response = await axiosClient.get(`/affiliators/${id}`);
             return {
                 success: true,
                 data: response.data.data,
@@ -51,10 +51,10 @@ export const affiliatorService = {
     },
 
     // Update Affiliator
-    updateAffiliator: async (id: string, data: { name?: string; email?: string }) => {
+    updateAffiliator: async (id: string, data: { name?: string; email?: string; phone?: string }) => {
         try {
-            // Trying PATCH as it is common for partial updates
-            const response = await axiosClient.patch(`${BASE_URL}/affiliators/${id}`, data);
+            const axiosClient = createAxiosClient();
+            const response = await axiosClient.patch(`/affiliators/${id}`, data);
             return {
                 success: true,
                 data: response.data.data,
@@ -69,13 +69,31 @@ export const affiliatorService = {
     // Delete Affiliator
     deleteAffiliator: async (id: string) => {
         try {
-            const response = await axiosClient.delete(`${BASE_URL}/affiliators/${id}`);
+            const axiosClient = createAxiosClient();
+            const response = await axiosClient.delete(`/affiliators/${id}`);
             return {
                 success: true,
                 message: response.data.message,
             };
         } catch (error: any) {
             console.error("Delete affiliator error:", error);
+            throw error;
+        }
+    },
+
+    // Get All Affiliators (Admin only)
+    getAllAffiliators: async (params?: { restaurantId?: string; page?: number; limit?: number }) => {
+        try {
+            const axiosClient = createAxiosClient();
+            const response = await axiosClient.get("/affiliators", { params });
+            return {
+                success: true,
+                data: response.data.data,
+                pagination: response.data.pagination,
+                message: response.data.message,
+            };
+        } catch (error: any) {
+            console.error("Get all affiliators error:", error);
             throw error;
         }
     },

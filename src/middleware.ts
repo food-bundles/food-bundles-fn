@@ -11,7 +11,7 @@ export async function middleware(req: NextRequest) {
   // Role-based route protection
   const roleRoutes = {
     "/dashboard": "ADMIN",
-    "/restaurant": "RESTAURANT", 
+    "/restaurant": "RESTAURANT",
     "/farmers": "FARMER",
     "/aggregator": "AGGREGATOR",
     "/logistics": "LOGISTICS"
@@ -19,10 +19,10 @@ export async function middleware(req: NextRequest) {
 
   const protectedRoutes = Object.keys(roleRoutes);
   const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route));
-  
+
   const guestOnlyRoutes = ["/guest"];
   const isGuestOnlyRoute = guestOnlyRoutes.some((route) => pathname.startsWith(route));
-  
+
   // Auth pages that logged-in users shouldn't access
   const authPages = ["/login", "/signup", "/forgot-password", "/reset-password"];
   const isAuthPage = authPages.includes(pathname);
@@ -69,7 +69,7 @@ export async function middleware(req: NextRequest) {
 
     try {
       const decoded: any = jwt.decode(token);
-      
+
       if (decoded.exp && decoded.exp * 1000 < Date.now()) {
         const redirectUrl = new URL("/login", req.url);
         redirectUrl.searchParams.set("redirect", pathname);
@@ -78,34 +78,56 @@ export async function middleware(req: NextRequest) {
       }
 
       // Check user role via API
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      let userRole: string | null = null;
+      let userData: any = null;
 
-      if (!response.ok) {
-        return NextResponse.redirect(new URL("/login", req.url));
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (response.ok) {
+          userData = await response.json();
+          userRole = userData.user?.role || userData.data?.user?.role;
+        } else {
+          // Fallback: Check if we have a role cookie for special cases like AFFILIATOR
+          // where the /me endpoint might be failing on the backend
+          const roleCookie = req.cookies.get("user-role")?.value;
+          if (roleCookie) {
+            userRole = roleCookie;
+          }
+        }
+      } catch (error) {
+        // If network error, still check cookie as fallback
+        const roleCookie = req.cookies.get("user-role")?.value;
+        if (roleCookie) {
+          userRole = roleCookie;
+        }
       }
 
-      const userData = await response.json();
-      const userRole = userData.user?.role;
-
       // Find required role for current route
-      const requiredRole = Object.entries(roleRoutes).find(([route]) => 
+      const requiredRole = Object.entries(roleRoutes).find(([route]) =>
         pathname.startsWith(route)
       )?.[1];
 
-      if (!userRole || userRole !== requiredRole) {
+      // Role check logic
+      const isAuthorized =
+        userRole === requiredRole ||
+        (requiredRole === "RESTAURANT" && userRole === "AFFILIATOR");
+
+      if (!userRole || !isAuthorized) {
         return NextResponse.redirect(new URL("/unauthorized", req.url));
       }
 
       return NextResponse.next();
     } catch (error) {
+      console.error("Middleware error:", error);
       const redirectUrl = new URL("/login", req.url);
       redirectUrl.searchParams.set("redirect", pathname);
-      redirectUrl.searchParams.set("reason", "invalid");
+      redirectUrl.searchParams.set("reason", "error");
       return NextResponse.redirect(redirectUrl);
     }
   }
@@ -117,7 +139,7 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/aggregator/:path*",
-    "/logistics/:path*", 
+    "/logistics/:path*",
     "/restaurant/:path*",
     "/farmers/:path*",
     "/guest/:path*",

@@ -148,7 +148,7 @@ export default function DashboardHeader() {
                     {user ? (
                       <>
                         <div className="p-0.5 bg-green-600 rounded-full flex items-center justify-center">
-                          {user?.profileImage ? (
+                          {user?.profileImage && displayName ? (
                             <Image                      
                               src={profileImage || "/placeholder.svg"}
                               alt={`${displayName}'s profile`}
@@ -160,13 +160,19 @@ export default function DashboardHeader() {
                                 target.src = "/placeholder.svg";
                               }}
                             />
-                          ) : (
+                          ) : displayName ? (
                             <div className="rounded-full bg-green-600 text-white flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 font-medium">
                               {displayName.substring(0, 2).toUpperCase()}
                             </div>
+                          ) : (
+                            <Skeleton className="rounded-full h-8 w-8 sm:h-10 sm:w-10 bg-green-600/60" />
                           )}
                         </div>
-                        <span className="font-medium text-white hidden sm:block text-sm md:text-base">{displayName}</span>
+                        {displayName ? (
+                          <span className="font-medium text-white hidden sm:block text-sm md:text-base">{displayName}</span>
+                        ) : (
+                          <Skeleton className="h-5 w-20 md:h-6 md:w-24 hidden sm:inline bg-green-600/60" />
+                        )}
                         <ChevronDown className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-white transition-transform duration-200" />
                       </>
                     ) : (
@@ -252,7 +258,7 @@ export default function DashboardHeader() {
                 {/* Mobile Profile Section */}
                 <div className="flex items-center gap-3 px-3 py-2 mb-2">
                   <div className="p-0.5 bg-green-600 rounded-full flex items-center justify-center">
-                    {user?.profileImage ? (
+                    {user?.profileImage && displayName ? (
                       <Image                      
                         src={profileImage || "/placeholder.svg"}
                         alt={`${displayName}'s profile`}
@@ -264,10 +270,12 @@ export default function DashboardHeader() {
                           target.src = "/placeholder.svg";
                         }}
                       />
-                    ) : (
+                    ) : displayName ? (
                       <div className="rounded-full bg-green-600 text-white flex items-center justify-center w-8 h-8 font-medium">
                         {displayName.substring(0, 2).toUpperCase()}
                       </div>
+                    ) : (
+                      <Skeleton className="rounded-full h-8 w-8 bg-green-600/60" />
                     )}
                   </div>
                   <div className="flex flex-col">

@@ -58,15 +58,7 @@ const createAxiosClient = (): AxiosInstance => {
   axiosClient.interceptors.response.use(
     (response: AxiosResponse) => response,
     (error: AxiosError) => {
-      try {
-        const { response } = error;
-        if (response?.status === 401) {
-          removeToken();
-          window.location.href = "/login";
-        }
-      } catch (e) {
-        console.error("Axios Error", e);
-      }
+      // Remove automatic redirect to prevent infinite loops
       return Promise.reject(error);
     }
   );
