@@ -459,11 +459,36 @@ export const ordersColumns = (
         </Button>
       );
     },
-    cell: ({ row }) => (
-      <div className="font-medium text-green-600">
-        {row.getValue("totalAmount")} Rwf
-      </div>
-    ),
+    cell: ({ row }) => {
+      const order = row.original;
+      const paymentMethod = order.originalData?.paymentMethod || order.originalData?.paymentMethodConfig?.name;
+      
+      const getPaymentMethodDisplay = (method: string) => {
+        switch (method) {
+          case "CASH":
+            return "Prepaid";
+          case "MOBILE_MONEY":
+            return "MoMo";
+          case "CARD":
+            return "Card";
+          case "VOUCHER":
+            return "Voucher";
+          default:
+            return method || "N/A";
+        }
+      };
+
+      return (
+        <div className="font-medium text-green-600">
+          <div>{row.getValue("totalAmount")} Rwf</div>
+          {paymentMethod && (
+            <div className="text-xs text-gray-900 mt-1">
+              via {getPaymentMethodDisplay(paymentMethod)}
+            </div>
+          )}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "status",

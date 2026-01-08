@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { DataTable } from "@/components/data-table";
 import { getInventoryColumns } from "./inventory-columns";
 import { createCommonFilters, TableFilters } from "@/components/filters";
@@ -26,7 +26,6 @@ interface InventoryManagementProps {
     totalPages: number;
   };
   onPaginationChange?: (page: number, limit: number) => void;
-  onFiltersChange?: (filters: { search: string; category: string }) => void;
   isLoading?: boolean;
 }
 
@@ -50,7 +49,6 @@ export function InventoryManagement({
   onRefresh,
   pagination,
   onPaginationChange,
-  onFiltersChange,
   isLoading = false,
 }: InventoryManagementProps) {
   // Filter states
@@ -77,13 +75,19 @@ export function InventoryManagement({
     setIsStatusModalOpen(true);
   };
 
-  const handleStatusUpdate = async (productId: string, status: string, reason?: string) => {
+  const handleStatusUpdate = async (
+    productId: string,
+    status: string,
+    reason?: string
+  ) => {
     try {
       await productService.updateProductStatus(productId, status, reason);
       toast.success("Product status updated successfully");
       onRefresh();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to update product status");
+      toast.error(
+        error.response?.data?.message || "Failed to update product status"
+      );
       throw error;
     }
   };
@@ -94,7 +98,9 @@ export function InventoryManagement({
       toast.success("Product updated successfully");
       onRefresh();
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to update product");
+      throw new Error(
+        error.response?.data?.message || "Failed to update product"
+      );
     }
   };
 
@@ -104,7 +110,9 @@ export function InventoryManagement({
       toast.success("Product deleted successfully");
       onRefresh();
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to delete product");
+      throw new Error(
+        error.response?.data?.message || "Failed to delete product"
+      );
     }
   };
 
@@ -119,17 +127,27 @@ export function InventoryManagement({
     }
   };
 
-
-
   // Get columns with handlers
   const columns = useMemo(() => {
     return getInventoryColumns(handleManageProduct, handleStatusClick);
   }, []);
 
-  // Filter data - now only for frontend-only filters like status and date range
+  // Filter data
   const filteredData = useMemo(() => {
     return products.filter((product) => {
-      // Status filter (frontend only)
+      // Search filter
+      if (searchValue) {
+        const searchLower = searchValue.toLowerCase();
+        const matchesSearch =
+          product.productName.toLowerCase().includes(searchLower) ||
+          product.sku.toLowerCase().includes(searchLower) ||
+          (product.category &&
+            product.category.name.toLowerCase().includes(searchLower));
+
+        if (!matchesSearch) return false;
+      }
+
+      // Status filter
       if (statusValue !== "all") {
         const quantity = product.quantity;
         const status =
@@ -141,7 +159,24 @@ export function InventoryManagement({
         if (status !== statusValue) return false;
       }
 
-      // Date range filter (expiry date) - frontend only
+      // Category filter
+      if (categoryValue !== "all") {
+        // Map category values to actual category names
+        const categoryNameMap: { [key: string]: string } = {
+          VEGETABLES: "Fresh Vegetables",
+          FRUITS: "Fresh Fruits",
+          ANIMAL_PRODUCTS: "Animal Products",
+          OTHER: "Others",
+        };
+
+        const expectedCategoryName =
+          categoryNameMap[categoryValue] || categoryValue;
+        if (product.category?.name !== expectedCategoryName) {
+          return false;
+        }
+      }
+
+      // Date range filter (expiry date)
       if (dateRange.from || dateRange.to) {
         if (!product.expiryDate) return false;
 
@@ -162,21 +197,7 @@ export function InventoryManagement({
 
       return true;
     });
-  }, [products, statusValue, dateRange]);
-
-  // Handle backend filter changes with debouncing
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (onFiltersChange) {
-        onFiltersChange({
-          search: searchValue,
-          category: categoryValue === "all" ? "" : categoryValue,
-        });
-      }
-    }, 500); // Debounce for 500ms
-
-    return () => clearTimeout(timeoutId);
-  }, [searchValue, categoryValue, onFiltersChange]);
+  }, [products, searchValue, statusValue, categoryValue, dateRange]);
 
   // Create filters
   const filters = [
