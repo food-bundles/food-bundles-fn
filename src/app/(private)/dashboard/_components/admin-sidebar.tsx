@@ -24,6 +24,7 @@ import {
   Tags,
   Boxes,
   HelpCircle,
+  BarChart3,
 } from "lucide-react";
 import NotificationsDrawer from "@/app/(private)/restaurant/_components/notificationDrawer";
 import { usePathname } from "next/navigation";
@@ -65,6 +66,11 @@ const menuItems = [
         icon: Boxes,
         label: "Units",
         href: "/dashboard/stock/units",
+      },
+      {
+        icon: BarChart3,
+        label: "Tt Sales Reports",
+        href: "/dashboard/stock/fb-reports",
       },
     ],
   },

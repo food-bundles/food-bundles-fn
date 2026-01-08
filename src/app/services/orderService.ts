@@ -154,6 +154,7 @@ export const orderService = {
     status?: string;
     paymentStatus?: string;
     restaurantId?: string;
+    search?: string;
     dateFrom?: string;
     dateTo?: string;
   }): Promise<OrdersResponse> => {

@@ -75,13 +75,19 @@ export function InventoryManagement({
     setIsStatusModalOpen(true);
   };
 
-  const handleStatusUpdate = async (productId: string, status: string, reason?: string) => {
+  const handleStatusUpdate = async (
+    productId: string,
+    status: string,
+    reason?: string
+  ) => {
     try {
       await productService.updateProductStatus(productId, status, reason);
       toast.success("Product status updated successfully");
       onRefresh();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to update product status");
+      toast.error(
+        error.response?.data?.message || "Failed to update product status"
+      );
       throw error;
     }
   };
@@ -92,7 +98,9 @@ export function InventoryManagement({
       toast.success("Product updated successfully");
       onRefresh();
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to update product");
+      throw new Error(
+        error.response?.data?.message || "Failed to update product"
+      );
     }
   };
 
@@ -102,7 +110,9 @@ export function InventoryManagement({
       toast.success("Product deleted successfully");
       onRefresh();
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to delete product");
+      throw new Error(
+        error.response?.data?.message || "Failed to delete product"
+      );
     }
   };
 
@@ -116,8 +126,6 @@ export function InventoryManagement({
       toast.error("Failed to create product");
     }
   };
-
-
 
   // Get columns with handlers
   const columns = useMemo(() => {
@@ -160,8 +168,9 @@ export function InventoryManagement({
           ANIMAL_PRODUCTS: "Animal Products",
           OTHER: "Others",
         };
-        
-        const expectedCategoryName = categoryNameMap[categoryValue] || categoryValue;
+
+        const expectedCategoryName =
+          categoryNameMap[categoryValue] || categoryValue;
         if (product.category?.name !== expectedCategoryName) {
           return false;
         }

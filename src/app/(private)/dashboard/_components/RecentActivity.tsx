@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -31,19 +32,26 @@ interface RecentActivityProps {
 }
 
 export function RecentActivity({ activities, loading = false }: RecentActivityProps) {
-const formatDate = (date: string | Date) =>
-  new Date(date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  const [mounted, setMounted] = useState(false);
 
-const formatTime = (date: string | Date) =>
-  new Date(date).toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true,
-  });
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const formatDate = (date: string | Date) =>
+    new Date(date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+
+  const formatTime = (date: string | Date) =>
+    new Date(date).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+
   const getActivityIcon = (type: string) => {
     switch (type) {
       case "user_signup":
@@ -87,7 +95,7 @@ const formatTime = (date: string | Date) =>
     }
   };
 
-  if (loading) {
+  if (loading || !mounted) {
     return (
       <Card className="h-full">
         <CardHeader>
@@ -157,8 +165,8 @@ const formatTime = (date: string | Date) =>
                 </p>
                 <div className="flex items-center justify-between mt-2">
                   <p className="text-xs text-gray-500 italic">
-                    {formatDate(activity.timestamp)} •{" "}
-                    {formatTime(activity.timestamp)}
+                    {mounted ? formatDate(activity.timestamp) : "Loading..."} •{" "}
+                    {mounted ? formatTime(activity.timestamp) : "..."}
                   </p>
                   {activity.amount && (
                     <span className="text-xs font-medium text-green-600">

@@ -207,22 +207,40 @@ export function Checkout() {
     }
   }, [wallet]);
 
+  // Update selected payment method ID when payment method changes
   useEffect(() => {
-    const selectedMethod = paymentMethods.find(pm => pm.id === selectedPaymentMethodId);
-    if (selectedMethod?.name === "VOUCHER" && isAuthenticated) {
+    if (paymentMethods.length > 0) {
+      let targetPaymentMethod;
+      
+      switch (method) {
+        case "prepaid":
+          targetPaymentMethod = paymentMethods.find((pm: PaymentMethodType) => pm.name === "CASH");
+          break;
+        case "momo":
+          targetPaymentMethod = paymentMethods.find((pm: PaymentMethodType) => pm.name === "MOBILE_MONEY");
+          break;
+        case "card":
+          targetPaymentMethod = paymentMethods.find((pm: PaymentMethodType) => pm.name === "CARD");
+          break;
+        case "voucher":
+          targetPaymentMethod = paymentMethods.find((pm: PaymentMethodType) => pm.name === "VOUCHER");
+          break;
+        default:
+          targetPaymentMethod = paymentMethods[0];
+      }
+      
+      if (targetPaymentMethod) {
+        setSelectedPaymentMethodId(targetPaymentMethod.id);
+      }
+    }
+  }, [method, paymentMethods]);
+
+  useEffect(() => {
+    if (method === "voucher" && isAuthenticated) {
       const fetchVouchers = async () => {
         try {
           setIsLoadingVouchers(true);
-          const response = await getMyVouchers({ status: "ACTIVE", activeOnly: true });
-          if (response?.data) {
-            // Filter vouchers that have remaining credit and are not expired
-            const validVouchers = response.data.filter((voucher: any) => 
-              voucher.status === "ACTIVE" && 
-              voucher.remainingCredit > 0 &&
-              new Date(voucher.expiryDate) > new Date()
-            );
-            setAvailableVouchers(validVouchers);
-          }
+          await getMyVouchers();
         } catch (error) {
           console.error("Error fetching vouchers:", error);
           setAvailableVouchers([]);
@@ -236,6 +254,18 @@ export function Checkout() {
       setIsLoadingVouchers(false);
     }
   }, [method, isAuthenticated, getMyVouchers]);
+
+  useEffect(() => {
+    if (method === "voucher" && myVouchers && myVouchers.length > 0) {
+      const validVouchers = myVouchers.filter((voucher: any) => 
+        voucher.status === "ACTIVE" && 
+        voucher.remainingCredit > 0 &&
+        (!voucher.expiryDate || new Date(voucher.expiryDate) > new Date())
+      );
+      console.log('Valid vouchers found:', validVouchers);
+      setAvailableVouchers(validVouchers);
+    }
+  }, [myVouchers, method]);
 
   // Check subscription benefits
   const cartWithRestaurant = cart as any;
@@ -399,13 +429,12 @@ export function Checkout() {
         }
       }
 
-      // Get the correct payment method ID based on selected method
-      let paymentMethodId = selectedPaymentMethodId;
-      if (method === "prepaid") {
-        const cashMethod = paymentMethods.find((pm: PaymentMethodType) => pm.name === "CASH");
-        if (cashMethod) {
-          paymentMethodId = cashMethod.id;
-        }
+      // Use the selected payment method ID (already updated by useEffect)
+      const paymentMethodId = selectedPaymentMethodId;
+      
+      if (!paymentMethodId) {
+        setErrors({ submit: "Please select a valid payment method." });
+        return;
       }
 
       const checkoutPayload: CheckoutRequest = {
@@ -837,12 +866,10 @@ export function Checkout() {
                               value={voucher.voucherCode}
                             >
                               <span className="block sm:hidden">
-                                {voucher.voucherCode} -{" "}
-                                {voucher.discountPercentage}% OFF
+                                {voucher.voucherCode} - {voucher.remainingCredit.toLocaleString()} RWF
                               </span>
                               <span className="hidden sm:block">
-                                {voucher.voucherCode} -{" "}
-                                {voucher.remainingCredit.toLocaleString()} RWF
+                                {voucher.voucherCode} - {voucher.remainingCredit.toLocaleString()} RWF available
                               </span>
                             </SelectItem>
                           ))}
@@ -856,12 +883,12 @@ export function Checkout() {
                     </div>
                   ) : (
                     <div className="text-center py-4 border border-gray-200 rounded-lg bg-gray-50">
-                      <p className="text-sm text-gray-600 mb-3">
+                      <p className="text-xs text-gray-600 mb-3">
                         You don&rsquo;t have any active vouchers
                       </p>
                       <Link
                         href="/restaurant/vouchers"
-                        className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md transition-colors"
+                        className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-md transition-colors"
                       >
                         Apply for Voucher
                       </Link>

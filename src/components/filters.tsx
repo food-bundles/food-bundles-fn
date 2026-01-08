@@ -135,7 +135,7 @@ export function TableFilters({ filters, className, showColumnToggle = false, onC
                       </>
                     ) : filter.label}
                   </span>
-                  <div className="flex items-center gap-1 flex-shrink-0">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     {filter.value && (
                       <Button
                         variant="ghost"
@@ -146,7 +146,7 @@ export function TableFilters({ filters, className, showColumnToggle = false, onC
                           filter.onChange?.(undefined);
                         }}
                       >
-                        <X className="h-2 w-2 sm:h-3 sm:w-3" />
+                        <X className="h-2 w-2 mr-2 sm:h-3 sm:w-3" />
                       </Button>
                     )}
                     <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -218,11 +218,8 @@ export function TableFilters({ filters, className, showColumnToggle = false, onC
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <div className="p-2">
-                  <div className="flex justify-between items-center my-2">
-                    <h3 className="text-sm font-medium">Select start and end dates</h3>
-                    <Button variant="ghost" size="sm" onClick={() => filter.onChange?.({})}>
-                      Clear
-                    </Button>
+                  <div className="flex justify-center items-center my-2">
+                    <h3 className="text-xs text-center font-medium">Select start and end dates</h3>
                   </div>
                   <Calendar
                     initialFocus

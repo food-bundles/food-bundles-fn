@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -20,7 +21,13 @@ interface QuickStatsProps {
 }
 
 export function QuickStats({ loading = false, stats }: QuickStatsProps) {
-  if (loading) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (loading || !mounted) {
     return (
       <Card className="col-span-3">
         <CardHeader>

@@ -73,7 +73,7 @@ export const productService = {
   getAllProductsRoleBased: async (params?: {
     page?: number;
     limit?: number;
-    categoryId?: string;
+    category?: string;
     search?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';

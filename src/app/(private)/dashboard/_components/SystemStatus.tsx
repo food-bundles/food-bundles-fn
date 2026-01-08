@@ -27,38 +27,43 @@ interface ServiceStatus {
 }
 
 export function SystemStatus({}: SystemStatusProps) {
-  const [services, setServices] = useState<ServiceStatus[]>([
-    {
-      name: "API Gateway",
-      status: "operational",
-      responseTime: 120,
-      lastChecked: new Date(),
-      icon: Server
-    },
-    {
-      name: "Database",
-      status: "operational", 
-      responseTime: 45,
-      lastChecked: new Date(),
-      icon: Database
-    },
-    {
-      name: "WebSocket",
-      status: "operational",
-      responseTime: 30,
-      lastChecked: new Date(),
-      icon: Wifi
-    },
-    {
-      name: "External APIs",
-      status: "operational",
-      responseTime: 200,
-      lastChecked: new Date(),
-      icon: Globe
-    }
-  ]);
-
+  const [mounted, setMounted] = useState(false);
+  const [services, setServices] = useState<ServiceStatus[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    setServices([
+      {
+        name: "API Gateway",
+        status: "operational",
+        responseTime: 120,
+        lastChecked: new Date(),
+        icon: Server
+      },
+      {
+        name: "Database",
+        status: "operational", 
+        responseTime: 45,
+        lastChecked: new Date(),
+        icon: Database
+      },
+      {
+        name: "WebSocket",
+        status: "operational",
+        responseTime: 30,
+        lastChecked: new Date(),
+        icon: Wifi
+      },
+      {
+        name: "External APIs",
+        status: "operational",
+        responseTime: 200,
+        lastChecked: new Date(),
+        icon: Globe
+      }
+    ]);
+  }, []);
 
   const checkSystemStatus = async () => {
     setIsRefreshing(true);
@@ -113,11 +118,43 @@ export function SystemStatus({}: SystemStatusProps) {
     }
   };
 
-  const overallStatus = services.every(s => s.status === "operational") 
+  const overallStatus = services.length > 0 && services.every(s => s.status === "operational") 
     ? "operational" 
     : services.some(s => s.status === "down") 
     ? "down" 
     : "degraded";
+
+  if (!mounted) {
+    return (
+      <Card>
+        <CardHeader>
+          <div className="flex gap-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 bg-gray-200 animate-pulse rounded" />
+                <CardTitle className="text-lg font-semibold">System Status</CardTitle>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-600">Overall Status:</span>
+              <div className="h-6 w-20 bg-gray-200 animate-pulse rounded" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="flex flex-col items-center p-3 bg-gray-50 rounded-lg">
+                <div className="h-4 w-16 bg-gray-200 animate-pulse rounded mb-2" />
+                <div className="h-6 w-20 bg-gray-200 animate-pulse rounded mb-1" />
+                <div className="h-3 w-12 bg-gray-200 animate-pulse rounded" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -156,7 +193,7 @@ export function SystemStatus({}: SystemStatusProps) {
                     </span>
                   )}
                   <p className="text-xs text-gray-400 mt-1">
-                    {service.lastChecked.toLocaleTimeString()}
+                    {mounted ? service.lastChecked.toLocaleTimeString() : "Loading..."}
                   </p>
                 </div>
               </div>

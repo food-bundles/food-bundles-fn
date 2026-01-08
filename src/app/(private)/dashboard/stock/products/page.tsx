@@ -17,17 +17,26 @@ export default function InventoryPage() {
     total: 0,
     totalPages: 0,
   });
+  const [filters, setFilters] = useState({
+    search: "",
+    category: "",
+  });
   const { getAllProductsRoleBased } = useProducts();
 
-  // ✅ Fetch products based on user role with pagination
-  const fetchProducts = async (page = 1, limit = 10, isPagination = false) => {
+  // ✅ Fetch products based on user role with pagination and filters
+  const fetchProducts = async (page = 1, limit = 10, filterParams = filters, isPagination = false) => {
     try {
       if (isPagination) {
         setPaginationLoading(true);
       } else {
         setLoading(true);
       }
-      const response = await getAllProductsRoleBased({ page, limit });
+      
+      const params: any = { page, limit };
+      if (filterParams.search.trim()) params.search = filterParams.search.trim();
+      if (filterParams.category && filterParams.category !== "all") params.category = filterParams.category;
+      
+      const response = await getAllProductsRoleBased(params);
 
       // Check if API returned data correctly
       if (response?.success && Array.isArray(response?.data)) {
@@ -82,12 +91,17 @@ export default function InventoryPage() {
   };
 
   const handlePaginationChange = (page: number, limit: number) => {
-    fetchProducts(page, limit, true);
+    fetchProducts(page, limit, filters, true);
+  };
+
+  const handleFiltersChange = (newFilters: { search: string; category: string }) => {
+    setFilters(newFilters);
+    fetchProducts(1, pagination.limit, newFilters, false);
   };
 
   // ✅ Use effect (correct spelling)
   useEffect(() => {
-    fetchProducts(1, 10);
+    fetchProducts(1, 10, filters);
   }, []);
 
   if (loading)
@@ -100,9 +114,10 @@ export default function InventoryPage() {
     <div className="p-6">
       <InventoryManagement 
         products={products} 
-        onRefresh={() => fetchProducts(pagination.page, pagination.limit)}
+        onRefresh={() => fetchProducts(pagination.page, pagination.limit, filters)}
         pagination={pagination}
         onPaginationChange={handlePaginationChange}
+        onFiltersChange={handleFiltersChange}
         isLoading={paginationLoading}
       />
     </div>
