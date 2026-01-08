@@ -130,14 +130,33 @@ const axiosClient = createAxiosClient();
 
 export const statisticsService = {
   async getDashboardStats(filters?: StatsFilters): Promise<{ message: string; data: DashboardStats }> {
-    const params = new URLSearchParams();
-    if (filters?.year) params.append('year', filters.year.toString());
-    if (filters?.month) params.append('month', filters.month.toString());
-    if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
-    if (filters?.dateTo) params.append('dateTo', filters.dateTo);
+    try {
+      const params = new URLSearchParams();
+      if (filters?.year) params.append('year', filters.year.toString());
+      if (filters?.month) params.append('month', filters.month.toString());
+      if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
+      if (filters?.dateTo) params.append('dateTo', filters.dateTo);
 
-    const response = await axiosClient.get(`/stats/dashboard?${params.toString()}`);
-    return response.data;
+      const response = await axiosClient.get(`/stats/dashboard?${params.toString()}`, {
+        timeout: 120000 // 2 minutes timeout
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error('Dashboard stats error:', error);
+      // Return fallback data on timeout or error
+      return {
+        message: 'Dashboard stats unavailable',
+        data: {
+          users: { totalUsers: 0, restaurants: 0, farmers: 0, admins: 0, affiliators: 0, logistics: 0, timeSeriesData: [], growth: { totalChange: 0, restaurantChange: 0, farmerChange: 0, adminChange: 0 } },
+          orders: { totalOrders: 0, completedOrders: 0, cancelledOrders: 0, ongoingOrders: 0, timeSeriesData: [], growth: { totalChange: 0, completedChange: 0 } },
+          finance: { totalRevenue: 0, totalExpenses: 0, netProfit: 0, profitMargin: 0, timeSeriesData: [], revenueBreakdown: { orders: 0, subscriptions: 0, vouchers: 0 }, expenseBreakdown: { usedVouchers: 0, maturedVouchers: 0, nearMaturityVouchers: 0, farmerPayments: 0 } },
+          subscriptions: { totalSubscriptions: 0, activeSubscriptions: 0, expiredSubscriptions: 0, planBreakdown: [], growth: { totalChange: 0, activeChange: 0 } },
+          vouchers: { totalVouchers: 0, usedVouchers: 0, maturedVouchers: 0, nearMaturityVouchers: 0, totalValue: 0, usedValue: 0, timeSeriesData: [], growth: { totalChange: 0, usedChange: 0 } },
+          quickStats: { totalUsers: { value: 0, change: 0 }, totalOrders: { value: 0, change: 0 }, totalRevenue: { value: 0, change: 0 }, activeSubscriptions: { value: 0, change: 0 }, usedVouchers: { value: 0, change: 0 }, completionRate: { value: 0, change: 0 } },
+          recentActivities: []
+        } as DashboardStats
+      };
+    }
   },
 
   async getUserStats(filters?: StatsFilters): Promise<{ message: string; data: DashboardStats['users'] }> {

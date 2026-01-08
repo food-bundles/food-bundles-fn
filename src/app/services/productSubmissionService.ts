@@ -210,9 +210,9 @@ export const productSubmissionService = {
   getAllProducts: async (category?: string): Promise<Product[]> => {
     try {
       const axiosClient = createAxiosClient()
-      let url = "/products"
+      let url = "/products?page=1&limit=100"
       if (category) {
-        url += `?category=${encodeURIComponent(category)}`
+        url += `&category=${encodeURIComponent(category)}`
       }
 
       const response = await axiosClient.get(url)

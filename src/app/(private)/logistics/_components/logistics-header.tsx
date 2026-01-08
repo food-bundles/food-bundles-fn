@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { notificationService } from "@/app/services/notificationService";
 import { OptimizedImage } from "@/components/OptimizedImage";
+import { useNotifications } from "@/app/contexts/NotificationContext";
 
 interface LogisticsHeaderProps {
   onMenuClick?: () => void;
@@ -28,25 +29,11 @@ interface LogisticsHeaderProps {
 
 export function LogisticsHeader({ onMenuClick, sidebarOpen }: LogisticsHeaderProps) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [isLoadingNotifications, setIsLoadingNotifications] = useState(true);
+  const { unreadCount, loading: isLoadingNotifications } = useNotifications();
   const { user, getUserProfileImage } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  useEffect(() => {
-    const fetchUnreadCount = async () => {
-      try {
-        setIsLoadingNotifications(true);
-        const response = await notificationService.getUnreadCount();
-        setUnreadCount(response.data.unreadCount);
-      } catch (error) {
-        console.error('Failed to fetch unread count:', error);
-      } finally {
-        setIsLoadingNotifications(false);
-      }
-    };
-    fetchUnreadCount();
-  }, []);
+  // Unread count is now managed by NotificationContext
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -61,8 +48,8 @@ export function LogisticsHeader({ onMenuClick, sidebarOpen }: LogisticsHeaderPro
   };
 
   const profileImage = getUserProfileImage();
-  const userName =  user?.username  || "";
-  
+  const userName = user?.username || "";
+
   return (
     <>
       <header className="bg-green-700 border-b border-green-800">

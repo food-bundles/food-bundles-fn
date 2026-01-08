@@ -16,22 +16,25 @@ const getToken = (): string | null => {
 
 const setToken = (token: string): void => {
   if (typeof window !== "undefined") {
+    const isProduction = process.env.NODE_ENV === "production";
+    const secureAttribute = isProduction ? "secure;" : "";
     document.cookie = `auth-token=${encodeURIComponent(
       token
-    )}; path=/; max-age=86400; secure; samesite=strict`;
+    )}; path=/; max-age=86400; ${secureAttribute} samesite=lax`;
   }
 };
 
 const removeToken = (): void => {
   if (typeof window !== "undefined") {
-    document.cookie =
-      "auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; secure; samesite=strict";
+    const isProduction = process.env.NODE_ENV === "production";
+    const secureAttribute = isProduction ? "secure;" : "";
+    document.cookie = `auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; ${secureAttribute} samesite=lax`;
   }
 };
 
 const createAxiosClient = (): AxiosInstance => {
   const axiosClient = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000",
+    baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || "https://server.food.rw",
     timeout: 50000,
     headers: {
       "Content-Type": "application/json",
@@ -55,15 +58,7 @@ const createAxiosClient = (): AxiosInstance => {
   axiosClient.interceptors.response.use(
     (response: AxiosResponse) => response,
     (error: AxiosError) => {
-      try {
-        const { response } = error;
-        if (response?.status === 401) {
-          removeToken();
-          window.location.href = "/login";
-        }
-      } catch (e) {
-        console.error("Axios Error", e);
-      }
+      // Remove automatic redirect to prevent infinite loops
       return Promise.reject(error);
     }
   );

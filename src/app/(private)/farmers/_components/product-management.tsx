@@ -22,6 +22,7 @@ import ProductSubmissionModal, {
 import { productColumns } from "./product-columns";
 import { DataTable } from "@/components/data-table";
 import { Product } from "./product-context";
+import StatusCards from "./status-cards";
 import {
   Sheet,
   SheetContent,
@@ -198,6 +199,13 @@ export default function ProductManagement() {
     <div className="min-h-screen bg-gray-50">
       <main className="container mx-auto px-6 py-8">
         <div className="bg-white rounded-lg shadow-sm p-6">
+          {/* Status Cards */}
+          <StatusCards
+            products={products}
+            onStatusClick={setSelectedStatus}
+            selectedStatus={selectedStatus}
+          />
+
           {/* Header */}
           <div className="flex  flex-col sm:flex-row sm:items-center  justify-between mb-6">
             <div>
@@ -219,7 +227,7 @@ export default function ProductManagement() {
           </div>
 
           {/* Status Summary Buttons */}
-          <div className="flex flex-wrap gap-2 mb-4">
+          {/* <div className="flex flex-wrap gap-2 mb-4">
             {statusOptions.map((status) => (
               <Button
                 key={status.value}
@@ -239,7 +247,7 @@ export default function ProductManagement() {
                 )
               </Button>
             ))}
-          </div>
+          </div> */}
 
           {/* Filter Component */}
           <div className="mb-6">

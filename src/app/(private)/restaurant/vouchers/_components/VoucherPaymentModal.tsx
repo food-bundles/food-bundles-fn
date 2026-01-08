@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { voucherService } from "@/app/services/voucherService";
 import { toast } from "sonner";
 
-type PaymentMethod = "momo" | "card" | "bank";
+type PaymentMethod = "prepaid" | "momo" | "card" | "bank";
 
 interface VoucherPaymentModalProps {
   open: boolean;
@@ -46,7 +46,7 @@ export default function VoucherPaymentModal({
       
       const paymentData: any = {
         amount: voucher.usedCredit,
-        paymentMethod: method === "momo" ? "MOBILE_MONEY" : method === "card" ? "CARD" : "BANK_TRANSFER",
+        paymentMethod: method === "prepaid" ? "CASH" : method === "momo" ? "MOBILE_MONEY" : method === "card" ? "CARD" : "BANK_TRANSFER",
       };
 
       // Add phone number for mobile money payment (format it properly)
@@ -86,6 +86,21 @@ export default function VoucherPaymentModal({
     const amount = voucher ? `${voucher.usedCredit.toLocaleString()} RWF` : "";
     
     switch (method) {
+      case "prepaid":
+        return (
+          <div className="space-y-3">
+            <p className="text-gray-900 text-[13px] text-center">
+              Pay using your prepaid wallet balance.
+            </p>
+            <Button 
+              onClick={handlePayment}
+              disabled={loading}
+              className="w-full bg-green-600 text-white hover:bg-green-700 rounded-none text-[13px] font-normal"
+            >
+              {loading ? "Processing..." : `Pay ${amount}`}
+            </Button>
+          </div>
+        );
       case "momo":
         return (
           <div className="space-y-3">
@@ -191,6 +206,13 @@ export default function VoucherPaymentModal({
 
         <div className="flex flex-wrap justify-center gap-2 mb-4">
           <Button
+            variant={method === "prepaid" ? "default" : "outline"}
+            onClick={() => setMethod("prepaid")}
+            className="rounded flex-1 sm:flex-initial h-8 w-30 text-[14px] font-normal"
+          >
+            Prepaid
+          </Button>
+          <Button
             variant={method === "momo" ? "default" : "outline"}
             onClick={() => setMethod("momo")}
             className="rounded flex-1 sm:flex-initial h-8 w-30 text-[14px] font-normal"
@@ -204,13 +226,6 @@ export default function VoucherPaymentModal({
           >
             Card
           </Button>
-          {/* <Button
-            variant={method === "bank" ? "default" : "outline"}
-            onClick={() => setMethod("bank")}
-            className="rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal"
-          >
-            Bank
-          </Button> */}
         </div>
 
         {renderForm()}

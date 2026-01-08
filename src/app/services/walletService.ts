@@ -34,6 +34,12 @@ export interface AdjustWalletData {
   description: string;
 }
 
+export interface AdminDepositData {
+  restaurantId: string;
+  amount: number;
+  description: string;
+}
+
 export const walletService = {
   // Create wallet
   createWallet: async (data: CreateWalletData) => {
@@ -59,6 +65,13 @@ export const walletService = {
   // Get wallet transactions
   getWalletTransactions: async (filters?: WalletTransactionFilters) => {
     const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/wallets/my-wallet-transactions", { params: filters });
+    return response.data;
+  },
+
+  // Get all wallet transactions (admin only)
+  getAllWalletTransactions: async (filters?: WalletTransactionFilters) => {
+    const axiosClient = createAxiosClient();
     const response = await axiosClient.get("/wallets/transactions", { params: filters });
     return response.data;
   },
@@ -78,9 +91,9 @@ export const walletService = {
   },
 
   // Get all wallets (admin)
-  getAllWallets: async () => {
+  getAllWallets: async (filters?: AdminWalletFilters) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.get("/wallets/all");
+    const response = await axiosClient.get("/wallets", { params: filters });
     return response.data;
   },
 
@@ -88,13 +101,6 @@ export const walletService = {
   getAllTransactions: async (filters?: WalletTransactionFilters) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.get("/wallets/all-transactions", { params: filters });
-    return response.data;
-  },
-
-  // Admin functions
-  getAllWallets: async (filters?: AdminWalletFilters) => {
-    const axiosClient = createAxiosClient();
-    const response = await axiosClient.get("/wallets", { params: filters });
     return response.data;
   },
 
@@ -113,6 +119,13 @@ export const walletService = {
   adjustWalletBalance: async (walletId: string, data: AdjustWalletData) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.post(`/wallets/${walletId}/adjust`, data);
+    return response.data;
+  },
+
+  // Admin deposit to restaurant wallet
+  adminDeposit: async (data: AdminDepositData) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/wallets/admin-deposit", data);
     return response.data;
   },
 };

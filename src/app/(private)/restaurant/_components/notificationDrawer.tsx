@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { notificationService, Notification } from "@/app/services/notificationService";
 import { formatDistanceToNow } from "date-fns";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
+import { useNotifications } from "@/app/contexts/NotificationContext";
 
 interface NotificationsDrawerProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ export default function NotificationsDrawer({
   isOpen,
   onClose,
 }: NotificationsDrawerProps) {
+  const { unreadCount, refreshUnreadCount, markAllAsRead: globalMarkAllRead } = useNotifications();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeFilter, setActiveFilter] = useState<"all" | "read" | "unread">(
@@ -55,7 +57,8 @@ export default function NotificationsDrawer({
     return () => document.removeEventListener("keydown", handleEscape);
   }, [isOpen, onClose]);
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  // use global unreadCount from context for the badge
+  // const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const filteredNotifications = notifications.filter((notification) => {
     if (activeFilter === "read") return notification.isRead;
@@ -65,7 +68,7 @@ export default function NotificationsDrawer({
 
   const handleMarkAllRead = async () => {
     try {
-      await notificationService.markAllAsRead();
+      await globalMarkAllRead();
       setNotifications((prev) =>
         prev.map((notification) => ({ ...notification, isRead: true }))
       );
@@ -84,6 +87,7 @@ export default function NotificationsDrawer({
             : notification
         )
       );
+      refreshUnreadCount();
     } catch (error) {
       console.error('Failed to mark as read:', error);
     }
@@ -95,6 +99,7 @@ export default function NotificationsDrawer({
       setNotifications((prev) =>
         prev.filter((notification) => notification.id !== id)
       );
+      refreshUnreadCount();
     } catch (error) {
       console.error('Failed to delete notification:', error);
     }
@@ -141,9 +146,8 @@ export default function NotificationsDrawer({
       <div
         className={`fixed top-0 right-0 h-full bg-white text-gray-900 z-50 transform transition-all duration-300 ease-in-out overflow-y-auto shadow-2xl border-l border-gray-200 scrollbar-hide
           w-[90vw] sm:w-[400px] md:w-[440px]
-          ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        }`}
+          ${isOpen ? "translate-x-0" : "translate-x-full"
+          }`}
       >
         {/* Header */}
         <div className="sticky top-0 z-10 bg-green-700 border-b border-gray-200 flex justify-between items-center px-6 py-3">
@@ -193,11 +197,10 @@ export default function NotificationsDrawer({
                 onClick={() =>
                   setActiveFilter(filter.key as "all" | "read" | "unread")
                 }
-                className={`pb-3 text-sm font-medium transition-colors ${
-                  activeFilter === filter.key
+                className={`pb-3 text-sm font-medium transition-colors ${activeFilter === filter.key
                     ? "text-gray-900 border-b-2 border-gray-900"
                     : "text-gray-500 hover:text-gray-700"
-                }`}
+                  }`}
               >
                 {filter.label}
               </button>
@@ -207,9 +210,9 @@ export default function NotificationsDrawer({
           {/* Notifications list */}
           <div className="space-y-4">
             {loading ? (
-             <div className="flex justify-center items-center h-32">
-              <Spinner variant="ring"/>
-             </div>
+              <div className="flex justify-center items-center h-32">
+                <Spinner variant="ring" />
+              </div>
             ) : filteredNotifications.length === 0 ? (
               <Card className="">
                 <CardContent className="p-8 text-center">
@@ -222,9 +225,8 @@ export default function NotificationsDrawer({
                   key={notification.id}
                   className={`${getNotificationBg(
                     notification
-                  )} transition-colors rounded py-1 ${
-                    !notification.isRead ? "cursor-pointer hover:shadow-md" : ""
-                  }`}
+                  )} transition-colors rounded py-1 ${!notification.isRead ? "cursor-pointer hover:shadow-md" : ""
+                    }`}
                   onClick={() =>
                     !notification.isRead && handleMarkAsRead(notification.id)
                   }

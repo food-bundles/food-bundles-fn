@@ -16,6 +16,24 @@ export const authService = {
       if (typeof window !== "undefined") {
         setToken(response.data.token);
         document.cookie = `auth-token=${response.data.token}; path=/; max-age=86400; secure; samesite=strict`;
+
+        // Handle both old and new response structures
+        const user = response.data.user || response.data.data?.user;
+        const userType = response.data.userType || response.data.data?.userType;
+
+        if (user) {
+          localStorage.setItem('user', JSON.stringify(user));
+          if (user.role) {
+            document.cookie = `user-role=${user.role}; path=/; max-age=86400; secure; samesite=strict`;
+          }
+          if (user.restaurantId) {
+            localStorage.setItem('restaurantId', user.restaurantId);
+          }
+        }
+
+        if (userType) {
+          document.cookie = `user-type=${userType}; path=/; max-age=86400; secure; samesite=strict`;
+        }
       }
     }
 
@@ -65,13 +83,24 @@ export const authService = {
   },
 
   getCurrentUser: async () => {
-    const axiosClient = createAxiosClient();
-    const response = await axiosClient.get("/me");
-    return response.data;
+    try {
+      const axiosClient = createAxiosClient();
+      const response = await axiosClient.get("/me");
+      return response.data;
+    } catch (error) {
+      console.warn("getCurrentUser failed, user may not be authenticated");
+      return null;
+    }
   },
 
   logout: async () => {
     removeToken();
+    if (typeof window !== "undefined") {
+      document.cookie = "user-role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      document.cookie = "user-type=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      localStorage.removeItem("user");
+      localStorage.removeItem("restaurantId");
+    }
     return { success: true, message: "Logged out successfully" };
   },
 

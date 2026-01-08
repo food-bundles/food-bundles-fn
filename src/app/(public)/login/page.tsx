@@ -136,7 +136,10 @@ function LoginForm() {
         localStorage.removeItem('rememberMe');
       }
       
-      const userRole = response.data?.user?.role;
+      // Handle both old and new response structures
+      const user = response.data?.user || response.data?.data?.user;
+      const userRole = user?.role;
+      
       if (userRole) {
         const redirectPath = getRedirectPath(userRole as UserRole);
         window.location.href = redirectPath;

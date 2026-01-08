@@ -23,6 +23,7 @@ import {
   Box,
   Tags,
   Boxes,
+  HelpCircle,
 } from "lucide-react";
 import NotificationsDrawer from "@/app/(private)/restaurant/_components/notificationDrawer";
 import { usePathname } from "next/navigation";
@@ -30,8 +31,10 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { authService } from "@/app/services/authService";
 import { OptimizedImage } from "@/components/OptimizedImage";
+import { Button } from "@/components/ui/button";
 
 const menuItems = [
+  { icon: Users, label: "Affiliators", href: "/dashboard/users/affiliators" },
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   {
     icon: FileText,
@@ -222,6 +225,10 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
           </div>
           </Link>
           <NotificationsDrawer isOpen={false} onClose={() => {}} />
+          <NotificationsDrawer
+            isOpen={false}
+            onClose={() => { }}
+          />
         </div>
 
         {/* Navigation */}
@@ -369,6 +376,26 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
               )}
             </li>
           </ul>
+
+          {/* Help Center */}
+          <div className="p-4 shrink-0">
+            <div className="bg-green-100 rounded-lg p-4 text-center">
+              <div className="w-16 h-16 bg-green-300 rounded-full flex items-center justify-center mx-auto mb-2">
+                <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
+                  <HelpCircle className="h-6 w-6 text-white" />
+                </div>
+              </div>
+
+              <h3 className="text-sm font-medium text-gray-800 mb-1">
+                Help center
+              </h3>
+              <Link href="/dashboard/contact-submissions">
+                <Button className="w-full bg-green-600 text-white text-xs py-2 px-3 cursor-pointer rounded-md hover:bg-green-700 transition-colors">
+                  Go to help center
+                </Button>
+              </Link>
+            </div>
+          </div>
         </nav>
       </div>
     </div>

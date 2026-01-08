@@ -22,6 +22,7 @@ interface User {
   profileImage?: string;
   location?: string;
   restaurantId?: string;
+  userType?: string;
 }
 
 interface AuthContextType {
@@ -41,43 +42,80 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window !== "undefined") {
+      const savedUser = localStorage.getItem("user");
+      if (savedUser) {
+        try {
+          return JSON.parse(savedUser);
+        } catch {
+          return null;
+        }
+      }
+    }
+    return null;
+  });
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    if (typeof window !== "undefined") {
+      return !!document.cookie.includes("auth-token");
+    }
+    return false;
+  });
+  const [isLoading, setIsLoading] = useState(() => {
+    if (typeof window !== "undefined") {
+      const hasUser = !!localStorage.getItem("user");
+      const hasToken = !!document.cookie.includes("auth-token");
+      return !(hasUser && hasToken);
+    }
+    return true;
+  });
   const [isInitialCheckDone, setIsInitialCheckDone] = useState(false);
   const checkingRef = useRef(false);
 
   const checkAuth = useCallback(async () => {
-    // Prevent multiple simultaneous auth checks
-    if (checkingRef.current) {
-      return;
-    }
-
+    if (checkingRef.current) return;
     checkingRef.current = true;
 
+    const hasCachedInfo = !!user && !!document.cookie.includes("auth-token");
+
     try {
-      setIsLoading(true);
+      if (!hasCachedInfo) {
+        setIsLoading(true);
+      }
+
       const response = await authService.getCurrentUser();
 
-      if (response.success && response.user) {
-        setUser(response.user);
-        setIsAuthenticated(true);
-      setIsLoading(false);
+      if (response && response.success) {
+        const userData = response.user || response.data?.user;
+        if (userData) {
+          setUser(userData);
+          setIsAuthenticated(true);
+          localStorage.setItem("user", JSON.stringify(userData));
+        }
       } else {
-        setUser(null);
-        setIsAuthenticated(false);
+        const savedUser = localStorage.getItem('user');
+        if (savedUser) {
+          try {
+            const parsedUser = JSON.parse(savedUser);
+            setUser(parsedUser);
+            setIsAuthenticated(true);
+          } catch {
+            setUser(null);
+            setIsAuthenticated(false);
+          }
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
+        }
       }
     } catch (error) {
       console.error("Auth check failed:", error);
-      setUser(null);
-      setIsAuthenticated(false);
-      
     } finally {
       setIsLoading(false);
       setIsInitialCheckDone(true);
       checkingRef.current = false;
     }
-  }, []);
+  }, [user]);
 
   const login = useCallback(
     async (loginData: any) => {
@@ -85,8 +123,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const response = await authService.login(loginData);
 
         if (response.success) {
-          // Immediately check auth after successful login
-          await checkAuth();
+          // Extract user from response
+          const userFromResponse = response.user || response.data?.user || response.data?.data?.user;
+
+          if (userFromResponse) {
+            setUser(userFromResponse);
+            setIsAuthenticated(true);
+            localStorage.setItem('user', JSON.stringify(userFromResponse));
+          } else {
+            // Immediately check auth if user not in response
+            await checkAuth();
+          }
 
           // Dispatch a custom event to notify other components
           window.dispatchEvent(new CustomEvent("loginSuccess"));
@@ -166,11 +213,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setIsInitialCheckDone(true);
       }
     }
-  }, [isInitialCheckDone]); 
+  }, [isInitialCheckDone]);
 
   useEffect(() => {
     let debounceTimer: NodeJS.Timeout;
-    
+
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === "auth-token") {
         clearTimeout(debounceTimer);
@@ -192,7 +239,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       window.removeEventListener("storage", handleStorageChange);
       clearTimeout(debounceTimer);
     };
-  }, [isAuthenticated]); 
+  }, [isAuthenticated]);
 
 
 

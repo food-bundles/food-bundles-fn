@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { Menu, X, UserPlus, User, ShoppingCart } from "lucide-react";
 import { useState, useCallback, useRef, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/auth-context";
 import { UserRole } from "@/lib/types";
 import Link from "next/link";
@@ -75,6 +75,7 @@ export function Header() {
   const [isShopDropdownOpen, setIsShopDropdownOpen] = useState(false);
   const [isAuthTransitioning, setIsAuthTransitioning] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const router = useRouter();
 
   const lastScrollY = useRef(0);
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -117,8 +118,8 @@ export function Header() {
   const handleNavigation = useCallback(async (path: string) => {
     // Show loading state briefly
     await new Promise((resolve) => setTimeout(resolve, 300));
-    window.location.href = path;
-  }, []);
+    router.push(path);
+  }, [router]);
 
   const handleDashboardNavigation = useCallback(() => {
     if (user?.role) {
@@ -278,7 +279,7 @@ export function Header() {
                     ]}
                   />
                   <span className="text-2sm font-bold text-black whitespace-nowrap">
-                    Food Bundles Ltd
+                    FoodBundles
                   </span>
                 </div>
               </Link>
@@ -315,11 +316,10 @@ export function Header() {
 
                   {/* Enhanced Dropdown */}
                   <div
-                    className={`absolute top-full -left-18 mt-2 w-64 space-y-2 bg-white border border-orange-200 rounded-md transition-all duration-300 ${
-                      isShopDropdownOpen
-                        ? "opacity-100 visible transform translate-y-0"
-                        : "opacity-0 invisible transform -translate-y-2"
-                    }`}
+                    className={`absolute top-full -left-18 mt-2 w-64 space-y-2 bg-white border border-orange-200 rounded-md transition-all duration-300 ${isShopDropdownOpen
+                      ? "opacity-100 visible transform translate-y-0"
+                      : "opacity-0 invisible transform -translate-y-2"
+                      }`}
                     onMouseEnter={handleShopMouseEnter}
                     onMouseLeave={handleShopMouseLeave}
                   >
@@ -348,7 +348,7 @@ export function Header() {
                       <button
                         onClick={() => {
                           setIsShopDropdownOpen(false);
-                          window.location.href = "/guest";
+                          router.push("/guest");
                         }}
                         className="flex items-center w-full text-left px-4 py-2 text-[13px] text-gray-900  hover:text-green-500 transition-colors group"
                       >
@@ -378,11 +378,10 @@ export function Header() {
 
                   {/* Mobile Subscribe Dropdown - Positioned appropriately */}
                   <div
-                    className={`absolute top-full -left-20 mt-1 w-60 bg-white border border-orange-200 rounded-lg shadow-lg transition-all duration-300 ${
-                      isShopDropdownOpen
-                        ? "opacity-100 visible transform translate-y-0"
-                        : "opacity-0 invisible transform -translate-y-2"
-                    }`}
+                    className={`absolute top-full -left-20 mt-1 w-60 bg-white border border-orange-200 rounded-lg shadow-lg transition-all duration-300 ${isShopDropdownOpen
+                      ? "opacity-100 visible transform translate-y-0"
+                      : "opacity-0 invisible transform -translate-y-2"
+                      }`}
                   >
                     <div>
                       <p className=" w-full ml-4 pt-2 font-medium text-gray-900 text-[14px]">
@@ -411,7 +410,7 @@ export function Header() {
                       <button
                         onClick={() => {
                           setIsShopDropdownOpen(false);
-                          window.location.href = "/guest";
+                          router.push("/guest");
                         }}
                         className="flex items-center w-full text-left px-4 py-2 text-[13px] text-gray-900 hover:text-green-500 transition-colors group"
                       >
@@ -424,6 +423,7 @@ export function Header() {
                   </div>
                 </div>
               </div>
+
 
               {/* Right actions */}
               <div className="flex items-center gap-2">
@@ -527,11 +527,10 @@ export function Header() {
                       key={item.id}
                       href={item.href}
                       onClick={(e) => handleNavClick(e, item.id)}
-                      className={`hover:text-secondary transition-colors cursor-pointer px-2 py-1 rounded flex items-center justify-between ${
-                        activeSection === item.id
-                          ? "text-yellow-300 bg-green-800/50"
-                          : "text-primary-foreground"
-                      }`}
+                      className={`hover:text-secondary transition-colors cursor-pointer px-2 py-1 rounded flex items-center justify-between ${activeSection === item.id
+                        ? "text-yellow-300 bg-green-800/50"
+                        : "text-primary-foreground"
+                        }`}
                     >
                       <span>{item.label}</span>
                     </a>

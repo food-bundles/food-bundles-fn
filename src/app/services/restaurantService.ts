@@ -1,116 +1,21 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import createAxiosClient from "@/app/hooks/axiosClient";
+import createAxiosClient from "../hooks/axiosClient";
 
-const axiosClient = createAxiosClient();
+export interface RestaurantFilters {
+  page?: number;
+  limit?: number;
+  search?: string;
+}
 
 export const restaurantService = {
-  // Get all restaurants with pagination
-  getAllRestaurants: async (params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    status?: string;
-    sortBy?: string;
-    sortOrder?: 'asc' | 'desc';
-  }) => {
-    try {
-      const response = await axiosClient.get("/restaurants", { params });
-      return response.data;
-    } catch (error: any) {
-      console.error("Get restaurants error:", error);
-      return {
-        success: false,
-        data: [],
-        message: error.response?.data?.message || "Failed to fetch restaurants",
-      };
-    }
+  getAllRestaurants: async (filters?: RestaurantFilters) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/restaurants", { params: filters });
+    return response.data;
   },
 
-  // Get restaurant by ID
   getRestaurantById: async (restaurantId: string) => {
-    try {
-      const response = await axiosClient.get(`/restaurants/${restaurantId}`);
-      return {
-        success: true,
-        data: response.data.data,
-      };
-    } catch (error: any) {
-      console.error("Get restaurant error:", error);
-      throw error;
-    }
-  },
-
-  // Update restaurant
-  updateRestaurant: async (restaurantId: string, data: any) => {
-    try {
-      const response = await axiosClient.put(`/restaurants/${restaurantId}`, data);
-      return {
-        success: true,
-        data: response.data.data,
-        message: response.data.message,
-      };
-    } catch (error: any) {
-      console.error("Update restaurant error:", error);
-      throw error;
-    }
-  },
-
-  // Delete restaurant
-  deleteRestaurant: async (restaurantId: string) => {
-    try {
-      const response = await axiosClient.delete(`/restaurants/${restaurantId}`);
-      return {
-        success: true,
-        message: response.data.message,
-      };
-    } catch (error: any) {
-      console.error("Delete restaurant error:", error);
-      throw error;
-    }
-  },
-
-  // Create restaurant
-  createRestaurant: async (data: any) => {
-    try {
-      const response = await axiosClient.post("/restaurants", data);
-      return {
-        success: true,
-        data: response.data.data,
-        message: response.data.message,
-      };
-    } catch (error: any) {
-      console.error("Create restaurant error:", error);
-      throw error;
-    }
-  },
-
-  // Accept agreement
-  acceptAgreement: async (identifier: string) => {
-    try {
-      const response = await axiosClient.post("/restaurants/accept", { identifier });
-      return {
-        success: true,
-        data: response.data.data,
-        message: response.data.message,
-      };
-    } catch (error: any) {
-      console.error("Accept agreement error:", error);
-      throw error;
-    }
-  },
-
-  // Create restaurant by admin (no password required)
-  createRestaurantByAdmin: async (restaurantData: any) => {
-    try {
-      const response = await axiosClient.post("/restaurants/admin/create", restaurantData);
-      return {
-        success: true,
-        data: response.data.data,
-        message: response.data.message,
-      };
-    } catch (error: any) {
-      console.error("Create restaurant by admin error:", error);
-      throw error;
-    }
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get(`/restaurants/${restaurantId}`);
+    return response.data;
   },
 };
