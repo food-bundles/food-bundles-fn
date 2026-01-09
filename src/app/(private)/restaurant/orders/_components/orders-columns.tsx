@@ -368,7 +368,7 @@ const formatTime = (date: string | Date) =>
 export const ordersColumns = (
   onView: (order: Order) => void,
   onDownload: (order: Order) => void,
-  onReorder: (orderId: string) => void
+  onReorder: (order: Order) => void
 ): ColumnDef<Order>[] => [
   {
     id: "select",
@@ -543,7 +543,7 @@ export const ordersColumns = (
           {order.originalData?.paymentMethod !== "VOUCHER" && (
             <button
               className="text-[12px] text-green-600 hover:text-green-700 cursor-pointer px-2 py-1 rounded hover:bg-green-50"
-              onClick={() => onReorder(order.id)}
+              onClick={() => onReorder(order)}
               title="Reorder"
             >
               Reorder

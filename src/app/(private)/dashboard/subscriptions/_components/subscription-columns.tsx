@@ -5,7 +5,6 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowUpDown } from "lucide-react";
 import { useState } from "react";
 import { SubscriptionDetailsModal } from "./subscription-modals";
 import { SubscriptionPlanDetailsModal } from "./subscription-plan-details-modal";
@@ -344,7 +343,6 @@ export const createRestaurantSubscriptionsColumns = (
           className="h-auto p-0"
         >
           Restaurant
-          <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
@@ -352,7 +350,7 @@ export const createRestaurantSubscriptionsColumns = (
       <div>
         <div className="">{row.original.restaurant.name}</div>
         <div className="text-xs text-gray-500">
-          {row.original.restaurant.email}
+          {row.original.restaurant.phone}
         </div>
       </div>
     ),

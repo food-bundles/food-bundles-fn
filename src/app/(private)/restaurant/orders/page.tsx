@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 import { orderService } from "@/app/services/orderService";
 import { tableTronicService } from "@/app/services/tableTronicService";
 import { ViewOrderModal } from "./_components/view-order-modal";
+import { ReorderDrawer } from "./_components/ReorderDrawer";
 
 export default function RestaurantOrdersPage() {
   const [searchValue, setSearchValue] = useState("");
@@ -38,6 +39,8 @@ export default function RestaurantOrdersPage() {
   const [reorderingId, setReorderingId] = useState<string | null>(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [reorderDrawerOpen, setReorderDrawerOpen] = useState(false);
+  const [selectedReorderOrder, setSelectedReorderOrder] = useState<any>(null);
   const router = useRouter();
 
   // WebSocket integration
@@ -309,22 +312,9 @@ export default function RestaurantOrdersPage() {
     }
   };
 
-  const handleReorder = async (orderId: string) => {
-    try {
-      setReorderingId(orderId);
-      const response = await reorderOrder(orderId);
-
-      if (response.success) {
-        toast.success("Order reordered successfully!");
-      } else {
-        toast.error(response.message || "Failed to reorder");
-      }
-    } catch (err: any) {
-      console.error("Reorder error:", err);
-      toast.error(err.response?.data?.message || "Failed to reorder order");
-    } finally {
-      setReorderingId(null);
-    }
+  const handleReorder = (order: any) => {
+    setSelectedReorderOrder(order);
+    setReorderDrawerOpen(true);
   };
 
   const handleInvoice = async (order: any) => {
@@ -430,6 +420,13 @@ export default function RestaurantOrdersPage() {
         open={viewModalOpen}
         onOpenChange={setViewModalOpen}
         order={selectedOrder}
+      />
+
+      {/* Reorder Drawer */}
+      <ReorderDrawer
+        isOpen={reorderDrawerOpen}
+        onClose={() => setReorderDrawerOpen(false)}
+        order={selectedReorderOrder}
       />
     </div>
   );

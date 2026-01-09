@@ -989,18 +989,18 @@ export function Checkout() {
             </div>
 
             <div className="p-4 space-y-4">
-              <p className="text-sm text-gray-700">
+              <p className="text-xs text-gray-700">
                 You will be redirected to complete your payment. Choose your
                 preferred payment method:
               </p>
               <div className="bg-gray-50 p-4 rounded-md">
                 <ul className="text-[13px] text-gray-900 space-y-2">
                   <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-green-600 rounded-full"></span>
+                    <span className="w-1.5 h-1.5 text-xs bg-green-600 rounded-full"></span>
                     Mobile Money (MTN/TIGO)
                   </li>
                   <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-green-600 rounded-full"></span>
+                    <span className="w-1.5 h-1.5 text-xs bg-green-600 rounded-full"></span>
                     Card Payment
                   </li>
                 </ul>
