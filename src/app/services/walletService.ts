@@ -65,7 +65,9 @@ export const walletService = {
   // Get wallet transactions
   getWalletTransactions: async (filters?: WalletTransactionFilters) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.get("/wallets/my-wallet-transactions", { params: filters });
+    const response = await axiosClient.get("/wallets/my-transactions", {
+      params: filters,
+    });
     return response.data;
   },
 
