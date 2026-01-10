@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Wallet, Plus, ArrowUpRight, ArrowDownRight, Loader2, Smartphone } from "lucide-react";
 import { toast } from "sonner";
+import { Spinner } from "@/components/ui/shadcn-io/spinner";
 
 export default function DepositsPage() {
   const { user } = useAuth();
@@ -188,8 +189,8 @@ export default function DepositsPage() {
 
   if (initialLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-16 w-16 animate-spin text-green-600" />
+      <div className="flex items-center justify-center h-screen">
+        <Spinner variant="ring" />
       </div>
     );
   }

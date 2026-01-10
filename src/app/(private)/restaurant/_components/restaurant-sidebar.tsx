@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Bell, HelpCircle, Crown, Ticket, Home, ShoppingCart, Wallet, Users } from "lucide-react";
+import { Bell, HelpCircle, Crown, Ticket, Home, ShoppingCart, Wallet, Users, Plus } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { OptimizedImage } from "@/components/OptimizedImage";
@@ -9,12 +9,12 @@ import { useAuth } from "@/app/contexts/auth-context";
 
 const menuItems = [
   { icon: Home, label: "Shop", href: "/restaurant" },
-  { icon: Users, label: "Affiliators", href: "/restaurant/affiliators" },
   { icon: Bell, label: "Updates", href: "/restaurant/updates" },
   { icon: ShoppingCart, label: "Orders", href: "/restaurant/orders" },
   { icon: Wallet, label: "Deposits", href: "/restaurant/deposits" },
   { icon: Crown, label: "Subscription", href: "/restaurant/subscribe" },
   { icon: Ticket, label: "Vouchers", href: "/restaurant/vouchers" },
+  { icon: Plus, label: "Affiliators", href: "/restaurant/affiliators" },
   { icon: HelpCircle, label: "Help & Support", href: "/restaurant/help" },
 ];
 
