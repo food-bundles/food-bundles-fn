@@ -16,6 +16,7 @@ import { Wallet, Plus, ArrowUpRight, ArrowDownRight, Loader2, CreditCard, Smartp
 import { toast } from "sonner";
 import { walletService } from "@/app/services/walletService";
 import { restaurantService } from "@/app/services/restaurantService";
+import { Spinner } from "@/components/ui/shadcn-io/spinner";
 
 export default function DepositsManagementPage() {
   const { getMyWallet } = useWallet();
@@ -218,8 +219,8 @@ export default function DepositsManagementPage() {
 
   if (initialLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-16 w-16 animate-spin text-green-600" />
+      <div className="h-screen flex items-center justify-center">
+        <Spinner variant="ring" />
       </div>
     );
   }
