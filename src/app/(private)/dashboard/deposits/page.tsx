@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Wallet, Plus, ArrowUpRight, ArrowDownRight, Loader2, CreditCard, Smartphone, Users, DollarSign, Search } from "lucide-react";
+import { Wallet, Plus, ArrowUpRight, ArrowDownRight, Loader2, CreditCard, Smartphone, Users, DollarSign, Search, Package, Calendar, Mail, Phone, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { walletService } from "@/app/services/walletService";
 import { restaurantService } from "@/app/services/restaurantService";
@@ -28,6 +28,7 @@ export default function DepositsManagementPage() {
   const [transactionFilters, setTransactionFilters] = useState({ type: '', restaurantName: '' });
   const [transactionStats, setTransactionStats] = useState({ topUp: 0, payment: 0, total: 0 });
   const [searchQuery, setSearchQuery] = useState("");
+  const [transactionSearchQuery, setTransactionSearchQuery] = useState("");
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
@@ -37,6 +38,9 @@ export default function DepositsManagementPage() {
   const [restaurants, setRestaurants] = useState<any[]>([]);
   const [selectedWallet, setSelectedWallet] = useState<any>(null);
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>("");
+  const [orderDetails, setOrderDetails] = useState<any>(null);
+  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [orderLoading, setOrderLoading] = useState(false);
 
   const [depositData, setDepositData] = useState({
     amount: "",
@@ -66,11 +70,11 @@ export default function DepositsManagementPage() {
     }
   };
 
-  const fetchTransactions = async (page = 1) => {
+  const fetchTransactions = async (page = 1, search = transactionSearchQuery) => {
     try {
       const filters: any = { page, limit: pageSize };
       if (transactionFilters.type) filters.type = transactionFilters.type;
-      if (transactionFilters.restaurantName) filters.restaurantName = transactionFilters.restaurantName;
+      if (search) filters.restaurantName = search;
       
       const response = await walletService.getAllWalletTransactions(filters);
       if (response && response.data) {
@@ -115,6 +119,38 @@ export default function DepositsManagementPage() {
     }
   };
 
+  const fetchOrderDetails = async (orderId: string) => {
+    setOrderLoading(true);
+    try {
+      const cookies = document.cookie.split(";");
+      let token = null;
+      for (const cookie of cookies) {
+        const [name, value] = cookie.trim().split("=");
+        if (name === "auth-token") {
+          token = decodeURIComponent(value);
+          break;
+        }
+      }
+      
+      const response = await fetch(`https://server.food.rw/orders/${orderId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      const data = await response.json();
+      if (data.data) {
+        setOrderDetails(data.data);
+        setShowOrderModal(true);
+      }
+    } catch (error) {
+      console.error("Failed to fetch order details:", error);
+      toast.error("Failed to load order details");
+    } finally {
+      setOrderLoading(false);
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       setInitialLoading(true);
@@ -150,6 +186,34 @@ export default function DepositsManagementPage() {
     } catch (error) {
       console.error("Failed to fetch transaction details:", error);
       toast.error("Failed to load transaction details");
+    }
+  };
+
+  const handleWalletToggle = async (walletId: string, currentStatus: boolean) => {
+    try {
+      const response = await walletService.updateWalletStatus(walletId, { isActive: !currentStatus });
+      if (response.message) {
+        toast.success(response.message, {
+          duration: 3000,
+          style: {
+            background: '#dcfce7',
+            color: '#166534',
+            border: '1px solid #bbf7d0',
+            maxWidth: '300px'
+          }
+        });
+        await fetchWallets(walletPagination.page);
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to update wallet status", {
+        duration: 4000,
+        style: {
+          background: '#fef2f2',
+          color: '#dc2626',
+          border: '1px solid #fecaca',
+          maxWidth: '300px'
+        }
+      });
     }
   };
 
@@ -232,12 +296,11 @@ export default function DepositsManagementPage() {
     <div className="p-6 space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/50 backdrop-blur-sm p-6 rounded-2xl border border-gray-100 shadow-sm">
         <div>
-          <h1 className="text-sm font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-green-700 bg-clip-text text-transparent">
+          <h1 className="text-lg font-semibold">
             Deposit Management
           </h1>
-          <p className="text-gray-500 mt-1 flex items-center gap-2 text-xs">
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-            Manage restaurant wallet deposits and monitor transactions
+          <p className="text-xs text-gray-600 mt-1">
+            Manage restaurant cash deposits and monitor transactions
           </p>
         </div>
         <Button
@@ -245,127 +308,122 @@ export default function DepositsManagementPage() {
           className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl shadow-lg shadow-green-200 transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
         >
           <Plus className="h-5 w-5" />
-          Add New Deposit
+          New Deposit
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-        <Card className="border-none shadow-xl shadow-gray-100 bg-gradient-to-br from-white to-green-50/30 overflow-hidden relative group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-green-100/30 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150 duration-500"></div>
-          <CardContent className="p-8">
-            <div className="flex items-center justify-between relative z-10">
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-gray-500 tracking-wider">
-                  Total Balance
-                </p>
-                <div className="flex items-baseline gap-2">
-                  <p className="text-3xl font-black text-gray-900 tracking-tight">
-                    {totalBalance.toLocaleString()}
-                  </p>
-                  <span className="text-sm font-bold text-green-600">RWF</span>
-                </div>
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="p-4 rounded-lg border bg-green-50 transition-all duration-200 hover:shadow-md">
+          <div className="flex items-center justify-between mb-2">
+            <DollarSign className="w-5 h-5 text-green-600" />
+            <div className="flex items-center gap-1 text-xs text-green-600">
+              <div className="w-3 h-3">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M7 14l5-5 5 5z"/>
+                </svg>
               </div>
-              <div className="p-4 bg-green-100 rounded-2xl">
-                <DollarSign className="h-8 w-8 text-green-600" />
-              </div>
+              +12.5%
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs text-gray-600 font-medium">Total Balance</p>
+            <p className="text-sm font-bold text-green-600">
+              {totalBalance.toLocaleString()} RWF
+            </p>
+          </div>
+        </div>
 
-        <Card className="border-none shadow-xl shadow-gray-100 bg-gradient-to-br from-white to-blue-50/30 overflow-hidden relative group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-100/30 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150 duration-500"></div>
-          <CardContent className="p-8">
-            <div className="flex items-center justify-between relative z-10">
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-gray-500 tracking-wider">
-                  Active Wallets
-                </p>
-                <p className="text-3xl font-black text-gray-900 tracking-tight">
-                  {activeWallets}
-                </p>
+        <div className="p-4 rounded-lg border bg-blue-50 transition-all duration-200 hover:shadow-md">
+          <div className="flex items-center justify-between mb-2">
+            <Wallet className="w-5 h-5 text-blue-600" />
+            <div className="flex items-center gap-1 text-xs text-blue-600">
+              <div className="w-3 h-3">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M7 14l5-5 5 5z"/>
+                </svg>
               </div>
-              <div className="p-4 bg-blue-100 rounded-2xl">
-                <Wallet className="h-8 w-8 text-blue-600" />
-              </div>
+              +8.2%
             </div>
-            <div className="mt-4 flex items-center gap-1.5 text-blue-600 font-medium text-xs">
-              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
-              {((activeWallets / (walletPagination.total || 1)) * 100).toFixed(0)}% of total wallets
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs text-gray-600 font-medium">Active Cash</p>
+            <p className="text-sm font-bold text-blue-600">
+              {activeWallets}
+            </p>
+          </div>
+        </div>
 
-        <Card className="border-none shadow-xl shadow-gray-100 bg-gradient-to-br from-white to-purple-50/30 overflow-hidden relative group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-purple-100/30 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150 duration-500"></div>
-          <CardContent className="p-8">
-            <div className="flex items-center justify-between relative z-10">
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-gray-500 tracking-wider">
-                  Total Wallets
-                </p>
-                <p className="text-3xl font-black text-gray-900 tracking-tight">
-                  {walletPagination.total}
-                </p>
+        <div className="p-4 rounded-lg border bg-purple-50 transition-all duration-200 hover:shadow-md">
+          <div className="flex items-center justify-between mb-2">
+            <Users className="w-5 h-5 text-purple-600" />
+            <div className="flex items-center gap-1 text-xs text-purple-600">
+              <div className="w-3 h-3">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M7 14l5-5 5 5z"/>
+                </svg>
               </div>
-              <div className="p-4 bg-purple-100 rounded-2xl">
-                <Users className="h-8 w-8 text-purple-600" />
-              </div>
+              +5.1%
             </div>
-            <div className="mt-4 text-gray-500 text-xs font-medium">
-              Registered Wallets in system
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs text-gray-600 font-medium">Total Cash</p>
+            <p className="text-sm font-bold text-purple-600">
+              {walletPagination.total}
+            </p>
+          </div>
+        </div>
 
-        <Card className="border-none shadow-xl shadow-gray-100 bg-gradient-to-br from-white to-green-50/30 overflow-hidden relative group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-green-100/30 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150 duration-500"></div>
-          <CardContent className="p-8">
-            <div className="flex items-center justify-between relative z-10">
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-gray-500 tracking-wider">
-                  Top-ups
-                </p>
-                <p className="text-3xl font-black text-gray-900 tracking-tight">
-                  {transactionStats.topUp}
-                </p>
+        <div className="p-4 rounded-lg border bg-green-50 transition-all duration-200 hover:shadow-md">
+          <div className="flex items-center justify-between mb-2">
+            <ArrowUpRight className="w-5 h-5 text-green-600" />
+            <div className="flex items-center gap-1 text-xs text-green-600">
+              <div className="w-3 h-3">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M7 14l5-5 5 5z"/>
+                </svg>
               </div>
-              <div className="p-4 bg-green-100 rounded-2xl">
-                <ArrowUpRight className="h-8 w-8 text-green-600" />
-              </div>
+              +15.3%
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs text-gray-600 font-medium">Top-ups</p>
+            <p className="text-sm font-bold text-green-600">
+              {transactionStats.topUp}
+            </p>
+          </div>
+        </div>
 
-        <Card className="border-none shadow-xl shadow-gray-100 bg-gradient-to-br from-white to-red-50/30 overflow-hidden relative group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-red-100/30 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150 duration-500"></div>
-          <CardContent className="p-8">
-            <div className="flex items-center justify-between relative z-10">
-              <div className="space-y-1">
-                <p className="text-sm font-semibold text-gray-500 tracking-wider">
-                  Payments
-                </p>
-                <p className="text-3xl font-black text-gray-900 tracking-tight">
-                  {transactionStats.payment}
-                </p>
+        <div className="p-4 rounded-lg border bg-red-50 transition-all duration-200 hover:shadow-md">
+          <div className="flex items-center justify-between mb-2">
+            <ArrowDownRight className="w-5 h-5 text-red-600" />
+            <div className="flex items-center gap-1 text-xs text-red-600">
+              <div className="w-3 h-3">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17 10l-5 5-5-5z"/>
+                </svg>
               </div>
-              <div className="p-4 bg-red-100 rounded-2xl">
-                <ArrowDownRight className="h-8 w-8 text-red-600" />
-              </div>
+              -3.7%
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs text-gray-600 font-medium">Payments</p>
+            <p className="text-sm font-bold text-red-600">
+              {transactionStats.payment}
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="space-y-8">
         {/* Wallets Table */}
-        <Card className="lg:col-span-2 border-none shadow-xl shadow-gray-100 rounded-2xl overflow-hidden">
+        <Card className="border-none shadow-xl shadow-gray-100 rounded-2xl overflow-hidden">
           <CardHeader className="bg-white border-b border-gray-50 pb-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
-                <CardTitle className="text-sm font-bold text-gray-900">Restaurant Wallets</CardTitle>
-                <CardDescription className="text-gray-500 mt-1 text-xs">
-                  Manage funds and monitor status per restaurant
+                <CardTitle className="text-sm font-semibold">Restaurant Wallets</CardTitle>
+                <CardDescription className="text-xs text-gray-600 mt-1">
+                  Manage cash and monitor status per restaurant
                 </CardDescription>
               </div>
               <div className="relative w-full md:w-80 group">
@@ -387,26 +445,32 @@ export default function DepositsManagementPage() {
               <table className="w-full">
                 <thead>
                   <tr className="bg-gray-50/50">
-                    <th className="text-left py-4 px-6 font-semibold text-gray-600 text-xs tracking-wider">Restaurant</th>
-                    <th className="text-left py-4 px-6 font-semibold text-gray-600 text-xs  tracking-wider">Balance</th>
-                    <th className="text-left py-4 px-6 font-semibold text-gray-600 text-xs  tracking-wider">Activity</th>
-                    <th className="text-left py-4 px-6 font-semibold text-gray-600 text-xs  tracking-wider">Status</th>
-                    <th className="text-right py-4 px-6 font-semibold text-gray-600 text-xs  tracking-wider">Actions</th>
+                    <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">No</th>
+                    <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">Restaurant</th>
+                    <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">Balance</th>
+                    <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">Activity</th>
+                    <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">Status</th>
+                    <th className="text-right py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {wallets.map((wallet) => (
+                  {wallets.map((wallet, index) => (
                     <tr key={wallet.id} className="hover:bg-green-50/30 transition-colors">
                       <td className="py-5 px-6">
+                        <span className="text-xs font-bold text-gray-900">
+                          {(walletPagination.page - 1) * 20 + index + 1}
+                        </span>
+                      </td>
+                      <td className="py-5 px-6">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-100 to-green-50 flex items-center justify-center text-green-700 font-bold text-lg">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-100 to-green-50 flex items-center justify-center text-green-700 font-bold text-xs">
                             {wallet.restaurant?.name?.charAt(0)}
                           </div>
                           <div>
-                            <p className="font-bold text-gray-900">
+                            <p className="text-xs font-bold text-gray-900">
                               {wallet.restaurant?.name}
                             </p>
-                            <p className="text-xs text-gray-500 font-medium">
+                            <p className="text-xs text-gray-600">
                               {wallet.restaurant?.phone}
                             </p>
                           </div>
@@ -414,39 +478,49 @@ export default function DepositsManagementPage() {
                       </td>
                       <td className="py-5 px-6">
                         <div className="flex flex-col">
-                          <span className="font-black text-gray-900">{wallet.balance?.toLocaleString()}</span>
-                          <span className="text-[10px] text-gray-400 font-bold tracking-tighter">RWF</span>
+                          <span className="text-sm font-bold text-gray-900">{wallet.balance?.toLocaleString()}</span>
+                          <span className="text-xs text-gray-600">RWF</span>
                         </div>
                       </td>
                       <td className="py-5 px-6 text-sm">
                         <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-100 w-fit">
                           <ArrowUpRight className="h-3.5 w-3.5" />
-                          <span className="font-bold">{wallet._count?.transactions || 0}</span>
+                          <span className="text-xs font-bold">{wallet._count?.transactions || 0}</span>
                         </div>
                       </td>
                       <td className="py-5 px-6">
                         {wallet.isActive ? (
-                          <Badge className="bg-green-100/50 text-green-700 border-none px-3 py-1 font-bold rounded-full">
+                          <Badge className="bg-green-100/50 text-green-700 border-none px-3 py-1 text-xs font-bold rounded-full">
                             Active
                           </Badge>
                         ) : (
-                          <Badge className="bg-red-100/50 text-red-700 border-none px-3 py-1 font-bold rounded-full">
+                          <Badge className="bg-red-100/50 text-red-700 border-none px-3 py-1 text-xs font-bold rounded-full">
                             Inactive
                           </Badge>
                         )}
                       </td>
                       <td className="py-5 px-6 text-right">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            setSelectedRestaurantId(wallet.restaurantId);
-                            setShowDepositModal(true);
-                          }}
-                          className="text-white bg-green-500 hover:text-green-700 hover:bg-green-100 rounded-xl font-bold transition-all"
-                        >
-                          Deposit
-                        </Button>
+                        <div className="flex gap-2 justify-end">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleWalletToggle(wallet.id, wallet.isActive)}
+                            className={`${wallet.isActive ? 'text-red-600 hover:bg-red-100' : 'text-green-600 hover:bg-green-100'} rounded-xl text-xs font-bold transition-all`}
+                          >
+                            {wallet.isActive ? 'Deactivate' : 'Activate'}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setSelectedRestaurantId(wallet.restaurantId);
+                              setShowDepositModal(true);
+                            }}
+                            className="text-white bg-green-500 hover:text-green-700 hover:bg-green-100 rounded-xl text-xs font-bold transition-all"
+                          >
+                            Deposit
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -501,15 +575,14 @@ export default function DepositsManagementPage() {
           </CardContent>
         </Card>
 
-        {/* Recent Transactions Column */}
-        <div className="space-y-6">
-          <Card className="border-none shadow-xl shadow-gray-100 rounded-2xl overflow-hidden h-full">
+        {/* All Transactions Table */}
+        <Card className="border-none shadow-xl shadow-gray-100 rounded-2xl overflow-hidden">
             <CardHeader className="bg-white border-b border-gray-50 pb-6">
-              <CardTitle className="text-sm font-bold text-gray-900">All Transactions</CardTitle>
-              <CardDescription className="text-gray-500 text-xs">Complete wallet transaction history</CardDescription>
+              <CardTitle className="text-sm font-semibold">All Transactions</CardTitle>
+              <CardDescription className="text-xs text-gray-600">Complete cash transaction history</CardDescription>
               
               {/* Filters */}
-              <div className="flex flex-col sm:flex-row gap-4 mt-4">
+              <div className="flex flex-col sm:flex-row gap-4 mt-4 text-xs">
                 <Select
                   value={transactionFilters.type || 'all'}
                   onValueChange={(value) => {
@@ -547,21 +620,21 @@ export default function DepositsManagementPage() {
                   </SelectContent>
                 </Select>
                 
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <div className="relative flex-1 group">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-green-500 transition-colors" />
                   <Input
                     placeholder="Search by restaurant name..."
-                    value={transactionFilters.restaurantName}
+                    value={transactionSearchQuery}
                     onChange={(e) => {
-                      setTransactionFilters(prev => ({ ...prev, restaurantName: e.target.value }));
-                      fetchTransactions(1);
+                      setTransactionSearchQuery(e.target.value);
+                      fetchTransactions(1, e.target.value);
                     }}
-                    className="pl-10"
+                    className="pl-10 bg-gray-50 border-gray-100 rounded-xl focus:ring-green-500/20 focus:border-green-500 transition-all"
                   />
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-0">
               {transactions.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-gray-400">
                   <div className="p-4 bg-gray-50 rounded-full mb-4">
@@ -570,42 +643,80 @@ export default function DepositsManagementPage() {
                   <p className="font-medium">No recent transactions</p>
                 </div>
               ) : (
-                <div className="space-y-6">
-                  {transactions.map((transaction) => (
-                    <div
-                      key={transaction.id}
-                      className="group flex items-start gap-4 hover:translate-x-1 transition-transform cursor-pointer"
-                      onClick={() => handleTransactionClick(transaction)}
-                    >
-                      <div className={`p-3 rounded-2xl ${transaction.amount > 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'} transition-colors`}>
-                        {transaction.amount > 0 ? <ArrowUpRight className="h-5 w-5" /> : <ArrowDownRight className="h-5 w-5" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-gray-900 truncate text-sm">
-                          {transaction.description}
-                        </p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[10px] font-black text-gray-400">
-                            {transaction.wallet?.restaurant?.name}
-                          </span>
-                          <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                          <span className="text-[10px] font-bold text-gray-400">
-                            {new Date(transaction.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-right flex flex-col items-end gap-1">
-                        <span className={`text-sm font-black ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {transaction.amount > 0 ? "+" : ""}{transaction.amount.toLocaleString()}
-                        </span>
-                        {getStatusBadge(transaction.status)}
-                      </div>
-                    </div>
-                  ))}
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gray-50/50">
+                        <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">No</th>
+                        <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">Restaurant</th>
+                        <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">Status</th>
+                        <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">Type</th>
+                        <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">Amount</th>
+                        <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">Previous Balance</th>
+                        <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">Date & Time</th>
+                        <th className="text-right py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {transactions.map((transaction, index) => (
+                        <tr key={transaction.id} className="hover:bg-green-50/30 transition-colors">
+                          <td className="py-5 px-6">
+                            <span className="text-xs font-bold text-gray-900">
+                              {(pagination.page - 1) * pageSize + index + 1}
+                            </span>
+                          </td>
+                          <td className="py-5 px-6">
+                            <span className="text-xs font-bold text-gray-900">
+                              {transaction.wallet?.restaurant?.name}
+                            </span>
+                          </td>
+                          <td className="py-5 px-6">
+                            {getStatusBadge(transaction.status)}
+                          </td>
+                          <td className="py-5 px-6">
+                            <div className="flex items-center gap-2">
+                              {getTransactionIcon(transaction.type)}
+                              <span className="text-xs font-bold text-gray-900">{transaction.type}</span>
+                            </div>
+                          </td>
+                          <td className="py-5 px-6">
+                            <span className={`text-xs font-bold ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {transaction.amount > 0 ? "+" : ""}{transaction.amount.toLocaleString()} RWF
+                            </span>
+                          </td>
+                          <td className="py-5 px-6">
+                            <span className="text-xs font-bold text-gray-900">
+                              {transaction.previousBalance?.toLocaleString() || '0'} RWF
+                            </span>
+                          </td>
+                          <td className="py-5 px-6">
+                            <div className="flex flex-col">
+                              <span className="text-xs text-gray-900 font-medium">
+                                {new Date(transaction.createdAt).toLocaleDateString()}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {new Date(transaction.createdAt).toLocaleTimeString()}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-5 px-6 text-right">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleTransactionClick(transaction)}
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-100 rounded-xl p-2 transition-all"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                   
                   {/* Pagination */}
                   {pagination.totalPages > 1 && (
-                    <div className="flex justify-center items-center gap-4 pt-4 border-t border-gray-100">
+                    <div className="flex justify-center items-center gap-4 py-6 border-t border-gray-50">
                       <Button
                         variant="outline"
                         size="sm"
@@ -653,7 +764,6 @@ export default function DepositsManagementPage() {
               )}
             </CardContent>
           </Card>
-        </div>
       </div>
 
       {/* Deposit Modal */}
@@ -774,11 +884,11 @@ export default function DepositsManagementPage() {
           <div className="bg-gradient-to-r from-green-600 to-green-500 p-8 text-white relative">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
             <DialogHeader className="text-left relative z-10">
-              <DialogTitle className="text-2xl font-black tracking-tight">
+              <DialogTitle className="text-lg font-semibold">
                 Transaction Details
               </DialogTitle>
-              <DialogDescription className="text-blue-50/80 font-medium">
-                Complete transaction information and metadata
+              <DialogDescription className="text-xs text-white">
+                Complete transaction information
               </DialogDescription>
             </DialogHeader>
           </div>
@@ -788,7 +898,7 @@ export default function DepositsManagementPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <p className="text-xs font-bold tracking-wider text-gray-500">Amount</p>
-                    <p className={`text-2xl font-black ${transactionDetails.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <p className={`text-xs font-black ${transactionDetails.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
                       {transactionDetails.amount > 0 ? '+' : ''}{transactionDetails.amount?.toLocaleString()} RWF
                     </p>
                   </div>
@@ -802,22 +912,22 @@ export default function DepositsManagementPage() {
                 
                 <div className="space-y-1">
                   <p className="text-xs font-bold tracking-wider text-gray-500">Restaurant</p>
-                  <p className="text-lg font-bold text-gray-900">{transactionDetails.wallet?.restaurant?.name}</p>
+                  <p className="text-xs font-bold text-gray-900">{transactionDetails.wallet?.restaurant?.name}</p>
                 </div>
                 
                 <div className="space-y-1">
                   <p className="text-xs font-bold tracking-wider text-gray-500">Description</p>
-                  <p className="text-gray-700">{transactionDetails.description}</p>
+                  <p className="text-gray-700 text-xs">{transactionDetails.description}</p>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <p className="text-xs font-bold tracking-wider text-gray-500">Previous Balance</p>
-                    <p className="text-gray-900 font-bold">{transactionDetails.previousBalance?.toLocaleString()} RWF</p>
+                    <p className="text-gray-900 text-xs font-bold">{transactionDetails.previousBalance?.toLocaleString()} RWF</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-xs font-bold tracking-wider text-gray-500">New Balance</p>
-                    <p className="text-gray-900 font-bold">{transactionDetails.newBalance?.toLocaleString()} RWF</p>
+                    <p className="text-gray-900 text-xs font-bold">{transactionDetails.newBalance?.toLocaleString()} RWF</p>
                   </div>
                 </div>
                 
@@ -833,7 +943,7 @@ export default function DepositsManagementPage() {
                   <p className="text-gray-700">{new Date(transactionDetails.createdAt).toLocaleString()}</p>
                 </div>
                 
-                {transactionDetails.metadata && (
+                {/* {transactionDetails.metadata && (
                   <div className="space-y-1">
                     <p className="text-xs font-bold tracking-wider text-gray-500">Additional Info</p>
                     <div className="bg-gray-50 p-3 rounded-lg text-sm">
@@ -844,6 +954,21 @@ export default function DepositsManagementPage() {
                         </div>
                       ))}
                     </div>
+                  </div>
+                )} */}
+                
+                {/* Order Details Button */}
+                {transactionDetails.metadata?.orderId && (
+                  <div className="pt-4 border-t border-gray-100">
+                    <Button
+                      onClick={() => {
+                        fetchOrderDetails(transactionDetails.metadata.orderId);
+                      }}
+                      className="w-full h-12 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2"
+                    >
+                      <Package className="h-5 w-5 text-sm" />
+                      View Order Details
+                    </Button>
                   </div>
                 )}
               </>
@@ -858,6 +983,145 @@ export default function DepositsManagementPage() {
               onClick={() => {
                 setShowTransactionModal(false);
                 setTransactionDetails(null);
+              }}
+              className="w-full h-12 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-xl font-bold transition-all"
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Order Details Modal */}
+      <Dialog open={showOrderModal} onOpenChange={setShowOrderModal}>
+        <DialogContent className="sm:max-w-2xl bg-white border-none rounded-3xl shadow-2xl overflow-hidden p-0">
+          <div className="bg-gradient-to-r from-green-600 to-green-500 p-8 text-white relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
+            <DialogHeader className="text-left relative z-10">
+              <DialogTitle className="text-lg font-semibold flex items-center gap-2">
+                <Package className="h-6 w-6" />
+                Order Details
+              </DialogTitle>
+              <DialogDescription className="text-xs text-white">
+                Order information with products and totals
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
+            {orderLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+              </div>
+            ) : orderDetails ? (
+              <>
+                {/* Customer Details */}
+                <Card className="border-none shadow-xl shadow-gray-100 bg-gradient-to-br from-white to-green-50/30">
+                  <CardContent className="p-4">
+                    <h3 className="text-sm font-semibold mb-3">Customer Details</h3>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-gray-900">{orderDetails.billingName}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-3 w-3 text-gray-500" />
+                        <span className="text-xs text-gray-600">{orderDetails.billingEmail.replace('mailto:', '')}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-3 w-3 text-gray-500" />
+                        <span className="text-xs text-gray-600">{orderDetails.billingPhone}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-3 w-3 text-gray-500" />
+                        <span className="text-xs text-gray-600">{new Date(orderDetails.requestedDelivery).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Order Items */}
+                <Card className="border-none shadow-xl shadow-gray-100 rounded-2xl overflow-hidden">
+                  <CardHeader className="bg-white border-b border-gray-50 pb-4">
+                    <CardTitle className="text-sm font-semibold">Order Items</CardTitle>
+                    <CardDescription className="text-xs text-gray-600 mt-1">
+                      Products in this order
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className="space-y-3">
+                      {orderDetails.orderItems.map((item: any) => (
+                        <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-50/50 rounded-xl text-xs">
+                          <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-200 ">
+                            {item.images[0] && (
+                              <img
+                                src={item.images[0]}
+                                alt={item.productName}
+                                className="w-full h-full object-cover"
+                              />
+                            )}
+                          </div>
+                          
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-gray-900">
+                              {item.productName}
+                            </p>
+                            <p className="text-xs text-gray-500">{item.category}</p>
+                          </div>
+                          
+                          <div className="text-right">
+                            <p className="text-xs font-bold text-gray-900">
+                              {item.quantity} {item.unit}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {item.unitPrice.toLocaleString()} {orderDetails.currency} each
+                            </p>
+                          </div>
+                          
+                          <div className="text-right min-w-0">
+                            <p className="text-xs font-black text-gray-900">
+                              {item.subtotal.toLocaleString()} {orderDetails.currency}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Order Summary */}
+                    <div className="border-t border-gray-100 pt-3 mt-4 text-xs">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">Subtotal</span>
+                          <span className="font-medium">
+                            {orderDetails.orderItems.reduce((sum: number, item: any) => sum + item.subtotal, 0).toLocaleString()} {orderDetails.currency}
+                          </span>
+                        </div>
+                        {orderDetails.deliveryFee > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Delivery Fee</span>
+                            <span className="font-medium">{orderDetails.deliveryFee.toLocaleString()} {orderDetails.currency}</span>
+                          </div>
+                        )}
+                        {orderDetails.packagingFee > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-600">Packaging Fee</span>
+                            <span className="font-medium">{orderDetails.packagingFee.toLocaleString()} {orderDetails.currency}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between text-lg font-black border-t border-gray-100 pt-2 text-xs">
+                          <span className="text-gray-900 text-xs">Total</span>
+                          <span className="text-gray-900">{orderDetails.totalAmount.toLocaleString()} {orderDetails.currency}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            ) : null}
+          </div>
+          <DialogFooter className="p-8 pt-0">
+            <Button
+              onClick={() => {
+                setShowOrderModal(false);
+                setOrderDetails(null);
               }}
               className="w-full h-12 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-xl font-bold transition-all"
             >

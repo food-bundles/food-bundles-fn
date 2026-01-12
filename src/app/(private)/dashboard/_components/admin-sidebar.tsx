@@ -36,6 +36,7 @@ import { Button } from "@/components/ui/button";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+  { icon: Users, label: "Affiliators", href: "/dashboard/users/affiliators" },
   {
     icon: FileText,
     label: "Farmer Submission",
