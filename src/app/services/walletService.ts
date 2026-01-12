@@ -112,9 +112,9 @@ export const walletService = {
     return response.data;
   },
 
-  updateWalletStatus: async (walletId: string, isActive: boolean) => {
+  updateWalletStatus: async (walletId: string, data: { isActive: boolean }) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.patch(`/wallets/${walletId}/status`, { isActive });
+    const response = await axiosClient.patch(`/wallets/${walletId}`, data);
     return response.data;
   },
 
