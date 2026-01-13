@@ -222,12 +222,14 @@ export function DataTable<TData, TValue>({
   };
 
   return (
-    <div className="space-y-2 h-full overflow-auto ">
+    <div className="space-y-0.5 h-full overflow-auto ">
       {(title || showAddButton || showExport) && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           {title && (
             <div className="flex-1 min-w-0">
-              <h1 className="text-[16px] font-medium text-gray-800 ">{title}</h1>
+              <h1 className="text-[16px] font-medium text-gray-800 ">
+                {title}
+              </h1>
               {description && (
                 <p className="text-gray-600 text-xs mt-1 line-clamp-2">
                   {description}
@@ -322,7 +324,10 @@ export function DataTable<TData, TValue>({
               ? [...Array(10)].map((_, i) => (
                   <TableRow key={i}>
                     {columns.map((_, colIndex) => (
-                      <TableCell key={colIndex}>
+                      <TableCell
+                        key={colIndex}
+                        className="text-xs text-gray-800 whitespace-nowrap"
+                      >
                         <Skeleton className="h-4 w-full" />
                       </TableCell>
                     ))}
@@ -336,7 +341,10 @@ export function DataTable<TData, TValue>({
                     className="hover:bg-green-50 text-[13px]"
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
+                      <TableCell
+                        key={cell.id}
+                        className="text-xs text-gray-800 whitespace-nowrap"
+                      >
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext()
@@ -348,7 +356,10 @@ export function DataTable<TData, TValue>({
               : [...Array(5)].map((_, i) => (
                   <TableRow key={i}>
                     {columns.map((_, colIndex) => (
-                      <TableCell key={colIndex}>
+                      <TableCell
+                        key={colIndex}
+                        className="text-xs text-gray-800 whitespace-nowrap"
+                      >
                         <Skeleton className="h-4 w-full" />
                       </TableCell>
                     ))}

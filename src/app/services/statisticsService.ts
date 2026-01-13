@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import createAxiosClient from '@/app/hooks/axiosClient';
 
 export interface DashboardStats {
@@ -132,10 +133,16 @@ export const statisticsService = {
   async getDashboardStats(filters?: StatsFilters): Promise<{ message: string; data: DashboardStats }> {
     try {
       const params = new URLSearchParams();
-      if (filters?.year) params.append('year', filters.year.toString());
-      if (filters?.month) params.append('month', filters.month.toString());
-      if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
-      if (filters?.dateTo) params.append('dateTo', filters.dateTo);
+      
+      // If no filters provided, use lifetime period
+      if (!filters?.year && !filters?.month && !filters?.dateFrom && !filters?.dateTo) {
+        params.append('period', 'lifetime');
+      } else {
+        if (filters?.year) params.append('year', filters.year.toString());
+        if (filters?.month) params.append('month', filters.month.toString());
+        if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
+        if (filters?.dateTo) params.append('dateTo', filters.dateTo);
+      }
 
       const response = await axiosClient.get(`/stats/dashboard?${params.toString()}`, {
         timeout: 120000 // 2 minutes timeout
@@ -161,10 +168,16 @@ export const statisticsService = {
 
   async getUserStats(filters?: StatsFilters): Promise<{ message: string; data: DashboardStats['users'] }> {
     const params = new URLSearchParams();
-    if (filters?.year) params.append('year', filters.year.toString());
-    if (filters?.month) params.append('month', filters.month.toString());
-    if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
-    if (filters?.dateTo) params.append('dateTo', filters.dateTo);
+    
+    // If no filters provided, use lifetime period
+    if (!filters?.year && !filters?.month && !filters?.dateFrom && !filters?.dateTo) {
+      params.append('period', 'lifetime');
+    } else {
+      if (filters?.year) params.append('year', filters.year.toString());
+      if (filters?.month) params.append('month', filters.month.toString());
+      if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
+      if (filters?.dateTo) params.append('dateTo', filters.dateTo);
+    }
 
     const response = await axiosClient.get(`/stats/users?${params.toString()}`);
     return response.data;
@@ -172,10 +185,16 @@ export const statisticsService = {
 
   async getOrderStats(filters?: StatsFilters): Promise<{ message: string; data: DashboardStats['orders'] }> {
     const params = new URLSearchParams();
-    if (filters?.year) params.append('year', filters.year.toString());
-    if (filters?.month) params.append('month', filters.month.toString());
-    if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
-    if (filters?.dateTo) params.append('dateTo', filters.dateTo);
+    
+    // If no filters provided, use lifetime period
+    if (!filters?.year && !filters?.month && !filters?.dateFrom && !filters?.dateTo) {
+      params.append('period', 'lifetime');
+    } else {
+      if (filters?.year) params.append('year', filters.year.toString());
+      if (filters?.month) params.append('month', filters.month.toString());
+      if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
+      if (filters?.dateTo) params.append('dateTo', filters.dateTo);
+    }
 
     const response = await axiosClient.get(`/stats/orders?${params.toString()}`);
     return response.data;
@@ -183,10 +202,16 @@ export const statisticsService = {
 
   async getFinanceStats(filters?: StatsFilters): Promise<{ message: string; data: DashboardStats['finance'] }> {
     const params = new URLSearchParams();
-    if (filters?.year) params.append('year', filters.year.toString());
-    if (filters?.month) params.append('month', filters.month.toString());
-    if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
-    if (filters?.dateTo) params.append('dateTo', filters.dateTo);
+    
+    // If no filters provided, use lifetime period
+    if (!filters?.year && !filters?.month && !filters?.dateFrom && !filters?.dateTo) {
+      params.append('period', 'lifetime');
+    } else {
+      if (filters?.year) params.append('year', filters.year.toString());
+      if (filters?.month) params.append('month', filters.month.toString());
+      if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
+      if (filters?.dateTo) params.append('dateTo', filters.dateTo);
+    }
 
     const response = await axiosClient.get(`/stats/finance?${params.toString()}`);
     return response.data;
@@ -194,10 +219,16 @@ export const statisticsService = {
 
   async getSubscriptionStats(filters?: StatsFilters): Promise<{ message: string; data: DashboardStats['subscriptions'] }> {
     const params = new URLSearchParams();
-    if (filters?.year) params.append('year', filters.year.toString());
-    if (filters?.month) params.append('month', filters.month.toString());
-    if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
-    if (filters?.dateTo) params.append('dateTo', filters.dateTo);
+    
+    // If no filters provided, use lifetime period
+    if (!filters?.year && !filters?.month && !filters?.dateFrom && !filters?.dateTo) {
+      params.append('period', 'lifetime');
+    } else {
+      if (filters?.year) params.append('year', filters.year.toString());
+      if (filters?.month) params.append('month', filters.month.toString());
+      if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
+      if (filters?.dateTo) params.append('dateTo', filters.dateTo);
+    }
 
     const response = await axiosClient.get(`/stats/subscriptions?${params.toString()}`);
     return response.data;
@@ -205,10 +236,16 @@ export const statisticsService = {
 
   async getVoucherStats(filters?: StatsFilters): Promise<{ message: string; data: DashboardStats['vouchers'] }> {
     const params = new URLSearchParams();
-    if (filters?.year) params.append('year', filters.year.toString());
-    if (filters?.month) params.append('month', filters.month.toString());
-    if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
-    if (filters?.dateTo) params.append('dateTo', filters.dateTo);
+    
+    // If no filters provided, use lifetime period
+    if (!filters?.year && !filters?.month && !filters?.dateFrom && !filters?.dateTo) {
+      params.append('period', 'lifetime');
+    } else {
+      if (filters?.year) params.append('year', filters.year.toString());
+      if (filters?.month) params.append('month', filters.month.toString());
+      if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
+      if (filters?.dateTo) params.append('dateTo', filters.dateTo);
+    }
 
     const response = await axiosClient.get(`/stats/vouchers?${params.toString()}`);
     return response.data;
@@ -216,10 +253,16 @@ export const statisticsService = {
 
   async getQuickStats(filters?: StatsFilters): Promise<{ message: string; data: DashboardStats['quickStats'] }> {
     const params = new URLSearchParams();
-    if (filters?.year) params.append('year', filters.year.toString());
-    if (filters?.month) params.append('month', filters.month.toString());
-    if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
-    if (filters?.dateTo) params.append('dateTo', filters.dateTo);
+    
+    // If no filters provided, use lifetime period
+    if (!filters?.year && !filters?.month && !filters?.dateFrom && !filters?.dateTo) {
+      params.append('period', 'lifetime');
+    } else {
+      if (filters?.year) params.append('year', filters.year.toString());
+      if (filters?.month) params.append('month', filters.month.toString());
+      if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
+      if (filters?.dateTo) params.append('dateTo', filters.dateTo);
+    }
 
     const response = await axiosClient.get(`/stats/quick?${params.toString()}`);
     return response.data;

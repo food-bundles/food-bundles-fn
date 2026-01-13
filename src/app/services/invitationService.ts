@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import createAxiosClient from '@/app/hooks/axiosClient';
 
 export interface Invitation {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   LineChart,
@@ -31,6 +31,7 @@ interface OrdersChartProps {
 }
 
 export function OrdersChart({ loading = false, data }: OrdersChartProps) {
+  const [apiData, setApiData] = useState<any>(null);
   const [localFilters, setLocalFilters] = useState<StatsFilters | null>(null);
   const [localData, setLocalData] = useState<DashboardStats["orders"] | null>(
     null
@@ -55,6 +56,20 @@ export function OrdersChart({ loading = false, data }: OrdersChartProps) {
   ];
 
 
+  const fetchApiData = async () => {
+    try {
+      const response = await fetch('https://server.food.rw/stats/orders?period=lifetime');
+      const result = await response.json();
+      setApiData(result.data);
+    } catch (error) {
+      console.error("Error fetching API data:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchApiData();
+  }, []);
+
   const fetchLocalData = async (filters: StatsFilters) => {
     setLocalLoading(true);
     try {
@@ -64,6 +79,31 @@ export function OrdersChart({ loading = false, data }: OrdersChartProps) {
       console.error("Error fetching local orders data:", error);
     } finally {
       setLocalLoading(false);
+    }
+  };
+
+  const transformApiToChart = (apiData: any, year?: number) => {
+    if (!apiData?.timeBreakdown) return [];
+    
+    if (!year) {
+      return Object.values(apiData.timeBreakdown).map((yearData: any) => ({
+        date: yearData.year.toString(),
+        completed: yearData.completed,
+        cancelled: yearData.cancelled,
+        ongoing: yearData.ongoing,
+        total: yearData.total,
+      }));
+    } else {
+      const yearData = apiData.timeBreakdown[year];
+      if (!yearData?.months) return [];
+      
+      return Object.values(yearData.months).map((monthData: any) => ({
+        date: monthData.monthName,
+        completed: monthData.completed,
+        cancelled: monthData.cancelled,
+        ongoing: monthData.ongoing,
+        total: monthData.total,
+      }));
     }
   };
 
@@ -83,14 +123,15 @@ export function OrdersChart({ loading = false, data }: OrdersChartProps) {
     );
   }
 
-  const chartData =
-    activeData?.timeSeriesData?.map((item) => ({
-      date: item.period,
-      completed: item.completed,
-      cancelled: item.cancelled,
-      ongoing: item.ongoing,
-      total: item.total,
-    })) || [];
+  const chartData = apiData && !localData
+    ? transformApiToChart(apiData, localFilters?.year)
+    : activeData?.timeSeriesData?.map((item) => ({
+        date: item.period,
+        completed: item.completed,
+        cancelled: item.cancelled,
+        ongoing: item.ongoing,
+        total: item.total,
+      })) || [];
 
   return (
     <Card>
@@ -104,9 +145,9 @@ export function OrdersChart({ loading = false, data }: OrdersChartProps) {
 
           <div className="flex items-center gap-2">
             <Select
-              value={localFilters?.year?.toString() || currentYear.toString()}
+              value={localFilters?.year?.toString() || "all"}
               onValueChange={(value) => {
-                const newFilters = { ...localFilters, year: parseInt(value) };
+                const newFilters = { ...localFilters, year: value === "all" ? undefined : parseInt(value) };
                 setLocalFilters(newFilters);
                 fetchLocalData(newFilters);
               }}
@@ -115,6 +156,7 @@ export function OrdersChart({ loading = false, data }: OrdersChartProps) {
                 <SelectValue placeholder="Year" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all" className="text-xs">All</SelectItem>
                 {years.map((year) => (
                   <SelectItem
                     key={year}
@@ -135,7 +177,7 @@ export function OrdersChart({ loading = false, data }: OrdersChartProps) {
                   month: value === "all" ? undefined : parseInt(value),
                 };
                 setLocalFilters(newFilters);
-                if (newFilters.year) fetchLocalData(newFilters);
+                fetchLocalData(newFilters);
               }}
             >
               <SelectTrigger className="h-5 text-xs w-16">
@@ -221,7 +263,7 @@ export function OrdersChart({ loading = false, data }: OrdersChartProps) {
               <p className="text-xs text-gray-500">Completed</p>
             </div>
             <p className="text-xs font-semibold text-green-600">
-              {(activeData?.completedOrders || 0).toLocaleString()}
+              {(apiData?.completedOrders || activeData?.completedOrders || 0).toLocaleString()}
             </p>
           </div>
           <div className="text-center">
@@ -230,7 +272,7 @@ export function OrdersChart({ loading = false, data }: OrdersChartProps) {
               <p className="text-xs text-gray-500">Cancelled</p>
             </div>
             <p className="text-xs font-semibold text-red-600">
-              {(activeData?.cancelledOrders || 0).toLocaleString()}
+              {(apiData?.cancelledOrders || activeData?.cancelledOrders || 0).toLocaleString()}
             </p>
           </div>
           <div className="text-center">
@@ -239,7 +281,7 @@ export function OrdersChart({ loading = false, data }: OrdersChartProps) {
               <p className="text-xs text-gray-500">Ongoing</p>
             </div>
             <p className="text-xs font-semibold text-blue-600">
-              {(activeData?.ongoingOrders || 0).toLocaleString()}
+              {(apiData?.ongoingOrders || activeData?.ongoingOrders || 0).toLocaleString()}
             </p>
           </div>
         </div>

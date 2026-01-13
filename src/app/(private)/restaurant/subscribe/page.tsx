@@ -5,13 +5,16 @@ import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import PaymentModal from "./_components/PaySubscribtionModel";
+import UpgradeDrawer from "./_components/UpgradeDrawer";
 import {
   subscriptionService,
   SubscriptionPlan,
+  RestaurantSubscription,
 } from "@/app/services/subscriptionService";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import SubscriptionTable from "./_components/SubscriptionTable";
+import { useSubscriptions } from "@/app/contexts/subscriptionContext";
 
 export default function SubscribePage() {
   const [openModal, setOpenModal] = useState(false);
@@ -20,6 +23,11 @@ export default function SubscribePage() {
   );
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentSubscription, setCurrentSubscription] = useState<RestaurantSubscription | null>(null);
+  const [upgradeDrawerOpen, setUpgradeDrawerOpen] = useState(false);
+  const [selectedUpgradePlan, setSelectedUpgradePlan] = useState<SubscriptionPlan | null>(null);
+
+  const { upgradeSubscription, downgradeSubscription } = useSubscriptions();
 
   const fetchPlans = async () => {
     try {
@@ -39,9 +47,59 @@ export default function SubscribePage() {
     }
   };
 
+  const fetchCurrentSubscription = async () => {
+    try {
+      const response = await subscriptionService.getMySubscriptions();
+      setCurrentSubscription(response.data || null);
+    } catch (error) {
+      // User might not have a subscription yet
+      setCurrentSubscription(null);
+    }
+  };
+
   useEffect(() => {
     fetchPlans();
+    fetchCurrentSubscription();
   }, []);
+
+  const handlePlanSelection = async (plan: SubscriptionPlan) => {
+    if (!currentSubscription) {
+      // No current subscription, proceed with new subscription
+      setSelectedPlan(plan);
+      setOpenModal(true);
+      return;
+    }
+
+    if (currentSubscription.status !== "ACTIVE") {
+      // Current subscription is not active, allow new subscription
+      setSelectedPlan(plan);
+      setOpenModal(true);
+      return;
+    }
+
+    if (currentSubscription.plan.id === plan.id) {
+      toast.info("You already have this plan active");
+      return;
+    }
+
+    // Show upgrade drawer for plan changes
+    setSelectedUpgradePlan(plan);
+    setUpgradeDrawerOpen(true);
+  };
+
+  const isPlanActive = (planId: string) => {
+    return currentSubscription?.plan.id === planId && currentSubscription?.status === "ACTIVE";
+  };
+
+  const getButtonText = (plan: SubscriptionPlan) => {
+    if (!currentSubscription || currentSubscription.status !== "ACTIVE") {
+      return `Choose ${plan.name}`;
+    }
+    
+    const isUpgrade = plan.price > currentSubscription.plan.price;
+    return isUpgrade ? "Upgrade" : "Downgrade";
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -59,10 +117,15 @@ export default function SubscribePage() {
         <div className="flex items-center justify-center gap-4 flex-wrap">
           {plans.map((plan) => {
             const isPopular = plan.name.toLowerCase().includes("premium");
-            const borderColor = isPopular
+            const isActive = isPlanActive(plan.id);
+            const borderColor = isActive
+              ? "border-gray-400 bg-gray-50"
+              : isPopular
               ? "border-yellow-300 hover:border-yellow-400"
               : "border-green-200 hover:border-green-400";
-            const buttonColor = isPopular
+            const buttonColor = isActive
+              ? "bg-gray-400 cursor-not-allowed"
+              : isPopular
               ? "bg-yellow-500 hover:bg-yellow-600"
               : "bg-green-600 hover:bg-green-700";
 
@@ -71,7 +134,14 @@ export default function SubscribePage() {
                 key={plan.id}
                 className={`w-[250px] h-[400px] flex flex-col items-center p-6 ${borderColor} transition-colors relative rounded shadow-none`}
               >
-                {isPopular && (
+                {isActive && (
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                    <Badge className="bg-gray-500 text-white rounded">
+                      Current Plan
+                    </Badge>
+                  </div>
+                )}
+                {isPopular && !isActive && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                     <Badge className="bg-yellow-500 text-white rounded">
                       Most Popular
@@ -81,7 +151,9 @@ export default function SubscribePage() {
                 <div className="text-center">
                   <Badge
                     className={`${
-                      isPopular
+                      isActive
+                        ? "bg-blue-100 text-gray-800"
+                        : isPopular
                         ? "bg-yellow-100 text-yellow-800"
                         : "bg-green-100 text-green-800"
                     } mb-2 rounded`}
@@ -140,12 +212,10 @@ export default function SubscribePage() {
                 </div>
                 <button
                   className={`${buttonColor} text-white text-[14px] rounded py-1 px-2 mt-auto`}
-                  onClick={() => {
-                    setSelectedPlan(plan);
-                    setOpenModal(true);
-                  }}
+                  onClick={() => handlePlanSelection(plan)}
+                  disabled={isActive}
                 >
-                  Choose {plan.name}
+                  {isActive ? "Current Plan" : getButtonText(plan)}
                 </button>
               </Card>
             );
@@ -158,6 +228,16 @@ export default function SubscribePage() {
         onClose={() => setOpenModal(false)}
         plan={selectedPlan}
       />
+      
+      {currentSubscription && selectedUpgradePlan && (
+        <UpgradeDrawer
+          isOpen={upgradeDrawerOpen}
+          onClose={() => setUpgradeDrawerOpen(false)}
+          currentSubscription={currentSubscription}
+          selectedPlan={selectedUpgradePlan}
+          onSuccess={fetchCurrentSubscription}
+        />
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { subscriptionService, SubscriptionPlan } from "@/app/services/subscriptionService";
 import { toast } from "sonner";
+import { useAuth } from "@/app/contexts/auth-context";
 
 type PaymentMethod = "wallet" | "momo" | "card";
 
@@ -31,6 +32,13 @@ export default function PaymentModal({
   const [phoneNumber, setPhoneNumber] = useState("");
   const [showRedirectInfo, setShowRedirectInfo] = useState(false);
   const [redirectUrl, setRedirectUrl] = useState("");
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user?.phone && method === "momo") {
+      setPhoneNumber(user.phone);
+    }
+  }, [user?.phone, method]);
 
   const handlePayment = async () => {
     if (!plan) return;

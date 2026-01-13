@@ -262,17 +262,11 @@ export const subscriptionService = {
   },
 
   /**
-   * Get restaurant's subscriptions (Restaurant only)
+   * Get restaurant's current subscription (Restaurant only)
    */
-  getMySubscriptions: async (params?: {
-    page?: number;
-    limit?: number;
-    status?: SubscriptionStatus;
-  }): Promise<SubscriptionsResponse> => {
+  getMySubscriptions: async (): Promise<SubscriptionResponse> => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.get("/subscriptions/my-subscriptions", {
-      params,
-    });
+    const response = await axiosClient.get("/subscriptions/my-subscriptions");
     return response.data;
   },
 

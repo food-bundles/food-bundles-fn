@@ -78,7 +78,7 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
             </button>
             <div className="flex items-center gap-2 md:gap-4">
               <h1 className="text-sm md:text-md font-semibold text-white">
-                Restaurant Dashboard <span className="text-2xl">🎅</span>
+                Restaurant Dashboard 
               </h1>
             </div>
           </div>
@@ -123,13 +123,9 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
                 <button className="flex items-center gap-2 hover:bg-transparent cursor-pointer text-primary-foreground hover:text-primary-foreground">
                   {user ? (
                     <>
-                      {userName ? (
-                        <span className="font-medium text-[13px] hidden md:inline">
-                          {userName}
-                        </span>
-                      ) : (
-                        <Skeleton className="h-5 w-20 md:h-6 md:w-24 hidden md:inline bg-green-600/60" />
-                      )}
+                      <span className="font-medium text-[13px] hidden md:inline">
+                        {userName || "Loading..."}
+                      </span>
                       <div className="rounded-full flex items-center justify-center">
                         {user?.profileImage ? (
                           <Image
@@ -145,15 +141,19 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
                           />
                         ) : (
                           <div className="rounded-full bg-green-600 text-white flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 font-medium">
-                            {userName.substring(0, 2).toUpperCase()}
+                            {userName ? userName.substring(0, 2).toUpperCase() : "U"}
                           </div>
                         )}
                       </div>
                     </>
                   ) : (
                     <>
-                      <Skeleton className="h-5 w-20 md:h-6 md:w-24 hidden md:inline bg-green-600/60" />
-                      <Skeleton className="rounded-full h-8 w-8 sm:h-10 sm:w-10 bg-green-600/60" />
+                      <span className="font-medium text-[13px] hidden md:inline">
+                        Loading...
+                      </span>
+                      <div className="rounded-full bg-green-600 text-white flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 font-medium">
+                        U
+                      </div>
                     </>
                   )}
                 </button>
