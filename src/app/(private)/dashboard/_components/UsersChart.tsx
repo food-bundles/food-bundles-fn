@@ -88,9 +88,9 @@ export function UsersChart({ loading = false, data }: UsersChartProps) {
           
           <div className="flex items-center gap-2">
             <Select
-              value={localFilters?.year?.toString() || currentYear.toString()}
+              value={localFilters?.year?.toString() || "all"}
               onValueChange={(value) => {
-                const newFilters = { ...localFilters, year: parseInt(value) };
+                const newFilters = { ...localFilters, year: value === "all" ? undefined : parseInt(value) };
                 setLocalFilters(newFilters);
                 fetchLocalData(newFilters);
               }}
@@ -99,6 +99,7 @@ export function UsersChart({ loading = false, data }: UsersChartProps) {
                 <SelectValue placeholder="Year" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all" className="text-xs">All</SelectItem>
                 {years.map(year => (
                   <SelectItem key={year} value={year.toString()} className="text-xs">{year}</SelectItem>
                 ))}
@@ -106,14 +107,14 @@ export function UsersChart({ loading = false, data }: UsersChartProps) {
             </Select>
             
             <Select
-              value={localFilters?.month?.toString() || 'all'}
+              value={localFilters?.month?.toString() || "all"}
               onValueChange={(value) => {
                 const newFilters = { 
                   ...localFilters, 
-                  month: value === 'all' ? undefined : parseInt(value) 
+                  month: value === "all" ? undefined : parseInt(value) 
                 };
                 setLocalFilters(newFilters);
-                if (newFilters.year) fetchLocalData(newFilters);
+                fetchLocalData(newFilters);
               }}
             >
               <SelectTrigger className="h-7 text-xs w-16">

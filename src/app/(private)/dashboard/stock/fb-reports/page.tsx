@@ -38,7 +38,25 @@ export default function FBReportsPage() {
         businessCode: businessCode.trim()
       });
       
-      setReportData(response.data || []);
+      console.log('Raw response:', response);
+      
+      let items = [];
+      if (typeof response === 'string') {
+        const parsed = JSON.parse(response);
+        items = parsed.items || [];
+      } else if (response?.data) {
+        if (typeof response.data === 'string') {
+          const parsed = JSON.parse(response.data);
+          items = parsed.items || [];
+        } else {
+          items = response.data.items || response.data || [];
+        }
+      } else if (response?.items) {
+        items = response.items;
+      }
+      
+      console.log('Parsed items:', items);
+      setReportData(items);
       setHasSearched(true);
       toast.success("Report generated successfully");
     } catch (error: any) {
@@ -62,20 +80,36 @@ export default function FBReportsPage() {
 
   const columns = [
     {
-      accessorKey: "id",
-      header: "ID",
+      accessorKey: "index",
+      header: "#",
+      cell: ({ row }: any) => row.index + 1,
     },
     {
-      accessorKey: "date",
-      header: "Date",
+      accessorKey: "category",
+      header: "Category",
     },
     {
-      accessorKey: "amount",
-      header: "Amount",
+      accessorKey: "menu",
+      header: "Menu Item",
     },
     {
-      accessorKey: "status",
-      header: "Status",
+      accessorKey: "quantitySold",
+      header: "Qty Sold",
+    },
+    {
+      accessorKey: "totalSales",
+      header: "Total Sales",
+      cell: ({ row }: any) => `${parseFloat(row.original.totalSales).toLocaleString()} RWF`,
+    },
+    {
+      accessorKey: "avgSalePrice",
+      header: "Avg Price",
+      cell: ({ row }: any) => `${parseFloat(row.original.avgSalePrice).toLocaleString()} RWF`,
+    },
+    {
+      accessorKey: "listprice",
+      header: "List Price",
+      cell: ({ row }: any) => `${parseFloat(row.original.listprice).toLocaleString()} RWF`,
     },
   ];
 
@@ -98,22 +132,23 @@ export default function FBReportsPage() {
         </p>
       </div>
 
-      <Card className="mb-3 py-1 w-1/2 rounded">
+      <Card className="mb-3 py-1 w-full md:w-1/2 rounded">
         <CardContent className="p-3">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-gray-500" />
               <span className="text-xs font-medium">Filters:</span>
             </div>
-            
-            <div className="flex items-center gap-3">
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 w-full">
               <Input
                 placeholder="Business Code"
                 value={businessCode}
                 onChange={(e) => setBusinessCode(e.target.value)}
-                className="h-7 text-xs w-32"
+                className="h-7 text-xs w-full sm:w-32"
               />
-              <div className="w-48">
+
+              <div className="w-full sm:w-48">
                 <TableFilters filters={filters} />
               </div>
             </div>
@@ -125,7 +160,8 @@ export default function FBReportsPage() {
         <Card>
           <CardContent className="text-center py-12">
             <p className="text-gray-500 text-sm mb-4">
-              Please enter a business code and select date range to generate reports
+              Please enter a business code and select date range to generate
+              reports
             </p>
             <p className="text-gray-400 text-sm">
               Reports will be generated automatically as you type
@@ -141,7 +177,7 @@ export default function FBReportsPage() {
               columns={columns}
               data={reportData}
               title="Report Results"
-              description={`Total: ${reportData.length} records`}
+              description={``}
               showExport={true}
               showSearch={true}
               showColumnVisibility={true}

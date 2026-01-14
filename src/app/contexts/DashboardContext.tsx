@@ -23,10 +23,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
-  const [filters, setFilters] = useState<StatsFilters>({
-    year: new Date().getFullYear(),
-    month: new Date().getMonth() + 1
-  });
+  const [filters, setFilters] = useState<StatsFilters>({});
 
   const fetchStats = async () => {
     if (!mounted) return; // Don't fetch until mounted

@@ -33,6 +33,11 @@ const formatTime = (date: string | Date) =>
 
 export const createInvitationColumns = ({ onResend, onCancel }: InvitationColumnsProps): ColumnDef<Invitation>[] => [
   {
+    accessorKey: "#",
+    header: "#",
+    cell: ({ row }) => <div className="text-xs">{row.index + 1}</div>,
+  },
+  {
     accessorKey: "email",
     header: "Email",
     cell: ({ row }) => (
@@ -115,21 +120,17 @@ export const createInvitationColumns = ({ onResend, onCancel }: InvitationColumn
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            {isPending && (
-              <DropdownMenuItem onClick={() => onResend(invitation.id)}>
-                <Mail className="mr-2 h-4 w-4" />
-                Resend
-              </DropdownMenuItem>
-            )}
-            {isPending && (
-              <DropdownMenuItem 
-                onClick={() => onCancel(invitation.id)}
-                className="text-red-600"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Cancel
-              </DropdownMenuItem>
-            )}
+            <DropdownMenuItem onClick={() => onResend(invitation.id)}>
+              <Mail className="mr-2 h-4 w-4" />
+              Resend
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => onCancel(invitation.id)}
+              className="text-red-600"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Cancel
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );

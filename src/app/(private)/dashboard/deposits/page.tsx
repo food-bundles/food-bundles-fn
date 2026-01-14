@@ -8,11 +8,46 @@ import { useWallet } from "@/app/contexts/WalletContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Wallet, Plus, ArrowUpRight, ArrowDownRight, Loader2, CreditCard, Smartphone, Users, DollarSign, Search, Package, Calendar, Mail, Phone, Eye } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Wallet,
+  Plus,
+  ArrowUpRight,
+  ArrowDownRight,
+  Loader2,
+  CreditCard,
+  Smartphone,
+  Users,
+  DollarSign,
+  Search,
+  Package,
+  Calendar,
+  Mail,
+  Phone,
+  Eye,
+} from "lucide-react";
 import { toast } from "sonner";
 import { walletService } from "@/app/services/walletService";
 import { restaurantService } from "@/app/services/restaurantService";
@@ -22,11 +57,28 @@ export default function DepositsManagementPage() {
   const { getMyWallet } = useWallet();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [wallets, setWallets] = useState<any[]>([]);
-  const [walletPagination, setWalletPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
-  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
+  const [walletPagination, setWalletPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0,
+  });
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0,
+  });
   const [pageSize, setPageSize] = useState(5);
-  const [transactionFilters, setTransactionFilters] = useState({ type: '', restaurantName: '' });
-  const [transactionStats, setTransactionStats] = useState({ topUp: 0, payment: 0, total: 0 });
+  const [transactionFilters, setTransactionFilters] = useState({
+    type: "",
+    restaurantName: "",
+  });
+  const [transactionStats, setTransactionStats] = useState({
+    topUp: 0,
+    payment: 0,
+    total: 0,
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [transactionSearchQuery, setTransactionSearchQuery] = useState("");
   const [showDepositModal, setShowDepositModal] = useState(false);
@@ -52,7 +104,7 @@ export default function DepositsManagementPage() {
       const response = await walletService.getAllWallets({
         page,
         limit: 20,
-        restaurantName: search || undefined
+        restaurantName: search || undefined,
       });
       if (response && response.data) {
         setWallets(response.data);
@@ -70,12 +122,15 @@ export default function DepositsManagementPage() {
     }
   };
 
-  const fetchTransactions = async (page = 1, search = transactionSearchQuery) => {
+  const fetchTransactions = async (
+    page = 1,
+    search = transactionSearchQuery
+  ) => {
     try {
       const filters: any = { page, limit: pageSize };
       if (transactionFilters.type) filters.type = transactionFilters.type;
       if (search) filters.restaurantName = search;
-      
+
       const response = await walletService.getAllWalletTransactions(filters);
       if (response && response.data) {
         setTransactions(response.data);
@@ -93,13 +148,21 @@ export default function DepositsManagementPage() {
 
   const fetchTransactionStats = async () => {
     try {
-      const topUpResponse = await walletService.getAllWalletTransactions({ type: 'TOP_UP', limit: 1000 });
-      const paymentResponse = await walletService.getAllWalletTransactions({ type: 'PAYMENT', limit: 1000 });
-      
-      setTransactionStats({ 
+      const topUpResponse = await walletService.getAllWalletTransactions({
+        type: "TOP_UP",
+        limit: 1000,
+      });
+      const paymentResponse = await walletService.getAllWalletTransactions({
+        type: "PAYMENT",
+        limit: 1000,
+      });
+
+      setTransactionStats({
         topUp: topUpResponse?.pagination?.total || 0,
         payment: paymentResponse?.pagination?.total || 0,
-        total: (topUpResponse?.pagination?.total || 0) + (paymentResponse?.pagination?.total || 0)
+        total:
+          (topUpResponse?.pagination?.total || 0) +
+          (paymentResponse?.pagination?.total || 0),
       });
     } catch (error) {
       console.error("Failed to fetch transaction stats:", error);
@@ -108,9 +171,16 @@ export default function DepositsManagementPage() {
 
   const fetchRestaurants = async (search = "") => {
     try {
-      const response = await restaurantService.getAllRestaurants({ page: 1, limit: 100, search });
+      const response = await restaurantService.getAllRestaurants({
+        page: 1,
+        limit: 100,
+        search,
+      });
       // Be more resilient with response structure
-      const restaurantData = response.data?.restaurants || response.restaurants || (Array.isArray(response.data) ? response.data : []);
+      const restaurantData =
+        response.data?.restaurants ||
+        response.restaurants ||
+        (Array.isArray(response.data) ? response.data : []);
       if (restaurantData) {
         setRestaurants(restaurantData);
       }
@@ -131,12 +201,12 @@ export default function DepositsManagementPage() {
           break;
         }
       }
-      
+
       const response = await fetch(`https://server.food.rw/orders/${orderId}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
       const data = await response.json();
       if (data.data) {
@@ -160,7 +230,7 @@ export default function DepositsManagementPage() {
           fetchWallets(1),
           fetchTransactions(1),
           fetchTransactionStats(),
-          fetchRestaurants()
+          fetchRestaurants(),
         ]);
       } catch (error) {
         console.error("Error in initial data fetch:", error);
@@ -189,31 +259,39 @@ export default function DepositsManagementPage() {
     }
   };
 
-  const handleWalletToggle = async (walletId: string, currentStatus: boolean) => {
+  const handleWalletToggle = async (
+    walletId: string,
+    currentStatus: boolean
+  ) => {
     try {
-      const response = await walletService.updateWalletStatus(walletId, { isActive: !currentStatus });
+      const response = await walletService.updateWalletStatus(walletId, {
+        isActive: !currentStatus,
+      });
       if (response.message) {
         toast.success(response.message, {
           duration: 3000,
           style: {
-            background: '#dcfce7',
-            color: '#166534',
-            border: '1px solid #bbf7d0',
-            maxWidth: '300px'
-          }
+            background: "#dcfce7",
+            color: "#166534",
+            border: "1px solid #bbf7d0",
+            maxWidth: "300px",
+          },
         });
         await fetchWallets(walletPagination.page);
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to update wallet status", {
-        duration: 4000,
-        style: {
-          background: '#fef2f2',
-          color: '#dc2626',
-          border: '1px solid #fecaca',
-          maxWidth: '300px'
+      toast.error(
+        error.response?.data?.message || "Failed to update wallet status",
+        {
+          duration: 4000,
+          style: {
+            background: "#fef2f2",
+            color: "#dc2626",
+            border: "1px solid #fecaca",
+            maxWidth: "300px",
+          },
         }
-      });
+      );
     }
   };
 
@@ -233,7 +311,8 @@ export default function DepositsManagementPage() {
       const response = await walletService.adminDeposit({
         restaurantId: selectedRestaurantId,
         amount: parseFloat(depositData.amount),
-        description: depositData.description || "Admin deposit for promotional credit",
+        description:
+          depositData.description || "Admin deposit for promotional credit",
       });
 
       if (response.message) {
@@ -289,16 +368,17 @@ export default function DepositsManagementPage() {
     );
   }
 
-  const totalBalance = wallets.reduce((sum, wallet) => sum + (wallet.balance || 0), 0);
-  const activeWallets = wallets.filter(wallet => wallet.isActive).length;
+  const totalBalance = wallets.reduce(
+    (sum, wallet) => sum + (wallet.balance || 0),
+    0
+  );
+  const activeWallets = wallets.filter((wallet) => wallet.isActive).length;
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/50 backdrop-blur-sm p-6 rounded-2xl border border-gray-100 shadow-sm">
         <div>
-          <h1 className="text-lg font-semibold">
-            Deposit Management
-          </h1>
+          <h1 className="text-lg font-semibold">Deposit Management</h1>
           <p className="text-xs text-gray-600 mt-1">
             Manage restaurant cash deposits and monitor transactions
           </p>
@@ -320,7 +400,7 @@ export default function DepositsManagementPage() {
             <div className="flex items-center gap-1 text-xs text-green-600">
               <div className="w-3 h-3">
                 <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M7 14l5-5 5 5z"/>
+                  <path d="M7 14l5-5 5 5z" />
                 </svg>
               </div>
               +12.5%
@@ -340,7 +420,7 @@ export default function DepositsManagementPage() {
             <div className="flex items-center gap-1 text-xs text-blue-600">
               <div className="w-3 h-3">
                 <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M7 14l5-5 5 5z"/>
+                  <path d="M7 14l5-5 5 5z" />
                 </svg>
               </div>
               +8.2%
@@ -348,9 +428,7 @@ export default function DepositsManagementPage() {
           </div>
           <div className="space-y-1">
             <p className="text-xs text-gray-600 font-medium">Active Cash</p>
-            <p className="text-sm font-bold text-blue-600">
-              {activeWallets}
-            </p>
+            <p className="text-sm font-bold text-blue-600">{activeWallets}</p>
           </div>
         </div>
 
@@ -360,7 +438,7 @@ export default function DepositsManagementPage() {
             <div className="flex items-center gap-1 text-xs text-purple-600">
               <div className="w-3 h-3">
                 <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M7 14l5-5 5 5z"/>
+                  <path d="M7 14l5-5 5 5z" />
                 </svg>
               </div>
               +5.1%
@@ -380,7 +458,7 @@ export default function DepositsManagementPage() {
             <div className="flex items-center gap-1 text-xs text-green-600">
               <div className="w-3 h-3">
                 <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M7 14l5-5 5 5z"/>
+                  <path d="M7 14l5-5 5 5z" />
                 </svg>
               </div>
               +15.3%
@@ -400,7 +478,7 @@ export default function DepositsManagementPage() {
             <div className="flex items-center gap-1 text-xs text-red-600">
               <div className="w-3 h-3">
                 <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M17 10l-5 5-5-5z"/>
+                  <path d="M17 10l-5 5-5-5z" />
                 </svg>
               </div>
               -3.7%
@@ -421,7 +499,9 @@ export default function DepositsManagementPage() {
           <CardHeader className="bg-white border-b border-gray-50 pb-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
-                <CardTitle className="text-sm font-semibold">Restaurant Wallets</CardTitle>
+                <CardTitle className="text-sm font-semibold">
+                  Restaurant Wallets
+                </CardTitle>
                 <CardDescription className="text-xs text-gray-600 mt-1">
                   Manage cash and monitor status per restaurant
                 </CardDescription>
@@ -445,17 +525,32 @@ export default function DepositsManagementPage() {
               <table className="w-full">
                 <thead>
                   <tr className="bg-gray-50/50">
-                    <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">No</th>
-                    <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">Restaurant</th>
-                    <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">Balance</th>
-                    <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">Activity</th>
-                    <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">Status</th>
-                    <th className="text-right py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">Actions</th>
+                    <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
+                      No
+                    </th>
+                    <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
+                      Restaurant
+                    </th>
+                    <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
+                      Balance
+                    </th>
+                    <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
+                      Activity
+                    </th>
+                    <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
+                      Status
+                    </th>
+                    <th className="text-right py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {wallets.map((wallet, index) => (
-                    <tr key={wallet.id} className="hover:bg-green-50/30 transition-colors">
+                    <tr
+                      key={wallet.id}
+                      className="hover:bg-green-50/30 transition-colors"
+                    >
                       <td className="py-5 px-6">
                         <span className="text-xs font-bold text-gray-900">
                           {(walletPagination.page - 1) * 20 + index + 1}
@@ -478,14 +573,18 @@ export default function DepositsManagementPage() {
                       </td>
                       <td className="py-5 px-6">
                         <div className="flex flex-col">
-                          <span className="text-sm font-bold text-gray-900">{wallet.balance?.toLocaleString()}</span>
+                          <span className="text-sm font-bold text-gray-900">
+                            {wallet.balance?.toLocaleString()}
+                          </span>
                           <span className="text-xs text-gray-600">RWF</span>
                         </div>
                       </td>
                       <td className="py-5 px-6 text-sm">
                         <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-100 w-fit">
                           <ArrowUpRight className="h-3.5 w-3.5" />
-                          <span className="text-xs font-bold">{wallet._count?.transactions || 0}</span>
+                          <span className="text-xs font-bold">
+                            {wallet._count?.transactions || 0}
+                          </span>
                         </div>
                       </td>
                       <td className="py-5 px-6">
@@ -504,10 +603,16 @@ export default function DepositsManagementPage() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => handleWalletToggle(wallet.id, wallet.isActive)}
-                            className={`${wallet.isActive ? 'text-red-600 hover:bg-red-100' : 'text-green-600 hover:bg-green-100'} rounded-xl text-xs font-bold transition-all`}
+                            onClick={() =>
+                              handleWalletToggle(wallet.id, wallet.isActive)
+                            }
+                            className={`${
+                              wallet.isActive
+                                ? "text-red-600 hover:bg-red-100"
+                                : "text-green-600 hover:bg-green-100"
+                            } rounded-xl text-xs font-bold transition-all`}
                           >
-                            {wallet.isActive ? 'Deactivate' : 'Activate'}
+                            {wallet.isActive ? "Deactivate" : "Activate"}
                           </Button>
                           <Button
                             size="sm"
@@ -541,30 +646,47 @@ export default function DepositsManagementPage() {
                   Previous
                 </Button>
                 <div className="flex gap-2">
-                  {Array.from({ length: Math.min(5, walletPagination.totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (walletPagination.totalPages <= 5) pageNum = i + 1;
-                    else if (walletPagination.page <= 3) pageNum = i + 1;
-                    else if (walletPagination.page >= walletPagination.totalPages - 2) pageNum = walletPagination.totalPages - 4 + i;
-                    else pageNum = walletPagination.page - 2 + i;
+                  {Array.from(
+                    { length: Math.min(5, walletPagination.totalPages) },
+                    (_, i) => {
+                      let pageNum;
+                      if (walletPagination.totalPages <= 5) pageNum = i + 1;
+                      else if (walletPagination.page <= 3) pageNum = i + 1;
+                      else if (
+                        walletPagination.page >=
+                        walletPagination.totalPages - 2
+                      )
+                        pageNum = walletPagination.totalPages - 4 + i;
+                      else pageNum = walletPagination.page - 2 + i;
 
-                    return (
-                      <Button
-                        key={pageNum}
-                        variant={pageNum === walletPagination.page ? "default" : "ghost"}
-                        size="sm"
-                        onClick={() => fetchWallets(pageNum)}
-                        className={`w-10 h-10 p-0 rounded-xl ${pageNum === walletPagination.page ? 'bg-green-600 shadow-lg shadow-green-200' : 'text-gray-600 hover:bg-gray-100'}`}
-                      >
-                        {pageNum}
-                      </Button>
-                    );
-                  })}
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={
+                            pageNum === walletPagination.page
+                              ? "default"
+                              : "ghost"
+                          }
+                          size="sm"
+                          onClick={() => fetchWallets(pageNum)}
+                          className={`w-10 h-10 p-0 rounded-xl ${
+                            pageNum === walletPagination.page
+                              ? "bg-green-600 shadow-lg shadow-green-200"
+                              : "text-gray-600 hover:bg-gray-100"
+                          }`}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    }
+                  )}
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={walletPagination.page >= walletPagination.totalPages}
+                  disabled={
+                    walletPagination.page >= walletPagination.totalPages
+                  }
                   onClick={() => fetchWallets(walletPagination.page + 1)}
                   className="rounded-xl px-4 border-gray-200"
                 >
@@ -577,193 +699,246 @@ export default function DepositsManagementPage() {
 
         {/* All Transactions Table */}
         <Card className="border-none shadow-xl shadow-gray-100 rounded-2xl overflow-hidden">
-            <CardHeader className="bg-white border-b border-gray-50 pb-6">
-              <CardTitle className="text-sm font-semibold">All Transactions</CardTitle>
-              <CardDescription className="text-xs text-gray-600">Complete cash transaction history</CardDescription>
-              
-              {/* Filters */}
-              <div className="flex flex-col sm:flex-row gap-4 mt-4 text-xs">
-                <Select
-                  value={transactionFilters.type || 'all'}
-                  onValueChange={(value) => {
-                    setTransactionFilters(prev => ({ ...prev, type: value === 'all' ? '' : value }));
-                    fetchTransactions(1);
+          <CardHeader className="bg-white border-b border-gray-50 pb-6">
+            <CardTitle className="text-sm font-semibold">
+              All Transactions
+            </CardTitle>
+            <CardDescription className="text-xs text-gray-600">
+              Complete cash transaction history
+            </CardDescription>
+
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-4 mt-4 text-xs">
+              <Select
+                value={transactionFilters.type || "all"}
+                onValueChange={(value) => {
+                  setTransactionFilters((prev) => ({
+                    ...prev,
+                    type: value === "all" ? "" : value,
+                  }));
+                  fetchTransactions(1);
+                }}
+              >
+                <SelectTrigger className="w-full sm:w-40">
+                  <SelectValue placeholder="Filter by type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="TOP_UP">Top-up</SelectItem>
+                  <SelectItem value="PAYMENT">Payment</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={pageSize.toString()}
+                onValueChange={(value) => {
+                  setPageSize(Number(value));
+                }}
+              >
+                <SelectTrigger className="w-full sm:w-24">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="15">15</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="30">30</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <div className="relative flex-1 group">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-green-500 transition-colors" />
+                <Input
+                  placeholder="Search by restaurant name..."
+                  value={transactionSearchQuery}
+                  onChange={(e) => {
+                    setTransactionSearchQuery(e.target.value);
+                    fetchTransactions(1, e.target.value);
                   }}
-                >
-                  <SelectTrigger className="w-full sm:w-40">
-                    <SelectValue placeholder="Filter by type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="TOP_UP">Top-up</SelectItem>
-                    <SelectItem value="PAYMENT">Payment</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                <Select
-                  value={pageSize.toString()}
-                  onValueChange={(value) => {
-                    setPageSize(Number(value));
-                  }}
-                >
-                  <SelectTrigger className="w-full sm:w-24">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5</SelectItem>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="15">15</SelectItem>
-                    <SelectItem value="20">20</SelectItem>
-                    <SelectItem value="30">30</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
-                    <SelectItem value="100">100</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                <div className="relative flex-1 group">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-green-500 transition-colors" />
-                  <Input
-                    placeholder="Search by restaurant name..."
-                    value={transactionSearchQuery}
-                    onChange={(e) => {
-                      setTransactionSearchQuery(e.target.value);
-                      fetchTransactions(1, e.target.value);
-                    }}
-                    className="pl-10 bg-gray-50 border-gray-100 rounded-xl focus:ring-green-500/20 focus:border-green-500 transition-all"
-                  />
-                </div>
+                  className="pl-10 bg-gray-50 border-gray-100 rounded-xl focus:ring-green-500/20 focus:border-green-500 transition-all"
+                />
               </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              {transactions.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                  <div className="p-4 bg-gray-50 rounded-full mb-4">
-                    <Wallet className="h-10 w-10 opacity-20" />
-                  </div>
-                  <p className="font-medium">No recent transactions</p>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {transactions.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                <div className="p-4 bg-gray-50 rounded-full mb-4">
+                  <Wallet className="h-10 w-10 opacity-20" />
                 </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-gray-50/50">
-                        <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">No</th>
-                        <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">Restaurant</th>
-                        <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">Status</th>
-                        <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">Type</th>
-                        <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">Amount</th>
-                        <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">Previous Balance</th>
-                        <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">Date & Time</th>
-                        <th className="text-right py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
-                      {transactions.map((transaction, index) => (
-                        <tr key={transaction.id} className="hover:bg-green-50/30 transition-colors">
-                          <td className="py-5 px-6">
-                            <span className="text-xs font-bold text-gray-900">
-                              {(pagination.page - 1) * pageSize + index + 1}
-                            </span>
-                          </td>
-                          <td className="py-5 px-6">
-                            <span className="text-xs font-bold text-gray-900">
-                              {transaction.wallet?.restaurant?.name}
-                            </span>
-                          </td>
-                          <td className="py-5 px-6">
-                            {getStatusBadge(transaction.status)}
-                          </td>
-                          <td className="py-5 px-6">
-                            <div className="flex items-center gap-2">
-                              {getTransactionIcon(transaction.type)}
-                              <span className="text-xs font-bold text-gray-900">{transaction.type}</span>
-                            </div>
-                          </td>
-                          <td className="py-5 px-6">
-                            <span className={`text-xs font-bold ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {transaction.amount > 0 ? "+" : ""}{transaction.amount.toLocaleString()} RWF
-                            </span>
-                          </td>
-                          <td className="py-5 px-6">
-                            <span className="text-xs font-bold text-gray-900">
-                              {transaction.previousBalance?.toLocaleString() || '0'} RWF
-                            </span>
-                          </td>
-                          <td className="py-5 px-6">
-                            <div className="flex flex-col">
-                              <span className="text-xs text-gray-900 font-medium">
-                                {new Date(transaction.createdAt).toLocaleDateString()}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                {new Date(transaction.createdAt).toLocaleTimeString()}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="py-5 px-6 text-right">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleTransactionClick(transaction)}
-                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-100 rounded-xl p-2 transition-all"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  
-                  {/* Pagination */}
-                  {pagination.totalPages > 1 && (
-                    <div className="flex justify-center items-center gap-4 py-6 border-t border-gray-50">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={pagination.page <= 1}
-                        onClick={() => fetchTransactions(pagination.page - 1)}
-                        className="rounded-xl px-4 border-gray-200"
+                <p className="font-medium">No recent transactions</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gray-50/50">
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
+                        No
+                      </th>
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
+                        Restaurant
+                      </th>
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
+                        Status
+                      </th>
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
+                        Type
+                      </th>
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
+                        Amount
+                      </th>
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
+                        Previous Balance
+                      </th>
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
+                        Date & Time
+                      </th>
+                      <th className="text-right py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {transactions.map((transaction, index) => (
+                      <tr
+                        key={transaction.id}
+                        className="hover:bg-green-50/30 transition-colors"
                       >
-                        Previous
-                      </Button>
-                      
-                      <div className="flex gap-1">
-                        {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                        <td className="py-5 px-6">
+                          <span className="text-xs font-bold text-gray-900">
+                            {(pagination.page - 1) * pageSize + index + 1}
+                          </span>
+                        </td>
+                        <td className="py-5 px-6">
+                          <span className="text-xs font-bold text-gray-900">
+                            {transaction.wallet?.restaurant?.name}
+                          </span>
+                        </td>
+                        <td className="py-5 px-6">
+                          {getStatusBadge(transaction.status)}
+                        </td>
+                        <td className="py-5 px-6">
+                          <div className="flex items-center gap-2">
+                            {getTransactionIcon(transaction.type)}
+                            <span className="text-xs font-bold text-gray-900">
+                              {transaction.type}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-5 px-6">
+                          <span
+                            className={`text-xs font-bold ${
+                              transaction.amount > 0
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }`}
+                          >
+                            {transaction.amount > 0 ? "+" : ""}
+                            {transaction.amount.toLocaleString()} RWF
+                          </span>
+                        </td>
+                        <td className="py-5 px-6">
+                          <span className="text-xs font-bold text-gray-900">
+                            {transaction.previousBalance?.toLocaleString() ||
+                              "0"}{" "}
+                            RWF
+                          </span>
+                        </td>
+                        <td className="py-5 px-6">
+                          <div className="flex flex-col">
+                            <span className="text-xs text-gray-900 font-medium">
+                              {new Date(
+                                transaction.createdAt
+                              ).toLocaleDateString()}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {new Date(
+                                transaction.createdAt
+                              ).toLocaleTimeString()}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-5 px-6 text-right">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleTransactionClick(transaction)}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-100 rounded-xl p-2 transition-all"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* Pagination */}
+                {pagination.totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-4 py-6 border-t border-gray-50">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={pagination.page <= 1}
+                      onClick={() => fetchTransactions(pagination.page - 1)}
+                      className="rounded-xl px-4 border-gray-200"
+                    >
+                      Previous
+                    </Button>
+
+                    <div className="flex gap-1">
+                      {Array.from(
+                        { length: Math.min(5, pagination.totalPages) },
+                        (_, i) => {
                           let pageNum;
                           if (pagination.totalPages <= 5) pageNum = i + 1;
                           else if (pagination.page <= 3) pageNum = i + 1;
-                          else if (pagination.page >= pagination.totalPages - 2) pageNum = pagination.totalPages - 4 + i;
+                          else if (pagination.page >= pagination.totalPages - 2)
+                            pageNum = pagination.totalPages - 4 + i;
                           else pageNum = pagination.page - 2 + i;
 
                           return (
                             <Button
                               key={pageNum}
-                              variant={pageNum === pagination.page ? "default" : "ghost"}
+                              variant={
+                                pageNum === pagination.page
+                                  ? "default"
+                                  : "ghost"
+                              }
                               size="sm"
                               onClick={() => fetchTransactions(pageNum)}
-                              className={`w-10 h-10 p-0 rounded-xl ${pageNum === pagination.page ? 'bg-green-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                              className={`w-10 h-10 p-0 rounded-xl ${
+                                pageNum === pagination.page
+                                  ? "bg-green-600 text-white"
+                                  : "text-gray-600 hover:bg-gray-100"
+                              }`}
                             >
                               {pageNum}
                             </Button>
                           );
-                        })}
-                      </div>
-                      
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={pagination.page >= pagination.totalPages}
-                        onClick={() => fetchTransactions(pagination.page + 1)}
-                        className="rounded-xl px-4 border-gray-200"
-                      >
-                        Next
-                      </Button>
+                        }
+                      )}
                     </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={pagination.page >= pagination.totalPages}
+                      onClick={() => fetchTransactions(pagination.page + 1)}
+                      className="rounded-xl px-4 border-gray-200"
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Deposit Modal */}
@@ -782,7 +957,12 @@ export default function DepositsManagementPage() {
           </div>
           <div className="p-8 space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="restaurant" className="text-xs font-bold tracking-wider text-gray-500 ml-1">Select Restaurant</Label>
+              <Label
+                htmlFor="restaurant"
+                className="text-xs font-bold tracking-wider text-gray-500 ml-1"
+              >
+                Select Restaurant
+              </Label>
               <Select
                 value={selectedRestaurantId}
                 onValueChange={(value) => setSelectedRestaurantId(value)}
@@ -803,10 +983,18 @@ export default function DepositsManagementPage() {
                   </div>
                   <div className="max-h-[300px] overflow-y-auto">
                     {restaurants.map((res) => (
-                      <SelectItem key={res.id} value={res.id} className="rounded-xl mx-1 py-3 focus:bg-green-50 focus:text-green-700 cursor-pointer transition-colors">
+                      <SelectItem
+                        key={res.id}
+                        value={res.id}
+                        className="rounded-xl mx-1 py-3 focus:bg-green-50 focus:text-green-700 cursor-pointer transition-colors"
+                      >
                         <div className="flex flex-col gap-0.5">
-                          <span className="font-bold text-sm tracking-tight">{res.name}</span>
-                          <span className="text-[10px] font-medium opacity-60 tracking-wider">{res.email}</span>
+                          <span className="font-bold text-sm tracking-tight">
+                            {res.name}
+                          </span>
+                          <span className="text-[10px] font-medium opacity-60 tracking-wider">
+                            {res.email}
+                          </span>
                         </div>
                       </SelectItem>
                     ))}
@@ -816,7 +1004,12 @@ export default function DepositsManagementPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="amount" className="text-xs font-bold tracking-wider text-gray-500 ml-1">Amount (RWF)</Label>
+              <Label
+                htmlFor="amount"
+                className="text-xs font-bold tracking-wider text-gray-500 ml-1"
+              >
+                Amount (RWF)
+              </Label>
               <div className="relative group">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-gray-400 group-focus-within:text-green-500 transition-colors">
                   RWF
@@ -828,14 +1021,22 @@ export default function DepositsManagementPage() {
                   className="h-14 pl-14 text-lg font-black rounded-xl border-gray-100 bg-gray-50/50 focus:ring-green-500/20 focus:border-green-500 transition-all placeholder:text-gray-300"
                   value={depositData.amount}
                   onChange={(e) =>
-                    setDepositData((prev) => ({ ...prev, amount: e.target.value }))
+                    setDepositData((prev) => ({
+                      ...prev,
+                      amount: e.target.value,
+                    }))
                   }
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description" className="text-xs font-bold tracking-wider text-gray-500 ml-1">Manual Description</Label>
+              <Label
+                htmlFor="description"
+                className="text-xs font-bold tracking-wider text-gray-500 ml-1"
+              >
+                Manual Description
+              </Label>
               <Input
                 id="description"
                 placeholder="e.g., Seasonal promotion bonus"
@@ -879,7 +1080,10 @@ export default function DepositsManagementPage() {
       </Dialog>
 
       {/* Transaction Details Modal */}
-      <Dialog open={showTransactionModal} onOpenChange={setShowTransactionModal}>
+      <Dialog
+        open={showTransactionModal}
+        onOpenChange={setShowTransactionModal}
+      >
         <DialogContent className="sm:max-w-lg bg-white border-none rounded-3xl shadow-2xl overflow-hidden p-0">
           <div className="bg-gradient-to-r from-green-600 to-green-500 p-8 text-white relative">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
@@ -897,52 +1101,87 @@ export default function DepositsManagementPage() {
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <p className="text-xs font-bold tracking-wider text-gray-500">Amount</p>
-                    <p className={`text-xs font-black ${transactionDetails.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {transactionDetails.amount > 0 ? '+' : ''}{transactionDetails.amount?.toLocaleString()} RWF
+                    <p className="text-xs font-bold tracking-wider text-gray-500">
+                      Amount
+                    </p>
+                    <p
+                      className={`text-xs font-black ${
+                        transactionDetails.amount > 0
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {transactionDetails.amount > 0 ? "+" : ""}
+                      {transactionDetails.amount?.toLocaleString()} RWF
                     </p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-xs font-bold tracking-wider text-gray-500">Status</p>
+                    <p className="text-xs font-bold tracking-wider text-gray-500">
+                      Status
+                    </p>
                     <div className="flex items-center gap-2">
                       {getStatusBadge(transactionDetails.status)}
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="space-y-1">
-                  <p className="text-xs font-bold tracking-wider text-gray-500">Restaurant</p>
-                  <p className="text-xs font-bold text-gray-900">{transactionDetails.wallet?.restaurant?.name}</p>
+                  <p className="text-xs font-bold tracking-wider text-gray-500">
+                    Restaurant
+                  </p>
+                  <p className="text-xs font-bold text-gray-900">
+                    {transactionDetails.wallet?.restaurant?.name}
+                  </p>
                 </div>
-                
+
                 <div className="space-y-1">
-                  <p className="text-xs font-bold tracking-wider text-gray-500">Description</p>
-                  <p className="text-gray-700 text-xs">{transactionDetails.description}</p>
+                  <p className="text-xs font-bold tracking-wider text-gray-500">
+                    Description
+                  </p>
+                  <p className="text-gray-700 text-xs">
+                    {transactionDetails.description}
+                  </p>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <p className="text-xs font-bold tracking-wider text-gray-500">Previous Balance</p>
-                    <p className="text-gray-900 text-xs font-bold">{transactionDetails.previousBalance?.toLocaleString()} RWF</p>
+                    <p className="text-xs font-bold tracking-wider text-gray-500">
+                      Previous Balance
+                    </p>
+                    <p className="text-gray-900 text-xs font-bold">
+                      {transactionDetails.previousBalance?.toLocaleString()} RWF
+                    </p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-xs font-bold tracking-wider text-gray-500">New Balance</p>
-                    <p className="text-gray-900 text-xs font-bold">{transactionDetails.newBalance?.toLocaleString()} RWF</p>
+                    <p className="text-xs font-bold tracking-wider text-gray-500">
+                      New Balance
+                    </p>
+                    <p className="text-gray-900 text-xs font-bold">
+                      {transactionDetails.newBalance?.toLocaleString()} RWF
+                    </p>
                   </div>
                 </div>
-                
+
                 {transactionDetails.paymentMethod && (
                   <div className="space-y-1">
-                    <p className="text-xs font-bold tracking-wider text-gray-500">Payment Method</p>
-                    <p className="text-gray-700">{transactionDetails.paymentMethod}</p>
+                    <p className="text-xs font-bold tracking-wider text-gray-500">
+                      Payment Method
+                    </p>
+                    <p className="text-gray-700">
+                      {transactionDetails.paymentMethod}
+                    </p>
                   </div>
                 )}
-                
+
                 <div className="space-y-1">
-                  <p className="text-xs font-bold tracking-wider text-gray-500">Transaction Date</p>
-                  <p className="text-gray-700">{new Date(transactionDetails.createdAt).toLocaleString()}</p>
+                  <p className="text-xs font-bold tracking-wider text-gray-500">
+                    Transaction Date
+                  </p>
+                  <p className="text-gray-700">
+                    {new Date(transactionDetails.createdAt).toLocaleString()}
+                  </p>
                 </div>
-                
+
                 {/* {transactionDetails.metadata && (
                   <div className="space-y-1">
                     <p className="text-xs font-bold tracking-wider text-gray-500">Additional Info</p>
@@ -956,7 +1195,7 @@ export default function DepositsManagementPage() {
                     </div>
                   </div>
                 )} */}
-                
+
                 {/* Order Details Button */}
                 {transactionDetails.metadata?.orderId && (
                   <div className="pt-4 border-t border-gray-100">
@@ -1017,22 +1256,34 @@ export default function DepositsManagementPage() {
                 {/* Customer Details */}
                 <Card className="border-none shadow-xl shadow-gray-100 bg-gradient-to-br from-white to-green-50/30">
                   <CardContent className="p-4">
-                    <h3 className="text-sm font-semibold mb-3">Customer Details</h3>
+                    <h3 className="text-sm font-semibold mb-3">
+                      Customer Details
+                    </h3>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-gray-900">{orderDetails.billingName}</span>
+                        <span className="text-xs font-bold text-gray-900">
+                          {orderDetails.billingName}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Mail className="h-3 w-3 text-gray-500" />
-                        <span className="text-xs text-gray-600">{orderDetails.billingEmail.replace('mailto:', '')}</span>
+                        <span className="text-xs text-gray-600">
+                          {orderDetails.billingEmail.replace("mailto:", "")}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Phone className="h-3 w-3 text-gray-500" />
-                        <span className="text-xs text-gray-600">{orderDetails.billingPhone}</span>
+                        <span className="text-xs text-gray-600">
+                          {orderDetails.billingPhone}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Calendar className="h-3 w-3 text-gray-500" />
-                        <span className="text-xs text-gray-600">{new Date(orderDetails.requestedDelivery).toLocaleDateString()}</span>
+                        <span className="text-xs text-gray-600">
+                          {new Date(
+                            orderDetails.requestedDelivery
+                          ).toLocaleDateString()}
+                        </span>
                       </div>
                     </div>
                   </CardContent>
@@ -1041,7 +1292,9 @@ export default function DepositsManagementPage() {
                 {/* Order Items */}
                 <Card className="border-none shadow-xl shadow-gray-100 rounded-2xl overflow-hidden">
                   <CardHeader className="bg-white border-b border-gray-50 pb-4">
-                    <CardTitle className="text-sm font-semibold">Order Items</CardTitle>
+                    <CardTitle className="text-sm font-semibold">
+                      Order Items
+                    </CardTitle>
                     <CardDescription className="text-xs text-gray-600 mt-1">
                       Products in this order
                     </CardDescription>
@@ -1049,7 +1302,10 @@ export default function DepositsManagementPage() {
                   <CardContent className="p-6">
                     <div className="space-y-3">
                       {orderDetails.orderItems.map((item: any) => (
-                        <div key={item.id} className="flex items-center gap-3 p-3 bg-gray-50/50 rounded-xl text-xs">
+                        <div
+                          key={item.id}
+                          className="flex items-center gap-3 p-3 bg-gray-50/50 rounded-xl text-xs"
+                        >
                           <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-200 ">
                             {item.images[0] && (
                               <img
@@ -1059,26 +1315,30 @@ export default function DepositsManagementPage() {
                               />
                             )}
                           </div>
-                          
+
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-bold text-gray-900">
                               {item.productName}
                             </p>
-                            <p className="text-xs text-gray-500">{item.category}</p>
+                            <p className="text-xs text-gray-500">
+                              {item.category}
+                            </p>
                           </div>
-                          
+
                           <div className="text-right">
                             <p className="text-xs font-bold text-gray-900">
                               {item.quantity} {item.unit}
                             </p>
                             <p className="text-xs text-gray-500">
-                              {item.unitPrice.toLocaleString()} {orderDetails.currency} each
+                              {item.unitPrice.toLocaleString()}{" "}
+                              {orderDetails.currency} each
                             </p>
                           </div>
-                          
+
                           <div className="text-right min-w-0">
                             <p className="text-xs font-black text-gray-900">
-                              {item.subtotal.toLocaleString()} {orderDetails.currency}
+                              {item.subtotal.toLocaleString()}{" "}
+                              {orderDetails.currency}
                             </p>
                           </div>
                         </div>
@@ -1091,24 +1351,39 @@ export default function DepositsManagementPage() {
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-600">Subtotal</span>
                           <span className="font-medium">
-                            {orderDetails.orderItems.reduce((sum: number, item: any) => sum + item.subtotal, 0).toLocaleString()} {orderDetails.currency}
+                            {orderDetails.orderItems
+                              .reduce(
+                                (sum: number, item: any) => sum + item.subtotal,
+                                0
+                              )
+                              .toLocaleString()}{" "}
+                            {orderDetails.currency}
                           </span>
                         </div>
                         {orderDetails.deliveryFee > 0 && (
                           <div className="flex justify-between text-sm">
                             <span className="text-gray-600">Delivery Fee</span>
-                            <span className="font-medium">{orderDetails.deliveryFee.toLocaleString()} {orderDetails.currency}</span>
+                            <span className="font-medium">
+                              {orderDetails.deliveryFee.toLocaleString()}{" "}
+                              {orderDetails.currency}
+                            </span>
                           </div>
                         )}
                         {orderDetails.packagingFee > 0 && (
                           <div className="flex justify-between text-sm">
                             <span className="text-gray-600">Packaging Fee</span>
-                            <span className="font-medium">{orderDetails.packagingFee.toLocaleString()} {orderDetails.currency}</span>
+                            <span className="font-medium">
+                              {orderDetails.packagingFee.toLocaleString()}{" "}
+                              {orderDetails.currency}
+                            </span>
                           </div>
                         )}
                         <div className="flex justify-between text-lg font-black border-t border-gray-100 pt-2 text-xs">
                           <span className="text-gray-900 text-xs">Total</span>
-                          <span className="text-gray-900">{orderDetails.totalAmount.toLocaleString()} {orderDetails.currency}</span>
+                          <span className="text-gray-900">
+                            {orderDetails.totalAmount.toLocaleString()}{" "}
+                            {orderDetails.currency}
+                          </span>
                         </div>
                       </div>
                     </div>

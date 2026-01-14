@@ -31,20 +31,6 @@ export function DashboardFilters() {
     { value: 12, label: "December" },
   ];
 
-
-
-  const getFilterSummary = () => {
-    const parts = [];
-    if (filters.year) parts.push(`${filters.year}`);
-    if (filters.month) {
-      const monthName = months.find(m => m.value === filters.month)?.label;
-      parts.push(monthName);
-    } else {
-      parts.push("All Months");
-    }
-    return parts.length > 0 ? parts.join(" • ") : "All Time";
-  };
-
   return (
     <Card className="mb-3 py-1 w-1/2 rounded">
       <CardContent className="p-3">
@@ -52,20 +38,20 @@ export function DashboardFilters() {
           <div className="flex items-center gap-2">
             <Calendar className="h-3 w-3 text-gray-500" />
             <span className="text-xs font-medium">Filters:</span>
-            <span className="text-xs text-gray-600">{getFilterSummary()}</span>
           </div>
           
           <div className="flex items-center gap-3">
             <Select
-              value={filters.year?.toString() || currentYear.toString()}
+              value={filters.year?.toString() || "all"}
               onValueChange={(value) =>
-                updateFilters({ ...filters, year: parseInt(value) })
+                updateFilters({ ...filters, year: value === "all" ? undefined : parseInt(value) })
               }
             >
               <SelectTrigger className="h-7 text-xs w-20">
-                <SelectValue />
+                <SelectValue placeholder="Year" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all" className="text-xs">All</SelectItem>
                 {years.map((year) => (
                   <SelectItem key={year} value={year.toString()} className="text-xs">
                     {year}

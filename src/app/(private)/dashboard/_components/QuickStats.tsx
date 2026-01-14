@@ -69,7 +69,7 @@ export function QuickStats({ loading = false, stats }: QuickStatsProps) {
     },
     {
       label: "Total Revenue",
-      value: `${(stats?.quickStats?.totalRevenue?.value || 0).toLocaleString()} RWF`,
+      value: `${(stats?.quickStats?.totalRevenue?.value.toFixed(2) || 0).toLocaleString()} RWF`,
       icon: DollarSign,
       color: "text-emerald-600",
       bgColor: "bg-emerald-50",
@@ -96,7 +96,7 @@ export function QuickStats({ loading = false, stats }: QuickStatsProps) {
     },
     {
       label: "Completion Rate",
-      value: `${stats?.quickStats?.completionRate?.value || 0}%`,
+      value: `${stats?.quickStats?.completionRate?.value.toFixed(3) || 0}%`,
       icon: TrendingUp,
       color: "text-indigo-600",
       bgColor: "bg-indigo-50",

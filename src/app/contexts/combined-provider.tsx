@@ -11,6 +11,7 @@ import { WalletProvider } from "./WalletContext";
 import { FarmersProvider } from "./FarmersContext";
 import { AdminsProvider } from "./AdminsContext";
 import { NotificationProvider } from "./NotificationContext";
+import { SubscriptionProvider } from "./subscriptionContext";
 
 interface CombinedProviderProps {
   children: React.ReactNode;
@@ -28,7 +29,9 @@ export function CombinedProvider({ children }: CombinedProviderProps) {
                 <WalletProvider>
                   <FarmersProvider>
                     <AdminsProvider>
-                      <NotificationProvider>{children}</NotificationProvider>
+                      <NotificationProvider>
+                        <SubscriptionProvider>{children}</SubscriptionProvider>
+                      </NotificationProvider>
                     </AdminsProvider>
                   </FarmersProvider>
                 </WalletProvider>
