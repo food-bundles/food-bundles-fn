@@ -14,7 +14,7 @@ interface FinanceChartProps {
 }
 
 export function FinanceChart({ loading = false, data }: FinanceChartProps) {
-  const [localFilters, setLocalFilters] = useState<StatsFilters | null>(null);
+  const [localFilters, setLocalFilters] = useState<StatsFilters>({});
   const [localData, setLocalData] = useState<DashboardStats['finance'] | null>(null);
   const [localLoading, setLocalLoading] = useState(false);
 
@@ -58,12 +58,44 @@ export function FinanceChart({ loading = false, data }: FinanceChartProps) {
     );
   }
 
-  const chartData = activeData?.timeSeriesData?.map(item => ({
-    date: item.period,
-    revenue: item.revenue,
-    expenses: item.expenses,
-    profit: item.revenue - item.expenses
-  })) || [];
+  const transformTimeBreakdown = () => {
+    if (!activeData?.timeBreakdown) return [];
+    
+    const data: Array<{ date: string; revenue: number; expenses: number; profit: number }> = [];
+    
+    Object.values(activeData.timeBreakdown).forEach((yearData: any) => {
+      if (localFilters?.month && yearData.months) {
+        const monthData = yearData.months[localFilters.month];
+        if (monthData?.weeks) {
+          Object.values(monthData.weeks).forEach((weekData: any) => {
+            if (weekData.days) {
+              Object.values(weekData.days).forEach((dayData: any) => {
+                data.push({
+                  date: dayData.dayName || dayData.date,
+                  revenue: dayData.revenue || 0,
+                  expenses: dayData.expenses || 0,
+                  profit: dayData.profit || 0
+                });
+              });
+            }
+          });
+        }
+      } else if (yearData.months) {
+        Object.values(yearData.months).forEach((monthData: any) => {
+          data.push({
+            date: monthData.monthName,
+            revenue: monthData.revenue || 0,
+            expenses: monthData.expenses || 0,
+            profit: monthData.profit || 0
+          });
+        });
+      }
+    });
+    
+    return data;
+  };
+
+  const chartData = transformTimeBreakdown();
 
   const isProfit = (activeData?.netProfit || 0) >= 0;
   const profitMargin = activeData?.profitMargin || 0;
@@ -84,9 +116,12 @@ export function FinanceChart({ loading = false, data }: FinanceChartProps) {
           
           <div className="flex items-center gap-2">
             <Select
-              value={localFilters?.year?.toString() || currentYear.toString()}
+              value={localFilters?.year?.toString() || "all"}
               onValueChange={(value) => {
-                const newFilters = { ...localFilters, year: parseInt(value) };
+                const newFilters = { 
+                  year: value === "all" ? undefined : parseInt(value),
+                  month: undefined
+                };
                 setLocalFilters(newFilters);
                 fetchLocalData(newFilters);
               }}
@@ -95,6 +130,7 @@ export function FinanceChart({ loading = false, data }: FinanceChartProps) {
                 <SelectValue placeholder="Year" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all" className="text-xs">All</SelectItem>
                 {years.map(year => (
                   <SelectItem key={year} value={year.toString()} className="text-xs">{year}</SelectItem>
                 ))}
@@ -109,8 +145,9 @@ export function FinanceChart({ loading = false, data }: FinanceChartProps) {
                   month: value === 'all' ? undefined : parseInt(value) 
                 };
                 setLocalFilters(newFilters);
-                if (newFilters.year) fetchLocalData(newFilters);
+                fetchLocalData(newFilters);
               }}
+              disabled={!localFilters?.year}
             >
               <SelectTrigger className="h-7 text-xs w-16">
                 <SelectValue />
@@ -149,11 +186,12 @@ export function FinanceChart({ loading = false, data }: FinanceChartProps) {
               }}
               labelStyle={{
                 fontSize: '12px',
-                marginBottom: '2px'
+                marginBottom: '4px',
+                fontWeight: 'bold'
               }}
               itemStyle={{
                 fontSize: '12px',
-                padding: '1px 0'
+                padding: '2px 0'
               }}
               formatter={(value: number, name: string) => [
                 `${value.toLocaleString()} RWF`,
@@ -164,18 +202,27 @@ export function FinanceChart({ loading = false, data }: FinanceChartProps) {
               type="monotone" 
               dataKey="revenue" 
               stroke="#10B981" 
-              strokeWidth={1.5}
-              name="Revenue"
-              dot={{ fill: '#10B981', strokeWidth: 1, r: 2 }}
+              strokeWidth={2}
+              name="revenue"
+              dot={{ fill: '#10B981', strokeWidth: 1, r: 3 }}
               isAnimationActive={false}
             />
             <Line 
               type="monotone" 
               dataKey="expenses" 
               stroke="#EF4444" 
-              strokeWidth={1.5}
-              name="Expenses"
-              dot={{ fill: '#EF4444', strokeWidth: 1, r: 2 }}
+              strokeWidth={2}
+              name="expenses"
+              dot={{ fill: '#EF4444', strokeWidth: 1, r: 3 }}
+              isAnimationActive={false}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="profit" 
+              stroke="#3B82F6" 
+              strokeWidth={2}
+              name="profit"
+              dot={{ fill: '#3B82F6', strokeWidth: 1, r: 3 }}
               isAnimationActive={false}
             />
           </LineChart>

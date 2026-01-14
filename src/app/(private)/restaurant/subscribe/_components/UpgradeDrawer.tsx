@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -42,6 +43,8 @@ export default function UpgradeDrawer({
   }, [user?.phone, paymentMethod]);
 
   const handleUpgrade = async () => {
+    if (!currentSubscription) return;
+    
     try {
       setIsProcessing(true);
       
@@ -59,8 +62,9 @@ export default function UpgradeDrawer({
     }
   };
 
+  if (!currentSubscription) return null;
+
   const isUpgrade = selectedPlan.price > currentSubscription.plan.price;
-  const priceDifference = selectedPlan.price - currentSubscription.plan.price;
   const remainingDays = currentSubscription.daysRemaining || 0;
   const halfDuration = Math.floor(currentSubscription.plan.duration / 2);
   const hasDiscount = remainingDays >= halfDuration;

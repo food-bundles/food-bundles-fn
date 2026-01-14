@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -56,11 +57,13 @@ export function OrdersChart({ loading = false, data }: OrdersChartProps) {
   ];
 
 
-  const fetchApiData = async () => {
+  const fetchApiData = async (year?: number, month?: number) => {
     try {
-      const response = await fetch('https://server.food.rw/stats/orders?period=lifetime');
-      const result = await response.json();
-      setApiData(result.data);
+      const filters: StatsFilters = {};
+      if (year) filters.year = year;
+      if (month) filters.month = month;
+      const response = await statisticsService.getOrderStats(filters);
+      setApiData(response.data);
     } catch (error) {
       console.error("Error fetching API data:", error);
     }
@@ -82,29 +85,45 @@ export function OrdersChart({ loading = false, data }: OrdersChartProps) {
     }
   };
 
-  const transformApiToChart = (apiData: any, year?: number) => {
+  const transformApiToChart = (apiData: any, year?: number, month?: number) => {
     if (!apiData?.timeBreakdown) return [];
     
     if (!year) {
       return Object.values(apiData.timeBreakdown).map((yearData: any) => ({
         date: yearData.year.toString(),
-        completed: yearData.completed,
-        cancelled: yearData.cancelled,
-        ongoing: yearData.ongoing,
-        total: yearData.total,
+        completed: yearData.completed || 0,
+        cancelled: yearData.cancelled || 0,
+        ongoing: yearData.ongoing || 0,
+        total: yearData.total || 0,
       }));
-    } else {
+    } else if (year && !month) {
       const yearData = apiData.timeBreakdown[year];
       if (!yearData?.months) return [];
       
-      return Object.values(yearData.months).map((monthData: any) => ({
-        date: monthData.monthName,
-        completed: monthData.completed,
-        cancelled: monthData.cancelled,
-        ongoing: monthData.ongoing,
-        total: monthData.total,
-      }));
+      return Object.values(yearData.months)
+        .sort((a: any, b: any) => a.month - b.month)
+        .map((monthData: any) => ({
+          date: monthData.monthName,
+          completed: monthData.completed || 0,
+          cancelled: monthData.cancelled || 0,
+          ongoing: monthData.ongoing || 0,
+          total: monthData.total || 0,
+        }));
+    } else if (year && month) {
+      const monthData = apiData.timeBreakdown[year]?.months[month];
+      if (!monthData?.weeks) return [];
+      
+      return Object.values(monthData.weeks)
+        .sort((a: any, b: any) => a.week - b.week)
+        .map((weekData: any) => ({
+          date: `Week ${weekData.week}`,
+          completed: weekData.completed || 0,
+          cancelled: weekData.cancelled || 0,
+          ongoing: weekData.ongoing || 0,
+          total: weekData.total || 0,
+        }));
     }
+    return [];
   };
 
   const activeData = localData || data;
@@ -123,15 +142,9 @@ export function OrdersChart({ loading = false, data }: OrdersChartProps) {
     );
   }
 
-  const chartData = apiData && !localData
-    ? transformApiToChart(apiData, localFilters?.year)
-    : activeData?.timeSeriesData?.map((item) => ({
-        date: item.period,
-        completed: item.completed,
-        cancelled: item.cancelled,
-        ongoing: item.ongoing,
-        total: item.total,
-      })) || [];
+  const chartData = apiData
+    ? transformApiToChart(apiData, localFilters?.year, localFilters?.month)
+    : [];
 
   return (
     <Card>
@@ -147,9 +160,16 @@ export function OrdersChart({ loading = false, data }: OrdersChartProps) {
             <Select
               value={localFilters?.year?.toString() || "all"}
               onValueChange={(value) => {
-                const newFilters = { ...localFilters, year: value === "all" ? undefined : parseInt(value) };
+                const newFilters = { 
+                  year: value === "all" ? undefined : parseInt(value),
+                  month: undefined
+                };
                 setLocalFilters(newFilters);
-                fetchLocalData(newFilters);
+                if (value !== "all") {
+                  fetchApiData(parseInt(value));
+                } else {
+                  fetchApiData();
+                }
               }}
             >
               <SelectTrigger className="h-5 text-xs w-20">
@@ -177,8 +197,13 @@ export function OrdersChart({ loading = false, data }: OrdersChartProps) {
                   month: value === "all" ? undefined : parseInt(value),
                 };
                 setLocalFilters(newFilters);
-                fetchLocalData(newFilters);
+                if (value !== "all" && localFilters?.year) {
+                  fetchApiData(localFilters.year, parseInt(value));
+                } else if (value === "all" && localFilters?.year) {
+                  fetchApiData(localFilters.year);
+                }
               }}
+              disabled={!localFilters?.year}
             >
               <SelectTrigger className="h-5 text-xs w-16">
                 <SelectValue />

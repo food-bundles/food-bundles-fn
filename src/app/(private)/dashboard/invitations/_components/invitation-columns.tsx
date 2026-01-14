@@ -110,7 +110,7 @@ export const createInvitationColumns = ({ onResend, onCancel }: InvitationColumn
     header: "Actions",
     cell: ({ row }) => {
       const invitation = row.original;
-      const isPending = !invitation.isUsed && new Date(invitation.expiresAt) > new Date();
+      // const isPending = !invitation.isUsed && new Date(invitation.expiresAt) > new Date();
 
       return (
         <DropdownMenu>

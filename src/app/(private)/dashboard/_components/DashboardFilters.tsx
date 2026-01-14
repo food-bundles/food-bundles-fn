@@ -32,28 +32,37 @@ export function DashboardFilters() {
   ];
 
   return (
-    <Card className="mb-3 py-1 w-1/2 rounded">
+    <Card className="mb-3 py-1 rounded inline-block max-w-max">
       <CardContent className="p-3">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <Calendar className="h-3 w-3 text-gray-500" />
             <span className="text-xs font-medium">Filters:</span>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <Select
               value={filters.year?.toString() || "all"}
               onValueChange={(value) =>
-                updateFilters({ ...filters, year: value === "all" ? undefined : parseInt(value) })
+                updateFilters({
+                  ...filters,
+                  year: value === "all" ? undefined : parseInt(value),
+                })
               }
             >
               <SelectTrigger className="h-7 text-xs w-20">
                 <SelectValue placeholder="Year" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all" className="text-xs">All</SelectItem>
+                <SelectItem value="all" className="text-xs">
+                  All
+                </SelectItem>
                 {years.map((year) => (
-                  <SelectItem key={year} value={year.toString()} className="text-xs">
+                  <SelectItem
+                    key={year}
+                    value={year.toString()}
+                    className="text-xs"
+                  >
                     {year}
                   </SelectItem>
                 ))}
@@ -73,9 +82,15 @@ export function DashboardFilters() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all" className="text-xs">All</SelectItem>
+                <SelectItem value="all" className="text-xs">
+                  All
+                </SelectItem>
                 {months.map((month) => (
-                  <SelectItem key={month.value} value={month.value.toString()} className="text-xs">
+                  <SelectItem
+                    key={month.value}
+                    value={month.value.toString()}
+                    className="text-xs"
+                  >
                     {month.label.slice(0, 3)}
                   </SelectItem>
                 ))}

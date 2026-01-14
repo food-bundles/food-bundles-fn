@@ -4,21 +4,12 @@
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { MdSubdirectoryArrowRight } from "react-icons/md";
-import { Button } from "@/components/ui/button";
-import { RefreshCw, TrendingUp, MoreHorizontal } from "lucide-react";
 import { FaCheckCircle } from "react-icons/fa";
 import {
   subscriptionService,
   RestaurantSubscription,
 } from "@/app/services/subscriptionService";
 import { toast } from "sonner";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import PlanSelectionDrawer from "./PlanSelectionDrawer";
 
 const formatDate = (date: string | Date) =>
   new Date(date).toLocaleDateString("en-US", {
@@ -33,7 +24,6 @@ export default function SubscriptionTable() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isRenewing, setIsRenewing] = useState(false);
-  const [planSelectionOpen, setPlanSelectionOpen] = useState(false);
 
   useEffect(() => {
     loadSubscription();
@@ -127,8 +117,9 @@ export default function SubscriptionTable() {
     <div className="mt-2 space-y-3 rounded-lg border bg-white">
       <h3 className="pt-2 px-2  font-semibold">My Subscription</h3>
 
-      <div className=" border ">
-        <div className="grid grid-cols-[1.5fr_1fr_1.5fr_1fr] divide-x divide-gray-200 items-center">
+      <div className="border">
+        {/* Desktop View */}
+        <div className="hidden md:grid md:grid-cols-[1.5fr_1fr_1.5fr_1fr] divide-x divide-gray-200 items-center">
           {/* PLAN */}
           <div className="p-4">
             <div className="flex items-center gap-2">
@@ -154,8 +145,6 @@ export default function SubscriptionTable() {
             </Badge>
           </div>
 
-       
-
           {/* PERIOD */}
           <div className="p-4">
             <p className="text-xs text-gray-500 mb-1">Period</p>
@@ -174,6 +163,54 @@ export default function SubscriptionTable() {
                 {subscription.daysRemaining || 0} days
               </span>
             </div>
+          </div>
+        </div>
+
+        {/* Mobile View */}
+        <div className="md:hidden divide-y divide-gray-200">
+          {/* PLAN */}
+          <div className="p-4">
+            <div className="flex items-center gap-2">
+              <MdSubdirectoryArrowRight className="w-5 h-5 text-green-600" />
+              <div>
+                <p className="font-semibold">{subscription.plan.name}</p>
+                <p className="text-xs text-gray-500">
+                  {subscription.plan.duration} days plan
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* STATUS & REMAINING */}
+          <div className="p-4 grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-gray-500 mb-1">Status</p>
+              <Badge
+                className={
+                  statusColor[subscription.status as keyof typeof statusColor]
+                }
+              >
+                {subscription.status}
+              </Badge>
+            </div>
+            <div>
+              <p className="text-xs text-gray-500 mb-1">Remaining</p>
+              <div className="flex items-center gap-1 text-green-600">
+                <FaCheckCircle className="w-4 h-4" />
+                <span className="font-semibold">
+                  {subscription.daysRemaining || 0} days
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* PERIOD */}
+          <div className="p-4">
+            <p className="text-xs text-gray-500 mb-1">Period</p>
+            <p className="text-xs text-gray-700">
+              {formatDate(subscription.startDate)} –{" "}
+              {formatDate(subscription.endDate)}
+            </p>
           </div>
         </div>
       </div>
