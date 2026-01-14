@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer} from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,6 +15,7 @@ interface UsersChartProps {
 }
 
 export function UsersChart({ loading = false, data }: UsersChartProps) {
+  const [apiData, setApiData] = useState<any>(null);
   const [localFilters, setLocalFilters] = useState<StatsFilters | null>(null);
   const [localData, setLocalData] = useState<DashboardStats['users'] | null>(null);
   const [localLoading, setLocalLoading] = useState(false);
@@ -27,6 +29,21 @@ export function UsersChart({ loading = false, data }: UsersChartProps) {
     { value: 10, label: "Oct" }, { value: 11, label: "Nov" }, { value: 12, label: "Dec" }
   ];
 
+  const fetchApiData = async (year?: number, month?: number) => {
+    try {
+      const filters: StatsFilters = {};
+      if (year) filters.year = year;
+      if (month) filters.month = month;
+      const response = await statisticsService.getUserStats(filters);
+      setApiData(response.data);
+    } catch (error) {
+      console.error("Error fetching API data:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchApiData();
+  }, []);
 
   const fetchLocalData = async (filters: StatsFilters) => {
     setLocalLoading(true);
@@ -38,6 +55,50 @@ export function UsersChart({ loading = false, data }: UsersChartProps) {
     } finally {
       setLocalLoading(false);
     }
+  };
+
+  const transformApiToChart = (apiData: any, year?: number, month?: number) => {
+    if (!apiData?.timeBreakdown) return [];
+    
+    if (!year) {
+      return Object.values(apiData.timeBreakdown).map((yearData: any) => ({
+        period: yearData.year.toString(),
+        restaurants: yearData.restaurants || 0,
+        farmers: yearData.farmers || 0,
+        admins: yearData.admins || 0,
+        affiliators: yearData.affiliators || 0,
+        total: yearData.total || 0,
+      }));
+    } else if (year && !month) {
+      const yearData = apiData.timeBreakdown[year];
+      if (!yearData?.months) return [];
+      
+      return Object.values(yearData.months)
+        .sort((a: any, b: any) => a.month - b.month)
+        .map((monthData: any) => ({
+          period: monthData.monthName,
+          restaurants: monthData.restaurants || 0,
+          farmers: monthData.farmers || 0,
+          admins: monthData.admins || 0,
+          affiliators: monthData.affiliators || 0,
+          total: monthData.total || 0,
+        }));
+    } else if (year && month) {
+      const monthData = apiData.timeBreakdown[year]?.months[month];
+      if (!monthData?.weeks) return [];
+      
+      return Object.values(monthData.weeks)
+        .sort((a: any, b: any) => a.week - b.week)
+        .map((weekData: any) => ({
+          period: `Week ${weekData.week}`,
+          restaurants: weekData.restaurants || 0,
+          farmers: weekData.farmers || 0,
+          admins: weekData.admins || 0,
+          affiliators: weekData.affiliators || 0,
+          total: weekData.total || 0,
+        }));
+    }
+    return [];
   };
 
   const activeData = localData || data;
@@ -56,14 +117,9 @@ export function UsersChart({ loading = false, data }: UsersChartProps) {
     );
   }
 
-  const chartData = activeData?.timeSeriesData?.map(item => ({
-    period: item.period,
-    restaurants: item.restaurants,
-    farmers: item.farmers,
-    admins: item.admins,
-    affiliators: item.affiliators,
-    total: item.total
-  })) || [];
+  const chartData = apiData
+    ? transformApiToChart(apiData, localFilters?.year, localFilters?.month)
+    : [];
 
   const totalChange = activeData?.growth?.totalChange || 0;
   const isGrowth = totalChange >= 0;
@@ -90,9 +146,16 @@ export function UsersChart({ loading = false, data }: UsersChartProps) {
             <Select
               value={localFilters?.year?.toString() || "all"}
               onValueChange={(value) => {
-                const newFilters = { ...localFilters, year: value === "all" ? undefined : parseInt(value) };
+                const newFilters = { 
+                  year: value === "all" ? undefined : parseInt(value),
+                  month: undefined
+                };
                 setLocalFilters(newFilters);
-                fetchLocalData(newFilters);
+                if (value !== "all") {
+                  fetchApiData(parseInt(value));
+                } else {
+                  fetchApiData();
+                }
               }}
             >
               <SelectTrigger className="h-7 text-xs w-20">
@@ -109,13 +172,18 @@ export function UsersChart({ loading = false, data }: UsersChartProps) {
             <Select
               value={localFilters?.month?.toString() || "all"}
               onValueChange={(value) => {
-                const newFilters = { 
-                  ...localFilters, 
-                  month: value === "all" ? undefined : parseInt(value) 
+                const newFilters = {
+                  ...localFilters,
+                  month: value === "all" ? undefined : parseInt(value),
                 };
                 setLocalFilters(newFilters);
-                fetchLocalData(newFilters);
+                if (value !== "all" && localFilters?.year) {
+                  fetchApiData(localFilters.year, parseInt(value));
+                } else if (value === "all" && localFilters?.year) {
+                  fetchApiData(localFilters.year);
+                }
               }}
+              disabled={!localFilters?.year}
             >
               <SelectTrigger className="h-7 text-xs w-16">
                 <SelectValue />
@@ -173,8 +241,8 @@ export function UsersChart({ loading = false, data }: UsersChartProps) {
                 fontSize: '12px',
                 padding: '1px 0'
               }}
-              formatter={(value: number, name: string) => [
-                value,
+              formatter={(value: number | undefined, name: string) => [
+                value ?? 0,
                 name === 'restaurants' ? 'Restaurants' : 
                 name === 'farmers' ? 'Farmers' : 
                 name === 'admins' ? 'Admins' : 'Affiliators'

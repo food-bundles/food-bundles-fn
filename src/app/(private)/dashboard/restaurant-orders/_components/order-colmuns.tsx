@@ -138,9 +138,10 @@ export interface Order {
 }
 
 // Status Dropdown Component
-function StatusDropdown({ currentStatus, orderId, onUpdate }: {
+function StatusDropdown({ currentStatus, orderId, restaurantName, onUpdate }: {
   currentStatus: string;
   orderId: string;
+  restaurantName: string;
   onUpdate: (orderId: string, status: string) => void;
 }) {
   const [selectedStatus, setSelectedStatus] = useState(currentStatus);
@@ -193,7 +194,8 @@ function StatusDropdown({ currentStatus, orderId, onUpdate }: {
               Confirm Status Update
             </AlertDialogTitle>
             <AlertDialogDescription className="text-gray-600 mt-3 text-center">
-              Are you sure you want to update the order status to{" "}
+              Are you sure you want to update the order status for{" "}
+              <span className="font-semibold text-gray-900">&quot;{restaurantName}&quot;</span> to{" "}
               <span className="font-semibold text-green-700">&quot;{selectedStatus}&quot;</span>?
               <br />
             </AlertDialogDescription>
@@ -219,9 +221,10 @@ function StatusDropdown({ currentStatus, orderId, onUpdate }: {
 }
 
 // Payment Status Dropdown Component
-function PaymentStatusDropdown({ currentStatus, orderId, onUpdate }: {
+function PaymentStatusDropdown({ currentStatus, orderId, restaurantName, onUpdate }: {
   currentStatus: string;
   orderId: string;
+  restaurantName: string;
   onUpdate: (orderId: string, paymentStatus: string) => void;
 }) {
   const [selectedStatus, setSelectedStatus] = useState(currentStatus);
@@ -273,7 +276,8 @@ function PaymentStatusDropdown({ currentStatus, orderId, onUpdate }: {
               Confirm Payment Status Update
             </AlertDialogTitle>
             <AlertDialogDescription className="text-gray-800 mt-3 text-center">
-              Are you sure you want to update the payment status to{" "}
+              Are you sure you want to update the payment status for{" "}
+              <span className="font-semibold text-gray-900">&quot;{restaurantName}&quot;</span> to{" "}
               <span className="font-semibold text-green-700">&quot;{selectedStatus}&quot;</span>?
               <br />
             </AlertDialogDescription>
@@ -322,6 +326,12 @@ export const createOrdersColumns = (actions: {
   onPaymentStatusUpdate: (orderId: string, paymentStatus: string) => void;
 }): ColumnDef<Order>[] => [
   {
+    accessorKey: "#",
+    header: "#",
+    cell: ({ row }) => (
+      <div>{row.index + 1}</div>),
+  },
+  {
     accessorKey: "orderNumber",
     header: "Order",
     cell: ({ row }) => (
@@ -333,8 +343,10 @@ export const createOrdersColumns = (actions: {
     header: "Restaurant",
     cell: ({ row }) => (
       <div>
-        <div className="font-medium">{row.original.restaurant.name}</div>
-        <div className="text-[12px] text-gray-800">
+        <div className="font-medium truncate max-w-45">
+          {row.original.restaurant.name}
+        </div>
+        <div className="text-[12px] truncate max-w-45 text-gray-800">
           {row.original.restaurant.email}
         </div>
       </div>
@@ -342,11 +354,10 @@ export const createOrdersColumns = (actions: {
   },
   {
     accessorKey: "billingName",
-    header: "Customer",
+    header: "Phone Number",
     cell: ({ row }) => (
       <div>
-        <div className="font-medium">{row.getValue("billingName")}</div>
-        <div className="text-[12px] text-gray-800">
+        <div className="text-[12px] text-gray-800 ">
           {row.original.billingPhone}
         </div>
       </div>
@@ -377,6 +388,7 @@ export const createOrdersColumns = (actions: {
         <StatusDropdown
           currentStatus={order.status}
           orderId={order.id}
+          restaurantName={order.restaurant.name}
           onUpdate={actions.onStatusUpdate}
         />
       );
@@ -391,6 +403,7 @@ export const createOrdersColumns = (actions: {
         <PaymentStatusDropdown
           currentStatus={order.paymentStatus}
           orderId={order.id}
+          restaurantName={order.restaurant.name}
           onUpdate={actions.onPaymentStatusUpdate}
         />
       );

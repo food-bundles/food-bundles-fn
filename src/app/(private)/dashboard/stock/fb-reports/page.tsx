@@ -13,7 +13,13 @@ import { TableFilters, createCommonFilters } from "@/components/filters";
 
 export default function FBReportsPage() {
   const [businessCode, setBusinessCode] = useState("");
-  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>(() => {
+    const now = new Date();
+    return {
+      from: new Date(now.getFullYear(), 0, 1),
+      to: new Date(now.getFullYear(), 11, 31)
+    };
+  });
   const [reportData, setReportData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -25,8 +31,6 @@ export default function FBReportsPage() {
       return;
     }
     if (!dateRange.from || !dateRange.to) {
-      setReportData([]);
-      setHasSearched(false);
       return;
     }
 
@@ -78,40 +82,63 @@ export default function FBReportsPage() {
     return () => clearTimeout(timeoutId);
   }, [businessCode, dateRange]);
 
-  const columns = [
-    {
-      accessorKey: "index",
-      header: "#",
-      cell: ({ row }: any) => row.index + 1,
-    },
-    {
-      accessorKey: "category",
-      header: "Category",
-    },
-    {
-      accessorKey: "menu",
-      header: "Menu Item",
-    },
-    {
-      accessorKey: "quantitySold",
-      header: "Qty Sold",
-    },
-    {
-      accessorKey: "totalSales",
-      header: "Total Sales",
-      cell: ({ row }: any) => `${parseFloat(row.original.totalSales).toLocaleString()} RWF`,
-    },
-    {
-      accessorKey: "avgSalePrice",
-      header: "Avg Price",
-      cell: ({ row }: any) => `${parseFloat(row.original.avgSalePrice).toLocaleString()} RWF`,
-    },
-    {
-      accessorKey: "listprice",
-      header: "List Price",
-      cell: ({ row }: any) => `${parseFloat(row.original.listprice).toLocaleString()} RWF`,
-    },
-  ];
+const columns = [
+  {
+    accessorKey: "category",
+    header: "Category",
+    size: 180,
+    cell: ({ row }: any) => (
+      <span className="whitespace-nowrap">{row.original.category}</span>
+    ),
+  },
+  {
+    accessorKey: "menu",
+    header: "Menu Item",
+    size: 260,
+    cell: ({ row }: any) => (
+      <span className="whitespace-nowrap">{row.original.menu}</span>
+    ),
+  },
+  {
+    accessorKey: "quantitySold",
+    header: "Qty Sold",
+    size: 100,
+    cell: ({ row }: any) => (
+      <span className="text-right block">{row.original.quantitySold}</span>
+    ),
+  },
+  {
+    accessorKey: "totalSales",
+    header: "Total Sales",
+    size: 140,
+    cell: ({ row }: any) => (
+      <span className="text-right block font-medium">
+        {Number(row.original.totalSales).toLocaleString()} RWF
+      </span>
+    ),
+  },
+  {
+    accessorKey: "avgSalePrice",
+    header: "Avg Price",
+    size: 140,
+    cell: ({ row }: any) => (
+      <span className="text-right block">
+        {Number(row.original.avgSalePrice).toLocaleString()} RWF
+      </span>
+    ),
+  },
+  {
+    accessorKey: "listprice",
+    header: "List Price",
+    size: 140,
+    cell: ({ row }: any) => (
+      <span className="text-right block">
+        {Number(row.original.listprice).toLocaleString()} RWF
+      </span>
+    ),
+  },
+];
+
 
   const filters = [
     createCommonFilters.dateRange(
@@ -124,15 +151,15 @@ export default function FBReportsPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-[16px] font-semibold text-gray-900 mb-2">
+        <h1 className="text-[18px] font-semibold text-gray-900 mb-2">
           FB Sales Reports
         </h1>
-        <p className="text-gray-600 text-sm">
+        <p className="text-gray-700 text-sm">
           Generate and view Food Bundle sales reports
         </p>
       </div>
 
-      <Card className="mb-3 py-1 w-full md:w-1/2 rounded">
+       <Card className="mb-3 py-1 rounded inline-block max-w-max">
         <CardContent className="p-3">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
             <div className="flex items-center gap-2">
@@ -171,8 +198,6 @@ export default function FBReportsPage() {
       )}
 
       {hasSearched && (
-        <Card>
-          <CardContent className="p-6">
             <DataTable
               columns={columns}
               data={reportData}
@@ -184,8 +209,6 @@ export default function FBReportsPage() {
               showPagination={true}
               isLoading={loading}
             />
-          </CardContent>
-        </Card>
       )}
     </div>
   );
