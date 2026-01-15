@@ -15,6 +15,13 @@ export const createVoucherColumns = ({
   payingVoucherId,
 }: VoucherColumnsProps): ColumnDef<IVoucher>[] => [
     {
+      accessorKey: "#",
+      header: "#",
+      cell: ({ row }) => {
+        return <div className="text-sm text-gray-600">{row.index + 1}</div>;
+      },
+    },
+    {
       accessorKey: "voucherCode",
       header: "Voucher",
       cell: ({ row }) => {
@@ -109,6 +116,24 @@ export const createVoucherColumns = ({
                   <p className="text-xs text-gray-500">{formatTime((voucher as any).usedAt)}</p>
                 </>
               ) : "Not used"}
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      id: "approver",
+      header: "Approver",
+      cell: ({ row }) => {
+        const voucher = row.original;
+        const approver = (voucher as any).approver;
+        return (
+          <div className="text-sm">
+            <div className="font-medium text-gray-900">
+              {approver?.username || "N/A"}
+            </div>
+            <div className="text-xs text-gray-500">
+              {approver?.email || ""}
             </div>
           </div>
         );
