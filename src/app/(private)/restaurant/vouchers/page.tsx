@@ -18,10 +18,12 @@ export default function VouchersPage() {
       try {
         const response = await subscriptionService.getMySubscriptions();
         if (response && response.data) {
-          setMySubscriptions(response.data || []);
+          const subscriptions = Array.isArray(response.data) ? response.data : [];
+          setMySubscriptions(subscriptions);
         }
       } catch (error) {
         console.error('Failed to fetch subscriptions:', error);
+        setMySubscriptions([]);
       } finally {
         setLoading(false);
       }
@@ -33,7 +35,9 @@ export default function VouchersPage() {
     setRefreshKey(prev => prev + 1);
   };
 
-  const activeSubscription = mySubscriptions.find(sub => sub.status === "ACTIVE");
+  const activeSubscription = Array.isArray(mySubscriptions) 
+    ? mySubscriptions.find(sub => sub.status === "ACTIVE")
+    : undefined;
   
   const formatDuration = (duration: number) => {
     if (duration >= 365) return `${Math.floor(duration / 365)} Year${Math.floor(duration / 365) > 1 ? 's' : ''}`;
@@ -76,24 +80,23 @@ export default function VouchersPage() {
                 ?.toLowerCase();
               const status = activeSubscription?.status?.toLowerCase();
 
-              // define color map per plan
-              const colorMap: Record<string, string> = {
-                premium: "yellow",
-                standard: "blue",
-                basic: "green",
+              // define color classes per plan
+              const colorClasses: Record<string, string> = {
+                premium: "bg-yellow-100 text-yellow-700 border-yellow-200",
+                standard: "bg-blue-100 text-blue-700 border-blue-200",
+                basic: "bg-green-100 text-green-700 border-green-200",
               };
 
-              // fallback color if plan not listed
-              const color = colorMap[plan || ""] || "gray";
+              const classes = colorClasses[plan || ""] || "bg-gray-100 text-gray-700 border-gray-200";
 
               return (
                 <span
-                  className={`absolute -top-2 right-1 px-2 text-[12px] font-medium bg-${color}-100 text-${color}-500 rounded-full border border-${color}-200`}
+                  className={`absolute -top-2 right-1 px-2 text-[12px] font-medium rounded-full border ${classes}`}
                 >
-                  <span className={`text-${color}-700 font-semibold`}>
+                  <span className="font-semibold">
                     {activeSubscription?.plan?.name?.split(" ")[0]}
                   </span>{" "}
-                  <span className={`capitalize text-${color}-900`}>
+                  <span className="capitalize">
                     {status}
                   </span>
                 </span>
