@@ -213,17 +213,12 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
       },
     },
     {
-      accessorKey: "voucherType",
-      header: "Type",
-      cell: ({ row }) => (
-        <div>
-          <Badge variant="outline">
-            <p className="text-xs font-normal">
-              {getVoucherTypeLabel(row.original.voucherType)}
-            </p>
-          </Badge>
-        </div>
-      ),
+      accessorKey: "ApprovedBy",
+      header: "Approved By",
+      cell: ({ row }) => {
+        const approver = (row.original as any).approver?.username || "N/A";
+        return <div className="text-xs">{approver}</div>;
+      },
     },
     {
       accessorKey: "creditLimit",
@@ -232,6 +227,9 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
         <div>
           <p className="text-xs">
             {row.original.creditLimit.toLocaleString()} RWF
+          </p>
+          <p className="text-xs text-gray-500">
+            {getVoucherTypeLabel(row.original.voucherType)}
           </p>
         </div>
       ),
@@ -372,9 +370,7 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
         return (
           <>
             <div className="flex items-center gap-2 text-xs">
-              <div className=" text-gray-800">
-                {formatDate(usedAt)}
-              </div>
+              <div className=" text-gray-800">{formatDate(usedAt)}</div>
               <div className="text-xs text-gray-500">{formatTime(usedAt)}</div>
             </div>
             <div className="flex items-center gap-2 text-xs ">
