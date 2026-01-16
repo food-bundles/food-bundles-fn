@@ -4,6 +4,7 @@ export interface IVoucherData {
   restaurantId: string;
   voucherType: "DISCOUNT_10" | "DISCOUNT_20" | "DISCOUNT_50" | "DISCOUNT_80" | "DISCOUNT_100";
   creditLimit: number;
+  repaymentDays: number;
   minTransactionAmount?: number;
   maxTransactionAmount?: number;
   expiryDate?: string;

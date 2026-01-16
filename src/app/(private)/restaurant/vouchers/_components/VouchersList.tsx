@@ -40,7 +40,7 @@ export default function VouchersList() {
     <div className="mb-8">
       <h2 className="text-[16px] font-medium text-center mb-4">My Voucher</h2>
       <div className="flex justify-center">
-        <div className="w-[320px] h-[400px] flex flex-col p-6 border rounded relative">
+        <div className="w-[320px] h-100 flex flex-col p-6 border rounded relative">
           <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
             <Skeleton className="h-6 w-20 rounded" />
           </div>
@@ -99,7 +99,7 @@ export default function VouchersList() {
             return (
               <Card
                 key={voucher.id}
-                className={`w-[320px] h-[400px] flex flex-col p-6 ${
+                className={`w-[320px] h-100 flex flex-col p-6 ${
                   isActive
                     ? "border-yellow-300 hover:border-yellow-400"
                     : "border-gray-200"

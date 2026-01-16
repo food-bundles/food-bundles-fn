@@ -178,6 +178,7 @@ export interface IVoucher {
   voucherType: VoucherType;
   discountPercentage: number;
   creditLimit: number;
+  repaymentDays: number;
   minTransactionAmount: number;
   maxTransactionAmount?: number;
   totalCredit: number;

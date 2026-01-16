@@ -44,7 +44,8 @@ export function RestaurantManagement({
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
 
   // Modal states
-  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
+  const [selectedRestaurant, setSelectedRestaurant] =
+    useState<Restaurant | null>(null);
   const [isManagementOpen, setIsManagementOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
@@ -60,7 +61,9 @@ export function RestaurantManagement({
       toast.success("Restaurant updated successfully");
       onRefresh();
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to update restaurant");
+      throw new Error(
+        error.response?.data?.message || "Failed to update restaurant"
+      );
     }
   };
 
@@ -70,7 +73,9 @@ export function RestaurantManagement({
       toast.success("Restaurant deleted successfully");
       onRefresh();
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to delete restaurant");
+      throw new Error(
+        error.response?.data?.message || "Failed to delete restaurant"
+      );
     }
   };
 
@@ -81,7 +86,9 @@ export function RestaurantManagement({
       onRefresh();
       setIsCreateOpen(false);
     } catch (error: any) {
-      throw new Error(error.response?.data?.message || "Failed to create restaurant");
+      throw new Error(
+        error.response?.data?.message || "Failed to create restaurant"
+      );
     }
   };
 
@@ -135,7 +142,9 @@ export function RestaurantManagement({
         columns={columns}
         data={filteredData}
         title="Restaurants Management"
-        description={pagination ? `Total: ${pagination.total} restaurants` : undefined}
+        description={
+          pagination ? `Total: ${pagination.total} restaurants` : undefined
+        }
         showExport={true}
         onExport={handleExport}
         showAddButton={true}
