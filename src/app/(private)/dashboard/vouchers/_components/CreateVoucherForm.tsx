@@ -39,8 +39,7 @@ const CreateVoucherForm = forwardRef<{ openModal: () => void }, CreateVoucherFor
   const [formData, setFormData] = useState({
     voucherType: "",
     creditLimit: "",
-    minTransactionAmount: "",
-    maxTransactionAmount: "",
+    repaymentDays: "",
     expiryDate: ""
   });
 
@@ -61,7 +60,7 @@ const CreateVoucherForm = forwardRef<{ openModal: () => void }, CreateVoucherFor
 
 
   const handleSubmit = async () => {
-    if (!selectedRestaurant || !formData.voucherType || !formData.creditLimit) {
+    if (!selectedRestaurant || !formData.voucherType || !formData.creditLimit || !formData.repaymentDays) {
       setError("Please fill all required fields");
       return;
     }
@@ -73,8 +72,7 @@ const CreateVoucherForm = forwardRef<{ openModal: () => void }, CreateVoucherFor
         restaurantId: selectedRestaurant.id,
         voucherType: formData.voucherType as VoucherType,
         creditLimit: parseFloat(formData.creditLimit),
-        minTransactionAmount: formData.minTransactionAmount ? parseFloat(formData.minTransactionAmount) : undefined,
-        maxTransactionAmount: formData.maxTransactionAmount ? parseFloat(formData.maxTransactionAmount) : undefined,
+        repaymentDays: parseInt(formData.repaymentDays),
         expiryDate: formData.expiryDate || undefined
       });
 
@@ -83,8 +81,7 @@ const CreateVoucherForm = forwardRef<{ openModal: () => void }, CreateVoucherFor
         setFormData({
           voucherType: "",
           creditLimit: "",
-          minTransactionAmount: "",
-          maxTransactionAmount: "",
+          repaymentDays: "",
           expiryDate: ""
         });
         setSelectedRestaurant(null);
@@ -199,39 +196,19 @@ const CreateVoucherForm = forwardRef<{ openModal: () => void }, CreateVoucherFor
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Min Transaction</label>
-              <Input
-                type="number"
-                value={formData.minTransactionAmount}
-                onChange={(e) => setFormData(prev => ({ ...prev, minTransactionAmount: e.target.value }))}
-                placeholder="Min amount"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Max Transaction</label>
-              <Input
-                type="number"
-                value={formData.maxTransactionAmount}
-                onChange={(e) => setFormData(prev => ({ ...prev, maxTransactionAmount: e.target.value }))}
-                placeholder="Max amount"
-              />
-            </div>
-          </div>
-
           <div>
-            <label className="block text-sm font-medium mb-2">Expiry Date</label>
+            <label className="block text-sm font-medium mb-2">Repayment Days *</label>
             <Input
-              type="date"
-              value={formData.expiryDate}
-              onChange={(e) => setFormData(prev => ({ ...prev, expiryDate: e.target.value }))}
+              type="number"
+              value={formData.repaymentDays}
+              onChange={(e) => setFormData(prev => ({ ...prev, repaymentDays: e.target.value }))}
+              placeholder="Enter repayment days"
             />
           </div>
 
           <Button 
             onClick={handleSubmit} 
-            disabled={loading || !selectedRestaurant || !formData.voucherType || !formData.creditLimit}
+            disabled={loading || !selectedRestaurant || !formData.voucherType || !formData.creditLimit || !formData.repaymentDays}
             className="w-full"
           >
             {loading ? "Creating..." : "Create Voucher"}

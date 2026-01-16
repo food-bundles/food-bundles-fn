@@ -80,7 +80,7 @@ export default function UpgradeDrawer({
 
       <div
         className={`fixed top-0 right-0 h-full bg-white text-gray-900 z-50 transform transition-all duration-300 ease-in-out overflow-y-auto shadow-2xl border-l border-gray-200 scrollbar-hide
-          w-[90vw] sm:w-[400px] md:w-[500px]
+          w-[90vw] sm:w-100 md:w-125
           ${isOpen ? "translate-x-0" : "translate-x-full"}`}
       >
         {/* Header */}

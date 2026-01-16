@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // Frontend Auth Service - Token-Based
 import {
   ICreateFarmerData,

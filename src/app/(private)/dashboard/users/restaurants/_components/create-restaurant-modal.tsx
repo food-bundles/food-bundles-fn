@@ -37,12 +37,12 @@ export function CreateRestaurantModal({
   });
 
   const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.email || !formData.phone || !formData.tin) {
       toast.error("Please fill in all required fields");
       return;
@@ -71,21 +71,24 @@ export function CreateRestaurantModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] bg-white text-gray-900 border-gray-200">
+      <DialogContent className="sm:max-w-125 bg-white text-gray-900 border-gray-200">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-gray-900">
             <Store className="h-5 w-5 text-green-600" />
             Create New Restaurant
           </DialogTitle>
           <DialogDescription className="text-gray-600">
-            Create a new restaurant account. Password will be auto-generated and sent via SMS.
+            Create a new restaurant account. Password will be auto-generated and
+            sent via SMS.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-gray-900">Restaurant Name *</Label>
+              <Label htmlFor="name" className="text-gray-900">
+                Restaurant Name *
+              </Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -96,7 +99,9 @@ export function CreateRestaurantModal({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-900">Email *</Label>
+              <Label htmlFor="email" className="text-gray-900">
+                Email *
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -111,7 +116,9 @@ export function CreateRestaurantModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="phone" className="text-gray-900">Phone *</Label>
+              <Label htmlFor="phone" className="text-gray-900">
+                Phone *
+              </Label>
               <Input
                 id="phone"
                 value={formData.phone}
@@ -122,7 +129,9 @@ export function CreateRestaurantModal({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="tin" className="text-gray-900">TIN Number *</Label>
+              <Label htmlFor="tin" className="text-gray-900">
+                TIN Number *
+              </Label>
               <Input
                 id="tin"
                 value={formData.tin}
@@ -135,7 +144,9 @@ export function CreateRestaurantModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="location" className="text-gray-900">Location</Label>
+            <Label htmlFor="location" className="text-gray-900">
+              Location
+            </Label>
             <Input
               id="location"
               value={formData.location}

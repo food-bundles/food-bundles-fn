@@ -65,7 +65,7 @@ export default function TermsAgreementPage() {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
-      <div className="w-full sm: lg:w-1/3 bg-linear-to-br from-green-600 to-green-900 flex flex-col justify-center items-center p-4 sm:p-6 lg:p-8 min-h-[200px] lg:min-h-screen">
+      <div className="w-full sm: lg:w-1/3 bg-linear-to-br from-green-600 to-green-900 flex flex-col justify-center items-center p-4 sm:p-6 lg:p-8 min-h-50 lg:min-h-screen">
         <div className="text-center mt-15 lg:mt-0">
           <div className="mb-4 lg:mb-8">
             <OptimizedImage
@@ -73,7 +73,7 @@ export default function TermsAgreementPage() {
               alt="Food Bundles"
               width={120}
               height={120}
-              className="mx-auto rounded-full w-16 h-16 sm:w-20 sm:h-20 lg:w-[120px] lg:h-[120px]"
+              className="mx-auto rounded-full w-16 h-16 sm:w-20 sm:h-20 lg:w-30 lg:h-30"
               transformation={[
                 { width: 240, height: 240, crop: "fill", quality: "85" }
               ]}
