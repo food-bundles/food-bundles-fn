@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -59,37 +60,18 @@ export function FinanceChart({ loading = false, data }: FinanceChartProps) {
   }
 
   const transformTimeBreakdown = () => {
-    if (!activeData?.timeBreakdown) return [];
+    if (!activeData?.timeSeriesData) return [];
     
     const data: Array<{ date: string; revenue: number; expenses: number; profit: number }> = [];
     
-    Object.values(activeData.timeBreakdown).forEach((yearData: any) => {
-      if (localFilters?.month && yearData.months) {
-        const monthData = yearData.months[localFilters.month];
-        if (monthData?.weeks) {
-          Object.values(monthData.weeks).forEach((weekData: any) => {
-            if (weekData.days) {
-              Object.values(weekData.days).forEach((dayData: any) => {
-                data.push({
-                  date: dayData.dayName || dayData.date,
-                  revenue: dayData.revenue || 0,
-                  expenses: dayData.expenses || 0,
-                  profit: dayData.profit || 0
-                });
-              });
-            }
-          });
-        }
-      } else if (yearData.months) {
-        Object.values(yearData.months).forEach((monthData: any) => {
-          data.push({
-            date: monthData.monthName,
-            revenue: monthData.revenue || 0,
-            expenses: monthData.expenses || 0,
-            profit: monthData.profit || 0
-          });
-        });
-      }
+    // Use the existing timeSeriesData structure
+    activeData.timeSeriesData.forEach((item: any) => {
+      data.push({
+        date: item.period || item.date,
+        revenue: item.revenue || 0,
+        expenses: item.expenses || 0,
+        profit: (item.revenue || 0) - (item.expenses || 0)
+      });
     });
     
     return data;
@@ -120,7 +102,7 @@ export function FinanceChart({ loading = false, data }: FinanceChartProps) {
               onValueChange={(value) => {
                 const newFilters = { 
                   year: value === "all" ? undefined : parseInt(value),
-                  month: undefined
+                  month: undefined // Always reset month when year changes
                 };
                 setLocalFilters(newFilters);
                 fetchLocalData(newFilters);
@@ -147,7 +129,7 @@ export function FinanceChart({ loading = false, data }: FinanceChartProps) {
                 setLocalFilters(newFilters);
                 fetchLocalData(newFilters);
               }}
-              disabled={!localFilters?.year}
+              disabled={!localFilters?.year} // Disable when no year selected or "all" years
             >
               <SelectTrigger className="h-7 text-xs w-16">
                 <SelectValue />
@@ -193,8 +175,8 @@ export function FinanceChart({ loading = false, data }: FinanceChartProps) {
                 fontSize: '12px',
                 padding: '2px 0'
               }}
-              formatter={(value: number, name: string) => [
-                `${value.toLocaleString()} RWF`,
+              formatter={(value: number | undefined, name: string | undefined) => [
+                `${(value || 0).toLocaleString()} RWF`,
                 name === 'revenue' ? 'Revenue' : name === 'expenses' ? 'Expenses' : 'Profit'
               ]}
             />

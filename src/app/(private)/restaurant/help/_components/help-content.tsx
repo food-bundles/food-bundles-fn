@@ -14,9 +14,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import Image from "next/image";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { faqData, keywordMapping, chatbotContext } from "@/data/faqData";
+import { faqData, chatbotContext } from "@/data/faqData";
 
 
 type ContactInfo = {
