@@ -28,7 +28,7 @@ import { useAuth } from "@/app/contexts/auth-context";
 import { useCart } from "@/app/contexts/cart-context";
 import { useProductSection } from "@/hooks/useProductSection";
 import { productService } from "@/app/services/productService";
-import { ChristmasAnimation } from "@/components/ChristmasAnimation";
+// import { ChristmasAnimation } from "@/components/ChristmasAnimation";
 import Link from "next/link";
 
 interface ProductCardProps {

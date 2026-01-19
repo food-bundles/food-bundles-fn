@@ -241,11 +241,11 @@ export function UsersChart({ loading = false, data }: UsersChartProps) {
                 fontSize: '12px',
                 padding: '1px 0'
               }}
-              formatter={(value: number | undefined, name: string) => [
+              formatter={(value: number | undefined, name: string | undefined) => [
                 value ?? 0,
                 name === 'restaurants' ? 'Restaurants' : 
                 name === 'farmers' ? 'Farmers' : 
-                name === 'admins' ? 'Admins' : 'Affiliators'
+                name === 'admins' ? 'Admins' : name || 'Unknown'
               ]}
             />
             <Area
@@ -282,14 +282,15 @@ export function UsersChart({ loading = false, data }: UsersChartProps) {
         </ResponsiveContainer>
         
         {/* c */}
-        <div className="grid grid-cols-4 gap-4 border-gray-100">
+        <div className="grid grid-cols-3 gap-4 border-gray-100">
           <div className="text-center">
             <div className="flex items-center justify-center gap-1 mb-1">
               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
               <p className="text-xs text-gray-500">Restaurants</p>
+
             </div>
             <p className="text-xs font-semibold text-blue-600">
-              {(activeData?.restaurants || 0).toLocaleString()}
+              {(activeData?.restaurants || 0).toLocaleString()} + {(activeData?.affiliators || 0).toLocaleString()} <span className="text-[11px] font-normal">Affiliators</span>
             </p>
           </div>
           <div className="text-center">
@@ -308,15 +309,6 @@ export function UsersChart({ loading = false, data }: UsersChartProps) {
             </div>
             <p className="text-xs font-semibold text-orange-600">
               {(activeData?.admins || 0).toLocaleString()}
-            </p>
-          </div>
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-              <p className="text-xs text-gray-500">Affiliators</p>
-            </div>
-            <p className="text-xs font-semibold text-purple-600">
-              {(activeData?.affiliators || 0).toLocaleString()}
             </p>
           </div>
         </div>
