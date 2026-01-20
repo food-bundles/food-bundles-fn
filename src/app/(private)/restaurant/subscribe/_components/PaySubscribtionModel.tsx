@@ -10,11 +10,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { subscriptionService, SubscriptionPlan } from "@/app/services/subscriptionService";
+import { SubscriptionPlan } from "@/app/services/subscriptionService";
+import { useSubscriptions } from "@/app/contexts/subscriptionContext";
 import { toast } from "sonner";
 import { useAuth } from "@/app/contexts/auth-context";
-
-type PaymentMethod = "wallet" | "momo" | "card";
 
 interface PaymentModalProps {
   open: boolean;
@@ -27,43 +26,49 @@ export default function PaymentModal({
   onClose,
   plan,
 }: PaymentModalProps) {
-  const [method, setMethod] = useState<PaymentMethod>("momo");
+  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [showRedirectInfo, setShowRedirectInfo] = useState(false);
   const [redirectUrl, setRedirectUrl] = useState("");
   const { user } = useAuth();
+  const { paymentMethods, createRestaurantSubscription, getPaymentMethodById } = useSubscriptions();
 
   useEffect(() => {
-    if (user?.phone && method === "momo") {
+    if (user?.phone) {
       setPhoneNumber(user.phone);
     }
-  }, [user?.phone, method]);
+    // Set default payment method to MOBILE_MONEY if available
+    const momoMethod = paymentMethods.find(method => method.name === "MOBILE_MONEY");
+    if (momoMethod && !selectedPaymentMethodId) {
+      setSelectedPaymentMethodId(momoMethod.id);
+    }
+  }, [user?.phone, paymentMethods, selectedPaymentMethodId]);
 
   const handlePayment = async () => {
-    if (!plan) return;
+    if (!plan || !selectedPaymentMethodId) return;
     
     try {
       setLoading(true);
       
-      const paymentMethodMap = {
-        wallet: "CASH" as const,
-        momo: "MOBILE_MONEY" as const,
-        card: "CARD" as const,
-      };
+      const selectedMethod = getPaymentMethodById(selectedPaymentMethodId);
+      if (!selectedMethod) {
+        toast.error("Please select a payment method");
+        return;
+      }
 
       const subscriptionData: any = {
         planId: plan.id,
+        paymentMethodId: selectedPaymentMethodId,
         autoRenew: true,
-        paymentMethod: paymentMethodMap[method],
       };
 
       // Add phone number for mobile money payment
-      if (method === "momo" && phoneNumber) {
+      if (selectedMethod.name === "MOBILE_MONEY" && phoneNumber) {
         subscriptionData.phoneNumber = phoneNumber;
       }
 
-      const response = await subscriptionService.createRestaurantSubscription(subscriptionData);
+      const response = await createRestaurantSubscription(subscriptionData);
       
       if (response.success || response.data) {
         // Check if redirect is required (for Flutterwave)
@@ -85,13 +90,16 @@ export default function PaymentModal({
 
   const renderForm = () => {
     const price = plan ? `${plan.price.toLocaleString()} Rwf` : "";
+    const selectedMethod = getPaymentMethodById(selectedPaymentMethodId);
     
-    switch (method) {
-      case "wallet":
+    if (!selectedMethod) return null;
+    
+    switch (selectedMethod.name) {
+      case "CASH":
         return (
           <div className="space-y-3">
             <p className="text-gray-900 text-[13px] text-center">
-              Pay using your wallet balance.
+              Pay using prepaid payment.
             </p>
             <Button 
               onClick={handlePayment}
@@ -102,7 +110,7 @@ export default function PaymentModal({
             </Button>
           </div>
         );
-      case "momo":
+      case "MOBILE_MONEY":
         return (
           <div className="space-y-3">
             <Input 
@@ -121,7 +129,7 @@ export default function PaymentModal({
             </Button>
           </div>
         );
-      case "card":
+      case "CARD":
         return (
           <div className="space-y-3">
             <p className="text-gray-900 text-[13px] text-center">
@@ -136,6 +144,22 @@ export default function PaymentModal({
             </Button>
           </div>
         );
+      // case "BANK_TRANSFER":
+      //   return (
+      //     <div className="space-y-3">
+      //       <p className="text-gray-900 text-[13px] text-center">
+      //         Pay using bank transfer.
+      //       </p>
+      //       <Button 
+      //         onClick={handlePayment}
+      //         disabled={loading}
+      //         className="w-full bg-green-600 text-white hover:bg-green-700 rounded-none text-[13px] font-normal"
+      //       >
+      //         {loading ? "Processing..." : `Pay ${price}`}
+      //       </Button>
+      //     </div>
+      //   );
+
       default:
         return null;
     }
@@ -181,6 +205,18 @@ export default function PaymentModal({
     );
   }
 
+  // Filter payment methods to only show MOBILE_MONEY, CARD, and CASH
+  const allowedPaymentMethods = paymentMethods.filter(method => 
+    ['MOBILE_MONEY', 'CARD', 'CASH'].includes(method.name)
+  );
+
+  const getDisplayName = (method: any) => {
+    if (method.name === 'CASH') return 'Prepaid';
+    if (method.name === 'MOBILE_MONEY') return 'MoMo';
+    if (method.name === 'CARD') return 'Card';
+    return method.description;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md border-2 border-green-500">
@@ -191,29 +227,18 @@ export default function PaymentModal({
         </DialogHeader>
 
         <div className="flex flex-wrap justify-center gap-2 mb-4">
-          <Button
-            variant={method === "wallet" ? "default" : "outline"}
-            onClick={() => setMethod("wallet")}
-            className="hidden rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal"
-          >
-            Wallet
-          </Button>
-          <Button
-            variant={method === "momo" ? "default" : "outline"}
-            onClick={() => setMethod("momo")}
-            className="rounded flex-1 sm:flex-initial h-8 w-20 text-[14px] font-normal"
-          >
-            MoMo
-          </Button>
-          <Button
-            variant={method === "card" ? "default" : "outline"}
-            onClick={() => setMethod("card")}
-            className="rounded flex-1 sm:flex-initial h-8 w-20 text-[14px] font-normal"
-          >
-            Card
-          </Button>
+          {allowedPaymentMethods.map((method) => (
+            <Button
+              key={method.id}
+              variant={selectedPaymentMethodId === method.id ? "default" : "outline"}
+              onClick={() => setSelectedPaymentMethodId(method.id)}
+              className="rounded flex-1 sm:flex-initial h-8 text-[14px] font-normal"
+            >
+              {getDisplayName(method)}
+            </Button>
+          ))}
         </div>
-
+        {/* Bank Transfer and Voucher are still in development */}
         {renderForm()}
       </DialogContent>
     </Dialog>

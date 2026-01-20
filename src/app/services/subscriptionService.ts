@@ -132,6 +132,7 @@ export interface UpdateSubscriptionPlanData {
 
 export interface CreateRestaurantSubscriptionData {
   planId: string;
+  paymentMethodId: string;
   autoRenew?: boolean;
   paymentMethod?: PaymentMethod;
   restaurantId?: string;
