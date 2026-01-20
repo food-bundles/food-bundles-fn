@@ -12,6 +12,8 @@ export function getRedirectPath(userRole: UserRole): string {
       return "/aggregator";
     case UserRole.ADMIN:
       return "/dashboard";
+    case UserRole.TRADER:
+      return "/traders";
     case UserRole.LOGISTICS:
       return "/logistics";
     default:
