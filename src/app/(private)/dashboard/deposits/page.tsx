@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useWallet } from "@/app/contexts/WalletContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +52,11 @@ import { toast } from "sonner";
 import { walletService } from "@/app/services/walletService";
 import { restaurantService } from "@/app/services/restaurantService";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
+import { DataTable } from "@/components/data-table";
+import { TableFilters } from "@/components/filters";
+import { createWalletColumns, WalletData } from "./_components/wallet-columns";
+import { createTransactionColumns, TransactionData } from "./_components/transaction-columns";
+import { createCommonFilters } from "./_components/filter-helpers";
 
 export default function DepositsManagementPage() {
   const { getMyWallet } = useWallet();
@@ -70,7 +75,7 @@ export default function DepositsManagementPage() {
     totalPages: 0,
   });
   const [pageSize, setPageSize] = useState(5);
-  const [transactionFilters, setTransactionFilters] = useState({
+  const [transactionFilterState, setTransactionFilterState] = useState({
     type: "",
     restaurantName: "",
   });
@@ -81,6 +86,9 @@ export default function DepositsManagementPage() {
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [transactionSearchQuery, setTransactionSearchQuery] = useState("");
+  const [walletStatusFilter, setWalletStatusFilter] = useState("all");
+  const [transactionTypeFilter, setTransactionTypeFilter] = useState("all");
+  const [transactionStatusFilter, setTransactionStatusFilter] = useState("all");
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
@@ -93,6 +101,60 @@ export default function DepositsManagementPage() {
   const [orderDetails, setOrderDetails] = useState<any>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [orderLoading, setOrderLoading] = useState(false);
+
+  const walletFilters = useMemo(() => {
+    return [
+      createCommonFilters.search(searchQuery, setSearchQuery, "Search restaurants..."),
+      createCommonFilters.status(walletStatusFilter, setWalletStatusFilter, [
+        { label: "All Status", value: "all" },
+        { label: "Active", value: "true" },
+        { label: "Inactive", value: "false" },
+      ]),
+    ];
+  }, [searchQuery, walletStatusFilter]);
+
+  const transactionFilters = useMemo(() => {
+    return [
+      createCommonFilters.search(transactionSearchQuery, setTransactionSearchQuery, "Search restaurants..."),
+      createCommonFilters.type(transactionTypeFilter, setTransactionTypeFilter, [
+        { label: "All Types", value: "all" },
+        { label: "Top-up", value: "TOP_UP" },
+        { label: "Payment", value: "PAYMENT" },
+        { label: "Refund", value: "REFUND" },
+      ]),
+      createCommonFilters.status(transactionStatusFilter, setTransactionStatusFilter, [
+        { label: "All Status", value: "all" },
+        { label: "Completed", value: "completed" },
+        { label: "Pending", value: "pending" },
+        { label: "Processing", value: "processing" },
+        { label: "Failed", value: "failed" },
+      ]),
+    ];
+  }, [transactionSearchQuery, transactionTypeFilter, transactionStatusFilter]);
+
+  const walletColumns = useMemo(() => {
+    return createWalletColumns({
+      onToggleStatus: (walletId: string, currentStatus: boolean) => {
+        handleWalletToggle(walletId, currentStatus);
+      },
+      onDeposit: (restaurantId: string) => {
+        setSelectedRestaurantId(restaurantId);
+        setShowDepositModal(true);
+      },
+      currentPage: walletPagination.page,
+      pageSize: 20,
+    });
+  }, [walletPagination.page]);
+
+  const transactionColumns = useMemo(() => {
+    return createTransactionColumns({
+      onViewDetails: (transaction: any) => {
+        handleTransactionClick(transaction);
+      },
+      currentPage: pagination.page,
+      pageSize: pageSize,
+    });
+  }, [pagination.page, pageSize]);
 
   const [depositData, setDepositData] = useState({
     amount: "",
@@ -128,7 +190,7 @@ export default function DepositsManagementPage() {
   ) => {
     try {
       const filters: any = { page, limit: pageSize };
-      if (transactionFilters.type) filters.type = transactionFilters.type;
+      if (transactionFilterState.type) filters.type = transactionFilterState.type;
       if (search) filters.restaurantName = search;
 
       const response = await walletService.getAllWalletTransactions(filters);
@@ -385,7 +447,7 @@ export default function DepositsManagementPage() {
         </div>
         <Button
           onClick={() => setShowDepositModal(true)}
-          className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl shadow-lg shadow-green-200 transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
+          className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
         >
           <Plus className="h-5 w-5" />
           New Deposit
@@ -493,10 +555,10 @@ export default function DepositsManagementPage() {
         </div>
       </div>
 
-      <div className="space-y-8">
+      <div className="space-y-4">
         {/* Wallets Table */}
         <Card className="border-none shadow-xl shadow-gray-100 rounded-2xl overflow-hidden">
-          <CardHeader className="bg-white border-b border-gray-50 pb-6">
+          <CardHeader className="bg-white pb-0 ">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
                 <CardTitle className="text-sm font-semibold">
@@ -506,437 +568,57 @@ export default function DepositsManagementPage() {
                   Manage cash and monitor status per restaurant
                 </CardDescription>
               </div>
-              <div className="relative w-full md:w-80 group">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-green-500 transition-colors" />
-                <Input
-                  placeholder="Search by restaurant name..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    fetchWallets(1, e.target.value);
-                  }}
-                  className="pl-12 bg-gray-50 border-gray-100 rounded-xl focus:ring-green-500/20 focus:border-green-500 transition-all"
-                />
-              </div>
             </div>
           </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-50/50">
-                    <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
-                      No
-                    </th>
-                    <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
-                      Restaurant
-                    </th>
-                    <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
-                      Balance
-                    </th>
-                    <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
-                      Activity
-                    </th>
-                    <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
-                      Status
-                    </th>
-                    <th className="text-right py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50">
-                  {wallets.map((wallet, index) => (
-                    <tr
-                      key={wallet.id}
-                      className="hover:bg-green-50/30 transition-colors"
-                    >
-                      <td className="py-5 px-6">
-                        <span className="text-xs font-bold text-gray-900">
-                          {(walletPagination.page - 1) * 20 + index + 1}
-                        </span>
-                      </td>
-                      <td className="py-5 px-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-100 to-green-50 flex items-center justify-center text-green-700 font-bold text-xs">
-                            {wallet.restaurant?.name?.charAt(0)}
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-gray-900">
-                              {wallet.restaurant?.name}
-                            </p>
-                            <p className="text-xs text-gray-600">
-                              {wallet.restaurant?.phone}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-5 px-6">
-                        <div className="flex flex-col">
-                          <span className="text-sm font-bold text-gray-900">
-                            {wallet.balance?.toLocaleString()}
-                          </span>
-                          <span className="text-xs text-gray-600">RWF</span>
-                        </div>
-                      </td>
-                      <td className="py-5 px-6 text-sm">
-                        <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-100 w-fit">
-                          <ArrowUpRight className="h-3.5 w-3.5" />
-                          <span className="text-xs font-bold">
-                            {wallet._count?.transactions || 0}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-5 px-6">
-                        {wallet.isActive ? (
-                          <Badge className="bg-green-100/50 text-green-700 border-none px-3 py-1 text-xs font-bold rounded-full">
-                            Active
-                          </Badge>
-                        ) : (
-                          <Badge className="bg-red-100/50 text-red-700 border-none px-3 py-1 text-xs font-bold rounded-full">
-                            Inactive
-                          </Badge>
-                        )}
-                      </td>
-                      <td className="py-5 px-6 text-right">
-                        <div className="flex gap-2 justify-end">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() =>
-                              handleWalletToggle(wallet.id, wallet.isActive)
-                            }
-                            className={`${
-                              wallet.isActive
-                                ? "text-red-600 hover:bg-red-100"
-                                : "text-green-600 hover:bg-green-100"
-                            } rounded-xl text-xs font-bold transition-all`}
-                          >
-                            {wallet.isActive ? "Deactivate" : "Activate"}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => {
-                              setSelectedRestaurantId(wallet.restaurantId);
-                              setShowDepositModal(true);
-                            }}
-                            className="text-white bg-green-500 hover:text-green-700 hover:bg-green-100 rounded-xl text-xs font-bold transition-all"
-                          >
-                            Deposit
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Wallet Pagination */}
-            {walletPagination.totalPages > 1 && (
-              <div className="flex justify-center items-center gap-4 py-6 border-t border-gray-50">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={walletPagination.page <= 1}
-                  onClick={() => fetchWallets(walletPagination.page - 1)}
-                  className="rounded-xl px-4 border-gray-200"
-                >
-                  Previous
-                </Button>
-                <div className="flex gap-2">
-                  {Array.from(
-                    { length: Math.min(5, walletPagination.totalPages) },
-                    (_, i) => {
-                      let pageNum;
-                      if (walletPagination.totalPages <= 5) pageNum = i + 1;
-                      else if (walletPagination.page <= 3) pageNum = i + 1;
-                      else if (
-                        walletPagination.page >=
-                        walletPagination.totalPages - 2
-                      )
-                        pageNum = walletPagination.totalPages - 4 + i;
-                      else pageNum = walletPagination.page - 2 + i;
-
-                      return (
-                        <Button
-                          key={pageNum}
-                          variant={
-                            pageNum === walletPagination.page
-                              ? "default"
-                              : "ghost"
-                          }
-                          size="sm"
-                          onClick={() => fetchWallets(pageNum)}
-                          className={`w-10 h-10 p-0 rounded-xl ${
-                            pageNum === walletPagination.page
-                              ? "bg-green-600 shadow-lg shadow-green-200"
-                              : "text-gray-600 hover:bg-gray-100"
-                          }`}
-                        >
-                          {pageNum}
-                        </Button>
-                      );
-                    }
-                  )}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={
-                    walletPagination.page >= walletPagination.totalPages
-                  }
-                  onClick={() => fetchWallets(walletPagination.page + 1)}
-                  className="rounded-xl px-4 border-gray-200"
-                >
-                  Next
-                </Button>
-              </div>
-            )}
+          <CardContent className="px-4">
+            <DataTable
+              columns={walletColumns}
+              data={wallets as WalletData[]}
+              customFilters={<TableFilters filters={walletFilters} />}
+              showSearch={false}
+              showExport={true}
+              showColumnVisibility={true}
+              showPagination={true}
+              showRowSelection={false}
+              showAddButton={true}
+              addButtonLabel="New Deposit"
+              onAddButton={() => setShowDepositModal(true)}
+              pagination={walletPagination}
+              onPaginationChange={(page, limit) => {
+                setWalletPagination(prev => ({ ...prev, page, limit }));
+                fetchWallets(page, searchQuery);
+              }}
+            />
           </CardContent>
         </Card>
 
         {/* All Transactions Table */}
         <Card className="border-none shadow-xl shadow-gray-100 rounded-2xl overflow-hidden">
-          <CardHeader className="bg-white border-b border-gray-50 pb-6">
+          <CardHeader className="bg-white  py-0">
             <CardTitle className="text-sm font-semibold">
               All Transactions
             </CardTitle>
             <CardDescription className="text-xs text-gray-600">
               Complete cash transaction history
             </CardDescription>
-
-            {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-4 mt-4 text-xs">
-              <Select
-                value={transactionFilters.type || "all"}
-                onValueChange={(value) => {
-                  setTransactionFilters((prev) => ({
-                    ...prev,
-                    type: value === "all" ? "" : value,
-                  }));
-                  fetchTransactions(1);
-                }}
-              >
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Filter by type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="TOP_UP">Top-up</SelectItem>
-                  <SelectItem value="PAYMENT">Payment</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select
-                value={pageSize.toString()}
-                onValueChange={(value) => {
-                  setPageSize(Number(value));
-                }}
-              >
-                <SelectTrigger className="w-full sm:w-24">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">5</SelectItem>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="15">15</SelectItem>
-                  <SelectItem value="20">20</SelectItem>
-                  <SelectItem value="30">30</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                  <SelectItem value="100">100</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <div className="relative flex-1 group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-green-500 transition-colors" />
-                <Input
-                  placeholder="Search by restaurant name..."
-                  value={transactionSearchQuery}
-                  onChange={(e) => {
-                    setTransactionSearchQuery(e.target.value);
-                    fetchTransactions(1, e.target.value);
-                  }}
-                  className="pl-10 bg-gray-50 border-gray-100 rounded-xl focus:ring-green-500/20 focus:border-green-500 transition-all"
-                />
-              </div>
-            </div>
           </CardHeader>
-          <CardContent className="p-0">
-            {transactions.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                <div className="p-4 bg-gray-50 rounded-full mb-4">
-                  <Wallet className="h-10 w-10 opacity-20" />
-                </div>
-                <p className="font-medium">No recent transactions</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-gray-50/50">
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
-                        No
-                      </th>
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
-                        Restaurant
-                      </th>
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
-                        Status
-                      </th>
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
-                        Type
-                      </th>
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
-                        Amount
-                      </th>
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
-                        Previous Balance
-                      </th>
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
-                        Date & Time
-                      </th>
-                      <th className="text-right py-4 px-6 text-xs font-medium text-gray-600 tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {transactions.map((transaction, index) => (
-                      <tr
-                        key={transaction.id}
-                        className="hover:bg-green-50/30 transition-colors"
-                      >
-                        <td className="py-5 px-6">
-                          <span className="text-xs font-bold text-gray-900">
-                            {(pagination.page - 1) * pageSize + index + 1}
-                          </span>
-                        </td>
-                        <td className="py-5 px-6">
-                          <span className="text-xs font-bold text-gray-900">
-                            {transaction.wallet?.restaurant?.name}
-                          </span>
-                        </td>
-                        <td className="py-5 px-6">
-                          {getStatusBadge(transaction.status)}
-                        </td>
-                        <td className="py-5 px-6">
-                          <div className="flex items-center gap-2">
-                            {getTransactionIcon(transaction.type)}
-                            <span className="text-xs font-bold text-gray-900">
-                              {transaction.type}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-5 px-6">
-                          <span
-                            className={`text-xs font-bold ${
-                              transaction.amount > 0
-                                ? "text-green-600"
-                                : "text-red-600"
-                            }`}
-                          >
-                            {transaction.amount > 0 ? "+" : ""}
-                            {transaction.amount.toLocaleString()} RWF
-                          </span>
-                        </td>
-                        <td className="py-5 px-6">
-                          <span className="text-xs font-bold text-gray-900">
-                            {transaction.previousBalance?.toLocaleString() ||
-                              "0"}{" "}
-                            RWF
-                          </span>
-                        </td>
-                        <td className="py-5 px-6">
-                          <div className="flex flex-col">
-                            <span className="text-xs text-gray-900 font-medium">
-                              {new Date(
-                                transaction.createdAt
-                              ).toLocaleDateString()}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {new Date(
-                                transaction.createdAt
-                              ).toLocaleTimeString()}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-5 px-6 text-right">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleTransactionClick(transaction)}
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-100 rounded-xl p-2 transition-all"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-                {/* Pagination */}
-                {pagination.totalPages > 1 && (
-                  <div className="flex justify-center items-center gap-4 py-6 border-t border-gray-50">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={pagination.page <= 1}
-                      onClick={() => fetchTransactions(pagination.page - 1)}
-                      className="rounded-xl px-4 border-gray-200"
-                    >
-                      Previous
-                    </Button>
-
-                    <div className="flex gap-1">
-                      {Array.from(
-                        { length: Math.min(5, pagination.totalPages) },
-                        (_, i) => {
-                          let pageNum;
-                          if (pagination.totalPages <= 5) pageNum = i + 1;
-                          else if (pagination.page <= 3) pageNum = i + 1;
-                          else if (pagination.page >= pagination.totalPages - 2)
-                            pageNum = pagination.totalPages - 4 + i;
-                          else pageNum = pagination.page - 2 + i;
-
-                          return (
-                            <Button
-                              key={pageNum}
-                              variant={
-                                pageNum === pagination.page
-                                  ? "default"
-                                  : "ghost"
-                              }
-                              size="sm"
-                              onClick={() => fetchTransactions(pageNum)}
-                              className={`w-10 h-10 p-0 rounded-xl ${
-                                pageNum === pagination.page
-                                  ? "bg-green-600 text-white"
-                                  : "text-gray-600 hover:bg-gray-100"
-                              }`}
-                            >
-                              {pageNum}
-                            </Button>
-                          );
-                        }
-                      )}
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={pagination.page >= pagination.totalPages}
-                      onClick={() => fetchTransactions(pagination.page + 1)}
-                      className="rounded-xl px-4 border-gray-200"
-                    >
-                      Next
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
+          <CardContent className="px-4">
+            <DataTable
+              columns={transactionColumns}
+              data={transactions as TransactionData[]}
+              customFilters={<TableFilters filters={transactionFilters} />}
+              showSearch={false}
+              showExport={true}
+              showColumnVisibility={true}
+              showPagination={true}
+              showRowSelection={false}
+              showAddButton={false}
+              pagination={pagination}
+              onPaginationChange={(page, limit) => {
+                setPagination(prev => ({ ...prev, page, limit }));
+                fetchTransactions(page, transactionSearchQuery);
+              }}
+            />
           </CardContent>
         </Card>
       </div>
@@ -1130,7 +812,7 @@ export default function DepositsManagementPage() {
                     Restaurant
                   </p>
                   <p className="text-xs font-bold text-gray-900">
-                    {transactionDetails.wallet?.restaurant?.name}
+                    {transactionDetails.wallet?.restaurant?.name} 
                   </p>
                 </div>
 

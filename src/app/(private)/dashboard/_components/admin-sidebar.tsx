@@ -355,9 +355,6 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
               {userDropdownOpen && (
                 <div className="absolute top-full left-0 right-0 mt-1  bg-green-800 border border-green-600 rounded-md shadow-lg z-50">
                   <div className="p-3 border-b border-green-600">
-                    <div className="text-xs text-green-200 font-medium truncate">
-                      {userData?.name || userData?.username || "User"}
-                    </div>
                     <div className="text-[10px] text-green-400 truncate mt-1">
                       {userData?.role || "Role"}
                     </div>

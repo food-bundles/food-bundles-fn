@@ -14,7 +14,8 @@ export async function middleware(req: NextRequest) {
     "/restaurant": "RESTAURANT",
     "/farmers": "FARMER",
     "/aggregator": "AGGREGATOR",
-    "/logistics": "LOGISTICS"
+    "/logistics": "LOGISTICS",
+    "/traders": "TRADER"
   };
 
   const protectedRoutes = Object.keys(roleRoutes);
@@ -142,6 +143,7 @@ export const config = {
     "/logistics/:path*",
     "/restaurant/:path*",
     "/farmers/:path*",
+    "/traders/:path*",
     "/guest/:path*",
     "/login",
     "/signup",
