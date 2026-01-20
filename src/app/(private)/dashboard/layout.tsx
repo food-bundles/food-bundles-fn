@@ -63,10 +63,8 @@ export default function AdminLayout({
                   />
                 </div>
 
-                <main className="grow min-h-0 bg-gray-100">
-                  <div className="container mx-auto max-w-full px-4 py-4 ">
-                    {children}
-                  </div>
+                <main className="flex-1 bg-gray-100 overflow-y-auto">
+                  <div className="min-h-full px-4 py-4">{children}</div>
                 </main>
               </div>
             </div>

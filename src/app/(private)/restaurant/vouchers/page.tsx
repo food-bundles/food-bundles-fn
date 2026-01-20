@@ -10,7 +10,7 @@ import { Calendar, Clock, CreditCard, RefreshCcw } from "lucide-react";
 
 export default function VouchersPage() {
   const [refreshKey, setRefreshKey] = useState(0);
-  const [mySubscriptions, setMySubscriptions] = useState<RestaurantSubscription[]>([]);
+  const [mySubscription, setMySubscription] = useState<RestaurantSubscription | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,12 +18,11 @@ export default function VouchersPage() {
       try {
         const response = await subscriptionService.getMySubscriptions();
         if (response && response.data) {
-          const subscriptions = Array.isArray(response.data) ? response.data : [];
-          setMySubscriptions(subscriptions);
+          setMySubscription(response.data);
         }
       } catch (error) {
         console.error('Failed to fetch subscriptions:', error);
-        setMySubscriptions([]);
+        setMySubscription(null);
       } finally {
         setLoading(false);
       }
@@ -35,9 +34,7 @@ export default function VouchersPage() {
     setRefreshKey(prev => prev + 1);
   };
 
-  const activeSubscription = Array.isArray(mySubscriptions) 
-    ? mySubscriptions.find(sub => sub.status === "ACTIVE")
-    : undefined;
+  const activeSubscription = mySubscription?.status === "ACTIVE" ? mySubscription : null;
   
   const formatDuration = (duration: number) => {
     if (duration >= 365) return `${Math.floor(duration / 365)} Year${Math.floor(duration / 365) > 1 ? 's' : ''}`;
@@ -56,16 +53,16 @@ export default function VouchersPage() {
     <div className="p-3 sm:p-4 lg:p-6 max-w-7xl mx-auto bg-gray-100 min-h-screen">
       <div className="mb-4 sm:mb-6 lg:mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
         <div className="flex-1">
-          <h1 className="text-lg sm:text-xl font-bold text-gray-900 mb-1 sm:mb-2">
+          <h1 className="text-xl sm:text-xl font-bold text-gray-900 mb-1 sm:mb-2">
             Voucher System
           </h1>
-          <p className="text-gray-700 text-xs sm:text-[14px]">
+          <p className="text-gray-700 text-sm">
             Manage vouchers, and credit payments
           </p>
         </div>
 
         {loading ? (
-          <div className="bg-white rounded-lg shadow-sm border p-3 w-full sm:min-w-[280px] sm:max-w-[320px]">
+          <div className="bg-white rounded-lg shadow-sm border p-3 w-full sm:min-w-70 sm:max-w-[320px]">
             <div className="animate-pulse">
               <div className="h-4 bg-gray-200 rounded mb-2"></div>
               <div className="h-3 bg-gray-200 rounded mb-1"></div>
@@ -128,7 +125,7 @@ export default function VouchersPage() {
                 <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-orange-500 shrink-0" />
                 <span className="text-gray-600 truncate">
                   <span className="font-semibold text-blue-600">
-                    {getDaysRemaining(activeSubscription.endDate)}
+                    {activeSubscription.daysRemaining || getDaysRemaining(activeSubscription.endDate)}
                   </span>{" "}
                   days left
                 </span>

@@ -102,6 +102,7 @@ export function InviteModal({ isOpen, onClose, onSubmit, isLoading }: InviteModa
                 <SelectItem value="ADMIN">Admin</SelectItem>
                 <SelectItem value="AGGREGATOR">Aggregator</SelectItem>
                 <SelectItem value="LOGISTICS">Logistics</SelectItem>
+                <SelectItem value="TRADER">Trader</SelectItem>
               </SelectContent>
             </Select>
             {errors.role && <p className="text-red-600 text-xs mt-1">{errors.role}</p>}

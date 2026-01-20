@@ -203,7 +203,7 @@ function ContactForm({
         placeholder="Your Message"
         value={formData.message}
         onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-        className="w-full min-h-[60px] px-3 py-2 text-sm bg-white border border-gray-300 rounded  resize-none"
+        className="w-full min-h-15 px-3 py-2 text-sm bg-white border border-gray-300 rounded  resize-none"
       />
       {status === 'success' && (
         <p className="text-green-600 text-sm font-medium">Message sent successfully!</p>

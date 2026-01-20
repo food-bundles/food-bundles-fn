@@ -228,7 +228,7 @@ export const createSubscriptionPlansColumns = (
     accessorKey: "description",
     header: "Description",
     cell: ({ row }) => (
-      <div className="max-w-[200px] truncate">
+      <div className="max-w-50 truncate">
         {row.getValue("description") || "No description"}
       </div>
     ),

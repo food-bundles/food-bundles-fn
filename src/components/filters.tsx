@@ -86,7 +86,7 @@ export function TableFilters({ filters, className, showColumnToggle = false, onC
 
       case "select":
         return (
-          <div key={filter.key} className="w-full sm:w-auto sm:min-w-[120px] md:min-w-[140px] lg:flex-1">
+          <div key={filter.key} className="w-full sm:w-auto sm:min-w-30 md:min-w-35 lg:flex-1">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -96,7 +96,7 @@ export function TableFilters({ filters, className, showColumnToggle = false, onC
                   <span className="truncate">
                     {filter.options?.find((option) => option.value === filter.value)?.label || filter.label}
                   </span>
-                  <ChevronDown className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <ChevronDown className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-full min-w-[200px]">
@@ -135,7 +135,7 @@ export function TableFilters({ filters, className, showColumnToggle = false, onC
                       </>
                     ) : filter.label}
                   </span>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
                     {filter.value && (
                       <Button
                         variant="ghost"
@@ -198,7 +198,7 @@ export function TableFilters({ filters, className, showColumnToggle = false, onC
                       <span>{filter.label}</span>
                     )}
                   </span>
-                  <div className="flex items-center gap-1 flex-shrink-0">
+                  <div className="flex items-center gap-1 shrink-0">
                     {(filter.value?.from || filter.value?.to) && (
                       <Button
                         variant="ghost"
@@ -229,14 +229,8 @@ export function TableFilters({ filters, className, showColumnToggle = false, onC
                       from: filter.value?.from,
                       to: filter.value?.to,
                     }}
-                    onSelect={(range) => {
-                      filter.onChange?.({
-                        from: range?.from,
-                        to: range?.to,
-                      });
-                    }}
-                    numberOfMonths={1}
-                    className="sm:block"
+                    onSelect={(range) => filter.onChange?.(range || {})}
+                    numberOfMonths={2}
                   />
                 </div>
               </PopoverContent>
@@ -250,13 +244,13 @@ export function TableFilters({ filters, className, showColumnToggle = false, onC
   };
 
   return (
-    <div className={cn("flex flex-col sm:flex-row md:flex-row lg:flex-row items-stretch sm:items-center gap-2 sm:gap-2 md:gap-3 lg:gap-4", className)}>
+    <div className={cn("flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4", className)}>
       {filters.map(renderFilter)}
       {showColumnToggle && (
         <Button
-          variant="outline"
           onClick={onColumnToggle}
-          className="h-9 px-2 sm:px-3 md:px-4 border-gray-300 hover:border-gray-400 whitespace-nowrap flex-shrink-0 text-xs sm:text-sm"
+          variant="outline"
+          className="w-full sm:w-auto h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm border-gray-300 hover:border-gray-400"
         >
           Columns
         </Button>
@@ -265,26 +259,24 @@ export function TableFilters({ filters, className, showColumnToggle = false, onC
   );
 }
 
-// Pre-configured filter sets for common use cases
 export const createCommonFilters = {
   search: (
     value: string,
     onChange: (value: string) => void,
-    placeholder = "Search..."
+    placeholder?: string
   ): FilterConfig => ({
     type: "search",
     key: "search",
     label: "Search",
-    placeholder,
+    placeholder: placeholder || "Search...",
     value,
     onChange,
-    width: "w-full max-w-sm",
   }),
 
   status: (
     value: string,
     onChange: (value: string) => void,
-    options: FilterOption[]
+    options: { label: string; value: string }[]
   ): FilterConfig => ({
     type: "select",
     key: "status",
@@ -292,46 +284,42 @@ export const createCommonFilters = {
     options,
     value,
     onChange,
-    width: "min-w-[120px]",
   }),
 
-  category: (
+  type: (
     value: string,
     onChange: (value: string) => void,
-    options: FilterOption[]
+    options: { label: string; value: string }[]
   ): FilterConfig => ({
     type: "select",
-    key: "category",
-    label: "Category",
+    key: "type",
+    label: "Type",
     options,
     value,
     onChange,
-    width: "min-w-[160px]",
   }),
 
   date: (
     value: Date | undefined,
-    onChange: (date: Date | undefined) => void,
-    label = "Date"
+    onChange: (value: Date | undefined) => void,
+    label?: string
   ): FilterConfig => ({
     type: "date",
     key: "date",
-    label,
+    label: label || "Date",
     value,
     onChange,
-    width: "min-w-[120px]",
   }),
 
   dateRange: (
     value: { from?: Date; to?: Date } | undefined,
-    onChange: (range: { from?: Date; to?: Date }) => void,
-    label = "Date Range"
+    onChange: (value: { from?: Date; to?: Date }) => void,
+    label?: string
   ): FilterConfig => ({
     type: "dateRange",
     key: "dateRange",
-    label,
+    label: label || "Date Range",
     value,
     onChange,
-    width: "min-w-[200px]",
   }),
 };
