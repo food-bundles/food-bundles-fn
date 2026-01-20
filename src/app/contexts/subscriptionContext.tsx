@@ -20,6 +20,7 @@ import {
   SubscriptionPlanResponse,
   SubscriptionHistoryResponse,
 } from "@/app/services/subscriptionService";
+import { paymentMethodService, PaymentMethod } from "@/app/services/paymentMethodService";
 import { useAuth } from "./auth-context";
 
 interface SubscriptionContextType {
@@ -27,6 +28,7 @@ interface SubscriptionContextType {
   mySubscriptions: RestaurantSubscription[];
   allSubscriptions: RestaurantSubscription[];
   subscriptionHistory: SubscriptionHistory[];
+  paymentMethods: PaymentMethod[];
   loading: boolean;
   error: string | null;
 
@@ -49,6 +51,9 @@ interface SubscriptionContextType {
   getAllSubscriptions: (params?: any) => Promise<SubscriptionsResponse>;
   checkExpiredSubscriptions: () => Promise<any>;
 
+  getActivePaymentMethods: () => Promise<void>;
+  getPaymentMethodById: (id: string) => PaymentMethod | undefined;
+
   refreshSubscriptionPlans: () => Promise<void>;
   refreshMySubscriptions: () => Promise<void>;
   refreshAllSubscriptions: () => Promise<void>;
@@ -65,6 +70,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
   const [mySubscriptions, setMySubscriptions] = useState<RestaurantSubscription[]>([]);
   const [allSubscriptions, setAllSubscriptions] = useState<RestaurantSubscription[]>([]);
   const [subscriptionHistory, setSubscriptionHistory] = useState<SubscriptionHistory[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -356,9 +362,28 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     }
   }, []);
 
+  const getActivePaymentMethods = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await paymentMethodService.getActivePaymentMethods();
+      if (response.data) {
+        setPaymentMethods(response.data);
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to fetch payment methods");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const getPaymentMethodById = useCallback((id: string): PaymentMethod | undefined => {
+    return paymentMethods.find(method => method.id === id);
+  }, [paymentMethods]);
+
   React.useEffect(() => {
     if (isAuthenticated) {
       refreshSubscriptionPlans();
+      getActivePaymentMethods();
       if (user?.role === "RESTAURANT") {
         refreshMySubscriptions();
       }
@@ -366,13 +391,14 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
         refreshAllSubscriptions();
       }
     }
-  }, [isAuthenticated, user?.role, refreshSubscriptionPlans, refreshMySubscriptions, refreshAllSubscriptions]);
+  }, [isAuthenticated, user?.role, refreshSubscriptionPlans, refreshMySubscriptions, refreshAllSubscriptions, getActivePaymentMethods]);
 
   const contextValue: SubscriptionContextType = {
     subscriptionPlans,
     mySubscriptions,
     allSubscriptions,
     subscriptionHistory,
+    paymentMethods,
     loading,
     error,
     createSubscriptionPlan,
@@ -391,6 +417,8 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     getSubscriptionHistory,
     getAllSubscriptions,
     checkExpiredSubscriptions,
+    getActivePaymentMethods,
+    getPaymentMethodById,
     refreshSubscriptionPlans,
     refreshMySubscriptions,
     refreshAllSubscriptions,
