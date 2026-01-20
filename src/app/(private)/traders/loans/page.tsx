@@ -48,7 +48,6 @@ export default function LoansPage() {
         showPagination={true}
         showRowSelection={false}
         showAddButton={false}
-        onRefresh={fetchLoans}
       />
     </div>
   );

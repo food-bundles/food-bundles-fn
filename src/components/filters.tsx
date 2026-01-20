@@ -86,7 +86,7 @@ export function TableFilters({ filters, className, showColumnToggle = false, onC
 
       case "select":
         return (
-          <div key={filter.key} className="w-full sm:w-auto sm:min-w-[120px] md:min-w-[140px] lg:flex-1">
+          <div key={filter.key} className="w-full sm:w-auto sm:min-w-30 md:min-w-35 lg:flex-1">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -96,7 +96,7 @@ export function TableFilters({ filters, className, showColumnToggle = false, onC
                   <span className="truncate">
                     {filter.options?.find((option) => option.value === filter.value)?.label || filter.label}
                   </span>
-                  <ChevronDown className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                  <ChevronDown className="ml-1 sm:ml-2 h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-full min-w-[200px]">
@@ -135,7 +135,7 @@ export function TableFilters({ filters, className, showColumnToggle = false, onC
                       </>
                     ) : filter.label}
                   </span>
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
                     {filter.value && (
                       <Button
                         variant="ghost"
@@ -198,7 +198,7 @@ export function TableFilters({ filters, className, showColumnToggle = false, onC
                       <span>{filter.label}</span>
                     )}
                   </span>
-                  <div className="flex items-center gap-1 flex-shrink-0">
+                  <div className="flex items-center gap-1 shrink-0">
                     {(filter.value?.from || filter.value?.to) && (
                       <Button
                         variant="ghost"

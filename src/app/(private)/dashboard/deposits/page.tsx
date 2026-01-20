@@ -57,6 +57,7 @@ import { TableFilters } from "@/components/filters";
 import { createWalletColumns, WalletData } from "./_components/wallet-columns";
 import { createTransactionColumns, TransactionData } from "./_components/transaction-columns";
 import { createCommonFilters } from "./_components/filter-helpers";
+import Image from "next/image";
 
 export default function DepositsManagementPage() {
   const { getMyWallet } = useWallet();
@@ -626,7 +627,7 @@ export default function DepositsManagementPage() {
       {/* Deposit Modal */}
       <Dialog open={showDepositModal} onOpenChange={setShowDepositModal}>
         <DialogContent className="sm:max-w-md bg-white border-none rounded-3xl shadow-2xl overflow-hidden p-0">
-          <div className="bg-gradient-to-r from-green-600 to-green-500 p-8 text-white relative">
+          <div className="bg-linear-to-r from-green-600 to-green-500 p-8 text-white relative">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
             <DialogHeader className="text-left relative z-10">
               <DialogTitle className="text-2xl font-black tracking-tight">
@@ -663,7 +664,7 @@ export default function DepositsManagementPage() {
                       />
                     </div>
                   </div>
-                  <div className="max-h-[300px] overflow-y-auto">
+                  <div className="max-h-75 overflow-y-auto">
                     {restaurants.map((res) => (
                       <SelectItem
                         key={res.id}
@@ -767,7 +768,7 @@ export default function DepositsManagementPage() {
         onOpenChange={setShowTransactionModal}
       >
         <DialogContent className="sm:max-w-lg bg-white border-none rounded-3xl shadow-2xl overflow-hidden p-0">
-          <div className="bg-gradient-to-r from-green-600 to-green-500 p-8 text-white relative">
+          <div className="bg-linear-to-r from-green-600 to-green-500 p-8 text-white relative">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
             <DialogHeader className="text-left relative z-10">
               <DialogTitle className="text-lg font-semibold">
@@ -916,7 +917,7 @@ export default function DepositsManagementPage() {
       {/* Order Details Modal */}
       <Dialog open={showOrderModal} onOpenChange={setShowOrderModal}>
         <DialogContent className="sm:max-w-2xl bg-white border-none rounded-3xl shadow-2xl overflow-hidden p-0">
-          <div className="bg-gradient-to-r from-green-600 to-green-500 p-8 text-white relative">
+          <div className="bg-linear-to-r from-green-600 to-green-500 p-8 text-white relative">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
             <DialogHeader className="text-left relative z-10">
               <DialogTitle className="text-lg font-semibold flex items-center gap-2">
@@ -936,7 +937,7 @@ export default function DepositsManagementPage() {
             ) : orderDetails ? (
               <>
                 {/* Customer Details */}
-                <Card className="border-none shadow-xl shadow-gray-100 bg-gradient-to-br from-white to-green-50/30">
+                <Card className="border-none shadow-xl shadow-gray-100 bg-linear-to-br from-white to-green-50/30">
                   <CardContent className="p-4">
                     <h3 className="text-sm font-semibold mb-3">
                       Customer Details
@@ -990,8 +991,10 @@ export default function DepositsManagementPage() {
                         >
                           <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-200 ">
                             {item.images[0] && (
-                              <img
+                              <Image
                                 src={item.images[0]}
+                                width={40}
+                                height={40}
                                 alt={item.productName}
                                 className="w-full h-full object-cover"
                               />
@@ -1060,7 +1063,7 @@ export default function DepositsManagementPage() {
                             </span>
                           </div>
                         )}
-                        <div className="flex justify-between text-lg font-black border-t border-gray-100 pt-2 text-xs">
+                        <div className="flex justify-between text-lg font-black border-t border-gray-100 pt-2">
                           <span className="text-gray-900 text-xs">Total</span>
                           <span className="text-gray-900">
                             {orderDetails.totalAmount.toLocaleString()}{" "}

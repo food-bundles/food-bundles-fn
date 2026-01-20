@@ -1,58 +1,90 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Ticket, Calendar, CreditCard, Building } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { DataTable } from "@/components/data-table";
+import { TableFilters } from "@/components/filters";
+import { createVoucherColumns } from "./_components/voucher-columns";
 import { traderService, type Voucher } from "@/app/services/traderService";
 import { Skeleton } from "@/components/ui/skeleton";
+import { createCommonFilters } from "./_components/filter-helpers";
 
 export default function VouchersPage() {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
-  useEffect(() => {
-    const fetchVouchers = async () => {
-      try {
-        const response = await traderService.getVouchers();
-        setVouchers(response.data.vouchers);
-      } catch (error) {
-        console.error("Failed to fetch vouchers:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchVouchers();
-  }, []);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "ACTIVE":
-        return "bg-green-100 text-green-800";
-      case "EXPIRED":
-        return "bg-red-100 text-red-800";
-      case "USED":
-        return "bg-gray-100 text-gray-800";
-      default:
-        return "bg-yellow-100 text-yellow-800";
+  const fetchVouchers = async (page = 1, limit = 10) => {
+    try {
+      const response = await traderService.getVouchers({ page, limit });
+      setVouchers(response.data.vouchers);
+      // Note: Add pagination from response if available
+    } catch (error) {
+      console.error("Failed to fetch vouchers:", error);
+    } finally {
+      setLoading(false);
     }
   };
+
+  const handleViewDetails = (voucher: Voucher) => {
+    console.log("View voucher details:", voucher);
+    // Implement voucher details modal or navigation
+  };
+
+  const voucherFilters = useMemo(() => {
+    return [
+      createCommonFilters.search(searchQuery, setSearchQuery, "Search vouchers..."),
+      createCommonFilters.status(statusFilter, setStatusFilter, [
+        { label: "All Status", value: "all" },
+        { label: "Active", value: "ACTIVE" },
+        { label: "Used", value: "USED" },
+        { label: "Expired", value: "EXPIRED" },
+        { label: "Matured", value: "MATURED" },
+      ]),
+    ];
+  }, [searchQuery, statusFilter]);
+
+  const voucherColumns = useMemo(() => {
+    return createVoucherColumns({
+      onViewDetails: handleViewDetails,
+      currentPage: pagination.page,
+      pageSize: pagination.limit,
+    });
+  }, [pagination.page, pagination.limit]);
+
+  const filteredVouchers = useMemo(() => {
+    let filtered = vouchers;
+    
+    if (searchQuery) {
+      filtered = filtered.filter(voucher => 
+        voucher.voucherCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        voucher.restaurant.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(voucher => voucher.status === statusFilter);
+    }
+    
+    return filtered;
+  }, [vouchers, searchQuery, statusFilter]);
+
+  useEffect(() => {
+    fetchVouchers();
+  }, []);
 
   if (loading) {
     return (
       <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i}>
-              <CardHeader>
-                <Skeleton className="h-6 w-32" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-24 w-full" />
-              </CardContent>
-            </Card>
-          ))}
+        <div className="space-y-4">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-64 w-full" />
         </div>
       </div>
     );
@@ -65,87 +97,18 @@ export default function VouchersPage() {
         <p className="text-gray-600">Manage vouchers you've approved for restaurants</p>
       </div>
 
-      {vouchers.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-12">
-            <Ticket className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Vouchers Yet</h3>
-            <p className="text-gray-500">Vouchers you approve will appear here</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {vouchers.map((voucher) => (
-            <Card key={voucher.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg font-semibold text-blue-600">
-                    {voucher.voucherCode}
-                  </CardTitle>
-                  <Badge className={getStatusColor(voucher.status)}>
-                    {voucher.status}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-2 text-sm">
-                  <Building className="h-4 w-4 text-gray-500" />
-                  <span className="font-medium">{voucher.restaurant.name}</span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-500">Credit Limit</span>
-                    <p className="font-semibold text-green-600">
-                      {voucher.creditLimit.toLocaleString()} {voucher.currency}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Remaining</span>
-                    <p className="font-semibold text-blue-600">
-                      {voucher.remainingCredit.toLocaleString()} {voucher.currency}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <CreditCard className="h-4 w-4 text-gray-500" />
-                    <span>Discount: {voucher.discountPercentage}%</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="h-4 w-4 text-gray-500" />
-                    <span>Expires: {new Date(voucher.expiryDate).toLocaleDateString()}</span>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t">
-                  <div className="flex justify-between text-xs text-gray-500">
-                    <span>Issued: {new Date(voucher.issuedDate).toLocaleDateString()}</span>
-                    <span>Repayment: {voucher.repaymentDays} days</span>
-                  </div>
-                </div>
-
-                {/* Progress bar for credit usage */}
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span>Credit Used</span>
-                    <span>{((voucher.usedCredit / voucher.totalCredit) * 100).toFixed(1)}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 h-2 rounded-full transition-all"
-                      style={{
-                        width: `${(voucher.usedCredit / voucher.totalCredit) * 100}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+      <DataTable
+        columns={voucherColumns}
+        data={filteredVouchers}
+        customFilters={<TableFilters filters={voucherFilters} />}
+        showSearch={false}
+        showExport={true}
+        showColumnVisibility={true}
+        showPagination={true}
+        showRowSelection={false}
+        showAddButton={false}
+        onRefresh={() => fetchVouchers(pagination.page, pagination.limit)}
+      />
     </div>
   );
 }

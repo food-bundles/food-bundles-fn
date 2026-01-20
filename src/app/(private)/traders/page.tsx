@@ -76,18 +76,98 @@ export default function TraderDashboardPage() {
   if (loading) {
     return (
       <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i}>
-              <CardHeader>
-                <Skeleton className="h-4 w-32" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-24" />
-              </CardContent>
-            </Card>
-          ))}
+        <div className="mb-6">
+          <Skeleton className="h-6 w-48 mb-2" />
+          <Skeleton className="h-4 w-64" />
         </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+          {[...Array(6)].map((_, i) => {
+            const cardColors = [
+              "bg-green-50", "bg-blue-50", "bg-purple-50", 
+              "bg-orange-50", "bg-emerald-50", "bg-yellow-50"
+            ];
+            return (
+              <div key={i} className={`p-4 rounded-lg border ${cardColors[i]} transition-all duration-200`}>
+                <div className="flex items-center justify-between mb-2">
+                  <Skeleton className="h-5 w-5 rounded" />
+                  <div className="flex items-center gap-1">
+                    <Skeleton className="h-3 w-3 rounded" />
+                    <Skeleton className="h-3 w-8" />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Skeleton className="h-3 w-24" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <Skeleton className="h-5 w-32" />
+            </CardHeader>
+            <CardContent>
+              <div className="bg-linear-to-r from-yellow-500 to-yellow-600 rounded-lg p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Skeleton className="h-4 w-24 mb-2 bg-yellow-400/30" />
+                    <Skeleton className="h-8 w-32 bg-yellow-400/30" />
+                  </div>
+                  <div className="text-right">
+                    <Skeleton className="h-4 w-16 mb-2 bg-yellow-400/30" />
+                    <Skeleton className="h-6 w-20 bg-yellow-400/30" />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-5 w-24" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-4 rounded" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-32" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <div>
+                      <Skeleton className="h-4 w-32 mb-1" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <Skeleton className="h-4 w-20 mb-1" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -140,8 +220,8 @@ export default function TraderDashboardPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Trader Dashboard</h1>
-        <p className="text-gray-600">Overview of your trading activities and performance</p>
+        <h1 className="text-xl font-bold text-gray-900">Trader Dashboard</h1>
+        <p className="text-gray-600 text-sm">Overview of your trading activities and performance</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
@@ -204,15 +284,9 @@ export default function TraderDashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           {/* Wallet Balance Card */}
           <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Wallet className="h-5 w-5 text-yellow-600" />
-                Wallet Balance
-              </CardTitle>
-            </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-lg p-6 text-white">
+                <div className="bg-linear-to-r from-yellow-500 to-yellow-600 rounded-lg p-6 text-white">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-yellow-100 text-sm">Available Balance</p>

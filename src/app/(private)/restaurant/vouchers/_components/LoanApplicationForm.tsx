@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -34,12 +33,9 @@ export default function LoanApplicationForm({
     const fetchSubscriptionData = async () => {
       try {
         const response = await subscriptionService.getMySubscriptions();
-        if (response?.data && response.data.length > 0) {
-          const activeSubscription = response.data.find(
-            (sub: any) => sub.status === "ACTIVE"
-          );
-          if (activeSubscription?.plan?.voucherPaymentDays) {
-            setMaxVoucherDays(activeSubscription.plan.voucherPaymentDays);
+        if (response?.data && response.data.status === "ACTIVE") {
+          if (response.data.plan?.voucherPaymentDays) {
+            setMaxVoucherDays(response.data.plan.voucherPaymentDays);
           }
         }
       } catch (error) {
@@ -95,7 +91,7 @@ export default function LoanApplicationForm({
         Apply for Voucher
       </h2>
       <div className="flex justify-center">
-        <div className="w-[300px] h-[400px] flex flex-col p-6 border rounded shadow-none bg-white">
+        <div className="w-75 h-100 flex flex-col p-6 border rounded shadow-none bg-white">
           <CardContent className="p-0 flex-1 flex flex-col">
             <div className="space-y-3 flex-1">
               <div>

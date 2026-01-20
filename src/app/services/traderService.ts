@@ -83,6 +83,9 @@ export interface TraderOrder {
   paymentStatus: string;
   voucherCode?: string;
   voucherId?: string;
+  billingName: string;
+  billingEmail: string;
+  billingPhone: string;
   createdAt: string;
   updatedAt: string;
   restaurant: {
@@ -94,7 +97,16 @@ export interface TraderOrder {
     voucherCode: string;
     discountPercentage: number;
   };
-  orderItems: any[];
+  orderItems: {
+    id: string;
+    productName: string;
+    quantity: number;
+    unitPrice: number;
+    subtotal: number;
+    unit: string;
+    images: string[];
+    category: string;
+  }[];
 }
 
 export interface CommissionDetails {
@@ -220,7 +232,10 @@ export const traderService = {
   }): Promise<{ success: boolean; data: TraderOrder[] }> => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.get("/traders/orders", { params });
-    return response.data;
+    return {
+      success: response.data.success,
+      data: response.data.data || response.data
+    };
   },
 
   // Transaction Management

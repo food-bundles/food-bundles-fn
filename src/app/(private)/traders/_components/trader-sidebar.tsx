@@ -3,7 +3,6 @@
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
-  Wallet,
   CreditCard,
   Ticket,
   ShoppingCart,
@@ -22,7 +21,7 @@ import { OptimizedImage } from "@/components/OptimizedImage";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/traders" },
-  { icon: Wallet, label: "Wallet", href: "/traders/wallet" },
+  // { icon: Wallet, label: "Wallet", href: "/traders/wallet" },
   { icon: CreditCard, label: "Loan Applications", href: "/traders/loans" },
   { icon: Ticket, label: "Vouchers", href: "/traders/vouchers" },
   { icon: ShoppingCart, label: "Orders", href: "/traders/orders" },
@@ -82,8 +81,6 @@ export function TraderSidebar({ isOpen, onClose }: TraderSidebarProps) {
 
   return (
     <div className="relative w-60 min-w-60 h-screen overflow-hidden bg-green-800">
-      {/* Animated Squares Background */}
-      <div className="absolute inset-0 animated-squares z-0" />
 
       <div
         className={`
@@ -126,7 +123,7 @@ export function TraderSidebar({ isOpen, onClose }: TraderSidebarProps) {
                     href={item.href}
                     onClick={() => onClose()}
                     className={cn(
-                      "flex items-center px-2 md:px-3 py-2 text-xs transition-colors whitespace-nowrap rounded-md",
+                      "flex items-center px-2 md:px-3 py-3 text-sm transition-colors whitespace-nowrap rounded-md",
                       isActive
                         ? "bg-green-700 hover:bg-green-700 text-green-200"
                         : "text-green-200 hover:bg-green-700 hover:text-white"

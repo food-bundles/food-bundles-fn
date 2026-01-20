@@ -213,7 +213,7 @@ export function getAdminSubmissionColumns(
       accessorKey: "location",
       header: "Location",
       cell: ({ row }) => (
-        <div className="max-w-[150px]">
+        <div className="max-w-37.5">
           <div className="font-medium text-sm">{row.original.province}</div>
           <div className="text-xs text-gray-500">{row.original.district}</div>
           <div className="text-xs text-gray-400 truncate">
