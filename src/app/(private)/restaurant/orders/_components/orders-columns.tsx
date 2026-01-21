@@ -7,7 +7,13 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, Copy, Check, RefreshCw, Download } from "lucide-react";
+import { Eye, Copy, Check, RefreshCw, Download, MoreHorizontal, RotateCcw } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export type OrderStatus =
   | "PENDING"
@@ -519,37 +525,43 @@ export const ordersColumns = (
     header: "Actions",
     cell: ({ row }) => {
       const order = row.original;
+      const ebmReference = order.originalData?.ebmReference;
+
+      const handleDownload = () => {
+        if (ebmReference) {
+          window.open(ebmReference, '_blank');
+        }
+      };
 
       return (
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onView(order)}
-            className="h-8 w-8 p-0 hover:bg-blue-100"
-            title="View Order"
-          >
-            <Eye className="h-4 w-4 text-blue-600" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onDownload(order)}
-            className="h-8 w-8 p-0 hover:bg-green-100"
-            title="Download Receipt"
-          >
-            <Download className="h-4 w-4 text-green-600" />
-          </Button>
-          {order.originalData?.paymentMethod !== "VOUCHER" && (
-            <button
-              className="text-[12px] text-green-600 hover:text-green-700 cursor-pointer px-2 py-1 rounded hover:bg-green-50"
-              onClick={() => onReorder(order)}
-              title="Reorder"
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 hover:bg-gray-100"
             >
-              Reorder
-            </button>
-          )}
-        </div>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onView(order)} >
+              <Eye className="h-4 w-4 mr-2" />
+              View Order
+            </DropdownMenuItem>
+            
+              <DropdownMenuItem onClick={() => onReorder(order)}>
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Reorder
+              </DropdownMenuItem>
+            {ebmReference && (
+              <DropdownMenuItem onClick={handleDownload}>
+                <Download className="h-4 w-4 mr-2" />
+                Download Invoice
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       );
     },
     enableSorting: false,
