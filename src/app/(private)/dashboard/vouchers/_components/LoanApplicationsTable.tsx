@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CheckCircle, XCircle, Trash2, MoreHorizontal, Search } from "lucide-react";
+import { CheckCircle, XCircle, Trash2, MoreHorizontal, Search, Check } from "lucide-react";
 import { DataTable } from "@/components/data-table";
 import { useVouchers } from "@/app/contexts/VoucherContext";
 import { ILoanApplication, LoanStatus } from "@/lib/types";
@@ -36,6 +36,7 @@ export default function LoanApplicationsTable() {
     allLoanApplications,
     getAllLoanApplications,
     approveLoan,
+    acceptLoan,
     rejectLoan,
     disburseLoan,
     deleteLoanApplication,
@@ -88,6 +89,17 @@ export default function LoanApplicationsTable() {
     }
   };
 
+  const handleAccept = async (id: string) => {
+    try {
+      await acceptLoan(id);
+      toast.success("Loan application accepted successfully!");
+      await getAllLoanApplications();
+    } catch (error) {
+      toast.error("Failed to accept loan application");
+      console.error("Failed to accept loan:", error);
+    }
+  };
+
   const handleReject = async (reason: string) => {
     if (!selectedApp) return;
     try {
@@ -133,6 +145,8 @@ export default function LoanApplicationsTable() {
         return <div className="text-yellow-500">Pending</div>;
       case LoanStatus.APPROVED:
         return <div className="text-green-500">Approved</div>;
+      case LoanStatus.ACCEPTED:
+        return <div className="text-teal-500">Accepted</div>;
       case LoanStatus.DISBURSED:
         return <div className="text-blue-500">Disbursed</div>;
       case LoanStatus.REJECTED:
@@ -256,6 +270,16 @@ export default function LoanApplicationsTable() {
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuItem
                   disabled={app.status !== LoanStatus.PENDING}
+                  onClick={() => handleAccept(app.id)}
+                >
+                  <Check className="mr-2 h-4 w-4" />
+                  Accept
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={
+                    app.status !== LoanStatus.PENDING &&
+                    app.status !== LoanStatus.ACCEPTED
+                  }
                   onClick={() => {
                     setSelectedApp(app);
                     setIsApproveModalOpen(true);
@@ -345,7 +369,7 @@ export default function LoanApplicationsTable() {
       />
 
       <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-        <DialogContent className="sm:max-w-[425px] bg-white">
+        <DialogContent className="sm:max-w-106.25 bg-white">
           <DialogHeader>
             <DialogTitle className="text-gray-900">
               Delete Loan Application

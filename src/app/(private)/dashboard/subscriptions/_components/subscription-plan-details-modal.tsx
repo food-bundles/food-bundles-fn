@@ -181,7 +181,7 @@ export function SubscriptionPlanDetailsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] bg-white text-gray-900 border-gray-200 flex flex-col p-0">
+      <DialogContent className="sm:max-w-125 max-h-[90vh] bg-white text-gray-900 border-gray-200 flex flex-col p-0">
         <DialogHeader className="px-6 pt-6 pb-2">
           <DialogTitle className="text-gray-900">
             Subscription Plan Details

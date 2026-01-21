@@ -162,6 +162,7 @@ export enum VoucherType {
 export enum LoanStatus {
   PENDING = "PENDING",
   APPROVED = "APPROVED",
+  ACCEPTED = "ACCEPTED",
   DISBURSED = "DISBURSED",
   REJECTED = "REJECTED",
   SETTLED = "SETTLED",

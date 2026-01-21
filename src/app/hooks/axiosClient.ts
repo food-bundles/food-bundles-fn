@@ -34,7 +34,7 @@ const removeToken = (): void => {
 
 const createAxiosClient = (): AxiosInstance => {
   const axiosClient = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || "https://server.food.rw",
+    baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
     timeout: 50000,
     headers: {
       "Content-Type": "application/json",

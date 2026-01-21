@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -23,10 +25,14 @@ export default function VouchersPage() {
   const fetchVouchers = async (page = 1, limit = 10) => {
     try {
       const response = await traderService.getVouchers({ page, limit });
-      setVouchers(response.data.vouchers);
-      // Note: Add pagination from response if available
+      const vouchersData = Array.isArray(response.data) ? response.data : response.data?.vouchers || [];
+      setVouchers(vouchersData);
+      if ((response as any).pagination) {
+        setPagination((response as any).pagination);
+      }
     } catch (error) {
       console.error("Failed to fetch vouchers:", error);
+      setVouchers([]);
     } finally {
       setLoading(false);
     }
@@ -59,17 +65,21 @@ export default function VouchersPage() {
   }, [pagination.page, pagination.limit]);
 
   const filteredVouchers = useMemo(() => {
+    if (!Array.isArray(vouchers)) {
+      return [];
+    }
+    
     let filtered = vouchers;
     
     if (searchQuery) {
       filtered = filtered.filter(voucher => 
-        voucher.voucherCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        voucher.restaurant.name.toLowerCase().includes(searchQuery.toLowerCase())
+        voucher?.voucherCode?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        voucher?.restaurant?.name?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
     
     if (statusFilter !== "all") {
-      filtered = filtered.filter(voucher => voucher.status === statusFilter);
+      filtered = filtered.filter(voucher => voucher?.status === statusFilter);
     }
     
     return filtered;
@@ -93,8 +103,8 @@ export default function VouchersPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Voucher Management</h1>
-        <p className="text-gray-600">Manage vouchers you've approved for restaurants</p>
+        <h1 className="text-xl font-bold text-gray-900">Voucher Management</h1>
+        <p className="text-gray-600 text-sm">Manage vouchers you've approved for restaurants</p>
       </div>
 
       <DataTable
@@ -107,7 +117,6 @@ export default function VouchersPage() {
         showPagination={true}
         showRowSelection={false}
         showAddButton={false}
-        onRefresh={() => fetchVouchers(pagination.page, pagination.limit)}
       />
     </div>
   );
