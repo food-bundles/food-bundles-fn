@@ -23,6 +23,7 @@ interface AdminHeaderProps {
 export function AdminHeader({ onMenuClick, sidebarOpen }: AdminHeaderProps) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [isMounted, setIsMounted] = useState(false);
   const pathname = usePathname();
 
   const getPageTitle = () => {
@@ -53,6 +54,10 @@ export function AdminHeader({ onMenuClick, sidebarOpen }: AdminHeaderProps) {
     const breadcrumbs = pathSegments.slice(1).map(segment => pathMap[segment] || segment);
     return breadcrumbs.join(' > ');
   };
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     const fetchUnreadCount = async () => {
@@ -106,15 +111,17 @@ export function AdminHeader({ onMenuClick, sidebarOpen }: AdminHeaderProps) {
           </button>
 
           <div className="flex items-center space-x-2">
-            <Select defaultValue="en">
-              <SelectTrigger className="h-5 w-20 text-xs bg-green-700 text-white border border-green-600 hover:bg-green-600 focus:ring-2 focus:ring-green-600 [&_svg]:text-white">
-                <SelectValue placeholder="ENG" />
-              </SelectTrigger>
+            {isMounted && (
+              <Select defaultValue="en" key="language-select">
+                <SelectTrigger className="h-5 w-20 text-xs bg-green-700 text-white border border-green-600 hover:bg-green-600 focus:ring-2 focus:ring-green-600 [&_svg]:text-white">
+                  <SelectValue placeholder="ENG" />
+                </SelectTrigger>
 
-              <SelectContent className="flex">
-                <SelectItem value="en">ENG</SelectItem>
-              </SelectContent>
-            </Select>
+                <SelectContent className="flex">
+                  <SelectItem value="en">ENG</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </div>
       </div>

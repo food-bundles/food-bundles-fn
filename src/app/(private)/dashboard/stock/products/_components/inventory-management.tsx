@@ -18,7 +18,7 @@ import { productService } from "@/app/services/productService";
 
 interface InventoryManagementProps {
   products: Product[];
-  onRefresh: () => void;
+  onRefresh: () => Promise<void>;
   pagination?: {
     page: number;
     limit: number;
@@ -26,6 +26,7 @@ interface InventoryManagementProps {
     totalPages: number;
   };
   onPaginationChange?: (page: number, limit: number) => void;
+  onFiltersChange?: (newFilters: { search: string; category: string }) => void;
   isLoading?: boolean;
 }
 
@@ -49,8 +50,24 @@ export function InventoryManagement({
   onRefresh,
   pagination,
   onPaginationChange,
+  onFiltersChange,
   isLoading = false,
 }: InventoryManagementProps) {
+  // Filter handlers
+  const handleSearchChange = (value: string) => {
+    setSearchValue(value);
+    if (onFiltersChange) {
+      onFiltersChange({ search: value, category: categoryValue });
+    }
+  };
+
+  const handleCategoryChange = (value: string) => {
+    setCategoryValue(value);
+    if (onFiltersChange) {
+      onFiltersChange({ search: searchValue, category: value });
+    }
+  };
+
   // Filter states
   const [searchValue, setSearchValue] = useState("");
   const [statusValue, setStatusValue] = useState("all");
@@ -203,13 +220,13 @@ export function InventoryManagement({
   const filters = [
     createCommonFilters.search(
       searchValue,
-      setSearchValue,
+      handleSearchChange,
       "Search products, SKU, category..."
     ),
     createCommonFilters.status(statusValue, setStatusValue, statusOptions),
     createCommonFilters.category(
       categoryValue,
-      setCategoryValue,
+      handleCategoryChange,
       categoryOptions
     ),
     createCommonFilters.dateRange(dateRange, setDateRange, "Expiry Date"),

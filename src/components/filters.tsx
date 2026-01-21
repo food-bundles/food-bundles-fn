@@ -322,4 +322,17 @@ export const createCommonFilters = {
     value,
     onChange,
   }),
+
+  category: (
+    value: string,
+    onChange: (value: string) => void,
+    options: { label: string; value: string }[]
+  ): FilterConfig => ({
+    type: "select",
+    key: "category",
+    label: "Category",
+    options,
+    value,
+    onChange,
+  }),
 };
