@@ -31,7 +31,7 @@ const farmers = [
     images: ["/farmers/farm3.jpeg", "/farmers/farm4.png"],
   },
   {
-    name: "Ntasho Farm",
+    name: "Nasho Farm",
     product: "Vegetables",
     images: ["/farmers/farm1.jpg", "/farmers/farm2.jpg"],
   },
