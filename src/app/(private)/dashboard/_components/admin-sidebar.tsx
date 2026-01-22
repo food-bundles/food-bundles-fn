@@ -123,6 +123,11 @@ const menuItems = [
     label: "Message",
     href: "/dashboard/contact-submissions",
   },
+  {
+    icon: Ticket,
+    label: "Promo Codes",
+    href: "/dashboard/promo-codes",
+  },
 ];
 
 interface AdminSidebarProps {
@@ -219,20 +224,20 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         {/* Logo */}
         <div className="p-3 md:p-4 flex items-center justify-between shrink-0 relative z-10 bg-green-900 backdrop-blur-sm">
           <Link href="/">
-          <div className="flex items-center gap-2">
-            <OptimizedImage
-              src="/imgs/Food_bundle_logo.png"
-              alt="Logo"
-              width={40}
-              height={40}
-              className="w-7 h-7 md:w-8 md:h-8 rounded-full object-cover"
-            />
-            <h1 className="text-sm font-bold text-green-100">
-              Food Bundles Ltd
-            </h1>
-          </div>
+            <div className="flex items-center gap-2">
+              <OptimizedImage
+                src="/imgs/Food_bundle_logo.png"
+                alt="Logo"
+                width={40}
+                height={40}
+                className="w-7 h-7 md:w-8 md:h-8 rounded-full object-cover"
+              />
+              <h1 className="text-sm font-bold text-green-100">
+                Food Bundles Ltd
+              </h1>
+            </div>
           </Link>
-          <NotificationsDrawer isOpen={false} onClose={() => {}} />
+          <NotificationsDrawer isOpen={false} onClose={() => { }} />
           <NotificationsDrawer
             isOpen={false}
             onClose={() => { }}

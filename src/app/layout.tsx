@@ -5,6 +5,7 @@ import { CombinedProvider } from "./contexts/combined-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { ToastContainer } from "react-toastify";
 import { ImageKitProvider } from "@/components/ImageKitProvider";
+import Chatbot from "@/components/Chatbot";
 
 const poppins = Poppins({
   weight: ["400", "500", "600", "700"],
@@ -23,7 +24,10 @@ export default function RootLayout({
     <html lang="en" className={`${poppins.variable}`}>
       <body suppressHydrationWarning>
         <ImageKitProvider>
-          <CombinedProvider>{children}</CombinedProvider>
+          <CombinedProvider>
+            {children}
+            <Chatbot />
+          </CombinedProvider>
         </ImageKitProvider>
         <ToastContainer />
         <Toaster />

@@ -145,7 +145,7 @@ export default async function HomePage() {
         <Footer />
       </div>
       {/* <SantaClaus /> */}
-      <div className="fixed bottom-4 right-4 z-50">
+      {/* <div className="fixed bottom-4 right-4 z-50">
         <Image
           src="https://res.cloudinary.com/dwv5pqkgd/image/upload/v1765878468/bg-removed_o0ogcx.png" 
           alt="Santa Claus" 
@@ -153,7 +153,7 @@ export default async function HomePage() {
           height={20}
           className="w-20 h-20 object-contain animate-bounce"
         />
-      </div>
+      </div> */}
       {/* <ChristmasAnimation /> */}
       
     </div>
