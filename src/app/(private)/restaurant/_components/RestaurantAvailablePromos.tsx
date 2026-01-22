@@ -110,7 +110,7 @@ export default function RestaurantAvailablePromos({ restaurantId, onApply }: Res
                                             onClick={() => onApply(promo.code)}
                                         >
                                             <CheckCircle2 className="h-3 w-3" />
-                                            Valid
+                                            Apply
                                         </Button>
                                     )}
                                 </div>

@@ -79,7 +79,6 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
             <div className="flex items-center gap-2 md:gap-4">
               <h1 className="text-sm md:text-md font-semibold text-white">
                 Restaurant Dashboard 
-                Restaurant Dashboard
               </h1>
             </div>
           </div>

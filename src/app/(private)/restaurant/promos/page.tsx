@@ -5,7 +5,7 @@ import { Ticket, Gift } from "lucide-react";
 
 export default function PromotionsPage() {
     return (
-        <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8">
+        <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8" style={{ fontFamily: 'inherit' }}>
             <div className="flex flex-col sm:flex-row gap-4 justify-between items-start">
                 <div className="space-y-1">
                     <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">

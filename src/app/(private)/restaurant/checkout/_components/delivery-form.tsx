@@ -625,12 +625,7 @@ export function Checkout() {
             </div>
             <div className="flex justify-between text-gray-900">
               <span>Subtotal</span>
-              <div className="flex items-center gap-2">
-                {appliedPromo && (
-                  <span className="line-through text-gray-400">Rwf {appliedPromo.originalAmount.toLocaleString()}</span>
-                )}
-                <span>Rwf {summaryData.subtotal.toLocaleString()}</span>
-              </div>
+              <span>Rwf {summaryData.subtotal.toLocaleString()}</span>
             </div>
             <div className="flex justify-between text-gray-900">
               <span>Delivery fee</span>
