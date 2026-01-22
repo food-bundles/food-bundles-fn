@@ -13,7 +13,14 @@ import {
   Loader2,
   ExternalLink,
   Info,
+  Ticket,
+  Gift,
+  Tag,
+  CheckCircle2,
 } from "lucide-react";
+import { promoService, IPromoCode } from "@/app/services/promoService";
+import { toast } from "sonner";
+import RestaurantAvailablePromos from "../../_components/RestaurantAvailablePromos";
 import {
   Select,
   SelectContent,
@@ -35,6 +42,7 @@ import dynamic from "next/dynamic";
 import "leaflet/dist/leaflet.css";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import { OTPInput } from "@/components/ui/otp-input";
+import { Button } from "@/components/ui/button";
 
 const MapComponent = dynamic(() => import("./MapComponent"), {
   ssr: false,
@@ -120,6 +128,44 @@ export function Checkout() {
   const [otherServices, setOtherServices] = useState(false);
   const [method, setMethod] = useState<PaymentMethod>("momo");
 
+  // Promo Code State
+  const [promoCode, setPromoCode] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<any | null>(null);
+  const [isValidatingPromo, setIsValidatingPromo] = useState(false);
+  const [promoError, setPromoError] = useState("");
+
+  const handleApplyPromo = async (codeToApply?: string) => {
+    const code = codeToApply || promoCode;
+    if (!code.trim() || !cart?.id) return;
+
+    setIsValidatingPromo(true);
+    setPromoError("");
+    try {
+      const response = await promoService.calculateCart(cart.id, code);
+
+      if (response.success) {
+        setAppliedPromo(response.data);
+        setPromoCode(code);
+        toast.success(`Promo code applied! Saved ${response.data.savings.toLocaleString()} RWF`);
+      } else {
+        setPromoError(response.message || "Invalid promo code");
+        toast.error(response.message || "Invalid promo code");
+      }
+    } catch (error: any) {
+      const msg = error.response?.data?.message || "Failed to validate promo code";
+      setPromoError(msg);
+      toast.error(msg);
+    } finally {
+      setIsValidatingPromo(false);
+    }
+  };
+
+  const removePromo = () => {
+    setAppliedPromo(null);
+    setPromoCode("");
+    setPromoError("");
+  };
+
   // Fetch payment methods on component mount
   useEffect(() => {
     const fetchPaymentMethods = async () => {
@@ -160,7 +206,7 @@ export function Checkout() {
         }
       };
       fetchWallet();
-      
+
       const fullAddress = getUserFullAddress(user);
 
       setFormData((prev) => ({
@@ -211,7 +257,7 @@ export function Checkout() {
   useEffect(() => {
     if (paymentMethods.length > 0) {
       let targetPaymentMethod;
-      
+
       switch (method) {
         case "prepaid":
           targetPaymentMethod = paymentMethods.find((pm: PaymentMethodType) => pm.name === "CASH");
@@ -228,7 +274,7 @@ export function Checkout() {
         default:
           targetPaymentMethod = paymentMethods[0];
       }
-      
+
       if (targetPaymentMethod) {
         setSelectedPaymentMethodId(targetPaymentMethod.id);
       }
@@ -257,8 +303,8 @@ export function Checkout() {
 
   useEffect(() => {
     if (method === "voucher" && myVouchers && myVouchers.length > 0) {
-      const validVouchers = myVouchers.filter((voucher: any) => 
-        voucher.status === "ACTIVE" && 
+      const validVouchers = myVouchers.filter((voucher: any) =>
+        voucher.status === "ACTIVE" &&
         voucher.remainingCredit > 0 &&
         (!voucher.expiryDate || new Date(voucher.expiryDate) > new Date())
       );
@@ -272,23 +318,33 @@ export function Checkout() {
   const hasActiveSubscription = cartWithRestaurant?.restaurant?.subscriptions?.some(
     (sub: any) => sub.status === 'ACTIVE' && sub.plan
   );
-  const subscriptionPlan = hasActiveSubscription 
-    ? cartWithRestaurant?.restaurant?.subscriptions?.find((sub: any) => sub.status === 'ACTIVE')?.plan 
+  const subscriptionPlan = hasActiveSubscription
+    ? cartWithRestaurant?.restaurant?.subscriptions?.find((sub: any) => sub.status === 'ACTIVE')?.plan
     : null;
-  
+
   const hasFreeDelivery = subscriptionPlan?.freeDelivery || false;
   const hasOtherServices = subscriptionPlan?.otherServices || false;
 
   // Calculate fees
   const deliveryFee = 0; // Currently free for all users
   const packagingFee = hasOtherServices ? 0 : (otherServices ? 15000 : 0);
-  const finalTotal = totalAmount + packagingFee;
+
+  // Calculate totals based on promo response
+  let subtotalAmount = totalAmount;
+  let promoDiscount = 0;
+  let finalTotal = totalAmount + packagingFee;
+
+  if (appliedPromo) {
+    subtotalAmount = appliedPromo.originalAmount;
+    promoDiscount = appliedPromo.discountAmount;
+    finalTotal = appliedPromo.finalAmount + packagingFee;
+  }
 
   const summaryData = {
     totalItems,
     totalQuantity,
-    subtotal: totalAmount,
-    discount: 0,
+    subtotal: appliedPromo ? appliedPromo.originalAmount : totalAmount,
+    discount: promoDiscount,
     deliveryFee,
     packagingFee,
     total: finalTotal,
@@ -431,7 +487,7 @@ export function Checkout() {
 
       // Use the selected payment method ID (already updated by useEffect)
       const paymentMethodId = selectedPaymentMethodId;
-      
+
       if (!paymentMethodId) {
         setErrors({ submit: "Please select a valid payment method." });
         return;
@@ -459,6 +515,10 @@ export function Checkout() {
 
       if (method === "voucher") {
         checkoutPayload.voucherCode = formData.voucherCode;
+      }
+
+      if (appliedPromo) {
+        checkoutPayload.promoCode = appliedPromo.promoCode.code;
       }
 
       const response = await checkoutService.createCheckout(checkoutPayload);
@@ -565,7 +625,12 @@ export function Checkout() {
             </div>
             <div className="flex justify-between text-gray-900">
               <span>Subtotal</span>
-              <span>Rwf {summaryData.subtotal.toLocaleString()}</span>
+              <div className="flex items-center gap-2">
+                {appliedPromo && (
+                  <span className="line-through text-gray-400">Rwf {appliedPromo.originalAmount.toLocaleString()}</span>
+                )}
+                <span>Rwf {summaryData.subtotal.toLocaleString()}</span>
+              </div>
             </div>
             <div className="flex justify-between text-gray-900">
               <span>Delivery fee</span>
@@ -577,8 +642,63 @@ export function Checkout() {
                 <span>Rwf {packagingFee.toLocaleString()}</span>
               </div>
             )}
-            <div className="border-t pt-3">
-              <div className="flex justify-between font-medium text-gray-900">
+
+            {/* Promo Discount Row */}
+            {summaryData.discount > 0 && (
+              <div className="flex justify-between text-green-600 font-medium">
+                <span className="flex items-center gap-1">
+                  <Tag className="h-3 w-3" />
+                  Discount
+                </span>
+                <span>- Rwf {summaryData.discount.toLocaleString()}</span>
+              </div>
+            )}
+
+            <div className="border-t pt-3 space-y-4">
+              {/* Promo Code Input */}
+              {!appliedPromo ? (
+                <div className="space-y-2">
+                  <div className="relative flex gap-2">
+                    <div className="relative flex-1">
+                      <Tag className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Promo code"
+                        value={promoCode}
+                        onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                        className="w-full pl-8 pr-3 h-8 border border-gray-300 text-[12px] focus:border-green-500 focus:outline-none placeholder:text-gray-400"
+                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleApplyPromo())}
+                      />
+                    </div>
+                    <Button
+                      onClick={() => handleApplyPromo()}
+                      disabled={isValidatingPromo || !promoCode.trim()}
+                      className="h-8 px-3 text-[11px] bg-green-600 hover:bg-green-700 font-bold"
+                    >
+                      {isValidatingPromo ? <Loader2 className="h-3 w-3 animate-spin" /> : "Apply"}
+                    </Button>
+                  </div>
+                  {promoError && <p className="text-[10px] text-red-500 animate-in fade-in slide-in-from-top-1">{promoError}</p>}
+                </div>
+              ) : (
+                <div className="bg-green-50 border border-green-200 rounded p-2 flex items-center justify-between animate-in zoom-in-95 duration-200">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                    <div className="flex flex-col">
+                      <span className="text-[11px] font-bold text-green-800">{appliedPromo.promoCode.code}</span>
+                      <span className="text-[9px] text-green-600">Saved Rwf {summaryData.discount.toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={removePromo}
+                    className="p-1 hover:bg-green-100 rounded text-green-700 transition-colors"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
+
+              <div className="flex justify-between font-bold text-[16px] text-gray-900 pt-1">
                 <span>Total</span>
                 <span>Rwf {summaryData.total.toLocaleString()}</span>
               </div>
@@ -633,13 +753,11 @@ export function Checkout() {
                       onChange={(e) =>
                         handleInputChange("deliveryAddress", e.target.value)
                       }
-                      className={`w-full pl-10 h-10 border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none rounded-none text-[14px] ${
-                        errors.deliveryAddress
-                          ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                          : "border-gray-300"
-                      } ${
-                        formData.hasSelectedLocationOnMap ? "bg-green-50" : ""
-                      }`}
+                      className={`w-full pl-10 h-10 border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none rounded-none text-[14px] ${errors.deliveryAddress
+                        ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                        : "border-gray-300"
+                        } ${formData.hasSelectedLocationOnMap ? "bg-green-50" : ""
+                        }`}
                       disabled={isSubmitting}
                     />
                   </div>
@@ -730,11 +848,10 @@ export function Checkout() {
                     <button
                       type="button"
                       onClick={() => setMethod("prepaid")}
-                      className={`rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal px-4 border transition-colors cursor-pointer ${
-                        method === "prepaid"
-                          ? "bg-green-700 text-white border-green-700"
-                          : "bg-white text-gray-900 border-gray-300 hover:border-green-500"
-                      } ${!wallet || walletBalance < finalTotal ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal px-4 border transition-colors cursor-pointer ${method === "prepaid"
+                        ? "bg-green-700 text-white border-green-700"
+                        : "bg-white text-gray-900 border-gray-300 hover:border-green-500"
+                        } ${!wallet || walletBalance < finalTotal ? 'opacity-50 cursor-not-allowed' : ''}`}
                       disabled={isSubmitting || !wallet || walletBalance < finalTotal}
                     >
                       Prepaid
@@ -742,11 +859,10 @@ export function Checkout() {
                     <button
                       type="button"
                       onClick={() => setMethod("momo")}
-                      className={`rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal px-4 border transition-colors cursor-pointer ${
-                        method === "momo"
-                          ? "bg-green-700 text-white border-green-700"
-                          : "bg-white text-gray-900 border-gray-300 hover:border-green-500"
-                      }`}
+                      className={`rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal px-4 border transition-colors cursor-pointer ${method === "momo"
+                        ? "bg-green-700 text-white border-green-700"
+                        : "bg-white text-gray-900 border-gray-300 hover:border-green-500"
+                        }`}
                       disabled={isSubmitting}
                     >
                       MoMo
@@ -754,11 +870,10 @@ export function Checkout() {
                     <button
                       type="button"
                       onClick={() => setMethod("card")}
-                      className={`rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal px-4 border transition-colors cursor-pointer ${
-                        method === "card"
-                          ? "bg-green-700 text-white border-green-700"
-                          : "bg-white text-gray-900 border-gray-300 hover:border-green-500"
-                      }`}
+                      className={`rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal px-4 border transition-colors cursor-pointer ${method === "card"
+                        ? "bg-green-700 text-white border-green-700"
+                        : "bg-white text-gray-900 border-gray-300 hover:border-green-500"
+                        }`}
                       disabled={isSubmitting}
                     >
                       Card/MoMo
@@ -766,11 +881,10 @@ export function Checkout() {
                     <button
                       type="button"
                       onClick={() => setMethod("voucher")}
-                      className={`rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal px-4 border transition-colors cursor-pointer ${
-                        method === "voucher"
-                          ? "bg-green-700 text-white border-green-700"
-                          : "bg-white text-gray-900 border-gray-300 hover:border-green-500"
-                      }`}
+                      className={`rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal px-4 border transition-colors cursor-pointer ${method === "voucher"
+                        ? "bg-green-700 text-white border-green-700"
+                        : "bg-white text-gray-900 border-gray-300 hover:border-green-500"
+                        }`}
                       disabled={isSubmitting}
                     >
                       Voucher
@@ -816,11 +930,10 @@ export function Checkout() {
                       onChange={(e) =>
                         handleInputChange("momoPhoneNumber", e.target.value)
                       }
-                      className={`w-full pl-10 h-10 border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none text-[14px] ${
-                        errors.momoPhoneNumber
-                          ? "border-red-500"
-                          : "border-gray-300"
-                      }`}
+                      className={`w-full pl-10 h-10 border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none text-[14px] ${errors.momoPhoneNumber
+                        ? "border-red-500"
+                        : "border-gray-300"
+                        }`}
                       disabled={isSubmitting}
                     />
                   </div>
@@ -851,11 +964,10 @@ export function Checkout() {
                         disabled={isSubmitting}
                       >
                         <SelectTrigger
-                          className={`w-full h-10 text-[14px] ${
-                            errors.voucherCode
-                              ? "border-red-500"
-                              : "border-gray-300"
-                          }`}
+                          className={`w-full h-10 text-[14px] ${errors.voucherCode
+                            ? "border-red-500"
+                            : "border-gray-300"
+                            }`}
                         >
                           <SelectValue placeholder="Select a voucher" />
                         </SelectTrigger>
@@ -968,6 +1080,22 @@ export function Checkout() {
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Available Promos Section */}
+      <div className="mt-8">
+        <div className="flex items-center gap-2 mb-4">
+          <Gift className="h-5 w-5 text-green-600" />
+          <h3 className="text-lg font-bold text-gray-900">Browse Available Promotions</h3>
+        </div>
+        <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+          <RestaurantAvailablePromos
+            onApply={(code) => {
+              setPromoCode(code);
+              handleApplyPromo(code);
+            }}
+          />
         </div>
       </div>
 

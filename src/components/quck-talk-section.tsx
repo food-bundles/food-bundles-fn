@@ -224,7 +224,11 @@ function ContactForm({
           Or chat with our Agent
         </p>
         <button
-          onClick={() => setIsChatOpen(true)}
+          onClick={() => {
+            if (window.chatbase) {
+              window.chatbase('open');
+            }
+          }}
           className="group flex items-center gap-2 hover:scale-110 transition-transform"
         >
           <BsFillChatRightQuoteFill className="h-10 w-10 md:h-12 md:w-12 text-green-600 hover:text-green-700" />
@@ -349,12 +353,6 @@ export default function QuickTalkSection() {
           </svg>
         </button>
       )}
-
-      <SharedChat 
-        isOpen={isChatOpen} 
-        onClose={() => setIsChatOpen(false)}
-        title="Food Bundle Support"
-      />
     </div>
   );
 }

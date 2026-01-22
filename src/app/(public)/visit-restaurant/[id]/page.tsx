@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import RestaurantPromos from "./_components/RestaurantPromos";
 
 // Mock restaurant data
 const mockRestaurantDetails = {
@@ -172,6 +173,9 @@ export default function VisitedRestaurantPage({
 
       {/* Content */}
       <div className="container mx-auto px-4 py-6 max-w-4xl">
+        {/* Promo Codes Section */}
+        <RestaurantPromos restaurantId={params.id} />
+
         {/* Quick info cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card>
@@ -215,11 +219,10 @@ export default function VisitedRestaurantPage({
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as typeof activeTab)}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === tab.key
-                  ? "border-green-500 text-green-600"
-                  : "border-transparent text-gray-600 hover:text-gray-900"
-              }`}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTab === tab.key
+                ? "border-green-500 text-green-600"
+                : "border-transparent text-gray-600 hover:text-gray-900"
+                }`}
             >
               {tab.label}
             </button>

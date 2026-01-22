@@ -16,6 +16,7 @@ export interface CheckoutRequest {
   narration?: string;
   currency?: string;
   voucherCode?: string;
+  promoCode?: string;
   cardDetails?: {
     cardNumber: string;
     expiryMonth: string;
@@ -217,6 +218,8 @@ class CheckoutService {
         data: response.data.data,
       };
     } catch (error: any) {
+      console.log("Received otp error", error);
+
       return {
         success: false,
         message: error.response?.data?.message || "Failed to verify OTP",
