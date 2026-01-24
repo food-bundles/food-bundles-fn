@@ -14,6 +14,11 @@ import { LoanApplication } from "@/app/services/traderService";
 import { useState } from "react";
 import { ApproveLoanModal } from "./ApproveLoanModal";
 
+const formatDateTime = (dateString: string | null) => {
+  if (!dateString) return "-";
+  return new Date(dateString).toLocaleDateString("en-RW", { year: "numeric", month: "short", day: "numeric" });
+};
+
 const ActionsCell = ({ loan }: { loan: LoanApplication }) => {
   const [showApproveModal, setShowApproveModal] = useState(false);
 
@@ -30,7 +35,7 @@ const ActionsCell = ({ loan }: { loan: LoanApplication }) => {
             <Eye className="mr-2 h-4 w-4" />
             View Details
           </DropdownMenuItem>
-          {loan.status === "PENDING" && (
+          {loan.status === "PENDING" || loan.status === "ACCEPTED" && (
             <DropdownMenuItem onClick={() => setShowApproveModal(true)}>
               <CheckCircle className="mr-2 h-4 w-4" />
               Approve Loan
@@ -132,8 +137,12 @@ export const loanColumns: ColumnDef<LoanApplication>[] = [
     accessorKey: "createdAt",
     header: "Applied Date",
     cell: ({ row }) => {
-      const date = new Date(row.getValue("createdAt"));
-      return <span>{date.toLocaleDateString()}</span>;
+      const createdAt = row.getValue("createdAt") as string;
+      return (
+        <span className="text-xs text-gray-700">
+          {formatDateTime(createdAt)}
+        </span>
+      );
     },
   },
   {

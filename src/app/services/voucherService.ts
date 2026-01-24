@@ -145,6 +145,12 @@ export const voucherService = {
     return response.data;
   },
 
+  acceptLoan: async (id: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(`/vouchers/loans/${id}/accept`);
+    return response.data;
+  },
+
   deleteLoanApplication: async (id: string) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.delete(`/vouchers/loans/${id}`);

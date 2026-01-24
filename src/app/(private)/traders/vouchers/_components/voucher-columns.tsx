@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Eye, Building, Calendar } from "lucide-react";
+import { MoreHorizontal, Eye} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +18,17 @@ interface VoucherColumnsProps {
   currentPage: number;
   pageSize: number;
 }
+
+  const formatDateTime = (dateString: string | null) => {
+    if (!dateString) return "-";
+    return new Date(dateString).toLocaleDateString("en-RW", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -56,83 +68,47 @@ export const createVoucherColumns = ({
   pageSize,
 }: VoucherColumnsProps): ColumnDef<Voucher>[] => [
   {
-    id: "index",
-    header: "#",
-    cell: ({ row }) => {
-      const index = row.index;
-      return (
-        <span className="text-xs font-bold text-gray-900">
-          {(currentPage - 1) * pageSize + index + 1}
-        </span>
-      );
-    },
-  },
-  {
     accessorKey: "voucherCode",
     header: "Voucher Code",
     cell: ({ row }) => (
-      <span className="text-xs font-bold text-blue-600">{row.original.voucherCode}</span>
+      <span className="text-xs font-bold text-blue-600">
+        {row.original.voucherCode}
+      </span>
+    ),
+  },
+  {
+    accessorKey: "totalCredit",
+    header: "Amount",
+    cell: ({ row }) => (
+      <span className="text-xs font-bold text-green-600">
+        {row.original.totalCredit.toLocaleString()} {row.original.currency}
+      </span>
     ),
   },
   {
     accessorKey: "restaurant",
     header: "Restaurant",
-    cell: ({ row }) => {
-      const restaurant = row.original.restaurant;
-      return (
-        <div className="flex items-center gap-2">
-          <Building className="h-4 w-4 text-gray-500" />
-          <div>
-            <p className="text-xs font-bold text-gray-900">{restaurant.name}</p>
-            <p className="text-xs text-gray-600">{restaurant.email}</p>
-          </div>
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "creditLimit",
-    header: "Credit Info",
     cell: ({ row }) => (
-      <div>
-        <p className="text-xs font-bold text-green-600">
-          {row.original.creditLimit.toLocaleString()} {row.original.currency}
-        </p>
-        <p className="text-xs text-gray-500">
-          {getVoucherTypeLabel(row.original.voucherType)}
-        </p>
-      </div>
+      <span className="text-xs font-medium text-gray-900">
+        {row.original.restaurant.name}
+      </span>
     ),
   },
   {
-    accessorKey: "usedCredit",
-    header: "Usage",
-    cell: ({ row }) => {
-      const usagePercent = (row.original.usedCredit / row.original.totalCredit) * 100;
-      return (
-        <div className="space-y-1">
-          <div className="flex justify-between text-xs">
-            <span className="font-bold text-gray-900">
-              {row.original.usedCredit.toLocaleString()} {row.original.currency}
-            </span>
-            <span className="text-gray-500">{usagePercent.toFixed(1)}%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-1.5">
-            <div
-              className="bg-blue-600 h-1.5 rounded-full transition-all"
-              style={{ width: `${usagePercent}%` }}
-            />
-          </div>
-        </div>
-      );
-    },
+    accessorKey: "repaymentDays",
+    header: "Repayment Days",
+    cell: ({ row }) => (
+      <span className="text-xs text-gray-700">
+        {row.original.repaymentDays} days
+      </span>
+    ),
   },
   {
-    accessorKey: "remainingCredit",
-    header: "Remaining",
-    cell: ({ row }) => (
-      <span className="text-xs font-bold text-blue-600">
-        {row.original.remainingCredit.toLocaleString()} {row.original.currency}
+    accessorKey: "loan.repaymentDueDate",
+    header: "Repayment Date",
+    cell: ({ row }: any) => (
+      <span className="text-xs text-gray-700">
+        {formatDateTime(row.original.loan.repaymentDueDate)}
       </span>
     ),
   },
@@ -146,16 +122,23 @@ export const createVoucherColumns = ({
     ),
   },
   {
-    accessorKey: "expiryDate",
-    header: "Expires",
-    cell: ({ row }) => (
-      <div className="flex items-center gap-1">
-        <Calendar className="h-3 w-3 text-gray-500" />
-        <span className="text-xs text-gray-900">
-          {new Date(row.original.expiryDate).toLocaleDateString()}
-        </span>
-      </div>
-    ),
+    accessorKey: "serviceFeeRate",
+    header: "Commission",
+    cell: ({ row }) => {
+      const commission = row.original.serviceFeeRate;
+      const isUsed =
+        row.original.status === "USED" || row.original.status === "SETTLED";
+      return (
+        <div className="text-xs">
+          <span
+            className={isUsed ? "text-green-600 font-medium" : "text-gray-500"}
+          >
+            {commission}%
+          </span>
+          {isUsed && <div className="text-green-500 text-xs">Earned</div>}
+        </div>
+      );
+    },
   },
   {
     id: "actions",
