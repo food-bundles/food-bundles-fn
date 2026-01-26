@@ -34,6 +34,7 @@ interface RestaurantHeaderProps {
 export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderProps) {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const { unreadCount, loading: isLoadingNotifications } = useNotifications();
   const { user, getUserProfileImage } = useAuth();
   const { totalItems, isLoading } = useCartSummary();
@@ -41,6 +42,10 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
   const pathname = usePathname();
 
   const showCartIcon = pathname !== "/restaurant";
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Unread count is now managed by NotificationContext
 
@@ -121,10 +126,10 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 hover:bg-transparent cursor-pointer text-primary-foreground hover:text-primary-foreground">
-                  {user ? (
+                  {user && isMounted ? (
                     <>
                       <span className="font-medium text-[13px] hidden md:inline">
-                        {userName || "Loading..."}
+                        {userName || "User"}
                       </span>
                       <div className="rounded-full flex items-center justify-center">
                         {user?.profileImage ? (
@@ -165,10 +170,10 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
               >
                 <div className="px-2 py-1.5">
                   <p className="text-[13px] font-medium text-gray-900 truncate">
-                    {userName}
+                    {isMounted ? userName : "Loading..."}
                   </p>
                   <p className="text-[12px] text-gray-500 truncate">
-                    {user?.email}
+                    {isMounted ? user?.email : "Loading..."}
                   </p>
                 </div>
                 <DropdownMenuSeparator />

@@ -51,6 +51,10 @@ export interface ICreatePromoData {
     applyToAllProducts: boolean;
     applicableProductIds?: string[];
     applicableCategoryIds?: string[];
+    excludedRestaurants?: Array<{
+        restaurantId: string;
+        reason: string;
+    }>;
     startDate: string;
     expiryDate: string;
     isActive?: boolean;

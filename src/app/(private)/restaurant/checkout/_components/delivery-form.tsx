@@ -133,6 +133,9 @@ export function Checkout() {
   const [appliedPromo, setAppliedPromo] = useState<any | null>(null);
   const [isValidatingPromo, setIsValidatingPromo] = useState(false);
   const [promoError, setPromoError] = useState("");
+  const [availablePromos, setAvailablePromos] = useState<any[]>([]);
+  const [selectedPromo, setSelectedPromo] = useState<any | null>(null);
+  const [isLoadingPromos, setIsLoadingPromos] = useState(true);
 
   const handleApplyPromo = async (codeToApply?: string) => {
     const code = codeToApply || promoCode;
@@ -164,7 +167,25 @@ export function Checkout() {
     setAppliedPromo(null);
     setPromoCode("");
     setPromoError("");
+    setSelectedPromo(null);
   };
+
+  // Fetch available promos
+  useEffect(() => {
+    const fetchAvailablePromos = async () => {
+      try {
+        const response = await promoService.getActivePromos();
+        if (response.success) {
+          setAvailablePromos(response.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch promos:", error);
+      } finally {
+        setIsLoadingPromos(false);
+      }
+    };
+    fetchAvailablePromos();
+  }, []);
 
   // Fetch payment methods on component mount
   useEffect(() => {
@@ -650,47 +671,82 @@ export function Checkout() {
             )}
 
             <div className="border-t pt-3 space-y-4">
-              {/* Promo Code Input */}
-              {!appliedPromo ? (
-                <div className="space-y-2">
-                  <div className="relative flex gap-2">
-                    <div className="relative flex-1">
-                      <Tag className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-                      <input
-                        type="text"
-                        placeholder="Promo code"
-                        value={promoCode}
-                        onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                        className="w-full pl-8 pr-3 h-8 border border-gray-300 text-[12px] focus:border-green-500 focus:outline-none placeholder:text-gray-400"
-                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleApplyPromo())}
-                      />
+              {/* Promo Code Section */}
+              {!isLoadingPromos && availablePromos.length > 0 && (
+                !appliedPromo ? (
+                  !selectedPromo ? (
+                    <div className="space-y-2">
+                      <label className="text-[12px] font-medium text-gray-700">Select Promo Code</label>
+                      <select
+                        value=""
+                        onChange={(e) => {
+                          const promo = availablePromos.find(p => p.id === e.target.value);
+                          setSelectedPromo(promo);
+                        }}
+                        className="w-full h-8 border border-gray-300 text-[12px] focus:border-green-500 focus:outline-none"
+                      >
+                        <option value="">Choose a promo code</option>
+                        {availablePromos.map((promo) => (
+                          <option key={promo.id} value={promo.id}>
+                            {promo.code} - {promo.discountValue}% OFF
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                    <Button
-                      onClick={() => handleApplyPromo()}
-                      disabled={isValidatingPromo || !promoCode.trim()}
-                      className="h-8 px-3 text-[11px] bg-green-600 hover:bg-green-700 font-bold"
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="bg-green-50 border border-green-200 rounded p-3">
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="text-[14px] font-bold text-green-800">{selectedPromo.code}</h4>
+                          <span className="text-[12px] bg-green-100 text-green-800 px-2 py-1 rounded">
+                            {selectedPromo.discountValue}% OFF
+                          </span>
+                        </div>
+                        <p className="text-[12px] text-green-700 mb-2">{selectedPromo.description}</p>
+                        <div className="text-[14px] text-green-600 space-y-1">
+                          <p>• Min order: {selectedPromo.minOrderAmount} RWF</p>
+                          <p>• Min items: {selectedPromo.minItemQuantity}</p>
+                          <p>• Expires: {new Date(selectedPromo.expiryDate).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => {
+                            setPromoCode(selectedPromo.code);
+                            handleApplyPromo(selectedPromo.code);
+                          }}
+                          disabled={isValidatingPromo}
+                          className="flex-1 h-8 text-[11px] bg-green-600 hover:bg-green-700 font-bold"
+                        >
+                          {isValidatingPromo ? <Loader2 className="h-3 w-3 animate-spin" /> : "Apply"}
+                        </Button>
+                        <Button
+                          onClick={() => setSelectedPromo(null)}
+                          variant="outline"
+                          className="h-8 px-3 text-[11px]"
+                        >
+                          Back
+                        </Button>
+                      </div>
+                    </div>
+                  )
+                ) : (
+                  <div className="bg-green-50 border border-green-200 rounded p-2 flex items-center justify-between animate-in zoom-in-95 duration-200">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      <div className="flex flex-col">
+                        <span className="text-[14px] font-bold text-green-800">{appliedPromo.promoCode.code}</span>
+                        <span className="text-[12px] text-green-600">Saved Rwf {summaryData.discount.toLocaleString()}</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={removePromo}
+                      className="p-1 hover:bg-green-100 rounded text-green-700 transition-colors"
                     >
-                      {isValidatingPromo ? <Loader2 className="h-3 w-3 animate-spin" /> : "Apply"}
-                    </Button>
+                      <X className="h-3.5 w-3.5" />
+                    </button>
                   </div>
-                  {promoError && <p className="text-[10px] text-red-500 animate-in fade-in slide-in-from-top-1">{promoError}</p>}
-                </div>
-              ) : (
-                <div className="bg-green-50 border border-green-200 rounded p-2 flex items-center justify-between animate-in zoom-in-95 duration-200">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <div className="flex flex-col">
-                      <span className="text-[11px] font-bold text-green-800">{appliedPromo.promoCode.code}</span>
-                      <span className="text-[9px] text-green-600">Saved Rwf {summaryData.discount.toLocaleString()}</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={removePromo}
-                    className="p-1 hover:bg-green-100 rounded text-green-700 transition-colors"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </div>
+                )
               )}
 
               <div className="flex justify-between font-bold text-[16px] text-gray-900 pt-1">
@@ -1075,22 +1131,6 @@ export function Checkout() {
               </div>
             )}
           </div>
-        </div>
-      </div>
-
-      {/* Available Promos Section */}
-      <div className="mt-8">
-        <div className="flex items-center gap-2 mb-4">
-          <Gift className="h-5 w-5 text-green-600" />
-          <h3 className="text-lg font-bold text-gray-900">Browse Available Promotions</h3>
-        </div>
-        <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-          <RestaurantAvailablePromos
-            onApply={(code) => {
-              setPromoCode(code);
-              handleApplyPromo(code);
-            }}
-          />
         </div>
       </div>
 
