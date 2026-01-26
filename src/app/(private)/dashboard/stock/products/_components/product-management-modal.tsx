@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Product } from "@/app/contexts/product-context";
+import { unitService } from "@/app/services/unitService";
 import Image from "next/image";
 
 interface ProductManagementModalProps {
@@ -61,6 +62,8 @@ export function ProductManagementModal({
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagesToKeep, setImagesToKeep] = useState<string[]>([]);
+  const [units, setUnits] = useState<any[]>([]);
+  const [isUnitsLoading, setIsUnitsLoading] = useState(false);
 
   // Edit form state
   const [editData, setEditData] = useState({
@@ -93,6 +96,31 @@ export function ProductManagementModal({
       setImagesToKeep(product.images || []);
     }
   }, [product]);
+
+  useEffect(() => {
+    if (open) {
+      fetchUnits();
+    }
+  }, [open]);
+
+  const fetchUnits = async () => {
+    try {
+      setIsUnitsLoading(true);
+      const response = await unitService.getAllUnits();
+      if (response.data) {
+        const activeUnits = response.data.filter((unit: any) => unit.isActive);
+        setUnits(activeUnits);
+      } else {
+        setUnits([]);
+      }
+    } catch (error) {
+      console.error("Error fetching units:", error);
+      toast.error("Failed to load units");
+      setUnits([]);
+    } finally {
+      setIsUnitsLoading(false);
+    }
+  };
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -283,11 +311,21 @@ export function ProductManagementModal({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-white border-gray-200">
-                      {units.map((unit) => (
-                        <SelectItem key={unit} value={unit}>
-                          {unit}
+                      {isUnitsLoading ? (
+                        <SelectItem value="" disabled>
+                          Loading units...
                         </SelectItem>
-                      ))}
+                      ) : units.length > 0 ? (
+                        units.map((unit) => (
+                          <SelectItem key={unit.id} value={unit.name}>
+                            {unit.name} - {unit.description}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="" disabled>
+                          No units available
+                        </SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -313,6 +351,27 @@ export function ProductManagementModal({
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="purchasePrice" className="text-gray-900">
+                    Purchase Price (RWF)
+                  </Label>
+                  <Input
+                    id="purchasePrice"
+                    type="number"
+                    value={editData.purchasePrice}
+                    onChange={(e) =>
+                      setEditData((prev) => ({
+                        ...prev,
+                        purchasePrice: Number(e.target.value),
+                      }))
+                    }
+                    disabled={isLoading}
+                    className="bg-white border-gray-300 text-gray-900"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <Label htmlFor="bonus" className="text-gray-900">
                     Bonus (%)
                   </Label>
@@ -324,6 +383,24 @@ export function ProductManagementModal({
                       setEditData((prev) => ({
                         ...prev,
                         bonus: Number(e.target.value),
+                      }))
+                    }
+                    disabled={isLoading}
+                    className="bg-white border-gray-300 text-gray-900"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="expiryDate" className="text-gray-900">
+                    Expiry Date
+                  </Label>
+                  <Input
+                    id="expiryDate"
+                    type="date"
+                    value={editData.expiryDate}
+                    onChange={(e) =>
+                      setEditData((prev) => ({
+                        ...prev,
+                        expiryDate: e.target.value,
                       }))
                     }
                     disabled={isLoading}
@@ -507,6 +584,14 @@ export function ProductManagementModal({
                   </div>
                   <div className="text-sm col-span-2 text-green-600 font-medium">
                     {product.unitPrice.toLocaleString()} RWF
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="text-sm font-medium text-gray-600">
+                    Purchase Price:
+                  </div>
+                  <div className="text-sm col-span-2 text-blue-600 font-medium">
+                    {(product.purchasePrice || 0).toLocaleString()} RWF
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">

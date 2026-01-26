@@ -60,21 +60,38 @@ export function FinanceChart({ loading = false, data }: FinanceChartProps) {
   }
 
   const transformTimeBreakdown = () => {
-    if (!activeData?.timeSeriesData) return [];
+    if (!activeData?.timeBreakdown) return [];
     
     const data: Array<{ date: string; revenue: number; expenses: number; profit: number }> = [];
     
-    // Use the existing timeSeriesData structure
-    activeData.timeSeriesData.forEach((item: any) => {
-      data.push({
-        date: item.period || item.date,
-        revenue: item.revenue || 0,
-        expenses: item.expenses || 0,
-        profit: (item.revenue || 0) - (item.expenses || 0)
+    // If no year filter is selected (showing "All"), group by years
+    if (!localFilters?.year) {
+      Object.values(activeData.timeBreakdown).forEach((yearData: any) => {
+        data.push({
+          date: yearData.year.toString(),
+          revenue: yearData.revenue || 0,
+          expenses: yearData.expenses || 0,
+          profit: yearData.profit || 0
+        });
       });
-    });
+    } else {
+      // If year is selected, show months for that year
+      Object.values(activeData.timeBreakdown).forEach((yearData: any) => {
+        if (yearData.months) {
+          Object.values(yearData.months).forEach((monthData: any) => {
+            data.push({
+              date: `${yearData.year}-${monthData.monthName}`,
+              revenue: monthData.revenue || 0,
+              expenses: monthData.expenses || 0,
+              profit: monthData.profit || 0
+            });
+          });
+        }
+      });
+    }
     
-    return data;
+    // Sort by date
+    return data.sort((a, b) => a.date.localeCompare(b.date));
   };
 
   const chartData = transformTimeBreakdown();

@@ -2,7 +2,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useProducts } from "@/app/contexts/product-context";
 import { InventoryManagement } from "./_components/inventory-management";
 import type { Product } from "@/app/contexts/product-context";
@@ -24,22 +24,20 @@ export default function InventoryPage() {
   });
   const { getAllProductsRoleBased } = useProducts();
 
-  // ✅ Fetch products based on user role with pagination and filters
-  const fetchProducts = async (page = 1, limit = 10, filterParams = filters, isPagination = false) => {
+  const fetchProducts = useCallback(async (page = 1, limit = 10, filterParams = filters, isPagination = false, isSearch = false) => {
     try {
       if (isPagination) {
         setPaginationLoading(true);
-      } else {
-        setLoading(true);
+      } else if (!isSearch) {
+        setLoading(true); // Only show main loading for initial load, not for search
       }
       
       const params: any = { page, limit };
       if (filterParams.search.trim()) params.search = filterParams.search.trim();
-      if (filterParams.category && filterParams.category !== "all") params.category = filterParams.category;
+      if (filterParams.category && filterParams.category !== "all") params.categoryId = filterParams.category;
       
       const response = await getAllProductsRoleBased(params);
 
-      // Check if API returned data correctly
       if (response?.success && Array.isArray(response?.data)) {
         const mappedProducts = response.data.map((product: Product) => ({
           id: product.id,
@@ -71,7 +69,6 @@ export default function InventoryPage() {
 
         setProducts(mappedProducts);
         
-        // Update pagination from API response
         if (response.pagination) {
           setPagination({
             page: response.pagination.page,
@@ -89,16 +86,17 @@ export default function InventoryPage() {
       setLoading(false);
       setPaginationLoading(false);
     }
-  };
+  }, [getAllProductsRoleBased, filters]);
 
-  const handlePaginationChange = (page: number, limit: number) => {
+  const handlePaginationChange = useCallback((page: number, limit: number) => {
     fetchProducts(page, limit, filters, true);
-  };
+  }, [filters]);
 
-  const handleFiltersChange = (newFilters: { search: string; category: string }) => {
-    setFilters(newFilters);
-    fetchProducts(1, pagination.limit, newFilters, false);
-  };
+  const handleFiltersChange = useCallback((newFilters: { search: string; categoryId?: string }) => {
+    const updatedFilters = { search: newFilters.search, category: newFilters.categoryId || "" };
+    setFilters(updatedFilters);
+    fetchProducts(1, pagination.limit, updatedFilters, false, true); // Pass true for isSearch
+  }, [pagination.limit]);
 
   // ✅ Use effect (correct spelling)
   useEffect(() => {
