@@ -312,17 +312,17 @@ export function ProductManagementModal({
                     </SelectTrigger>
                     <SelectContent className="bg-white border-gray-200">
                       {isUnitsLoading ? (
-                        <SelectItem value="" disabled>
+                        <SelectItem value="loading" disabled>
                           Loading units...
                         </SelectItem>
                       ) : units.length > 0 ? (
                         units.map((unit) => (
-                          <SelectItem key={unit.id} value={unit.name}>
+                          <SelectItem key={unit.id} value={unit.name || unit.id}>
                             {unit.name} - {unit.description}
                           </SelectItem>
                         ))
                       ) : (
-                        <SelectItem value="" disabled>
+                        <SelectItem value="no-units" disabled>
                           No units available
                         </SelectItem>
                       )}
