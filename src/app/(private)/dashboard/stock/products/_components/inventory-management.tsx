@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { DataTable } from "@/components/data-table";
 import { getInventoryColumns } from "./inventory-columns";
 import { createCommonFilters, TableFilters } from "@/components/filters";
@@ -15,6 +15,7 @@ import { ProductStatusModal } from "./product-status-modal";
 import type { Product } from "@/app/contexts/product-context";
 import { toast } from "sonner";
 import { productService } from "@/app/services/productService";
+import { useCategory } from "@/app/contexts/category-context";
 
 interface InventoryManagementProps {
   products: Product[];
@@ -26,7 +27,7 @@ interface InventoryManagementProps {
     totalPages: number;
   };
   onPaginationChange?: (page: number, limit: number) => void;
-  onFiltersChange?: (newFilters: { search: string; category: string }) => void;
+  onFiltersChange?: (newFilters: { search: string; categoryId?: string }) => void;
   isLoading?: boolean;
 }
 
@@ -37,14 +38,6 @@ const statusOptions = [
   { label: "Out of Stock", value: "out-of-stock" },
 ];
 
-const categoryOptions = [
-  { label: "All Categories", value: "all" },
-  { label: "Vegetables", value: "VEGETABLES" },
-  { label: "Fruits", value: "FRUITS" },
-  { label: "Animal Products", value: "ANIMAL_PRODUCTS" },
-  { label: "Others", value: "OTHER" },
-];
-
 export function InventoryManagement({
   products,
   onRefresh,
@@ -53,26 +46,43 @@ export function InventoryManagement({
   onFiltersChange,
   isLoading = false,
 }: InventoryManagementProps) {
-  // Filter handlers
-  const handleSearchChange = (value: string) => {
-    setSearchValue(value);
-    if (onFiltersChange) {
-      onFiltersChange({ search: value, category: categoryValue });
-    }
-  };
-
-  const handleCategoryChange = (value: string) => {
-    setCategoryValue(value);
-    if (onFiltersChange) {
-      onFiltersChange({ search: searchValue, category: value });
-    }
-  };
+  const { activeCategories } = useCategory();
 
   // Filter states
   const [searchValue, setSearchValue] = useState("");
   const [statusValue, setStatusValue] = useState("all");
   const [categoryValue, setCategoryValue] = useState("all");
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+
+  // Debounced search effect - trigger on both search and clear
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (onFiltersChange) {
+        onFiltersChange({ 
+          search: searchValue, 
+          categoryId: categoryValue === "all" ? undefined : categoryValue 
+        });
+      }
+    }, 800);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchValue]);
+
+  // Filter handlers
+  const handleSearchChange = (value: string) => {
+    setSearchValue(value);
+    // Debouncing is handled by useEffect above
+  };
+
+  const handleCategoryChange = (value: string) => {
+    setCategoryValue(value);
+    if (onFiltersChange) {
+      onFiltersChange({ 
+        search: searchValue, 
+        categoryId: value === "all" ? undefined : value 
+      });
+    }
+  };
 
   // Modal states
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -149,22 +159,10 @@ export function InventoryManagement({
     return getInventoryColumns(handleManageProduct, handleStatusClick);
   }, []);
 
-  // Filter data
+  // Remove client-side search filtering since we're using backend search
   const filteredData = useMemo(() => {
     return products.filter((product) => {
-      // Search filter
-      if (searchValue) {
-        const searchLower = searchValue.toLowerCase();
-        const matchesSearch =
-          product.productName.toLowerCase().includes(searchLower) ||
-          product.sku.toLowerCase().includes(searchLower) ||
-          (product.category &&
-            product.category.name.toLowerCase().includes(searchLower));
-
-        if (!matchesSearch) return false;
-      }
-
-      // Status filter
+      // Status filter (client-side)
       if (statusValue !== "all") {
         const quantity = product.quantity;
         const status =
@@ -176,24 +174,7 @@ export function InventoryManagement({
         if (status !== statusValue) return false;
       }
 
-      // Category filter
-      if (categoryValue !== "all") {
-        // Map category values to actual category names
-        const categoryNameMap: { [key: string]: string } = {
-          VEGETABLES: "Fresh Vegetables",
-          FRUITS: "Fresh Fruits",
-          ANIMAL_PRODUCTS: "Animal Products",
-          OTHER: "Others",
-        };
-
-        const expectedCategoryName =
-          categoryNameMap[categoryValue] || categoryValue;
-        if (product.category?.name !== expectedCategoryName) {
-          return false;
-        }
-      }
-
-      // Date range filter (expiry date)
+      // Date range filter (client-side)
       if (dateRange.from || dateRange.to) {
         if (!product.expiryDate) return false;
 
@@ -214,7 +195,21 @@ export function InventoryManagement({
 
       return true;
     });
-  }, [products, searchValue, statusValue, categoryValue, dateRange]);
+  }, [products, statusValue, dateRange]); // Removed searchValue and categoryValue
+
+  // Create category options from API data
+  const categoryOptions = useMemo(() => {
+    const options = [{ label: "All Categories", value: "all" }];
+    if (activeCategories) {
+      activeCategories.forEach(category => {
+        options.push({
+          label: category.name,
+          value: category.id
+        });
+      });
+    }
+    return options;
+  }, [activeCategories]);
 
   // Create filters
   const filters = [
@@ -224,11 +219,14 @@ export function InventoryManagement({
       "Search products, SKU, category..."
     ),
     createCommonFilters.status(statusValue, setStatusValue, statusOptions),
-    createCommonFilters.category(
-      categoryValue,
-      handleCategoryChange,
-      categoryOptions
-    ),
+    {
+      type: "select" as const,
+      key: "category",
+      label: "Category",
+      options: categoryOptions,
+      value: categoryValue,
+      onChange: handleCategoryChange,
+    },
     createCommonFilters.dateRange(dateRange, setDateRange, "Expiry Date"),
   ];
 

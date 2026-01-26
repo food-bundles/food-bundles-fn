@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { notificationService } from "@/app/services/notificationService";
+import { getToken } from "@/app/hooks/axiosClient";
 
 interface NotificationContextType {
     unreadCount: number;
@@ -18,10 +19,20 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
     const refreshUnreadCount = useCallback(async () => {
         try {
+            // Only fetch if user is authenticated
+            const token = getToken();
+            if (!token) {
+                setUnreadCount(0);
+                setLoading(false);
+                return;
+            }
+            
             const response = await notificationService.getUnreadCount();
             setUnreadCount(response.data.unreadCount);
         } catch (error) {
             console.error("Failed to fetch unread count:", error);
+            // Reset count on error (likely auth issue)
+            setUnreadCount(0);
         } finally {
             setLoading(false);
         }
