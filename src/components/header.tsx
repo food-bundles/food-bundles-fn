@@ -75,6 +75,7 @@ export function Header() {
   const [isShopDropdownOpen, setIsShopDropdownOpen] = useState(false);
   const [isAuthTransitioning, setIsAuthTransitioning] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
 
   const lastScrollY = useRef(0);
@@ -221,6 +222,10 @@ export function Header() {
   }, [detectActiveSection]);
 
   // Removed animation effect to improve performance
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -429,7 +434,7 @@ export function Header() {
               <div className="flex items-center gap-2">
                 {/* Desktop User Menu - Inline Links */}
                 <div className="hidden md:block">
-                  {isAuthenticated ? (
+                  {isAuthenticated && isMounted ? (
                     <div className="flex items-center gap-2">
                       {/* Show My Account and Logout links when user menu is open */}
                       {isUserMenuOpen && (
@@ -489,7 +494,7 @@ export function Header() {
                         </div>
                       </button>
                     </div>
-                  ) : isAuthTransitioning || isLoading ? (
+                  ) : (isAuthTransitioning || isLoading || !isMounted) ? (
                     <div className="flex items-center gap-2 px-3">
                       <Skeleton className="h-6 w-20 rounded bg-green-600/60" />
                       <Skeleton className="h-6 w-6 rounded-full bg-green-600/60" />
