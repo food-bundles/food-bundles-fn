@@ -103,7 +103,7 @@ export default function SubscribePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Spinner variant="ring" />
+        <Spinner variant="ring" className="w-10 h-10" />
       </div>
     );
   }

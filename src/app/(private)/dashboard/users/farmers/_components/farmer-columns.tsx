@@ -18,6 +18,20 @@ export const getFarmerColumns = (
     ),
   },
   {
+    accessorKey: "name",
+    header: "Name",
+    cell: ({ row }) => {
+      const name = row.getValue("name") as string;
+      return name ? (
+        <div className="font-medium">
+          {name}
+        </div>
+      ) : (
+        <span className="text-gray-400">Not provided</span>
+      );
+    },
+  },
+  {
     accessorKey: "province",
     header: "Location",
     cell: ({ row }) => {

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent } from "@/components/ui/card";
-import { CreditCard, Smartphone, Loader2 } from "lucide-react";
+import { CreditCard, Smartphone, Loader2, Info, X, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 interface TopUpModalProps {
@@ -28,6 +28,8 @@ export function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
     expiryYear: "",
     pin: ""
   });
+  const [showFlutterwaveInfo, setShowFlutterwaveInfo] = useState(false);
+  const [flutterwaveRedirectUrl, setFlutterwaveRedirectUrl] = useState<string>("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,15 +63,18 @@ export function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
 
       const response = await topUpWallet(topUpData);
       
-      if (response.data?.requiresRedirect && response.data?.redirectUrl) {
-        toast.success("Redirecting to payment gateway...");
-        window.open(response.data.redirectUrl, '_blank');
-      } else {
-        toast.success("Top-up initiated successfully!");
+      // Always show modal for card payments that return success
+      if (response.success || response.data) {
+        const redirectUrl = response.data?.redirectUrl || response.redirectUrl;
+        if (redirectUrl) {
+          setFlutterwaveRedirectUrl(redirectUrl);
+          setShowFlutterwaveInfo(true);
+        } else {
+          toast.success("Top-up initiated successfully!");
+          onClose();
+          resetForm();
+        }
       }
-      
-      onClose();
-      resetForm();
     } catch (error) {
       console.error("Top-up error:", error);
     }
@@ -90,6 +95,12 @@ export function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
   const handleClose = () => {
     onClose();
     resetForm();
+  };
+
+  const handleFlutterwaveRedirect = () => {
+    if (flutterwaveRedirectUrl) {
+      window.location.href = flutterwaveRedirectUrl;
+    }
   };
 
   return (
@@ -231,6 +242,61 @@ export function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
           </div>
         </form>
       </DialogContent>
+      
+      {/* Flutterwave Redirect Modal */}
+      {showFlutterwaveInfo && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-md w-full max-w-md flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 className="text-[16px] font-medium text-gray-900 flex items-center gap-2">
+                <Info className="h-4 w-4 text-green-500" />
+                Complete Payment
+              </h3>
+              <button
+                onClick={() => setShowFlutterwaveInfo(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4">
+              <p className="text-xs text-gray-700">
+                You will be redirected to complete your payment. Choose your
+                preferred payment method:
+              </p>
+              <div className="bg-gray-50 p-4 rounded-md">
+                <ul className="text-[13px] text-gray-900 space-y-2">
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 text-xs bg-green-600 rounded-full"></span>
+                    Mobile Money (MTN/TIGO)
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 text-xs bg-green-600 rounded-full"></span>
+                    Card Payment
+                  </li>
+                </ul>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowFlutterwaveInfo(false)}
+                  className="flex-1 h-10 border border-gray-300 hover:border-gray-400 text-gray-900 text-[14px] font-medium cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleFlutterwaveRedirect}
+                  className="flex-1 h-10 bg-green-600 hover:bg-green-700 text-white text-[14px] font-medium cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </Dialog>
   );
 }

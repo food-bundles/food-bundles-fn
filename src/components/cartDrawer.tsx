@@ -133,12 +133,6 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
           {/* Total and checkout button */}
           {cartItems.length > 0 && (
             <div className="sticky bottom-0 bg-white border-t border-gray-200 pt-4 pb-6 px-2 sm:px-1">
-              <div className="flex justify-between text-gray-900">
-                <span className="text-[14px]">Delivery fee</span>
-                <span className="line-through text-[14px] text-gray-400">
-                  Rwf 5,000
-                </span>
-              </div>
               <div className="flex justify-between items-center mb-2 sm:mb-1">
                 <span className="text-lg sm:text-sm font-semibold">Total:</span>
                 <span className="text-lg sm:text-sm font-bold">

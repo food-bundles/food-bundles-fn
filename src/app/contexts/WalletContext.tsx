@@ -3,6 +3,7 @@
 
 import React, { createContext, useContext, useCallback, useState, useEffect } from "react";
 import { walletService, TopUpWalletData, WalletTransactionFilters, AdminWalletFilters, AdjustWalletData } from "@/app/services/walletService";
+import { paymentMethodService, PaymentMethod } from "@/app/services/paymentMethodService";
 import { useWalletWebSocket } from "@/hooks/useWalletWebSocket";
 import { useAuth } from "@/app/contexts/auth-context";
 
@@ -47,6 +48,7 @@ interface WalletContextType {
   // State
   wallet: Wallet | null;
   transactions: WalletTransaction[];
+  paymentMethods: PaymentMethod[];
   loading: boolean;
   error: string | null;
 
@@ -55,6 +57,7 @@ interface WalletContextType {
   createWallet: () => Promise<any>;
   topUpWallet: (data: TopUpWalletData) => Promise<any>;
   getTransactions: (filters?: WalletTransactionFilters) => Promise<any>;
+  getActivePaymentMethods: () => Promise<void>;
   refreshWallet: () => Promise<void>;
   clearError: () => void;
 
@@ -74,6 +77,7 @@ interface WalletProviderProps {
 export function WalletProvider({ children }: WalletProviderProps) {
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
@@ -122,8 +126,8 @@ export function WalletProvider({ children }: WalletProviderProps) {
       setLoading(true);
       const response = await walletService.topUpWallet(data);
       
-      // Only refresh wallet for completed transactions (mobile money success)
-      // Card payments will be updated via webhook/websocket
+      // Don't refresh wallet for redirect transactions
+      // They will be updated via webhook/websocket when payment completes
       if (response.data && !response.data.requiresRedirect) {
         await getMyWallet();
       }
@@ -152,6 +156,21 @@ export function WalletProvider({ children }: WalletProviderProps) {
       throw err;
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  const getActivePaymentMethods = useCallback(async () => {
+    try {
+      const response = await paymentMethodService.getActivePaymentMethods();
+      if (response.data) {
+        // Filter to only show MOBILE_MONEY and CARD
+        const filteredMethods = response.data.filter((method: PaymentMethod) => 
+          ['MOBILE_MONEY', 'CARD'].includes(method.name)
+        );
+        setPaymentMethods(filteredMethods);
+      }
+    } catch (err: any) {
+      console.error('Failed to fetch payment methods:', err);
     }
   }, []);
 
@@ -188,7 +207,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     }
   }, []);
 
-  const updateWalletStatus = useCallback(async (walletId: string, isActive: boolean) => {
+  const updateWalletStatus = useCallback(async (walletId: string, isActive: any) => {
     try {
       setLoading(true);
       const response = await walletService.updateWalletStatus(walletId, isActive);
@@ -216,14 +235,11 @@ export function WalletProvider({ children }: WalletProviderProps) {
     }
   }, []);
 
-  // Handle WebSocket wallet updates
   useEffect(() => {
     if (walletUpdates.length > 0) {
       const latestUpdate = walletUpdates[walletUpdates.length - 1];
       
-      // Refresh wallet and transactions when we receive any wallet update
       if (latestUpdate.action === "TOP_UP") {
-        // Refresh wallet balance
         walletService.getMyWallet()
           .then(response => {
             if (response.data) {
@@ -232,7 +248,6 @@ export function WalletProvider({ children }: WalletProviderProps) {
           })
           .catch(console.error);
         
-        // Refresh transactions
         walletService.getWalletTransactions({ limit: 10 })
           .then(response => {
             if (response.data) {
@@ -241,7 +256,6 @@ export function WalletProvider({ children }: WalletProviderProps) {
           })
           .catch(console.error);
         
-        // Dispatch custom event for deposits page to refresh its transactions
         window.dispatchEvent(new CustomEvent('walletTransactionUpdate'));
       }
     }
@@ -251,6 +265,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     // State
     wallet,
     transactions,
+    paymentMethods,
     loading,
     error,
 
@@ -259,6 +274,7 @@ export function WalletProvider({ children }: WalletProviderProps) {
     createWallet,
     topUpWallet,
     getTransactions,
+    getActivePaymentMethods,
     refreshWallet,
     clearError,
 

@@ -454,7 +454,7 @@ export function DataTable<TData, TValue>({
           )}
 
           {showPagination && (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 mr-4">
               <Select
                 value={`${
                   pagination?.limit || table.getState().pagination.pageSize
