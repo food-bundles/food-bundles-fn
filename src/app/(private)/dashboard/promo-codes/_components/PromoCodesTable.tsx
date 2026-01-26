@@ -77,6 +77,13 @@ export default function PromoCodesTable({ onCreatePromo }: PromoCodesTableProps)
 
     const columns: ColumnDef<IPromoCode>[] = [
         {
+            accessorKey: "index",
+            header: "#",
+            cell: ({ row }) => (
+                <div className="text-sm font-medium">{row.index + 1}</div>
+            ),
+        },
+        {
             accessorKey: "code",
             header: "Code",
             cell: ({ row }) => (
@@ -101,11 +108,27 @@ export default function PromoCodesTable({ onCreatePromo }: PromoCodesTableProps)
         {
             accessorKey: "type",
             header: "Type",
-            cell: ({ row }) => (
-                <Badge variant={row.original.type === "PUBLIC" ? "default" : "outline"}>
-                    {row.original.type}
-                </Badge>
-            ),
+            cell: ({ row }) => {
+                const type = row.original.type;
+                const getTypeDisplay = () => {
+                    switch (type) {
+                        case "PUBLIC":
+                            return { text: "Public", className: "text-green-600 border-green-200 bg-green-50" };
+                        case "SUBSCRIBERS":
+                            return { text: "Subscribers", className: "text-blue-600 border-blue-200 bg-blue-50" };
+                        case "EXCEPTIONAL":
+                            return { text: "Exceptional", className: "text-purple-600 border-purple-200 bg-purple-50" };
+                        default:
+                            return { text: "Public", className: "" };
+                    }
+                };
+                const display = getTypeDisplay();
+                return (
+                    <Badge variant="outline" className={display.className}>
+                        {display.text}
+                    </Badge>
+                );
+            },
         },
         {
             accessorKey: "usage",

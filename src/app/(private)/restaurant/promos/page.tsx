@@ -33,8 +33,8 @@ export default function PromotionsPage() {
                 </div>
                 <h3 className="text-lg font-bold text-green-900">How to use promo codes?</h3>
                 <p className="text-green-800 text-sm max-w-md">
-                    Copy the promo code of your choice and paste it into the "Promo Code" field during checkout.
-                    The discount will be automatically applied to your order total.
+                    Select a promo code from the dropdown menu during checkout, review the discount details, 
+                    and click "Apply" to automatically reduce your order total.
                 </p>
             </div>
         </div>

@@ -137,17 +137,15 @@ export function TableFilters({ filters, className, showColumnToggle = false, onC
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
                     {filter.value && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-3 w-3 sm:h-4 sm:w-4 p-0 hover:bg-gray-200"
+                      <div
+                        className="h-3 w-3 sm:h-4 sm:w-4 p-0 hover:bg-gray-200 rounded cursor-pointer flex items-center justify-center"
                         onClick={(e) => {
                           e.stopPropagation();
                           filter.onChange?.(undefined);
                         }}
                       >
-                        <X className="h-2 w-2 mr-2 sm:h-3 sm:w-3" />
-                      </Button>
+                        <X className="h-2 w-2 sm:h-3 sm:w-3" />
+                      </div>
                     )}
                     <CalendarIcon className="h-3 w-3 sm:h-4 sm:w-4" />
                   </div>
@@ -200,17 +198,15 @@ export function TableFilters({ filters, className, showColumnToggle = false, onC
                   </span>
                   <div className="flex items-center gap-1 shrink-0">
                     {(filter.value?.from || filter.value?.to) && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-4 w-4 p-0 hover:bg-gray-200"
+                      <div
+                        className="h-4 w-4 p-0 hover:bg-gray-200 rounded cursor-pointer flex items-center justify-center"
                         onClick={(e) => {
                           e.stopPropagation();
                           filter.onChange?.({});
                         }}
                       >
                         <X className="h-3 w-3" />
-                      </Button>
+                      </div>
                     )}
                     <CalendarIcon className="h-4 w-4" />
                   </div>

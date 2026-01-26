@@ -167,4 +167,16 @@ export const productService = {
     const response = await axiosClient.get("/products/discounted");
     return response.data;
   },
+
+  getAllCategories: async () => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/category?limit=1000");
+    return response.data;
+  },
+
+  getRestaurants: async () => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/restaurants?limit=1000");
+    return response.data;
+  },
 };
