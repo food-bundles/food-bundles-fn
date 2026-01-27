@@ -38,6 +38,7 @@ export function CreateFarmerModal({
 }: CreateFarmerModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
+    name: "",
     phone: "",
     email: "",
   });
@@ -207,6 +208,11 @@ export function CreateFarmerModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!formData.name) {
+      toast.error("Name is required");
+      return;
+    }
+
     if (!formData.phone) {
       toast.error("Phone number is required");
       return;
@@ -223,6 +229,8 @@ export function CreateFarmerModal({
         ...formData,
         ...locationData,
         location: `${locationData.province}, ${locationData.district}, ${locationData.sector}, ${locationData.cell}, ${locationData.village}`,
+        // Only include email if it's not empty
+        ...(formData.email.trim() ? { email: formData.email.trim() } : {}),
       };
       
       await onCreate(farmerData);
@@ -231,6 +239,7 @@ export function CreateFarmerModal({
       
       // Reset form
       setFormData({
+        name: "",
         phone: "",
         email: "",
       });
@@ -243,7 +252,15 @@ export function CreateFarmerModal({
       });
     } catch (error: any) {
       console.error("Failed to create farmer:", error);
-      toast.error(error.message || "Failed to create farmer");
+      
+      // Handle specific error cases
+      if (error.message?.includes("Unique constraint failed on the fields: (`email`)")) {
+        toast.error("This email is already registered. Please use a different email or leave it empty.");
+      } else if (error.message?.includes("Unique constraint failed on the fields: (`phone`)")) {
+        toast.error("This phone number is already registered. Please use a different phone number.");
+      } else {
+        toast.error(error.message || "Failed to create farmer");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -290,6 +307,18 @@ export function CreateFarmerModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name" className="text-gray-900">Name *</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => handleInputChange("name", e.target.value)}
+              disabled={isLoading}
+              className="bg-white border-gray-300 text-gray-900"
+              placeholder="Enter full name"
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="phone" className="text-gray-900">Phone Number *</Label>

@@ -106,7 +106,7 @@ export default function InventoryPage() {
   if (loading)
     return (
       <div className="h-screen flex items-center justify-center">
-        <Spinner variant="ring" />
+        <Spinner variant="ring" className="w-10 h-10" />
       </div>
     );
   return (

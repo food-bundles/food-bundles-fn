@@ -6,7 +6,7 @@ export interface CreateWalletData {
 
 export interface TopUpWalletData {
   amount: number;
-  paymentMethod: "MOBILE_MONEY" | "CARD";
+  paymentMethodId: string;
   phoneNumber?: string;
   description?: string;
   walletId?: string;

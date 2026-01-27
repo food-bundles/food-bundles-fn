@@ -93,7 +93,11 @@ export function CreateFarmerModal({
 
   useEffect(() => {
     if (locationData.sector && locationData.district && locationData.province) {
-      loadCells(locationData.province, locationData.district, locationData.sector);
+      loadCells(
+        locationData.province,
+        locationData.district,
+        locationData.sector,
+      );
     } else {
       setCells([]);
       setVillages([]);
@@ -101,22 +105,39 @@ export function CreateFarmerModal({
   }, [locationData.sector, locationData.district, locationData.province]);
 
   useEffect(() => {
-    if (locationData.cell && locationData.sector && locationData.district && locationData.province) {
-      loadVillages(locationData.province, locationData.district, locationData.sector, locationData.cell);
+    if (
+      locationData.cell &&
+      locationData.sector &&
+      locationData.district &&
+      locationData.province
+    ) {
+      loadVillages(
+        locationData.province,
+        locationData.district,
+        locationData.sector,
+        locationData.cell,
+      );
     } else {
       setVillages([]);
     }
-  }, [locationData.cell, locationData.sector, locationData.district, locationData.province]);
+  }, [
+    locationData.cell,
+    locationData.sector,
+    locationData.district,
+    locationData.province,
+  ]);
 
   const loadProvinces = async () => {
     setLoadingState((prev) => ({ ...prev, provinces: true }));
     try {
-      const locationHierarchy = await locationService.fetchLocationHierarchy([]);
+      const locationHierarchy = await locationService.fetchLocationHierarchy(
+        [],
+      );
       const provinceNames = Array.isArray(locationHierarchy)
         ? locationHierarchy.map((prov: any) => prov.name || prov)
         : locationHierarchy.provinces
-        ? locationHierarchy.provinces.map((prov: any) => prov.name || prov)
-        : [];
+          ? locationHierarchy.provinces.map((prov: any) => prov.name || prov)
+          : [];
       setProvinces(provinceNames);
     } catch (error) {
       console.error("Failed to load provinces:", error);
@@ -142,7 +163,10 @@ export function CreateFarmerModal({
   const loadSectors = async (province: string, district: string) => {
     setLoadingState((prev) => ({ ...prev, sectors: true }));
     try {
-      const sectors = await locationService.getSectorsByDistrict(province, district);
+      const sectors = await locationService.getSectorsByDistrict(
+        province,
+        district,
+      );
       setSectors(sectors);
     } catch (error) {
       console.error("Failed to load sectors:", error);
@@ -152,10 +176,18 @@ export function CreateFarmerModal({
     }
   };
 
-  const loadCells = async (province: string, district: string, sector: string) => {
+  const loadCells = async (
+    province: string,
+    district: string,
+    sector: string,
+  ) => {
     setLoadingState((prev) => ({ ...prev, cells: true }));
     try {
-      const cells = await locationService.getCellsBySector(province, district, sector);
+      const cells = await locationService.getCellsBySector(
+        province,
+        district,
+        sector,
+      );
       setCells(cells);
     } catch (error) {
       console.error("Failed to load cells:", error);
@@ -165,10 +197,20 @@ export function CreateFarmerModal({
     }
   };
 
-  const loadVillages = async (province: string, district: string, sector: string, cell: string) => {
+  const loadVillages = async (
+    province: string,
+    district: string,
+    sector: string,
+    cell: string,
+  ) => {
     setLoadingState((prev) => ({ ...prev, villages: true }));
     try {
-      const villages = await locationService.getVillagesByCell(province, district, sector, cell);
+      const villages = await locationService.getVillagesByCell(
+        province,
+        district,
+        sector,
+        cell,
+      );
       setVillages(villages);
     } catch (error) {
       console.error("Failed to load villages:", error);
@@ -179,7 +221,7 @@ export function CreateFarmerModal({
   };
 
   const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleLocationChange = (field: keyof LocationState, value: string) => {
@@ -206,7 +248,7 @@ export function CreateFarmerModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.phone) {
       toast.error("Phone number is required");
       return;
@@ -224,11 +266,11 @@ export function CreateFarmerModal({
         ...locationData,
         location: `${locationData.province}, ${locationData.district}, ${locationData.sector}, ${locationData.cell}, ${locationData.village}`,
       };
-      
+
       await onCreate(farmerData);
       toast.success("Farmer created successfully. PIN sent via SMS.");
       onOpenChange(false);
-      
+
       // Reset form
       setFormData({
         phone: "",
@@ -254,7 +296,7 @@ export function CreateFarmerModal({
     value: string,
     placeholder: string,
     field: keyof LocationState,
-    isLoading: boolean
+    isLoading: boolean,
   ) => (
     <div className="relative">
       <select
@@ -285,14 +327,17 @@ export function CreateFarmerModal({
             Create New Farmer
           </DialogTitle>
           <DialogDescription className="text-gray-600">
-            Create a new farmer account. PIN will be auto-generated and sent via SMS.
+            Create a new farmer account. PIN will be auto-generated and sent via
+            SMS.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="phone" className="text-gray-900">Phone Number *</Label>
+              <Label htmlFor="phone" className="text-gray-900">
+                Phone Number *
+              </Label>
               <Input
                 id="phone"
                 value={formData.phone}
@@ -303,7 +348,9 @@ export function CreateFarmerModal({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-900">Email</Label>
+              <Label htmlFor="email" className="text-gray-900">
+                Email
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -317,33 +364,65 @@ export function CreateFarmerModal({
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-sm font-medium text-gray-900">Location Details *</h3>
-            
+            <h3 className="text-sm font-medium text-gray-900">
+              Location Details *
+            </h3>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-gray-900">Province</Label>
-                {renderDropdown(provinces, locationData.province, "Province", "province", loading.provinces)}
+                {renderDropdown(
+                  provinces,
+                  locationData.province,
+                  "Province",
+                  "province",
+                  loading.provinces,
+                )}
               </div>
               <div className="space-y-2">
                 <Label className="text-gray-900">District</Label>
-                {renderDropdown(districts, locationData.district, "District", "district", loading.districts)}
+                {renderDropdown(
+                  districts,
+                  locationData.district,
+                  "District",
+                  "district",
+                  loading.districts,
+                )}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-gray-900">Sector</Label>
-                {renderDropdown(sectors, locationData.sector, "Sector", "sector", loading.sectors)}
+                {renderDropdown(
+                  sectors,
+                  locationData.sector,
+                  "Sector",
+                  "sector",
+                  loading.sectors,
+                )}
               </div>
               <div className="space-y-2">
                 <Label className="text-gray-900">Cell</Label>
-                {renderDropdown(cells, locationData.cell, "Cell", "cell", loading.cells)}
+                {renderDropdown(
+                  cells,
+                  locationData.cell,
+                  "Cell",
+                  "cell",
+                  loading.cells,
+                )}
               </div>
             </div>
 
             <div className="space-y-2">
               <Label className="text-gray-900">Village</Label>
-              {renderDropdown(villages, locationData.village, "Village", "village", loading.villages)}
+              {renderDropdown(
+                villages,
+                locationData.village,
+                "Village",
+                "village",
+                loading.villages,
+              )}
             </div>
           </div>
 

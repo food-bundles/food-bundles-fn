@@ -48,7 +48,7 @@ const MapComponent = dynamic(() => import("./MapComponent"), {
   ssr: false,
   loading: () => (
     <div className="flex-1 rounded border border-gray-300 bg-gray-100 flex items-center justify-center">
-      <Spinner variant="ring" />
+      <Spinner variant="ring" className="w-10 h-10" />
     </div>
   ),
 });
@@ -619,8 +619,8 @@ export function Checkout() {
 
   if (isLoading) {
     return (
-      <div className="min-h-[400px] flex items-center justify-center">
-        <Spinner variant="ring" />
+      <div className="min-h-100 flex items-center justify-center">
+        <Spinner variant="ring" className="w-10 h-10" />
       </div>
     );
   }
@@ -647,10 +647,6 @@ export function Checkout() {
             <div className="flex justify-between text-gray-900">
               <span>Subtotal</span>
               <span>Rwf {summaryData.subtotal.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between text-gray-900">
-              <span>Delivery fee</span>
-              <span className="line-through text-gray-400">Rwf 5,000</span>
             </div>
             {packagingFee > 0 && (
               <div className="flex justify-between text-gray-900">
@@ -849,97 +845,109 @@ export function Checkout() {
                 />
               </div>
 
-              {/* Other Services Section */}
-              {hasOtherServices ? (
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="otherServices"
-                    checked={true}
-                    disabled={true}
-                    className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                  />
-                  <label
-                    htmlFor="otherServices"
-                    className="text-sm text-gray-700"
-                  >
-                    <span className="line-through text-gray-400">
-                      Add other services: +15,000 RWF
-                    </span>
-                    <span className="ml-2 text-green-600">Included</span>
-                  </label>
+              {/* Other Services and Payment Method Section */}
+              <div className="flex gap-6">
+                {/* Other Services Section */}
+                <div className="flex-1">
+                  {hasOtherServices ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="otherServices"
+                          checked={true}
+                          disabled={true}
+                          className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                        />
+                        <label
+                          htmlFor="otherServices"
+                          className="text-sm text-gray-700"
+                        >
+                          <span className="line-through text-gray-400">
+                            Add other services: +15,000F
+                          </span>
+                          <span className="ml-2 text-green-600">Included</span>
+                        </label>
+                      </div>
+                      <div className="ml-6 text-xs text-gray-600">
+                        <div>• Packaging per item</div>
+                        <div>• Labeling stickers</div>
+                        <div>• Cutting (meat preparation)</div>
+                        <div>• Extra cleaning</div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="otherServices"
+                          checked={otherServices}
+                          onChange={(e) => setOtherServices(e.target.checked)}
+                          className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                          disabled={isSubmitting}
+                        />
+                        <label
+                          htmlFor="otherServices"
+                          className="text-sm text-gray-700"
+                        >
+                          Add other services: +15,000F
+                        </label>
+                      </div>
+                      {otherServices && (
+                        <div className="ml-6 text-xs text-gray-600">
+                          <div>- Packaging per item</div>
+                          <div>- Labeling stickers</div>
+                          <div>- Cutting (meat preparation)</div>
+                          <div>- Extra cleaning</div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="otherServices"
-                    checked={otherServices}
-                    onChange={(e) => setOtherServices(e.target.checked)}
-                    className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                    disabled={isSubmitting}
-                  />
-                  <label
-                    htmlFor="otherServices"
-                    className="text-sm text-gray-700"
-                  >
-                    Add other services: +15,000 RWF
-                  </label>
-                </div>
-              )}
 
-              {/* Payment Method Section */}
-              <div className="space-y-3">
-                <div className="flex items-center">
-                  <h3 className="text-[14px] mr-5 font-medium text-gray-900">
-                    Payment Method
-                  </h3>
-
-                  <div className="flex flex-wrap justify-center gap-2 ">
-                    <button
-                      type="button"
-                      onClick={() => setMethod("prepaid")}
-                      className={`rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal px-4 border transition-colors cursor-pointer ${method === "prepaid"
-                        ? "bg-green-700 text-white border-green-700"
-                        : "bg-white text-gray-900 border-gray-300 hover:border-green-500"
-                        } ${!wallet || walletBalance < finalTotal ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      disabled={isSubmitting || !wallet || walletBalance < finalTotal}
-                    >
-                      Prepaid
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setMethod("momo")}
-                      className={`rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal px-4 border transition-colors cursor-pointer ${method === "momo"
-                        ? "bg-green-700 text-white border-green-700"
-                        : "bg-white text-gray-900 border-gray-300 hover:border-green-500"
-                        }`}
+                {/* Payment Method Section */}
+                <div className="flex-1">
+                  <div>
+                    <label className="text-[14px] font-medium text-gray-900 mb-2 block">
+                      Payment Method
+                    </label>
+                    <Select
+                      value={method}
+                      onValueChange={(value: PaymentMethod) => setMethod(value)}
                       disabled={isSubmitting}
                     >
-                      MoMo
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setMethod("card")}
-                      className={`rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal px-4 border transition-colors cursor-pointer ${method === "card"
-                        ? "bg-green-700 text-white border-green-700"
-                        : "bg-white text-gray-900 border-gray-300 hover:border-green-500"
-                        }`}
-                      disabled={isSubmitting}
-                    >
-                      Card/MoMo
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setMethod("voucher")}
-                      className={`rounded flex-1 sm:flex-initial h-7 text-[13px] font-normal px-4 border transition-colors cursor-pointer ${method === "voucher"
-                        ? "bg-green-700 text-white border-green-700"
-                        : "bg-white text-gray-900 border-gray-300 hover:border-green-500"
-                        }`}
-                      disabled={isSubmitting}
-                    >
-                      Voucher
-                    </button>
+                      <SelectTrigger className={`w-full h-10 ${
+                        method === "prepaid" ? "text-blue-600" :
+                        method === "momo" ? "text-green-600" :
+                        method === "card" ? "text-purple-600" :
+                        method === "voucher" ? "text-orange-600" : ""
+                      }`}>
+                        <SelectValue placeholder="Select payment method" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="prepaid" disabled={!wallet || walletBalance < finalTotal}>
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            Prepaid
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="momo">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            MoMo
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="card">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            Card & MoMo
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="voucher">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                            Voucher
+                          </span>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>
