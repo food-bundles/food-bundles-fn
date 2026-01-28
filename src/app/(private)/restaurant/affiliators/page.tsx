@@ -237,8 +237,8 @@ export default function AffiliatorsPage() {
         <div className="p-6 space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h2 className="text-xl font-bold tracking-tight text-gray-900">Affiliators</h2>
-                    <p className="text-sm text-gray-500 mt-1">Manage your affiliators here.</p>
+                    <h2 className="text-2xl font-bold tracking-tight text-gray-900">Affiliators</h2>
+                    <p className="text-sm text-gray-500 mt-1">Manage your associates here.</p>
                 </div>
                 <Button onClick={() => { resetForm(); setIsDialogOpen(true); }} className="bg-green-700 hover:bg-green-600">
                     Add Affiliator

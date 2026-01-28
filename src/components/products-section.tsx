@@ -16,6 +16,7 @@ import {
   ShoppingCart,
   // Eye,
   Check,
+  Gift,
 } from "lucide-react";
 import {
   Select,
@@ -24,10 +25,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useAuth } from "@/app/contexts/auth-context";
 import { useCart } from "@/app/contexts/cart-context";
 import { useProductSection } from "@/hooks/useProductSection";
 import { productService } from "@/app/services/productService";
+import RestaurantAvailablePromos from "@/app/(private)/restaurant/_components/RestaurantAvailablePromos";
 // import { ChristmasAnimation } from "@/components/ChristmasAnimation";
 import Link from "next/link";
 
@@ -316,9 +332,29 @@ export function ProductsSection({
   const { selectedCategory, setSelectedCategory } = useProductSection();
   const { user, isAuthenticated } = useAuth();
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isPromoSheetOpen, setIsPromoSheetOpen] = useState(false);
+  const [showSparkles, setShowSparkles] = useState(false);
   const [showDiscounted, setShowDiscounted] = useState(false);
   const [discountedProducts, setDiscountedProducts] = useState<Product[]>([]);
+  const [hasPromoCodes, setHasPromoCodes] = useState(false);
   const { totalItems, totalQuantity, totalAmount, isLoading } = useCartSummary();
+
+  // Check for promo codes availability on mount
+  useEffect(() => {
+    const checkPromoCodes = async () => {
+      try {
+        const { promoService } = await import('@/app/services/promoService');
+        const response = await promoService.getActivePromos();
+        if (response.success) {
+          setHasPromoCodes(response.data.length > 0);
+        }
+      } catch (error) {
+        console.error('Failed to check promo codes:', error);
+        setHasPromoCodes(false);
+      }
+    };
+    checkPromoCodes();
+  }, []);
 
 
   const searchQuery = search?.query || "";
@@ -393,9 +429,73 @@ export function ProductsSection({
                 <div className="flex flex-col lg:flex-row items-center lg:items-stretch justify-between gap-4 w-full px-4">
                   {/* Left: Greeting */}
                   <div className="flex flex-col justify-center text-center lg:text-left">
-                    <h1 className="text-[16px] font-semibold text-gray-800">
-                      Hello <span className="text-green-600">{userName}</span>! 
-                    </h1>
+                    <div className="flex items-center justify-center lg:justify-start gap-3">
+                      <h1 className="text-[16px] font-semibold text-gray-800">
+                        Hello <span className="text-green-600">{userName}</span>!
+                      </h1>
+                      {hasPromoCodes && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Sheet open={isPromoSheetOpen} onOpenChange={setIsPromoSheetOpen}>
+                                <SheetTrigger asChild>
+                                  <button 
+                                    className="relative p-3 hover:bg-gray-200 rounded-full transition-all duration-300 group"
+                                    onClick={() => {
+                                      setShowSparkles(true);
+                                      setTimeout(() => setShowSparkles(false), 1000);
+                                    }}
+                                  >
+                                    <Gift className="h-9 w-9 text-green-500 hover:text-green-600 group-hover:scale-110 transition-all duration-200" />
+                                    {showSparkles && (
+                                      <div className="absolute inset-0 pointer-events-none">
+                                        {[...Array(8)].map((_, i) => (
+                                          <div
+                                            key={i}
+                                            className="absolute w-1.5 h-1.5 bg-yellow-400 rounded-full animate-ping"
+                                            style={{
+                                              top: `${15 + Math.random() * 70}%`,
+                                              left: `${15 + Math.random() * 70}%`,
+                                              animationDelay: `${i * 120}ms`,
+                                              animationDuration: '1000ms'
+                                            }}
+                                          />
+                                        ))}
+                                      </div>
+                                    )}
+                                  </button>
+                                </SheetTrigger>
+                                <SheetContent className="w-[400px] sm:w-[540px] bg-gradient-to-br from-white to-yellow-50">
+                                  <SheetHeader className="space-y-4 pb-6 border-b border-yellow-100">
+                                    <SheetTitle className="flex items-center gap-3 text-xl font-bold">
+                                      <div className="p-2 bg-green-100 rounded-full">
+                                        <Gift className="h-6 w-6 text-green-600" />
+                                      </div>
+                                      Available Promo Codes
+                                    </SheetTitle>
+                                    <div className="bg-gradient-to-r from-green-50 p-4 rounded-lg border border-green-200">
+                                      <h3 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                                        <span className="text-green-600">💡</span>
+                                        How to use promo codes?
+                                      </h3>
+                                      <p className="text-sm text-gray-600 leading-relaxed">
+                                        Select a promo code from the dropdown menu during checkout, review the discount details, and click "Apply" to automatically reduce your order total.
+                                      </p>
+                                    </div>
+                                  </SheetHeader>
+                                  <div className="mt-6">
+                                    <RestaurantAvailablePromos onPromoCodesLoad={setHasPromoCodes} />
+                                  </div>
+                                </SheetContent>
+                              </Sheet>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>View your gift</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </div>
                     <p className="text-gray-500 text-sm">
                       Welcome to Our Farm <span className="text-2xl"></span>
                     </p>

@@ -191,7 +191,7 @@ Please provide a helpful response based on the FAQ data and context. If the ques
           </div> */}
 
           {/* Email Support */}
-          <div className="flex flex-col items-center justify-center space-y-4 ">
+          <div className="flex flex-col items-center justify-center space-y-4 hover:bg-green-100 p-4 rounded-lg transition-colors duration-200 cursor-pointer">
             <div className="flex items-center justify-center ">
               <Mail className="h-10 w-10 text-green-600" />
             </div>
@@ -207,8 +207,8 @@ Please provide a helpful response based on the FAQ data and context. If the ques
           </div>
 
           {/* WhatsApp Support */}
-          <div className="flex flex-col items-center justify-center space-y-4">
-            <div className="flex flex-col items-center justify-center p-2 rounded-full ">
+          <div className="flex flex-col items-center justify-center space-y-4 hover:bg-green-100 p-4 rounded-lg transition-colors duration-200 cursor-pointer" onClick={() => window.open("https://wa.me/250796897823", "_blank")}>
+            <div className="flex flex-col items-center justify-center p-2 rounded-full">
               <svg
                 className="h-6 w-6 sm:h-8 sm:w-8 text-green-600"
                 viewBox="0 0 24 24"
@@ -229,19 +229,14 @@ Please provide a helpful response based on the FAQ data and context. If the ques
           </div>
        
           {/* Live Chat */}
-          <div className="flex flex-col items-center justify-center space-y-4">
-            <div
-              onClick={() => setIsChatOpen(true)}
-              className="flex flex-col itmes-center justify-center bg-purple-100 p-2 rounded-full"
-            >
+          <div className="flex flex-col items-center justify-center space-y-4 hover:bg-green-100 p-4 rounded-lg transition-colors duration-200 cursor-pointer" onClick={() => { if (window.chatbase) { window.chatbase('open'); } }}>
+            <div className="flex flex-col itmes-center justify-center bg-purple-100 p-2 rounded-full">
               <CircleChevronRight className="h-5 w-5 text-purple-600" />
             </div>
             <div className="flex flex-col items-center">
               <h4 className="font-semibold text-gray-900 mb-1">For More</h4>
               <p className="text-sm text-gray-600 mb-1">Chat With Our Agent</p>
-              <p className="text-xs text-green-500 hover:rounded-md hover:bg-green-300 p-2" 
-              onClick={() => setIsChatOpen(true)}
-              >Available now</p>
+              <p className="text-xs text-green-500">Available now</p>
             </div>
           </div>
         </div>

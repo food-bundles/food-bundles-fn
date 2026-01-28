@@ -128,6 +128,7 @@ interface DataTableProps<TData, TValue> {
     totalPages: number;
   };
   onPaginationChange?: (page: number, limit: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
   isLoading?: boolean;
 }
 
@@ -148,6 +149,7 @@ export function DataTable<TData, TValue>({
   customFilters,
   pagination,
   onPaginationChange,
+  onPageSizeChange,
   isLoading = false,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -209,7 +211,9 @@ export function DataTable<TData, TValue>({
   };
 
   const handlePageSizeChange = (pageSize: number) => {
-    if (pagination && onPaginationChange) {
+    if (onPageSizeChange) {
+      onPageSizeChange(pageSize);
+    } else if (pagination && onPaginationChange) {
       onPaginationChange(1, pageSize);
     } else {
       table.setPageSize(pageSize);

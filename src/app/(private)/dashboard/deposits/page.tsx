@@ -8,6 +8,7 @@ import { useWallet } from "@/app/contexts/WalletContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -65,17 +66,16 @@ export default function DepositsManagementPage() {
   const [wallets, setWallets] = useState<any[]>([]);
   const [walletPagination, setWalletPagination] = useState({
     page: 1,
-    limit: 20,
+    limit: 5,
     total: 0,
     totalPages: 0,
   });
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 20,
+    limit: 5,
     total: 0,
     totalPages: 0,
   });
-  const [pageSize, setPageSize] = useState(5);
   const [transactionFilterState, setTransactionFilterState] = useState({
     type: "",
     restaurantName: "",
@@ -86,11 +86,17 @@ export default function DepositsManagementPage() {
     total: 0,
   });
   const [searchQuery, setSearchQuery] = useState("");
+  const [depositSearchQuery, setDepositSearchQuery] = useState("");
+  const [filteredRestaurants, setFilteredRestaurants] = useState<any[]>([]);
   const [transactionSearchQuery, setTransactionSearchQuery] = useState("");
   const [walletStatusFilter, setWalletStatusFilter] = useState("all");
   const [transactionTypeFilter, setTransactionTypeFilter] = useState("all");
   const [transactionStatusFilter, setTransactionStatusFilter] = useState("all");
   const [showDepositModal, setShowDepositModal] = useState(false);
+  const [showOTPModal, setShowOTPModal] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [sessionId, setSessionId] = useState("");
+  const [isOTPLoading, setIsOTPLoading] = useState(false);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   const [transactionDetails, setTransactionDetails] = useState<any>(null);
@@ -125,10 +131,9 @@ export default function DepositsManagementPage() {
       ]),
       createCommonFilters.status(transactionStatusFilter, setTransactionStatusFilter, [
         { label: "All Status", value: "all" },
-        { label: "Completed", value: "completed" },
-        { label: "Pending", value: "pending" },
-        { label: "Processing", value: "processing" },
-        { label: "Failed", value: "failed" },
+        { label: "Completed", value: "COMPLETED" },
+        { label: "Processing", value: "PROCESSING" },
+        { label: "Failed", value: "FAILED" },
       ]),
     ];
   }, [transactionSearchQuery, transactionTypeFilter, transactionStatusFilter]);
@@ -153,28 +158,34 @@ export default function DepositsManagementPage() {
         handleTransactionClick(transaction);
       },
       currentPage: pagination.page,
-      pageSize: pageSize,
+      pageSize: pagination.limit,
     });
-  }, [pagination.page, pageSize]);
+  }, [pagination.page, pagination.limit]);
 
   const [depositData, setDepositData] = useState({
     amount: "",
     description: "",
   });
 
-  const fetchWallets = async (page = 1, search = searchQuery) => {
+  const fetchWallets = async (page = 1, search = searchQuery, statusFilter = walletStatusFilter, limit = walletPagination.limit) => {
     try {
-      const response = await walletService.getAllWallets({
+      const filters: any = {
         page,
-        limit: 20,
+        limit,
         restaurantName: search || undefined,
-      });
+      };
+      
+      if (statusFilter !== "all") {
+        filters.isActive = statusFilter === "true";
+      }
+
+      const response = await walletService.getAllWallets(filters);
       if (response && response.data) {
         setWallets(response.data);
         if (response.pagination) {
           setWalletPagination({
             page: response.pagination.page,
-            limit: response.pagination.limit,
+            limit: limit,
             total: response.pagination.total,
             totalPages: response.pagination.totalPages,
           });
@@ -187,19 +198,32 @@ export default function DepositsManagementPage() {
 
   const fetchTransactions = async (
     page = 1,
-    search = transactionSearchQuery
+    search = transactionSearchQuery,
+    limit = pagination.limit,
+    typeFilter = transactionTypeFilter,
+    statusFilter = transactionStatusFilter
   ) => {
     try {
-      const filters: any = { page, limit: pageSize };
-      if (transactionFilterState.type) filters.type = transactionFilterState.type;
-      if (search) filters.restaurantName = search;
+      const filters: any = { page, limit };
+      
+      if (typeFilter !== "all") {
+        filters.type = typeFilter;
+      }
+      
+      if (statusFilter !== "all") {
+        filters.status = statusFilter;
+      }
+      
+      if (search) {
+        filters.restaurantName = search;
+      }
 
       const response = await walletService.getAllWalletTransactions(filters);
       if (response && response.data) {
         setTransactions(response.data);
         setPagination({
-          page: response.pagination?.page || 1,
-          limit: response.pagination?.limit || pageSize,
+          page: response.pagination?.page || page,
+          limit: limit,
           total: response.pagination?.total || 0,
           totalPages: response.pagination?.totalPages || 0,
         });
@@ -246,9 +270,22 @@ export default function DepositsManagementPage() {
         (Array.isArray(response.data) ? response.data : []);
       if (restaurantData) {
         setRestaurants(restaurantData);
+        setFilteredRestaurants(restaurantData);
       }
     } catch (error) {
       console.error("Failed to fetch restaurants:", error);
+    }
+  };
+
+  const handleDepositSearchChange = (value: string) => {
+    setDepositSearchQuery(value);
+    if (value.trim() === "") {
+      setFilteredRestaurants(restaurants);
+    } else {
+      const filtered = restaurants.filter(restaurant => 
+        restaurant.name.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredRestaurants(filtered);
     }
   };
 
@@ -304,9 +341,21 @@ export default function DepositsManagementPage() {
     fetchData();
   }, []);
 
+  // Refetch wallets when filters change
   useEffect(() => {
-    fetchTransactions(1);
-  }, [pageSize]);
+    if (!initialLoading) {
+      fetchWallets(1, searchQuery, walletStatusFilter, walletPagination.limit);
+    }
+  }, [walletStatusFilter]);
+
+  // Refetch transactions when filters change
+  useEffect(() => {
+    if (!initialLoading) {
+      fetchTransactions(1, transactionSearchQuery, pagination.limit, transactionTypeFilter, transactionStatusFilter);
+    }
+  }, [transactionTypeFilter, transactionStatusFilter]);
+
+
 
   const handleTransactionClick = async (transaction: any) => {
     try {
@@ -371,27 +420,54 @@ export default function DepositsManagementPage() {
 
     setIsDepositLoading(true);
     try {
-      const response = await walletService.adminDeposit({
+      const response = await walletService.adminDepositRequestOTP({
         restaurantId: selectedRestaurantId,
         amount: parseFloat(depositData.amount),
         description:
           depositData.description || "Admin deposit for promotional credit",
       });
 
-      if (response.message) {
-        toast.success("Deposit successful!");
+      if (response.requiresOTP && response.sessionId) {
+        setSessionId(response.sessionId);
         setShowDepositModal(false);
+        setShowOTPModal(true);
+        toast.success(response.message || "OTP sent for verification");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to request OTP");
+    } finally {
+      setIsDepositLoading(false);
+    }
+  };
+
+  const handleOTPVerification = async () => {
+    if (!otpCode || otpCode.length !== 6) {
+      toast.error("Please enter a valid 6-digit OTP");
+      return;
+    }
+
+    setIsOTPLoading(true);
+    try {
+      const response = await walletService.adminDepositVerifyOTP({
+        otp: otpCode,
+        sessionId: sessionId,
+      });
+
+      if (response.data?.success) {
+        toast.success("Deposit successful!");
+        setShowOTPModal(false);
+        setOtpCode("");
+        setSessionId("");
         setDepositData({ amount: "", description: "" });
-        setSelectedWallet(null);
         setSelectedRestaurantId("");
         await fetchWallets(1);
         await fetchTransactions(pagination.page);
         await fetchTransactionStats();
       }
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to process deposit");
+      toast.error(error.response?.data?.message || "Failed to verify OTP");
     } finally {
-      setIsDepositLoading(false);
+      setIsOTPLoading(false);
     }
   };
 
@@ -423,14 +499,6 @@ export default function DepositsManagementPage() {
     }
   };
 
-  if (initialLoading) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        <Spinner variant="ring" className="w-10 h-10" />
-      </div>
-    );
-  }
-
   const totalBalance = wallets.reduce(
     (sum, wallet) => sum + (wallet.balance || 0),
     0
@@ -439,6 +507,7 @@ export default function DepositsManagementPage() {
 
   return (
     <div className="p-6 space-y-6">
+      {/* Static content - shows immediately */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/50 backdrop-blur-sm p-6 rounded-2xl border border-gray-100 shadow-sm">
         <div>
           <h1 className="text-lg font-semibold">Deposit Management</h1>
@@ -455,107 +524,120 @@ export default function DepositsManagementPage() {
         </Button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div className="p-4 rounded-lg border bg-green-50 transition-all duration-200 hover:shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <DollarSign className="w-5 h-5 text-green-600" />
-            <div className="flex items-center gap-1 text-xs text-green-600">
-              <div className="w-3 h-3">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M7 14l5-5 5 5z" />
-                </svg>
+      {/* Stats Cards - only this section shows loading */}
+      {initialLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="p-4 rounded-lg border bg-gray-50">
+              <div className="h-5 bg-gray-200 rounded w-16 animate-pulse mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-20 animate-pulse mb-1"></div>
+              <div className="h-6 bg-gray-200 rounded w-24 animate-pulse"></div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="p-4 rounded-lg border bg-green-50 transition-all duration-200 hover:shadow-md">
+            <div className="flex items-center justify-between mb-2">
+              <DollarSign className="w-5 h-5 text-green-600" />
+              <div className="flex items-center gap-1 text-xs text-green-600">
+                <div className="w-3 h-3">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M7 14l5-5 5 5z" />
+                  </svg>
+                </div>
+                +12.5%
               </div>
-              +12.5%
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-gray-600 font-medium">Total Balance</p>
+              <p className="text-sm font-bold text-green-600">
+                {totalBalance.toLocaleString()} RWF
+              </p>
             </div>
           </div>
-          <div className="space-y-1">
-            <p className="text-xs text-gray-600 font-medium">Total Balance</p>
-            <p className="text-sm font-bold text-green-600">
-              {totalBalance.toLocaleString()} RWF
-            </p>
-          </div>
-        </div>
 
-        <div className="p-4 rounded-lg border bg-blue-50 transition-all duration-200 hover:shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <Wallet className="w-5 h-5 text-blue-600" />
-            <div className="flex items-center gap-1 text-xs text-blue-600">
-              <div className="w-3 h-3">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M7 14l5-5 5 5z" />
-                </svg>
+          <div className="p-4 rounded-lg border bg-blue-50 transition-all duration-200 hover:shadow-md">
+            <div className="flex items-center justify-between mb-2">
+              <Wallet className="w-5 h-5 text-blue-600" />
+              <div className="flex items-center gap-1 text-xs text-blue-600">
+                <div className="w-3 h-3">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M7 14l5-5 5 5z" />
+                  </svg>
+                </div>
+                +8.2%
               </div>
-              +8.2%
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-gray-600 font-medium">Active Cash</p>
+              <p className="text-sm font-bold text-blue-600">{activeWallets}</p>
             </div>
           </div>
-          <div className="space-y-1">
-            <p className="text-xs text-gray-600 font-medium">Active Cash</p>
-            <p className="text-sm font-bold text-blue-600">{activeWallets}</p>
-          </div>
-        </div>
 
-        <div className="p-4 rounded-lg border bg-purple-50 transition-all duration-200 hover:shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <Users className="w-5 h-5 text-purple-600" />
-            <div className="flex items-center gap-1 text-xs text-purple-600">
-              <div className="w-3 h-3">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M7 14l5-5 5 5z" />
-                </svg>
+          <div className="p-4 rounded-lg border bg-purple-50 transition-all duration-200 hover:shadow-md">
+            <div className="flex items-center justify-between mb-2">
+              <Users className="w-5 h-5 text-purple-600" />
+              <div className="flex items-center gap-1 text-xs text-purple-600">
+                <div className="w-3 h-3">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M7 14l5-5 5 5z" />
+                  </svg>
+                </div>
+                +5.1%
               </div>
-              +5.1%
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-gray-600 font-medium">Total Cash</p>
+              <p className="text-sm font-bold text-purple-600">
+                {walletPagination.total}
+              </p>
             </div>
           </div>
-          <div className="space-y-1">
-            <p className="text-xs text-gray-600 font-medium">Total Cash</p>
-            <p className="text-sm font-bold text-purple-600">
-              {walletPagination.total}
-            </p>
-          </div>
-        </div>
 
-        <div className="p-4 rounded-lg border bg-green-50 transition-all duration-200 hover:shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <ArrowUpRight className="w-5 h-5 text-green-600" />
-            <div className="flex items-center gap-1 text-xs text-green-600">
-              <div className="w-3 h-3">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M7 14l5-5 5 5z" />
-                </svg>
+          <div className="p-4 rounded-lg border bg-green-50 transition-all duration-200 hover:shadow-md">
+            <div className="flex items-center justify-between mb-2">
+              <ArrowUpRight className="w-5 h-5 text-green-600" />
+              <div className="flex items-center gap-1 text-xs text-green-600">
+                <div className="w-3 h-3">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M7 14l5-5 5 5z" />
+                  </svg>
+                </div>
+                +15.3%
               </div>
-              +15.3%
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-gray-600 font-medium">Top-ups</p>
+              <p className="text-sm font-bold text-green-600">
+                {transactionStats.topUp}
+              </p>
             </div>
           </div>
-          <div className="space-y-1">
-            <p className="text-xs text-gray-600 font-medium">Top-ups</p>
-            <p className="text-sm font-bold text-green-600">
-              {transactionStats.topUp}
-            </p>
-          </div>
-        </div>
 
-        <div className="p-4 rounded-lg border bg-red-50 transition-all duration-200 hover:shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <ArrowDownRight className="w-5 h-5 text-red-600" />
-            <div className="flex items-center gap-1 text-xs text-red-600">
-              <div className="w-3 h-3">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M17 10l-5 5-5-5z" />
-                </svg>
+          <div className="p-4 rounded-lg border bg-red-50 transition-all duration-200 hover:shadow-md">
+            <div className="flex items-center justify-between mb-2">
+              <ArrowDownRight className="w-5 h-5 text-red-600" />
+              <div className="flex items-center gap-1 text-xs text-red-600">
+                <div className="w-3 h-3">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17 10l-5 5-5-5z" />
+                  </svg>
+                </div>
+                -3.7%
               </div>
-              -3.7%
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-gray-600 font-medium">Payments</p>
+              <p className="text-sm font-bold text-red-600">
+                {transactionStats.payment}
+              </p>
             </div>
           </div>
-          <div className="space-y-1">
-            <p className="text-xs text-gray-600 font-medium">Payments</p>
-            <p className="text-sm font-bold text-red-600">
-              {transactionStats.payment}
-            </p>
-          </div>
         </div>
-      </div>
+      )}
 
+      {/* Data tables - show immediately with their own loading states */}
       <div className="space-y-4">
         {/* Wallets Table */}
         <Card className="border-none shadow-xl shadow-gray-100 rounded-2xl overflow-hidden">
@@ -587,7 +669,11 @@ export default function DepositsManagementPage() {
               pagination={walletPagination}
               onPaginationChange={(page, limit) => {
                 setWalletPagination(prev => ({ ...prev, page, limit }));
-                fetchWallets(page, searchQuery);
+                fetchWallets(page, searchQuery, walletStatusFilter, limit);
+              }}
+              onPageSizeChange={(newPageSize) => {
+                setWalletPagination(prev => ({ ...prev, limit: newPageSize, page: 1 }));
+                fetchWallets(1, searchQuery, walletStatusFilter, newPageSize);
               }}
             />
           </CardContent>
@@ -617,7 +703,11 @@ export default function DepositsManagementPage() {
               pagination={pagination}
               onPaginationChange={(page, limit) => {
                 setPagination(prev => ({ ...prev, page, limit }));
-                fetchTransactions(page, transactionSearchQuery);
+                fetchTransactions(page, transactionSearchQuery, limit, transactionTypeFilter, transactionStatusFilter);
+              }}
+              onPageSizeChange={(newPageSize) => {
+                setPagination(prev => ({ ...prev, limit: newPageSize, page: 1 }));
+                fetchTransactions(1, transactionSearchQuery, newPageSize, transactionTypeFilter, transactionStatusFilter);
               }}
             />
           </CardContent>
@@ -626,111 +716,130 @@ export default function DepositsManagementPage() {
 
       {/* Deposit Modal */}
       <Dialog open={showDepositModal} onOpenChange={setShowDepositModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-green-600">Add New Deposit</DialogTitle>
+            <DialogDescription>
+              Add promotional credit or top up restaurant wallet manually
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); handleDeposit(); }} className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="restaurant">Select Restaurant *</Label>
+                <Select
+                  value={selectedRestaurantId}
+                  onValueChange={(value) => setSelectedRestaurantId(value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Search and select restaurant..." />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[200px] overflow-hidden">
+                    <div className="sticky top-0 bg-white z-50 p-2 border-b border-gray-50">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          placeholder="Type to search..."
+                          className="h-10 pl-10 bg-gray-50 border-none rounded-lg text-sm"
+                          value={depositSearchQuery}
+                          onChange={(e) => handleDepositSearchChange(e.target.value)}
+                          onKeyDown={(e) => e.stopPropagation()}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    </div>
+                    <div className="max-h-[150px] overflow-y-auto">
+                      {filteredRestaurants.map((res) => (
+                        <SelectItem key={res.id} value={res.id} className="hover:text-green-600 hover:bg-green-50">
+                          {res.name}
+                        </SelectItem>
+                      ))}
+                    </div>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="amount">Amount (RWF) *</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  required
+                  placeholder="250000"
+                  value={depositData.amount}
+                  onChange={(e) => setDepositData(prev => ({ ...prev, amount: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                placeholder="Admin deposit for promotional credit"
+                value={depositData.description}
+                onChange={(e) => setDepositData(prev => ({ ...prev, description: e.target.value }))}
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowDepositModal(false);
+                  setSelectedRestaurantId("");
+                  setDepositData({ amount: "", description: "" });
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isDepositLoading || !selectedRestaurantId || !depositData.amount}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {isDepositLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Plus className="h-4 w-4 mr-2" />
+                )}
+                Request OTP
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* OTP Verification Modal */}
+      <Dialog open={showOTPModal} onOpenChange={setShowOTPModal}>
         <DialogContent className="sm:max-w-md bg-white border-none rounded-3xl shadow-2xl overflow-hidden p-0">
-          <div className="bg-linear-to-r from-green-600 to-green-500 p-8 text-white relative">
+          <div className="bg-green-700 p-8 text-white relative">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
             <DialogHeader className="text-left relative z-10">
               <DialogTitle className="text-2xl font-black tracking-tight">
-                Add New Deposit
+                Verify OTP
               </DialogTitle>
               <DialogDescription className="text-green-50/80 font-medium">
-                Add promotional credit or top up restaurant wallet manually
+                Enter the 6-digit OTP sent to verify the deposit
               </DialogDescription>
             </DialogHeader>
           </div>
           <div className="p-8 space-y-6">
             <div className="space-y-2">
               <Label
-                htmlFor="restaurant"
+                htmlFor="otp"
                 className="text-xs font-bold tracking-wider text-gray-500 ml-1"
               >
-                Select Restaurant
-              </Label>
-              <Select
-                value={selectedRestaurantId}
-                onValueChange={(value) => setSelectedRestaurantId(value)}
-              >
-                <SelectTrigger className="h-12 rounded-xl border-gray-100 bg-gray-50/50 focus:ring-green-500/20">
-                  <SelectValue placeholder="Search and select restaurant..." />
-                </SelectTrigger>
-                <SelectContent className="rounded-2xl border-gray-100 shadow-xl">
-                  <div className="p-2 sticky top-0 bg-white z-10 border-b border-gray-50 mb-2">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <Input
-                        placeholder="Type to search..."
-                        className="h-10 pl-10 bg-gray-50 border-none rounded-lg text-sm"
-                        onChange={(e) => fetchRestaurants(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="max-h-75 overflow-y-auto">
-                    {restaurants.map((res) => (
-                      <SelectItem
-                        key={res.id}
-                        value={res.id}
-                        className="rounded-xl mx-1 py-3 focus:bg-green-50 focus:text-green-700 cursor-pointer transition-colors"
-                      >
-                        <div className="flex flex-col gap-0.5">
-                          <span className="font-bold text-sm tracking-tight">
-                            {res.name}
-                          </span>
-                          <span className="text-[10px] font-medium opacity-60 tracking-wider">
-                            {res.email}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </div>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label
-                htmlFor="amount"
-                className="text-xs font-bold tracking-wider text-gray-500 ml-1"
-              >
-                Amount (RWF)
-              </Label>
-              <div className="relative group">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-gray-400 group-focus-within:text-green-500 transition-colors">
-                  RWF
-                </div>
-                <Input
-                  id="amount"
-                  type="number"
-                  placeholder="0.00"
-                  className="h-14 pl-14 text-lg font-black rounded-xl border-gray-100 bg-gray-50/50 focus:ring-green-500/20 focus:border-green-500 transition-all placeholder:text-gray-300"
-                  value={depositData.amount}
-                  onChange={(e) =>
-                    setDepositData((prev) => ({
-                      ...prev,
-                      amount: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label
-                htmlFor="description"
-                className="text-xs font-bold tracking-wider text-gray-500 ml-1"
-              >
-                Manual Description
+                OTP Code
               </Label>
               <Input
-                id="description"
-                placeholder="e.g., Seasonal promotion bonus"
-                className="h-12 rounded-xl border-gray-100 bg-gray-50/50 focus:ring-green-500/20 focus:border-green-500 transition-all"
-                value={depositData.description}
-                onChange={(e) =>
-                  setDepositData((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
+                id="otp"
+                type="text"
+                placeholder="000000"
+                maxLength={6}
+                className="h-14 text-center text-2xl font-black rounded-xl border-gray-100 bg-gray-50/50 focus:ring-green-500/20 focus:border-green-500 transition-all placeholder:text-gray-300 tracking-widest"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
               />
             </div>
           </div>
@@ -738,25 +847,23 @@ export default function DepositsManagementPage() {
             <Button
               variant="ghost"
               onClick={() => {
-                setShowDepositModal(false);
-                setSelectedWallet(null);
-                setSelectedRestaurantId("");
+                setShowOTPModal(false);
+                setOtpCode("");
+                setSessionId("");
               }}
               className="flex-1 h-12 rounded-xl font-bold text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all"
             >
               Cancel
             </Button>
             <Button
-              onClick={handleDeposit}
-              disabled={isDepositLoading}
+              onClick={handleOTPVerification}
+              disabled={isOTPLoading || otpCode.length !== 6}
               className="flex-1 h-12 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold shadow-lg shadow-green-200 transition-all active:scale-95 disabled:opacity-70"
             >
-              {isDepositLoading ? (
+              {isOTPLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin mr-2" />
-              ) : (
-                <Plus className="h-5 w-5 mr-2" />
-              )}
-              Confirm Deposit
+              ) : null}
+              Verify & Deposit
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -768,13 +875,13 @@ export default function DepositsManagementPage() {
         onOpenChange={setShowTransactionModal}
       >
         <DialogContent className="sm:max-w-lg bg-white border-none rounded-3xl shadow-2xl overflow-hidden p-0">
-          <div className="bg-linear-to-r from-green-600 to-green-500 p-8 text-white relative">
+          <div className=" p-8 text-white relative">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
             <DialogHeader className="text-left relative z-10">
-              <DialogTitle className="text-lg font-semibold">
+              <DialogTitle className="text-lg font-semibold text-green-600">
                 Transaction Details
               </DialogTitle>
-              <DialogDescription className="text-xs text-white">
+              <DialogDescription className="text-xs text-black/50">
                 Complete transaction information
               </DialogDescription>
             </DialogHeader>
@@ -850,7 +957,7 @@ export default function DepositsManagementPage() {
                     <p className="text-xs font-bold tracking-wider text-gray-500">
                       Payment Method
                     </p>
-                    <p className="text-gray-700">
+                    <p className="text-gray-700 lowercase text-xs">
                       {transactionDetails.paymentMethod}
                     </p>
                   </div>
@@ -860,7 +967,7 @@ export default function DepositsManagementPage() {
                   <p className="text-xs font-bold tracking-wider text-gray-500">
                     Transaction Date
                   </p>
-                  <p className="text-gray-700">
+                  <p className="text-gray-700 text-xs">
                     {new Date(transactionDetails.createdAt).toLocaleString()}
                   </p>
                 </div>

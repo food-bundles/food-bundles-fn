@@ -124,10 +124,17 @@ export const walletService = {
     return response.data;
   },
 
-  // Admin deposit to restaurant wallet
-  adminDeposit: async (data: AdminDepositData) => {
+  // Admin deposit to restaurant wallet - Request OTP
+  adminDepositRequestOTP: async (data: AdminDepositData) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.post("/wallets/admin-deposit", data);
+    const response = await axiosClient.post("/wallets/admin-deposit/request-otp", data);
+    return response.data;
+  },
+
+  // Admin deposit to restaurant wallet - Verify OTP
+  adminDepositVerifyOTP: async (data: { otp: string; sessionId: string }) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/wallets/admin-deposit/verify-otp", data);
     return response.data;
   },
 };

@@ -14,7 +14,6 @@ const menuItems = [
   { icon: Wallet, label: "Deposits", href: "/restaurant/deposits" },
   { icon: Crown, label: "Subscription", href: "/restaurant/subscribe" },
   { icon: Ticket, label: "Vouchers", href: "/restaurant/vouchers" },
-  { icon: Gift, label: "Promotions", href: "/restaurant/promos" },
   { icon: Plus, label: "Affiliators", href: "/restaurant/affiliators" },
   { icon: HelpCircle, label: "Help & Support", href: "/restaurant/help" },
 ];
