@@ -28,16 +28,16 @@ export function TraderHeader({ onMenuClick, sidebarOpen }: TraderHeaderProps) {
   const getPageTitle = () => {
     const pathSegments = pathname.split('/').filter(Boolean);
     const pathMap: { [key: string]: string } = {
-      'traders': 'Trader Dashboard',
-      'wallet': 'Wallet Management',
-      'loans': 'Loan Applications',
-      'vouchers': 'Voucher Management',
-      'orders': 'Order Management',
-      'commission': 'Commission Tracking'
+      traders: "Digital Food Store Dashboard",
+      wallet: "Digital Food Store Wallet",
+      loans: "Loan Applications",
+      vouchers: "Voucher Management",
+      orders: "Order Management",
+      commission: "Commission Tracking",
     };
 
     if (pathSegments.length === 1) {
-      return pathMap[pathSegments[0]] || 'Trader Dashboard';
+      return pathMap[pathSegments[0]] || "Digital Food Store Dashboard";
     }
 
     const breadcrumbs = pathSegments.slice(1).map(segment => pathMap[segment] || segment);

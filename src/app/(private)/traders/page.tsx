@@ -4,14 +4,31 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Wallet, CreditCard, Ticket, ShoppingCart, TrendingUp, Users, Plus, ArrowUpRight, ArrowDownRight } from "lucide-react";
-import { traderService, type TraderDashboard, type TraderWallet, type TraderTransaction } from "@/app/services/traderService";
+import {
+  Wallet,
+  CreditCard,
+  Ticket,
+  ShoppingCart,
+  TrendingUp,
+  Users,
+  Plus,
+  ArrowUpRight,
+  ArrowDownRight,
+} from "lucide-react";
+import {
+  traderService,
+  type TraderDashboard,
+  type TraderWallet,
+  type TraderTransaction,
+} from "@/app/services/traderService";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TopUpModal } from "./wallet/_components/TopUpModal";
+import { TopUpModal } from "./_components/TopUpModal";
 import toast from "react-hot-toast";
 
 export default function TraderDashboardPage() {
-  const [dashboardData, setDashboardData] = useState<TraderDashboard | null>(null);
+  const [dashboardData, setDashboardData] = useState<TraderDashboard | null>(
+    null,
+  );
   const [wallet, setWallet] = useState<TraderWallet | null>(null);
   const [transactions, setTransactions] = useState<TraderTransaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,15 +97,22 @@ export default function TraderDashboardPage() {
           <Skeleton className="h-6 w-48 mb-2" />
           <Skeleton className="h-4 w-64" />
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           {[...Array(6)].map((_, i) => {
             const cardColors = [
-              "bg-green-50", "bg-blue-50", "bg-purple-50", 
-              "bg-orange-50", "bg-emerald-50", "bg-yellow-50"
+              "bg-green-50",
+              "bg-blue-50",
+              "bg-purple-50",
+              "bg-orange-50",
+              "bg-emerald-50",
+              "bg-yellow-50",
             ];
             return (
-              <div key={i} className={`p-4 rounded-lg border ${cardColors[i]} transition-all duration-200`}>
+              <div
+                key={i}
+                className={`p-4 rounded-lg border ${cardColors[i]} transition-all duration-200`}
+              >
                 <div className="flex items-center justify-between mb-2">
                   <Skeleton className="h-5 w-5 rounded" />
                   <div className="flex items-center gap-1">
@@ -125,14 +149,17 @@ export default function TraderDashboardPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <Skeleton className="h-5 w-24" />
             </CardHeader>
             <CardContent className="space-y-4">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div
+                  key={i}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                >
                   <div className="flex items-center gap-2">
                     <Skeleton className="h-4 w-4 rounded" />
                     <Skeleton className="h-4 w-20" />
@@ -151,7 +178,10 @@ export default function TraderDashboardPage() {
           <CardContent>
             <div className="space-y-3">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                <div
+                  key={i}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
                   <div className="flex items-center gap-3">
                     <Skeleton className="h-8 w-8 rounded-full" />
                     <div>
@@ -220,27 +250,60 @@ export default function TraderDashboardPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-xl font-bold text-gray-900">Trader Dashboard</h1>
-        <p className="text-gray-600 text-sm">Overview of your trading activities and performance</p>
+        <h1 className="text-xl font-bold text-gray-600">
+          Digital Food Store Dashboard
+        </h1>
+        <p className="text-gray-600 text-sm">
+          Overview of your Digital Food Store activities and performance
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         {stats.map((stat, index) => {
           const cardColors = [
-            { bg: "bg-green-50", text: "text-green-600", percent: "text-green-600" },
-            { bg: "bg-blue-50", text: "text-blue-600", percent: "text-blue-600" },
-            { bg: "bg-purple-50", text: "text-purple-600", percent: "text-purple-600" },
-            { bg: "bg-orange-50", text: "text-orange-600", percent: "text-orange-600" },
-            { bg: "bg-emerald-50", text: "text-emerald-600", percent: "text-emerald-600" },
-            { bg: "bg-yellow-50", text: "text-yellow-600", percent: "text-yellow-600" },
+            {
+              bg: "bg-green-50",
+              text: "text-green-600",
+              percent: "text-green-600",
+            },
+            {
+              bg: "bg-blue-50",
+              text: "text-blue-600",
+              percent: "text-blue-600",
+            },
+            {
+              bg: "bg-purple-50",
+              text: "text-purple-600",
+              percent: "text-purple-600",
+            },
+            {
+              bg: "bg-orange-50",
+              text: "text-orange-600",
+              percent: "text-orange-600",
+            },
+            {
+              bg: "bg-emerald-50",
+              text: "text-emerald-600",
+              percent: "text-emerald-600",
+            },
+            {
+              bg: "bg-yellow-50",
+              text: "text-yellow-600",
+              percent: "text-yellow-600",
+            },
           ];
           const colors = cardColors[index % cardColors.length];
-          
+
           return (
-            <div key={index} className={`p-4 rounded-lg border ${colors.bg} transition-all duration-200 hover:shadow-md`}>
+            <div
+              key={index}
+              className={`p-4 rounded-lg border ${colors.bg} transition-all duration-200 hover:shadow-md`}
+            >
               <div className="flex items-center justify-between mb-2">
                 <stat.icon className={`w-5 h-5 ${colors.text}`} />
-                <div className={`flex items-center gap-1 text-xs ${colors.percent}`}>
+                <div
+                  className={`flex items-center gap-1 text-xs ${colors.percent}`}
+                >
                   <div className="w-3 h-3">
                     <svg viewBox="0 0 24 24" fill="currentColor">
                       <path d="M7 14l5-5 5 5z" />
@@ -250,8 +313,12 @@ export default function TraderDashboardPage() {
                 </div>
               </div>
               <div className="space-y-1">
-                <p className="text-xs text-gray-600 font-medium">{stat.title}</p>
-                <p className={`text-sm font-bold ${colors.text}`}>{stat.value}</p>
+                <p className="text-xs text-gray-600 font-medium">
+                  {stat.title}
+                </p>
+                <p className={`text-sm font-bold ${colors.text}`}>
+                  {stat.value}
+                </p>
               </div>
             </div>
           );
@@ -271,8 +338,8 @@ export default function TraderDashboardPage() {
             </p>
           </CardHeader>
           <CardContent className="text-center">
-            <Button 
-              onClick={createWallet} 
+            <Button
+              onClick={createWallet}
               disabled={creating}
               className="bg-green-600 hover:bg-green-700"
             >
@@ -289,7 +356,9 @@ export default function TraderDashboardPage() {
                 <div className="bg-linear-to-r from-yellow-500 to-yellow-600 rounded-lg p-6 text-white">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-yellow-100 text-sm">Available Balance</p>
+                      <p className="text-yellow-100 text-sm">
+                        Available Balance
+                      </p>
                       <p className="text-3xl font-bold">
                         {wallet.balance.toLocaleString()} {wallet.currency}
                       </p>
@@ -303,14 +372,16 @@ export default function TraderDashboardPage() {
                   </div>
                   <div className="mt-4 pt-4 border-t border-yellow-400">
                     <div className="flex justify-between text-sm text-yellow-100">
-                      <span>Wallet ID: {wallet.id.slice(0, 8)}...</span>
-                      <span>Transactions: {wallet._count?.transactions || 0}</span>
+                      <span>Wallet Type: Food Store</span>
+                      <span>
+                        Transactions: {wallet._count?.transactions || 0}
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 <div className="flex gap-4">
-                  <Button 
+                  <Button
                     onClick={() => setShowTopUpModal(true)}
                     className="flex-1 bg-green-600 hover:bg-green-700"
                   >
@@ -341,7 +412,7 @@ export default function TraderDashboardPage() {
                   {wallet.balance.toLocaleString()} RWF
                 </span>
               </div>
-              
+
               <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                 <div className="flex items-center gap-2">
                   <ArrowDownRight className="h-4 w-4 text-blue-600" />
@@ -373,11 +444,16 @@ export default function TraderDashboardPage() {
           {transactions.length > 0 ? (
             <div className="space-y-3">
               {transactions.map((transaction) => (
-                <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div
+                  key={transaction.id}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
                   <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-full ${
-                      transaction.amount > 0 ? 'bg-green-100' : 'bg-red-100'
-                    }`}>
+                    <div
+                      className={`p-2 rounded-full ${
+                        transaction.amount > 0 ? "bg-green-100" : "bg-red-100"
+                      }`}
+                    >
                       {transaction.amount > 0 ? (
                         <ArrowUpRight className="h-4 w-4 text-green-600" />
                       ) : (
@@ -385,19 +461,28 @@ export default function TraderDashboardPage() {
                       )}
                     </div>
                     <div>
-                      <p className="font-medium text-sm">{transaction.description}</p>
+                      <p className="font-medium text-sm">
+                        {transaction.description}
+                      </p>
                       <p className="text-xs text-gray-500">
                         {new Date(transaction.createdAt).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className={`font-semibold ${
-                      transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {transaction.amount > 0 ? '+' : ''}{transaction.amount.toLocaleString()} RWF
+                    <p
+                      className={`font-semibold ${
+                        transaction.amount > 0
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {transaction.amount > 0 ? "+" : ""}
+                      {transaction.amount.toLocaleString()} RWF
                     </p>
-                    <p className="text-xs text-gray-500 capitalize">{transaction.status.toLowerCase()}</p>
+                    <p className="text-xs text-gray-500 capitalize">
+                      {transaction.status.toLowerCase()}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -406,7 +491,9 @@ export default function TraderDashboardPage() {
             <div className="text-center py-8 text-gray-500">
               <Wallet className="h-12 w-12 mx-auto mb-4 text-gray-300" />
               <p>No transactions yet</p>
-              <p className="text-sm">Your transaction history will appear here</p>
+              <p className="text-sm">
+                Your transaction history will appear here
+              </p>
             </div>
           )}
         </CardContent>

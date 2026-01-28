@@ -169,8 +169,8 @@ export const traderService = {
 
   topUpWallet: async (data: {
     amount: number;
-    paymentMethod: string;
-    phoneNumber: string;
+    paymentMethodId: string;
+    phoneNumber?: string;
     description?: string;
   }) => {
     const axiosClient = createAxiosClient();
