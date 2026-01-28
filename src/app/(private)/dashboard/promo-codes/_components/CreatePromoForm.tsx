@@ -263,9 +263,9 @@ const CreatePromoForm = forwardRef<{ openModal: () => void }, CreatePromoFormPro
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="PUBLIC" className="text-green-600">🟢 Public (Visible in shop)</SelectItem>
-                                    <SelectItem value="SUBSCRIBERS" className="text-blue-600">🔵 Subscribers Only</SelectItem>
-                                    <SelectItem value="EXCEPTIONAL" className="text-purple-600">🟣 Exceptional</SelectItem>
+                                    <SelectItem value="PUBLIC" className="text-green-600">Public (Visible in shop)</SelectItem>
+                                    <SelectItem value="SUBSCRIBERS" className="text-blue-600">Subscribers Only</SelectItem>
+                                    <SelectItem value="EXCEPTIONAL" className="text-purple-600">Exceptional</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

@@ -11,9 +11,10 @@ import { Button } from "@/components/ui/button";
 interface RestaurantAvailablePromosProps {
     restaurantId?: string; // Optional, if provided, filters by restaurant exclusion
     onApply?: (code: string) => void;
+    onPromoCodesLoad?: (hasPromos: boolean) => void;
 }
 
-export default function RestaurantAvailablePromos({ restaurantId, onApply }: RestaurantAvailablePromosProps) {
+export default function RestaurantAvailablePromos({ restaurantId, onApply, onPromoCodesLoad }: RestaurantAvailablePromosProps) {
     const [promos, setPromos] = useState<IPromoCode[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -23,6 +24,7 @@ export default function RestaurantAvailablePromos({ restaurantId, onApply }: Res
                 const response = await promoService.getActivePromos();
                 if (response.success) {
                     setPromos(response.data);
+                    onPromoCodesLoad?.(response.data.length > 0);
                 }
             } catch (error) {
                 console.error("Failed to fetch promos:", error);
@@ -53,67 +55,26 @@ export default function RestaurantAvailablePromos({ restaurantId, onApply }: Res
     );
 
     return (
-        <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="space-y-4 mx-4">
+            <div className="grid grid-cols-2 gap-3">
                 {promos.map((promo) => (
-                    <Card key={promo.id} className="relative overflow-hidden border-2 border-green-100 hover:border-green-300 transition-all group">
+                    <Card key={promo.id} className="relative overflow-hidden border border-green-100 hover:border-green-300 transition-all group mx-2">
                         <div className="absolute top-0 right-0 p-2">
                             <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                                 {promo.discountType === "PERCENTAGE" ? `${promo.discountValue}% OFF` : `${promo.discountValue.toLocaleString()} RWF OFF`}
                             </Badge>
                         </div>
-                        <CardContent className="p-5">
-                            <div className="flex items-start gap-3 mb-3">
-                                <div className="p-2 bg-green-100 rounded-lg text-green-700">
-                                    <Ticket className="h-5 w-5" />
-                                </div>
-                                <div className="space-y-1">
-                                    <h3 className="font-bold text-gray-900 group-hover:text-green-700 transition-colors uppercase tracking-tight">
-                                        {promo.code}
-                                    </h3>
-                                    <p className="text-xs font-medium text-gray-500">{promo.name}</p>
-                                </div>
-                            </div>
-
-                            <p className="text-sm text-gray-600 mb-4 line-clamp-2 min-h-[40px]">
-                                {promo.description}
-                            </p>
-
-                            <div className="flex flex-col gap-2 pt-3 border-t border-gray-100">
-                                <div className="flex items-center justify-between text-[11px] text-gray-500">
-                                    <div className="flex items-center gap-1">
-                                        <Clock className="h-3 w-3" />
-                                        <span>Expires {new Date(promo.expiryDate).toLocaleDateString()}</span>
-                                    </div>
-                                    {promo.minOrderAmount > 0 && (
-                                        <div className="flex items-center gap-1 font-medium text-green-600">
-                                            <Info className="h-3 w-3" />
-                                            <span>Min: {promo.minOrderAmount.toLocaleString()} RWF</span>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="flex gap-2 mt-2">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="flex-1 h-8 text-xs gap-1.5"
-                                        onClick={() => copyToClipboard(promo.code)}
-                                    >
-                                        <Copy className="h-3 w-3" />
-                                        Copy Code
-                                    </Button>
-                                    {onApply && (
-                                        <Button
-                                            size="sm"
-                                            className="flex-1 h-8 text-xs bg-green-600 hover:bg-green-700 gap-1.5"
-                                            onClick={() => onApply(promo.code)}
-                                        >
-                                            <CheckCircle2 className="h-3 w-3" />
-                                            Apply
-                                        </Button>
-                                    )}
-                                </div>
+                        <CardContent className="p-4">
+                            <div className="text-center space-y-1">
+                                <h3 className="font-medium text-sm text-gray-900">
+                                    {promo.name}
+                                </h3>
+                                <p className="text-xs text-green-700 uppercase font-bold">
+                                    {promo.code}
+                                </p>
+                                {/* <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
+                                    {promo.discountType === "PERCENTAGE" ? `${promo.discountValue}% OFF` : `${promo.discountValue.toLocaleString()} RWF OFF`}
+                                </Badge> */}
                             </div>
                         </CardContent>
                     </Card>
