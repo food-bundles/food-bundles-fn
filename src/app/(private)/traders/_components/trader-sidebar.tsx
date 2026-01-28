@@ -21,7 +21,6 @@ import { OptimizedImage } from "@/components/OptimizedImage";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/traders" },
-  // { icon: Wallet, label: "Wallet", href: "/traders/wallet" },
   { icon: CreditCard, label: "Loan Applications", href: "/traders/loans" },
   { icon: Ticket, label: "Vouchers", href: "/traders/vouchers" },
   { icon: ShoppingCart, label: "Orders", href: "/traders/orders" },
@@ -152,9 +151,6 @@ export function TraderSidebar({ isOpen, onClose }: TraderSidebarProps) {
                   <div className="truncate">
                     {userData?.name || userData?.username}
                   </div>
-                  <div className="text-[10px] text-green-400 truncate">
-                    {userData?.role || "Role"}
-                  </div>
                 </div>
                 <ChevronDown
                   className={cn(
@@ -169,9 +165,6 @@ export function TraderSidebar({ isOpen, onClose }: TraderSidebarProps) {
                   <div className="p-3 border-b border-green-600">
                     <div className="text-xs text-green-200 font-medium truncate">
                       {userData?.name || userData?.username || "User"}
-                    </div>
-                    <div className="text-[10px] text-green-400 truncate mt-1">
-                      {userData?.role || "Role"}
                     </div>
                     {userData?.email && (
                       <div className="flex items-center mt-2 text-[10px] text-green-300">

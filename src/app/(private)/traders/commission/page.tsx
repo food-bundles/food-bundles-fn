@@ -85,7 +85,7 @@ export default function CommissionPage() {
       <div className="mb-6">
         <h1 className="text-xl font-bold text-gray-900">Commission Tracking</h1>
         <p className="text-gray-600 text-sm">
-          Track and manage your trading commissions
+          Track and manage your Digital Food Store commissions
         </p>
       </div>
 
@@ -160,7 +160,7 @@ export default function CommissionPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <DollarSign className="h-5 w-5 text-purple-600" />
-              Trading Statistics
+              Digital Food Store Statistics
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
