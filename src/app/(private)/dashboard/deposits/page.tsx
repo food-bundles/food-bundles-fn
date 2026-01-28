@@ -499,14 +499,6 @@ export default function DepositsManagementPage() {
     }
   };
 
-  if (initialLoading) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        <Spinner variant="ring" className="w-10 h-10" />
-      </div>
-    );
-  }
-
   const totalBalance = wallets.reduce(
     (sum, wallet) => sum + (wallet.balance || 0),
     0
@@ -515,6 +507,7 @@ export default function DepositsManagementPage() {
 
   return (
     <div className="p-6 space-y-6">
+      {/* Static content - shows immediately */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/50 backdrop-blur-sm p-6 rounded-2xl border border-gray-100 shadow-sm">
         <div>
           <h1 className="text-lg font-semibold">Deposit Management</h1>
@@ -531,107 +524,120 @@ export default function DepositsManagementPage() {
         </Button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div className="p-4 rounded-lg border bg-green-50 transition-all duration-200 hover:shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <DollarSign className="w-5 h-5 text-green-600" />
-            <div className="flex items-center gap-1 text-xs text-green-600">
-              <div className="w-3 h-3">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M7 14l5-5 5 5z" />
-                </svg>
+      {/* Stats Cards - only this section shows loading */}
+      {initialLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="p-4 rounded-lg border bg-gray-50">
+              <div className="h-5 bg-gray-200 rounded w-16 animate-pulse mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-20 animate-pulse mb-1"></div>
+              <div className="h-6 bg-gray-200 rounded w-24 animate-pulse"></div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="p-4 rounded-lg border bg-green-50 transition-all duration-200 hover:shadow-md">
+            <div className="flex items-center justify-between mb-2">
+              <DollarSign className="w-5 h-5 text-green-600" />
+              <div className="flex items-center gap-1 text-xs text-green-600">
+                <div className="w-3 h-3">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M7 14l5-5 5 5z" />
+                  </svg>
+                </div>
+                +12.5%
               </div>
-              +12.5%
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-gray-600 font-medium">Total Balance</p>
+              <p className="text-sm font-bold text-green-600">
+                {totalBalance.toLocaleString()} RWF
+              </p>
             </div>
           </div>
-          <div className="space-y-1">
-            <p className="text-xs text-gray-600 font-medium">Total Balance</p>
-            <p className="text-sm font-bold text-green-600">
-              {totalBalance.toLocaleString()} RWF
-            </p>
-          </div>
-        </div>
 
-        <div className="p-4 rounded-lg border bg-blue-50 transition-all duration-200 hover:shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <Wallet className="w-5 h-5 text-blue-600" />
-            <div className="flex items-center gap-1 text-xs text-blue-600">
-              <div className="w-3 h-3">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M7 14l5-5 5 5z" />
-                </svg>
+          <div className="p-4 rounded-lg border bg-blue-50 transition-all duration-200 hover:shadow-md">
+            <div className="flex items-center justify-between mb-2">
+              <Wallet className="w-5 h-5 text-blue-600" />
+              <div className="flex items-center gap-1 text-xs text-blue-600">
+                <div className="w-3 h-3">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M7 14l5-5 5 5z" />
+                  </svg>
+                </div>
+                +8.2%
               </div>
-              +8.2%
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-gray-600 font-medium">Active Cash</p>
+              <p className="text-sm font-bold text-blue-600">{activeWallets}</p>
             </div>
           </div>
-          <div className="space-y-1">
-            <p className="text-xs text-gray-600 font-medium">Active Cash</p>
-            <p className="text-sm font-bold text-blue-600">{activeWallets}</p>
-          </div>
-        </div>
 
-        <div className="p-4 rounded-lg border bg-purple-50 transition-all duration-200 hover:shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <Users className="w-5 h-5 text-purple-600" />
-            <div className="flex items-center gap-1 text-xs text-purple-600">
-              <div className="w-3 h-3">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M7 14l5-5 5 5z" />
-                </svg>
+          <div className="p-4 rounded-lg border bg-purple-50 transition-all duration-200 hover:shadow-md">
+            <div className="flex items-center justify-between mb-2">
+              <Users className="w-5 h-5 text-purple-600" />
+              <div className="flex items-center gap-1 text-xs text-purple-600">
+                <div className="w-3 h-3">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M7 14l5-5 5 5z" />
+                  </svg>
+                </div>
+                +5.1%
               </div>
-              +5.1%
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-gray-600 font-medium">Total Cash</p>
+              <p className="text-sm font-bold text-purple-600">
+                {walletPagination.total}
+              </p>
             </div>
           </div>
-          <div className="space-y-1">
-            <p className="text-xs text-gray-600 font-medium">Total Cash</p>
-            <p className="text-sm font-bold text-purple-600">
-              {walletPagination.total}
-            </p>
-          </div>
-        </div>
 
-        <div className="p-4 rounded-lg border bg-green-50 transition-all duration-200 hover:shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <ArrowUpRight className="w-5 h-5 text-green-600" />
-            <div className="flex items-center gap-1 text-xs text-green-600">
-              <div className="w-3 h-3">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M7 14l5-5 5 5z" />
-                </svg>
+          <div className="p-4 rounded-lg border bg-green-50 transition-all duration-200 hover:shadow-md">
+            <div className="flex items-center justify-between mb-2">
+              <ArrowUpRight className="w-5 h-5 text-green-600" />
+              <div className="flex items-center gap-1 text-xs text-green-600">
+                <div className="w-3 h-3">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M7 14l5-5 5 5z" />
+                  </svg>
+                </div>
+                +15.3%
               </div>
-              +15.3%
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-gray-600 font-medium">Top-ups</p>
+              <p className="text-sm font-bold text-green-600">
+                {transactionStats.topUp}
+              </p>
             </div>
           </div>
-          <div className="space-y-1">
-            <p className="text-xs text-gray-600 font-medium">Top-ups</p>
-            <p className="text-sm font-bold text-green-600">
-              {transactionStats.topUp}
-            </p>
-          </div>
-        </div>
 
-        <div className="p-4 rounded-lg border bg-red-50 transition-all duration-200 hover:shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <ArrowDownRight className="w-5 h-5 text-red-600" />
-            <div className="flex items-center gap-1 text-xs text-red-600">
-              <div className="w-3 h-3">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M17 10l-5 5-5-5z" />
-                </svg>
+          <div className="p-4 rounded-lg border bg-red-50 transition-all duration-200 hover:shadow-md">
+            <div className="flex items-center justify-between mb-2">
+              <ArrowDownRight className="w-5 h-5 text-red-600" />
+              <div className="flex items-center gap-1 text-xs text-red-600">
+                <div className="w-3 h-3">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17 10l-5 5-5-5z" />
+                  </svg>
+                </div>
+                -3.7%
               </div>
-              -3.7%
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-gray-600 font-medium">Payments</p>
+              <p className="text-sm font-bold text-red-600">
+                {transactionStats.payment}
+              </p>
             </div>
           </div>
-          <div className="space-y-1">
-            <p className="text-xs text-gray-600 font-medium">Payments</p>
-            <p className="text-sm font-bold text-red-600">
-              {transactionStats.payment}
-            </p>
-          </div>
         </div>
-      </div>
+      )}
 
+      {/* Data tables - show immediately with their own loading states */}
       <div className="space-y-4">
         {/* Wallets Table */}
         <Card className="border-none shadow-xl shadow-gray-100 rounded-2xl overflow-hidden">
