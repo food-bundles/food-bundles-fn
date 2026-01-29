@@ -64,8 +64,6 @@ const getVoucherTypeLabel = (type: string) => {
 
 export const createVoucherColumns = ({
   onViewDetails,
-  currentPage,
-  pageSize,
 }: VoucherColumnsProps): ColumnDef<Voucher>[] => [
   {
     accessorKey: "voucherCode",
@@ -78,10 +76,19 @@ export const createVoucherColumns = ({
   },
   {
     accessorKey: "totalCredit",
-    header: "Amount",
+    header: "Approved Amount",
+    cell: ({ row }) => (
+      <span className="text-xs">
+        {row.original.totalCredit.toLocaleString()} {row.original.currency}
+      </span>
+    ),
+  },
+  {
+    accessorKey: "usedAmount",
+    header: "Used Amount",
     cell: ({ row }) => (
       <span className="text-xs font-bold text-green-600">
-        {row.original.totalCredit.toLocaleString()} {row.original.currency}
+         {row.original.usedCredit}
       </span>
     ),
   },
@@ -89,7 +96,7 @@ export const createVoucherColumns = ({
     accessorKey: "restaurant",
     header: "Restaurant",
     cell: ({ row }) => (
-      <span className="text-xs font-medium text-gray-900">
+      <span className="text-xs text-gray-900">
         {row.original.restaurant.name}
       </span>
     ),
@@ -112,15 +119,15 @@ export const createVoucherColumns = ({
       </span>
     ),
   },
-  {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => (
-      <Badge className={getStatusColor(row.original.status)}>
-        {row.original.status}
-      </Badge>
-    ),
-  },
+  // {
+  //   accessorKey: "status",
+  //   header: "Status",
+  //   cell: ({ row }) => (
+  //     <Badge className={getStatusColor(row.original.status)}>
+  //       {row.original.status}
+  //     </Badge>
+  //   ),
+  // },
   {
     accessorKey: "serviceFeeRate",
     header: "Commission",

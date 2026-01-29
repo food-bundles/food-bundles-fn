@@ -866,14 +866,7 @@ export function Checkout() {
                           <span className="line-through text-gray-400">
                             Add other services: +15,000F
                           </span>
-                          <span className="ml-2 text-green-600">Included</span>
                         </label>
-                      </div>
-                      <div className="ml-6 text-xs text-gray-600">
-                        <div>• Packaging per item</div>
-                        <div>• Labeling stickers</div>
-                        <div>• Cutting (meat preparation)</div>
-                        <div>• Extra cleaning</div>
                       </div>
                     </div>
                   ) : (
@@ -938,7 +931,7 @@ export function Checkout() {
                         </SelectItem>
                         <SelectItem value="card">
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                            Card & MoMo
+                            Card
                           </span>
                         </SelectItem>
                         <SelectItem value="voucher">
@@ -977,7 +970,7 @@ export function Checkout() {
               {method === "momo" && (
                 <div className="space-y-2 mt-3">
                   <label className="flex items-center text-sm font-medium text-gray-700">
-                    Phone Number (MTN or TIGO)
+                    Phone Number
                   </label>
 
                   <div className="relative">
@@ -1164,19 +1157,6 @@ export function Checkout() {
                 You will be redirected to complete your payment. Choose your
                 preferred payment method:
               </p>
-              <div className="bg-gray-50 p-4 rounded-md">
-                <ul className="text-[13px] text-gray-900 space-y-2">
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 text-xs bg-green-600 rounded-full"></span>
-                    Mobile Money (MTN/TIGO)
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 text-xs bg-green-600 rounded-full"></span>
-                    Card Payment
-                  </li>
-                </ul>
-              </div>
-
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowFlutterwaveInfo(false)}

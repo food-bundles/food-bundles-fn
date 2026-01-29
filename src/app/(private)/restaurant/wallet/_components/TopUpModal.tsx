@@ -55,7 +55,7 @@ export function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
     try {
       const topUpData = {
         amount: parseFloat(amount),
-        paymentMethod,
+        paymentMethodId: paymentMethod === "MOBILE_MONEY" ? "mobile-money-id" : "card-id", 
         description: "Wallet top-up",
         ...(paymentMethod === "MOBILE_MONEY" && { phoneNumber }),
         ...(paymentMethod === "CARD" && { cardDetails })
@@ -63,7 +63,6 @@ export function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
 
       const response = await topUpWallet(topUpData);
       
-      // Always show modal for card payments that return success
       if (response.success || response.data) {
         const redirectUrl = response.data?.redirectUrl || response.redirectUrl;
         if (redirectUrl) {
@@ -265,18 +264,6 @@ export function TopUpModal({ isOpen, onClose }: TopUpModalProps) {
                 You will be redirected to complete your payment. Choose your
                 preferred payment method:
               </p>
-              <div className="bg-gray-50 p-4 rounded-md">
-                <ul className="text-[13px] text-gray-900 space-y-2">
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 text-xs bg-green-600 rounded-full"></span>
-                    Mobile Money (MTN/TIGO)
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 text-xs bg-green-600 rounded-full"></span>
-                    Card Payment
-                  </li>
-                </ul>
-              </div>
 
               <div className="flex gap-3">
                 <button

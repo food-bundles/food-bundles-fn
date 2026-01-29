@@ -6,7 +6,6 @@ import {
   CreditCard,
   Ticket,
   ShoppingCart,
-  TrendingUp,
   LogOut,
   User,
   Mail,
@@ -21,10 +20,9 @@ import { OptimizedImage } from "@/components/OptimizedImage";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/traders" },
-  { icon: CreditCard, label: "Loan Applications", href: "/traders/loans" },
+  { icon: CreditCard, label: "Voucher Applications", href: "/traders/loans" },
   { icon: Ticket, label: "Vouchers", href: "/traders/vouchers" },
   { icon: ShoppingCart, label: "Orders", href: "/traders/orders" },
-  { icon: TrendingUp, label: "Commission", href: "/traders/commission" },
 ];
 
 interface TraderSidebarProps {

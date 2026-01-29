@@ -134,18 +134,6 @@ export const loanColumns: ColumnDef<LoanApplication>[] = [
     },
   },
   {
-    accessorKey: "createdAt",
-    header: "Applied Date",
-    cell: ({ row }) => {
-      const createdAt = row.getValue("createdAt") as string;
-      return (
-        <span className="text-xs text-gray-700">
-          {formatDateTime(createdAt)}
-        </span>
-      );
-    },
-  },
-  {
     id: "actions",
     header: "Actions",
     cell: ({ row }) => <ActionsCell loan={row.original} />,
