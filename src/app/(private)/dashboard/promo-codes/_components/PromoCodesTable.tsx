@@ -19,18 +19,21 @@ import { IPromoCode } from "@/app/services/promoService";
 import { Input } from "@/components/ui/input";
 import PromoDetailsModal from "./PromoDetailsModal";
 import RestaurantExclusionModal from "./RestaurantExclusionModal";
+import RestaurantInclusionModal from "./RestaurantInclusionModal";
 import DeletePromoModal from "./DeletePromoModal";
 import EditPromoModal from "./EditPromoModal";
+import { ListPlus } from "lucide-react";
 
 interface PromoCodesTableProps {
     onCreatePromo?: () => void;
 }
 
 export default function PromoCodesTable({ onCreatePromo }: PromoCodesTableProps) {
-    const { promos, loading, deletePromo, updatePromo, fetchPromos } = usePromo();
+    const { promos, loading, deletePromo, updatePromo, fetchPromos, removeInclusion } = usePromo();
     const [selectedPromo, setSelectedPromo] = useState<IPromoCode | null>(null);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [isExclusionModalOpen, setIsExclusionModalOpen] = useState(false);
+    const [isInclusionModalOpen, setIsInclusionModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [searchFilter, setSearchFilter] = useState("");
@@ -196,6 +199,15 @@ export default function PromoCodesTable({ onCreatePromo }: PromoCodesTableProps)
                                     Manage Exclusions
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
+                                    onClick={() => {
+                                        setSelectedPromo(promo);
+                                        setIsInclusionModalOpen(true);
+                                    }}
+                                >
+                                    <CheckCircle className="mr-2 h-4 w-4" />
+                                    Manage Inclusions
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
                                     onClick={() => handleToggleStatus(promo)}
                                 >
                                     {promo.isActive ? (
@@ -265,6 +277,11 @@ export default function PromoCodesTable({ onCreatePromo }: PromoCodesTableProps)
                         promo={selectedPromo}
                         open={isExclusionModalOpen}
                         onOpenChange={setIsExclusionModalOpen}
+                    />
+                    <RestaurantInclusionModal
+                        promo={selectedPromo}
+                        open={isInclusionModalOpen}
+                        onOpenChange={setIsInclusionModalOpen}
                     />
                     <DeletePromoModal
                         open={isDeleteModalOpen}

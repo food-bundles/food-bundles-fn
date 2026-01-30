@@ -13,7 +13,9 @@ interface PromoContextType {
     updatePromo: (id: string, data: Partial<ICreatePromoData>) => Promise<void>;
     deletePromo: (id: string) => Promise<void>;
     excludeRestaurant: (promoId: string, restaurantId: string, reason: string) => Promise<void>;
+    includeRestaurant: (promoId: string, restaurantId: string, reason: string) => Promise<void>;
     removeExclusion: (promoId: string, restaurantId: string) => Promise<void>;
+    removeInclusion: (promoId: string, restaurantId: string) => Promise<void>;
 }
 
 const PromoContext = createContext<PromoContextType | undefined>(undefined);
@@ -80,6 +82,16 @@ export const PromoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             throw err;
         }
     };
+    const includeRestaurant = async (promoId: string, restaurantId: string, reason: string) => {
+        try {
+            await promoService.includeRestaurant(promoId, { restaurantId, reason });
+            toast.success("Restaurant included successfully");
+            await fetchPromos();
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || "Failed to include restaurant");
+            throw err;
+        }
+    };
 
     const removeExclusion = async (promoId: string, restaurantId: string) => {
         try {
@@ -88,6 +100,17 @@ export const PromoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             await fetchPromos();
         } catch (err: any) {
             toast.error(err.response?.data?.message || "Failed to remove exclusion");
+            throw err;
+        }
+    };
+
+    const removeInclusion = async (promoId: string, restaurantId: string) => {
+        try {
+            await promoService.removeInclusion(promoId, restaurantId);
+            toast.success("Restaurant inclusion removed successfully");
+            await fetchPromos();
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || "Failed to remove inclusion");
             throw err;
         }
     };
@@ -107,7 +130,9 @@ export const PromoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 updatePromo,
                 deletePromo,
                 excludeRestaurant,
+                includeRestaurant,
                 removeExclusion,
+                removeInclusion,
             }}
         >
             {children}

@@ -44,15 +44,19 @@ export default function EditPromoModal({ promo, open, onOpenChange, onSuccess }:
         applyToAllProducts: true,
         applicableProductIds: [],
         applicableCategoryIds: [],
+        includedRestaurants: [],
         excludedRestaurants: [],
         startDate: "",
         expiryDate: "",
     });
 
     const [excludedRestaurant, setExcludedRestaurant] = useState({ restaurantId: "", reason: "" });
+    const [includedRestaurant, setIncludedRestaurant] = useState({ restaurantId: "", reason: "" });
     const [productSearch, setProductSearch] = useState("");
-    const [restaurantSearch, setRestaurantSearch] = useState("");
+    const [excludedRestaurantSearch, setExcludedRestaurantSearch] = useState("");
+    const [includedRestaurantSearch, setIncludedRestaurantSearch] = useState("");
     const [hasExcludedRestaurants, setHasExcludedRestaurants] = useState(false);
+    const [hasIncludedRestaurants, setHasIncludedRestaurants] = useState(false);
 
     useEffect(() => {
         if (open) {
@@ -95,11 +99,13 @@ export default function EditPromoModal({ promo, open, onOpenChange, onSuccess }:
                 applyToAllProducts: promo.applyToAllProducts,
                 applicableProductIds: promo.applicableProductIds || [],
                 applicableCategoryIds: promo.applicableCategoryIds || [],
+                includedRestaurants: promo.includedRestaurants || [],
                 excludedRestaurants: promo.excludedRestaurants || [],
                 startDate: new Date(promo.startDate).toISOString().split('T')[0],
                 expiryDate: new Date(promo.expiryDate).toISOString().split('T')[0],
             });
             setHasExcludedRestaurants((promo.excludedRestaurants || []).length > 0);
+            setHasIncludedRestaurants((promo.includedRestaurants || []).length > 0);
         }
     }, [promo, open, products, categories]);
 
@@ -131,6 +137,20 @@ export default function EditPromoModal({ promo, open, onOpenChange, onSuccess }:
             setFormData(prev => ({
                 ...prev,
                 excludedRestaurants: prev.excludedRestaurants!.filter(excluded => excluded.restaurantId !== restaurantId)
+            }));
+        }
+    };
+
+    const handleIncludedRestaurantToggle = (restaurantId: string, checked: boolean) => {
+        if (checked) {
+            setFormData(prev => ({
+                ...prev,
+                includedRestaurants: [...prev.includedRestaurants!, { restaurantId, reason: "Included in promo" }]
+            }));
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                includedRestaurants: prev.includedRestaurants!.filter(included => included.restaurantId !== restaurantId)
             }));
         }
     };
@@ -234,7 +254,7 @@ export default function EditPromoModal({ promo, open, onOpenChange, onSuccess }:
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="PERCENTAGE">Percentage (%)</SelectItem>
-                                    <SelectItem value="FIXED">Fixed Amount (RWF)</SelectItem>
+                                    <SelectItem value="FIXED_AMOUNT">Fixed Amount (RWF)</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -346,8 +366,8 @@ export default function EditPromoModal({ promo, open, onOpenChange, onSuccess }:
                         <Switch
                             id="edit-applyToAllProducts"
                             checked={formData.applyToAllProducts}
-                            onCheckedChange={(val) => setFormData({ 
-                                ...formData, 
+                            onCheckedChange={(val) => setFormData({
+                                ...formData,
                                 applyToAllProducts: val,
                                 applicableProductIds: val ? [] : formData.applicableProductIds,
                                 applicableCategoryIds: val ? [] : formData.applicableCategoryIds
@@ -369,38 +389,36 @@ export default function EditPromoModal({ promo, open, onOpenChange, onSuccess }:
                                 {loadingData ? (
                                     <div className="text-sm text-gray-500">Loading products...</div>
                                 ) : (
-                                    <div className={`border rounded p-2 space-y-2 ${
-                                        products.filter(product => 
-                                            product.productName.toLowerCase().includes(productSearch.toLowerCase())
-                                        ).length > 0 ? 'max-h-40 overflow-y-auto' : ''
-                                    }`}>
+                                    <div className={`border rounded p-2 space-y-2 ${products.filter(product =>
+                                        product.productName.toLowerCase().includes(productSearch.toLowerCase())
+                                    ).length > 0 ? 'max-h-40 overflow-y-auto' : ''
+                                        }`}>
                                         {products
-                                            .filter(product => 
+                                            .filter(product =>
                                                 product.productName.toLowerCase().includes(productSearch.toLowerCase())
                                             )
                                             .map((product) => (
-                                            <div key={product.id} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1 rounded" onClick={() => handleProductToggle(product.id, !formData.applicableProductIds?.includes(product.id))}>
-                                                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
-                                                    formData.applicableProductIds?.includes(product.id) 
-                                                        ? 'bg-green-600 border-green-600' 
+                                                <div key={product.id} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1 rounded" onClick={() => handleProductToggle(product.id, !formData.applicableProductIds?.includes(product.id))}>
+                                                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${formData.applicableProductIds?.includes(product.id)
+                                                        ? 'bg-green-600 border-green-600'
                                                         : 'border-gray-300'
-                                                }`}>
-                                                    {formData.applicableProductIds?.includes(product.id) && (
-                                                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                                        </svg>
-                                                    )}
+                                                        }`}>
+                                                        {formData.applicableProductIds?.includes(product.id) && (
+                                                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                            </svg>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-sm">
+                                                        {product.productName} - {product.unitPrice.toLocaleString()} RWF
+                                                    </span>
                                                 </div>
-                                                <span className="text-sm">
-                                                    {product.productName} - {product.unitPrice.toLocaleString()} RWF
-                                                </span>
-                                            </div>
-                                        ))}
-                                        {products.filter(product => 
+                                            ))}
+                                        {products.filter(product =>
                                             product.productName.toLowerCase().includes(productSearch.toLowerCase())
                                         ).length === 0 && (
-                                            <div className="text-sm text-gray-500 py-2">No products found</div>
-                                        )}
+                                                <div className="text-sm text-gray-500 py-2">No products found</div>
+                                            )}
                                     </div>
                                 )}
                             </div>
@@ -448,45 +466,104 @@ export default function EditPromoModal({ promo, open, onOpenChange, onSuccess }:
                             <Label>Excluded Restaurants</Label>
                             <Input
                                 placeholder="Search restaurants..."
-                                value={restaurantSearch}
-                                onChange={(e) => setRestaurantSearch(e.target.value)}
+                                value={excludedRestaurantSearch}
+                                onChange={(e) => setExcludedRestaurantSearch(e.target.value)}
                                 className="mb-2"
                             />
                             {loadingData ? (
                                 <div className="text-sm text-gray-500">Loading restaurants...</div>
                             ) : (
-                                <div className={`border rounded p-2 space-y-2 ${
-                                    restaurants.filter(restaurant => 
-                                        restaurant.name.toLowerCase().includes(restaurantSearch.toLowerCase())
-                                    ).length > 0 ? 'max-h-40 overflow-y-auto' : ''
-                                }`}>
+                                <div className={`border rounded p-2 space-y-2 ${restaurants.filter(restaurant =>
+                                    restaurant.name.toLowerCase().includes(excludedRestaurantSearch.toLowerCase())
+                                ).length > 0 ? 'max-h-40 overflow-y-auto' : ''
+                                    }`}>
                                     {restaurants
-                                        .filter(restaurant => 
-                                            restaurant.name.toLowerCase().includes(restaurantSearch.toLowerCase())
+                                        .filter(restaurant =>
+                                            restaurant.name.toLowerCase().includes(excludedRestaurantSearch.toLowerCase())
                                         )
                                         .map((restaurant) => (
-                                        <div key={restaurant.id} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1 rounded" onClick={() => handleRestaurantToggle(restaurant.id, !formData.excludedRestaurants?.some(excluded => excluded.restaurantId === restaurant.id))}>
-                                            <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
-                                                formData.excludedRestaurants?.some(excluded => excluded.restaurantId === restaurant.id)
-                                                    ? 'bg-red-600 border-red-600' 
+                                            <div key={restaurant.id} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1 rounded" onClick={() => handleRestaurantToggle(restaurant.id, !formData.excludedRestaurants?.some(excluded => excluded.restaurantId === restaurant.id))}>
+                                                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${formData.excludedRestaurants?.some(excluded => excluded.restaurantId === restaurant.id)
+                                                    ? 'bg-red-600 border-red-600'
                                                     : 'border-gray-300'
-                                            }`}>
-                                                {formData.excludedRestaurants?.some(excluded => excluded.restaurantId === restaurant.id) && (
-                                                    <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                                    </svg>
-                                                )}
+                                                    }`}>
+                                                    {formData.excludedRestaurants?.some(excluded => excluded.restaurantId === restaurant.id) && (
+                                                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                        </svg>
+                                                    )}
+                                                </div>
+                                                <span className="text-sm">
+                                                    {restaurant.name}
+                                                </span>
                                             </div>
-                                            <span className="text-sm">
-                                                {restaurant.name}
-                                            </span>
-                                        </div>
-                                    ))}
-                                    {restaurants.filter(restaurant => 
-                                        restaurant.name.toLowerCase().includes(restaurantSearch.toLowerCase())
+                                        ))}
+                                    {restaurants.filter(restaurant =>
+                                        restaurant.name.toLowerCase().includes(excludedRestaurantSearch.toLowerCase())
                                     ).length === 0 && (
-                                        <div className="text-sm text-gray-500 py-2">No restaurants found</div>
-                                    )}
+                                            <div className="text-sm text-gray-500 py-2">No restaurants found</div>
+                                        )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <div className="flex items-center space-x-2">
+                        <Switch
+                            id="edit-hasIncludedRestaurants"
+                            checked={hasIncludedRestaurants}
+                            onCheckedChange={(val) => {
+                                setHasIncludedRestaurants(val);
+                                if (!val) {
+                                    setFormData(prev => ({ ...prev, includedRestaurants: [] }));
+                                }
+                            }}
+                        />
+                        <Label htmlFor="edit-hasIncludedRestaurants">Include specific restaurants only?</Label>
+                    </div>
+
+                    {hasIncludedRestaurants && (
+                        <div className="space-y-2">
+                            <Label>Included Restaurants</Label>
+                            <Input
+                                placeholder="Search restaurants..."
+                                value={includedRestaurantSearch}
+                                onChange={(e) => setIncludedRestaurantSearch(e.target.value)}
+                                className="mb-2"
+                            />
+                            {loadingData ? (
+                                <div className="text-sm text-gray-500">Loading restaurants...</div>
+                            ) : (
+                                <div className={`border rounded p-2 space-y-2 ${restaurants.filter(restaurant =>
+                                    restaurant.name.toLowerCase().includes(includedRestaurantSearch.toLowerCase())
+                                ).length > 0 ? 'max-h-40 overflow-y-auto' : ''
+                                    }`}>
+                                    {restaurants
+                                        .filter(restaurant =>
+                                            restaurant.name.toLowerCase().includes(includedRestaurantSearch.toLowerCase())
+                                        )
+                                        .map((restaurant) => (
+                                            <div key={restaurant.id} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1 rounded" onClick={() => handleIncludedRestaurantToggle(restaurant.id, !formData.includedRestaurants?.some(included => included.restaurantId === restaurant.id))}>
+                                                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${formData.includedRestaurants?.some(included => included.restaurantId === restaurant.id)
+                                                    ? 'bg-green-600 border-green-600'
+                                                    : 'border-gray-300'
+                                                    }`}>
+                                                    {formData.includedRestaurants?.some(included => included.restaurantId === restaurant.id) && (
+                                                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                                        </svg>
+                                                    )}
+                                                </div>
+                                                <span className="text-sm">
+                                                    {restaurant.name}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    {restaurants.filter(restaurant =>
+                                        restaurant.name.toLowerCase().includes(includedRestaurantSearch.toLowerCase())
+                                    ).length === 0 && (
+                                            <div className="text-sm text-gray-500 py-2">No restaurants found</div>
+                                        )}
                                 </div>
                             )}
                         </div>

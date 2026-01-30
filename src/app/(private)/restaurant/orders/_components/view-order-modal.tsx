@@ -146,10 +146,17 @@ export function ViewOrderModal({ open, onOpenChange, order }: ViewOrderModalProp
               </table>
             </div>
             <div class="total">
-              <strong>Total Amount: ${
-                order.originalData?.totalAmount?.toLocaleString() ||
-                order.totalAmount
-              } RWF</strong>
+              ${
+                order.originalData?.originalAmount && order.originalData.originalAmount !== order.originalData.totalAmount ? `
+                  <div style="text-align: right; margin-bottom: 10px;">
+                    <div style="color: #6b7280; text-decoration: line-through; font-size: 14px;">Original Amount: ${order.originalData.originalAmount.toLocaleString()} RWF</div>
+                    <div style="color: #22c55e; font-size: 14px;">Discount: -${(order.originalData.originalAmount - order.originalData.totalAmount).toLocaleString()} RWF</div>
+                  </div>
+                  <strong>Final Amount: ${order.originalData.totalAmount.toLocaleString()} RWF</strong>
+                ` : `
+                  <strong>Total Amount: ${order.originalData?.totalAmount?.toLocaleString() || order.totalAmount} RWF</strong>
+                `
+              }
             </div>
             <div class="footer">
               <p>Thank you for your order!</p>
@@ -313,14 +320,39 @@ export function ViewOrderModal({ open, onOpenChange, order }: ViewOrderModalProp
                     
                     {/* Total Section */}
                     <div className="border-t border-gray-300 pt-3 mt-4">
-                      <div className="flex justify-between items-center">
-                        <span className="text-base sm:text-lg font-bold text-gray-900">
-                          Total Amount
-                        </span>
-                        <span className="text-base sm:text-lg font-bold text-green-600">
-                          {order.originalData?.totalAmount?.toLocaleString() || order.totalAmount} RWF
-                        </span>
-                      </div>
+                      {order.originalData?.originalAmount && order.originalData.originalAmount !== order.originalData.totalAmount ? (
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">Original Amount</span>
+                            <span className="text-sm text-gray-500 line-through">
+                              {order.originalData.originalAmount.toLocaleString()} RWF
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-green-600">Discount Applied</span>
+                            <span className="text-sm text-green-600">
+                              -{(order.originalData.originalAmount - order.originalData.totalAmount).toLocaleString()} RWF
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center border-t pt-2">
+                            <span className="text-base sm:text-lg font-bold text-gray-900">
+                              Final Amount
+                            </span>
+                            <span className="text-base sm:text-lg font-bold text-green-600">
+                              {order.originalData.totalAmount.toLocaleString()} RWF
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex justify-between items-center">
+                          <span className="text-base sm:text-lg font-bold text-gray-900">
+                            Total Amount
+                          </span>
+                          <span className="text-base sm:text-lg font-bold text-green-600">
+                            {order.originalData?.totalAmount?.toLocaleString() || order.totalAmount} RWF
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

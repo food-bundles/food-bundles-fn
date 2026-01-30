@@ -5,8 +5,8 @@ export interface IPromoCode {
     code: string;
     name: string;
     description: string;
-    type: "PUBLIC" | "PRIVATE";
-    discountType: "PERCENTAGE" | "FIXED";
+    type: "PUBLIC" | "PRIVATE" | "SUBSCRIBERS" | "EXCEPTIONAL";
+    discountType: "PERCENTAGE" | "FIXED_AMOUNT";
     discountValue: number;
     isReusable: boolean;
     maxUsageCount: number;
@@ -17,15 +17,21 @@ export interface IPromoCode {
     applyToAllProducts: boolean;
     applicableProductIds: string[];
     applicableCategoryIds: string[];
-    isActive: boolean;
-    startDate: string;
-    expiryDate: string;
+    includedRestaurants: Array<{
+        restaurantId: string;
+        reason: string;
+        includedBy: string;
+        includedAt: string;
+    }>;
     excludedRestaurants: Array<{
         restaurantId: string;
         reason: string;
         excludedBy: string;
         excludedAt: string;
     }>;
+    isActive: boolean;
+    startDate: string;
+    expiryDate: string;
     createdBy: string;
     createdAt: string;
     updatedAt: string;
@@ -40,8 +46,8 @@ export interface ICreatePromoData {
     code: string;
     name: string;
     description: string;
-    type: "PUBLIC" | "PRIVATE";
-    discountType: "PERCENTAGE" | "FIXED";
+    type: "PUBLIC" | "PRIVATE" | "SUBSCRIBERS" | "EXCEPTIONAL";
+    discountType: "PERCENTAGE" | "FIXED_AMOUNT";
     discountValue: number;
     isReusable: boolean;
     maxUsageCount: number;
@@ -51,6 +57,10 @@ export interface ICreatePromoData {
     applyToAllProducts: boolean;
     applicableProductIds?: string[];
     applicableCategoryIds?: string[];
+    includedRestaurants?: Array<{
+        restaurantId: string;
+        reason: string;
+    }>;
     excludedRestaurants?: Array<{
         restaurantId: string;
         reason: string;
@@ -112,9 +122,21 @@ export const promoService = {
         return response.data;
     },
 
+    includeRestaurant: async (promoId: string, data: { restaurantId: string; reason: string }) => {
+        const axiosClient = createAxiosClient();
+        const response = await axiosClient.post(`/promo/${promoId}/include`, data);
+        return response.data;
+    },
+
     removeExclusion: async (promoId: string, restaurantId: string) => {
         const axiosClient = createAxiosClient();
         const response = await axiosClient.delete(`/promo/${promoId}/exclude/${restaurantId}`);
+        return response.data;
+    },
+
+    removeInclusion: async (promoId: string, restaurantId: string) => {
+        const axiosClient = createAxiosClient();
+        const response = await axiosClient.delete(`/promo/${promoId}/include/${restaurantId}`);
         return response.data;
     },
 

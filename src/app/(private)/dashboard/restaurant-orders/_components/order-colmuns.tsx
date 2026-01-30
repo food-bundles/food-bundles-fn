@@ -102,6 +102,7 @@ export interface Order {
   orderNumber: string;
   restaurantId: string;
   totalAmount: number;
+  originalAmount?: number;
   status: "PENDING" | "CONFIRMED" | "PREPARING" | "READY" |"IN_TRANSIT" | "DELIVERED" | "CANCELLED" | "REFUNDED";
   paymentStatus: "PENDING" | "PROCESSING" | "COMPLETED" | "VOUCHER_CREDIT" | "FAILED" | "CANCELLED" | "REFUNDED";
   paymentMethod: "CASH" | "MOBILE_MONEY" | "CARD" | "BANK_TRANSFER"| "VOUCHER";
@@ -366,18 +367,38 @@ export const createOrdersColumns = (actions: {
   {
     accessorKey: "totalAmount",
     header: "Amount",
-    cell: ({ row }) => (
-      <div className="font-medium">
-        RWF {row.getValue<number>("totalAmount").toLocaleString()}
-        <div
-          className={`text-[12px]  lowercase rounded-full border px-2 ${getPaymentMethodColor(
-            row.original.paymentMethod
-          )}`}
-        >
-          {row.original.paymentMethod}
+    cell: ({ row }) => {
+      const order = row.original;
+      const totalAmount = row.getValue<number>("totalAmount");
+      const originalAmount = order.originalAmount;
+      
+      return (
+        <div className="font-medium">
+          {originalAmount && originalAmount !== totalAmount ? (
+            <div>
+              <div className="text-gray-500 line-through text-xs">
+                RWF {originalAmount.toLocaleString()}
+              </div>
+              <div className="text-green-600">
+                RWF {totalAmount.toLocaleString()}
+              </div>
+              <div className="text-xs text-green-500">
+                Saved: {(originalAmount - totalAmount).toLocaleString()}
+              </div>
+            </div>
+          ) : (
+            <div>RWF {totalAmount.toLocaleString()}</div>
+          )}
+          <div
+            className={`text-[12px] lowercase rounded-full border px-2 mt-1 ${getPaymentMethodColor(
+              row.original.paymentMethod
+            )}`}
+          >
+            {row.original.paymentMethod}
+          </div>
         </div>
-      </div>
-    ),
+      );
+    },
   },
   {
     accessorKey: "status",

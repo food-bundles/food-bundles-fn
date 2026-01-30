@@ -86,9 +86,25 @@ export function ViewOrderModal({ open, onClose, order }: ViewOrderModalProps) {
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <span className="text-sm font-medium">Total:</span>
-                  <span className="col-span-2 text-sm font-medium">
-                    {order.totalAmount.toLocaleString()} RWF
-                  </span>
+                  <div className="col-span-2">
+                    {order.originalAmount && order.originalAmount !== order.totalAmount ? (
+                      <div>
+                        <div className="text-gray-500 line-through text-xs">
+                          {order.originalAmount.toLocaleString()} RWF
+                        </div>
+                        <div className="text-green-600 font-medium">
+                          {order.totalAmount.toLocaleString()} RWF
+                        </div>
+                        <div className="text-xs text-green-500">
+                          Saved: {(order.originalAmount - order.totalAmount).toLocaleString()} RWF
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-sm font-medium">
+                        {order.totalAmount.toLocaleString()} RWF
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <span className="text-sm font-medium">Payment Method:</span>
