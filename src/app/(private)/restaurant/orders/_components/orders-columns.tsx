@@ -467,6 +467,8 @@ export const ordersColumns = (
     },
     cell: ({ row }) => {
       const order = row.original;
+      const originalAmount = order.originalData?.originalAmount;
+      const totalAmount = row.getValue("totalAmount") as number;
       const paymentMethod = order.originalData?.paymentMethod || order.originalData?.paymentMethodConfig?.name;
       
       const getPaymentMethodDisplay = (method: string) => {
@@ -485,8 +487,16 @@ export const ordersColumns = (
       };
 
       return (
-        <div className="font-medium text-green-600">
-          <div>{row.getValue("totalAmount")} Rwf</div>
+        <div className="font-medium">
+          {originalAmount && originalAmount !== totalAmount ? (
+            <div>
+              <div className="text-gray-500 line-through text-xs">{originalAmount} Rwf</div>
+              <div className="text-green-600">{totalAmount} Rwf</div>
+              <div className="text-xs text-green-500">Saved: {originalAmount - totalAmount} Rwf</div>
+            </div>
+          ) : (
+            <div className="text-green-600">{totalAmount} Rwf</div>
+          )}
           {paymentMethod && (
             <div className="text-xs text-gray-900 mt-1">
               via {getPaymentMethodDisplay(paymentMethod)}

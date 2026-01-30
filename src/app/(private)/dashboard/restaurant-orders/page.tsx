@@ -107,6 +107,7 @@ export default function AdminOrdersPage() {
           orderNumber: order.orderNumber,
           restaurantId: order.restaurantId,
           totalAmount: order.totalAmount,
+          originalAmount: order.originalAmount,
           status: order.status as Order['status'],
           paymentStatus: order.paymentStatus as Order['paymentStatus'],
           paymentMethod: order.paymentMethod,
@@ -280,7 +281,15 @@ export default function AdminOrdersPage() {
               </table>
             </div>
             <div class="total">
-              <strong>Total Amount: ${order.totalAmount.toLocaleString()} RWF</strong>
+              ${order.originalAmount && order.originalAmount !== order.totalAmount ? `
+                <div style="text-align: right; margin-bottom: 10px;">
+                  <div style="color: #6b7280; text-decoration: line-through; font-size: 14px;">Original Amount: ${order.originalAmount.toLocaleString()} RWF</div>
+                  <div style="color: #22c55e; font-size: 14px;">Discount: -${(order.originalAmount - order.totalAmount).toLocaleString()} RWF</div>
+                </div>
+                <strong>Final Amount: ${order.totalAmount.toLocaleString()} RWF</strong>
+              ` : `
+                <strong>Total Amount: ${order.totalAmount.toLocaleString()} RWF</strong>
+              `}
             </div>
             <div class="footer">
               <p>Thank you for your order!</p>
