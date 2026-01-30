@@ -101,7 +101,7 @@ export default function TermsAgreementPage() {
             <div className="bg-white pt-4 sm:pt-6 lg:pt-8 px-2 rounded-lg lg:rounded-none ">
               <div className="prose prose-sm max-w-none">
                 <div className="text-center mb-6 lg:mb-8 pb-4 lg:pb-6 border-b border-gray-200">
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 pt-6">
                     FOOD BUNDLES Limited.
                   </h2>
                   <p className="text-xs sm:text-sm text-gray-600">

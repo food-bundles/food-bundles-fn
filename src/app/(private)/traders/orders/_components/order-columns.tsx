@@ -72,28 +72,16 @@ export const createOrderColumns = ({
       const restaurant = row.original.restaurant;
       return (
         <div className="flex items-center gap-2">
-          <Building className="h-4 w-4 text-gray-500" />
           <span className="text-xs font-bold text-gray-900">{restaurant.name}</span>
         </div>
       );
     },
   },
   {
-    accessorKey: "billingName",
-    header: "Customer",
-    cell: ({ row }) => (
-      <div>
-        <p className="text-xs font-bold text-gray-900">{row.original.billingName}</p>
-        <p className="text-xs text-gray-600">{row.original.billingPhone}</p>
-      </div>
-    ),
-  },
-  {
     accessorKey: "totalAmount",
-    header: "Amount",
+    header: "order Amount",
     cell: ({ row }) => (
       <div className="flex items-center gap-1">
-        <CreditCard className="h-3 w-3 text-gray-500" />
         <span className="text-xs font-bold text-green-600">
           {row.original.totalAmount.toLocaleString()} RWF
         </span>
@@ -112,19 +100,6 @@ export const createOrderColumns = ({
         </div>
       ) : (
         <span className="text-xs text-gray-500">No Voucher</span>
-      );
-    },
-  },
-  {
-    accessorKey: "orderItems",
-    header: "Items",
-    cell: ({ row }) => {
-      const items = row.original.orderItems;
-      return (
-        <div className="flex items-center gap-1">
-          <Package className="h-3 w-3 text-gray-500" />
-          <span className="text-xs font-bold text-gray-900">{items.length} items</span>
-        </div>
       );
     },
   },

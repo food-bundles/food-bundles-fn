@@ -69,7 +69,7 @@ export function DepositForm({
                   'bg-gray-100 text-gray-800'
                 }`}>
                   {method.name === 'MOBILE_MONEY' ? 'MoMo' : 
-                   method.name === 'CARD' ? 'Card & MoMo' : method.description}
+                   method.name === 'CARD' ? 'Card' : method.description}
                 </span>
               </SelectItem>
             ))}

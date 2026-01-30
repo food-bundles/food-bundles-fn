@@ -50,6 +50,7 @@ export default function VouchersPage() {
         { label: "All Status", value: "all" },
         { label: "Active", value: "ACTIVE" },
         { label: "Used", value: "USED" },
+        { label: "settled", value: "SETTLED" },
         { label: "Expired", value: "EXPIRED" },
         { label: "Matured", value: "MATURED" },
       ]),

@@ -123,6 +123,16 @@ export async function middleware(req: NextRequest) {
         return NextResponse.redirect(new URL("/unauthorized", req.url));
       }
 
+      if (userRole === "TRADER" && pathname.startsWith("/traders")) {
+        if (pathname === "/traders/agreement") {
+          return NextResponse.next();
+        }
+        const agreementAccepted = req.cookies.get("traderAgreementAccepted")?.value === "true";
+        if (!agreementAccepted) {
+          return NextResponse.redirect(new URL("/traders/agreement", req.url));
+        }
+      }
+
       return NextResponse.next();
     } catch (error) {
       console.error("Middleware error:", error);

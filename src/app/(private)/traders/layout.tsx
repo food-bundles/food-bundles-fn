@@ -3,6 +3,7 @@ import type React from "react";
 import { TraderSidebar } from "./_components/trader-sidebar";
 import { TraderHeader } from "./_components/trader-header";
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 export default function TraderLayout({
   children,
@@ -10,6 +11,8 @@ export default function TraderLayout({
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const pathname = usePathname();
+  const isAgreementPage = pathname === "/traders/agreement";
 
   useEffect(() => {
     const checkScreenSize = () => {
@@ -24,6 +27,11 @@ export default function TraderLayout({
     window.addEventListener('resize', checkScreenSize);
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
+
+  // Show agreement page without sidebar/header
+  if (isAgreementPage) {
+    return <div>{children}</div>;
+  }
 
   return (
     <div className="flex h-screen bg-white">

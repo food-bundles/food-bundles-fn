@@ -172,7 +172,7 @@ export function TopUpModal({ isOpen, onClose, onSuccess }: TopUpModalProps) {
         ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="amount">Amount (RWF) *</Label>
+            <Label htmlFor="amount">Amount (RWF)</Label>
             <Input
               id="amount"
               type="number"
@@ -185,7 +185,7 @@ export function TopUpModal({ isOpen, onClose, onSuccess }: TopUpModalProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="paymentMethod">Payment Method *</Label>
+            <Label htmlFor="paymentMethod">Payment Method</Label>
             <Select
               value={formData.paymentMethodId}
               onValueChange={(value) => setFormData({ ...formData, paymentMethodId: value })}
@@ -205,7 +205,7 @@ export function TopUpModal({ isOpen, onClose, onSuccess }: TopUpModalProps) {
                       'bg-gray-100 text-gray-800'
                     }`}>
                       {method.name === 'MOBILE_MONEY' ? 'MoMo' : 
-                       method.name === 'CARD' ? 'Card & MoMo' : method.description}
+                       method.name === 'CARD' ? 'Card' : method.description}
                     </span>
                   </SelectItem>
                 ))}
@@ -215,7 +215,7 @@ export function TopUpModal({ isOpen, onClose, onSuccess }: TopUpModalProps) {
 
           {selectedMethod?.name === "MOBILE_MONEY" && (
             <div className="space-y-2">
-              <Label htmlFor="phoneNumber">Phone Number *</Label>
+              <Label htmlFor="phoneNumber">Phone Number</Label>
               <Input
                 id="phoneNumber"
                 type="tel"
@@ -226,17 +226,6 @@ export function TopUpModal({ isOpen, onClose, onSuccess }: TopUpModalProps) {
               />
             </div>
           )}
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description (Optional)</Label>
-            <Textarea
-              id="description"
-              placeholder="Enter description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={3}
-            />
-          </div>
 
           <div className="flex gap-3 pt-4">
             <Button
