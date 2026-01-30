@@ -19,6 +19,7 @@ export interface WalletTransactionFilters {
   endDate?: string;
   page?: number;
   limit?: number;
+  restaurantName?: string;
 }
 
 export interface AdminWalletFilters {

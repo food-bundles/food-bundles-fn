@@ -341,12 +341,32 @@ export default function DepositsManagementPage() {
     fetchData();
   }, []);
 
+  // Refetch wallets when search query changes (real-time search)
+  useEffect(() => {
+    if (!initialLoading) {
+      const timeoutId = setTimeout(() => {
+        fetchWallets(1, searchQuery, walletStatusFilter, walletPagination.limit);
+      }, 300); // Debounce search
+      return () => clearTimeout(timeoutId);
+    }
+  }, [searchQuery]);
+
   // Refetch wallets when filters change
   useEffect(() => {
     if (!initialLoading) {
       fetchWallets(1, searchQuery, walletStatusFilter, walletPagination.limit);
     }
   }, [walletStatusFilter]);
+
+  // Refetch transactions when search query changes (real-time search)
+  useEffect(() => {
+    if (!initialLoading) {
+      const timeoutId = setTimeout(() => {
+        fetchTransactions(1, transactionSearchQuery, pagination.limit, transactionTypeFilter, transactionStatusFilter);
+      }, 300); // Debounce search
+      return () => clearTimeout(timeoutId);
+    }
+  }, [transactionSearchQuery]);
 
   // Refetch transactions when filters change
   useEffect(() => {
