@@ -48,7 +48,12 @@ export const voucherService = {
     return response.data;
   },
 
-  getAllVouchers: async (params?: { status?: string; restaurantId?: string; page?: number; limit?: number }) => {
+  getAllVouchers: async (params?: {
+    status?: string;
+    restaurantId?: string;
+    page?: number;
+    limit?: number;
+  }) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.get("/vouchers", { params });
     return response.data;
@@ -72,19 +77,35 @@ export const voucherService = {
     return response.data;
   },
 
-  getRestaurantVouchers: async (restaurantId: string, params?: { status?: string; activeOnly?: boolean }) => {
+  getRestaurantVouchers: async (
+    restaurantId: string,
+    params?: { status?: string; activeOnly?: boolean },
+  ) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.get(`/vouchers/restaurant/${restaurantId}`, { params });
+    const response = await axiosClient.get(
+      `/vouchers/restaurant/${restaurantId}`,
+      { params },
+    );
     return response.data;
   },
 
   getAvailableVouchers: async (amount: number) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.get("/vouchers/available", { params: { amount } });
+    const response = await axiosClient.get("/vouchers/available", {
+      params: { amount },
+    });
     return response.data;
   },
 
-  updateVoucher: async (id: string, updateData: { status?: string; voucherType?: string; discountPercentage?: number; creditLimit?: number }) => {
+  updateVoucher: async (
+    id: string,
+    updateData: {
+      status?: string;
+      voucherType?: string;
+      discountPercentage?: number;
+      creditLimit?: number;
+    },
+  ) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.patch(`/vouchers/${id}`, updateData);
     return response.data;
@@ -92,7 +113,9 @@ export const voucherService = {
 
   deactivateVoucher: async (id: string, reason?: string) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.delete(`/vouchers/${id}`, { data: { reason } });
+    const response = await axiosClient.delete(`/vouchers/${id}`, {
+      data: { reason },
+    });
     return response.data;
   },
 
@@ -115,9 +138,14 @@ export const voucherService = {
     return response.data;
   },
 
-  getAllLoanApplications: async (params?: { status?: string; restaurantId?: string }) => {
+  getAllLoanApplications: async (params?: {
+    status?: string;
+    restaurantId?: string;
+  }) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.get("/vouchers/loans/applications", { params });
+    const response = await axiosClient.get("/vouchers/loans/applications", {
+      params,
+    });
     return response.data;
   },
 
@@ -129,7 +157,10 @@ export const voucherService = {
 
   approveLoan: async (id: string, approvalData: ILoanApprovalData) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.patch(`/vouchers/loans/${id}/approve`, approvalData);
+    const response = await axiosClient.patch(
+      `/vouchers/loans/${id}/approve`,
+      approvalData,
+    );
     return response.data;
   },
 
@@ -141,13 +172,21 @@ export const voucherService = {
 
   rejectLoan: async (id: string, reason?: string) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.patch(`/vouchers/loans/${id}/reject`, { reason });
+    const response = await axiosClient.patch(`/vouchers/loans/${id}/reject`, {
+      reason,
+    });
     return response.data;
   },
 
-  acceptLoan: async (id: string) => {
+  acceptLoan: async (
+    id: string,
+    data: { acceptedAmount: number; paymentDays: number },
+  ) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.patch(`/vouchers/loans/${id}/accept`);
+    const response = await axiosClient.patch(
+      `/vouchers/loans/${id}/accept`,
+      data,
+    );
     return response.data;
   },
 
@@ -160,32 +199,46 @@ export const voucherService = {
   // Voucher Payments
   processVoucherPayment: async (paymentData: IVoucherPaymentData) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.post("/vouchers/checkout/voucher", paymentData);
+    const response = await axiosClient.post(
+      "/vouchers/checkout/voucher",
+      paymentData,
+    );
     return response.data;
   },
 
   // Repayment & Penalties
   makeRepayment: async (voucherId: string, repaymentData: IRepaymentData) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.post(`/vouchers/${voucherId}/repay`, repaymentData);
+    const response = await axiosClient.post(
+      `/vouchers/${voucherId}/repay`,
+      repaymentData,
+    );
     return response.data;
   },
 
   // Voucher Credit Repayment
-  repayVoucherCredit: async (voucherId: string, paymentData: {
-    amount: number;
-    paymentMethod: "MOBILE_MONEY" | "CARD" | "BANK_TRANSFER";
-    paymentReference?: string;
-    phoneNumber?: string;
-  }) => {
+  repayVoucherCredit: async (
+    voucherId: string,
+    paymentData: {
+      amount: number;
+      paymentMethod: "MOBILE_MONEY" | "CARD" | "BANK_TRANSFER";
+      paymentReference?: string;
+      phoneNumber?: string;
+    },
+  ) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.post(`/vouchers/${voucherId}/repay`, paymentData);
+    const response = await axiosClient.post(
+      `/vouchers/${voucherId}/repay`,
+      paymentData,
+    );
     return response.data;
   },
 
   getOutstandingBalance: async (voucherId: string) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.get(`/vouchers/${voucherId}/outstanding`);
+    const response = await axiosClient.get(
+      `/vouchers/${voucherId}/outstanding`,
+    );
     return response.data;
   },
 
@@ -199,14 +252,17 @@ export const voucherService = {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.post("/vouchers/penalties/calculate", {
       loanId,
-      penaltyRatePerMonth
+      penaltyRatePerMonth,
     });
     return response.data;
   },
 
   waivePenalty: async (penaltyId: string, reason?: string) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.post(`/vouchers/penalties/${penaltyId}/waive`, { reason });
+    const response = await axiosClient.post(
+      `/vouchers/penalties/${penaltyId}/waive`,
+      { reason },
+    );
     return response.data;
   },
 

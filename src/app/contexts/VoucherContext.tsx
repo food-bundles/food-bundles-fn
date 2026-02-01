@@ -28,7 +28,7 @@ interface VoucherContextType {
   getAllLoanApplications: () => Promise<any>;
   getAllVouchers: (params?: { page?: number; limit?: number }) => Promise<any>;
   approveLoan: (loanId: string, approvalData: any) => Promise<any>;
-  acceptLoan: (loanId: string) => Promise<any>;
+  acceptLoan: (loanId: string, data: { acceptedAmount: number; paymentDays: number }) => Promise<any>;
   rejectLoan: (loanId: string, reason: string) => Promise<any>;
   disburseLoan: (loanId: string) => Promise<any>;
   deleteLoanApplication: (loanId: string) => Promise<any>;
@@ -170,21 +170,27 @@ export function VoucherProvider({ children }: VoucherProviderProps) {
     }
   }, [getAllLoanApplications]);
 
-  const acceptLoan = useCallback(async (loanId: string) => {
-    try {
-      setLoading(true);
-      const response = await voucherService.acceptLoan(loanId);
-      if (response.success) {
-        await getAllLoanApplications();
+  const acceptLoan = useCallback(
+    async (
+      loanId: string,
+      data: { acceptedAmount: number; paymentDays: number },
+    ) => {
+      try {
+        setLoading(true);
+        const response = await voucherService.acceptLoan(loanId, data);
+        if (response.success) {
+          await getAllLoanApplications();
+        }
+        return response;
+      } catch (err: any) {
+        setError(err.response?.data?.message || "Failed to accept loan");
+        throw err;
+      } finally {
+        setLoading(false);
       }
-      return response;
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to accept loan");
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, [getAllLoanApplications]);
+    },
+    [getAllLoanApplications],
+  );
 
   const rejectLoan = useCallback(async (loanId: string, reason: string) => {
     try {

@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import AcceptLoanModal from "./AcceptLoanModal";
 
 export default function LoanApplicationsTable() {
   const {
@@ -43,6 +44,7 @@ export default function LoanApplicationsTable() {
   } = useVouchers();
   const [selectedApp, setSelectedApp] = useState<ILoanApplication | null>(null);
   const [isApproveModalOpen, setIsApproveModalOpen] = useState(false);
+  const [isAcceptModalOpen, setIsAcceptModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
@@ -89,16 +91,23 @@ export default function LoanApplicationsTable() {
     }
   };
 
-  const handleAccept = async (id: string) => {
-    try {
-      await acceptLoan(id);
-      toast.success("Loan application accepted successfully!");
-      await getAllLoanApplications();
-    } catch (error) {
-      toast.error("Failed to accept loan application");
-      console.error("Failed to accept loan:", error);
-    }
-  };
+const handleAccept = async (data: {
+  acceptedAmount: number;
+  paymentDays: number;
+}) => {
+  if (!selectedApp) return;
+
+  try {
+    await acceptLoan(selectedApp.id, data);
+    toast.success("Loan application accepted successfully!");
+    await getAllLoanApplications();
+    setSelectedApp(null);
+  } catch (error) {
+    toast.error("Failed to accept loan application");
+    console.error("Failed to accept loan:", error);
+  }
+};
+
 
   const handleReject = async (reason: string) => {
     if (!selectedApp) return;
@@ -270,11 +279,15 @@ export default function LoanApplicationsTable() {
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuItem
                   disabled={app.status !== LoanStatus.PENDING}
-                  onClick={() => handleAccept(app.id)}
+                  onClick={() => {
+                    setSelectedApp(app);
+                    setIsAcceptModalOpen(true);
+                  }}
                 >
                   <Check className="mr-2 h-4 w-4" />
                   Accept
                 </DropdownMenuItem>
+
                 <DropdownMenuItem
                   disabled={
                     app.status !== LoanStatus.PENDING &&
@@ -349,6 +362,16 @@ export default function LoanApplicationsTable() {
           showPagination={true}
         />
       </div>
+      <AcceptLoanModal
+        isOpen={isAcceptModalOpen}
+        onClose={() => {
+          setIsAcceptModalOpen(false);
+          setSelectedApp(null);
+        }}
+        selectedApp={selectedApp}
+        onAccept={handleAccept}
+      />
+
       <ApproveLoanModal
         isOpen={isApproveModalOpen}
         onClose={() => {
