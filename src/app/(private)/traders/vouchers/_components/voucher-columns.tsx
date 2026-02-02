@@ -79,7 +79,7 @@ export const createVoucherColumns = ({
     header: "Approved Amount",
     cell: ({ row }) => (
       <span className="text-xs">
-        {row.original.totalCredit.toLocaleString()} {row.original.currency}
+        {row.original.creditLimit.toLocaleString()} {row.original.currency}
       </span>
     ),
   },
@@ -88,7 +88,7 @@ export const createVoucherColumns = ({
     header: "Used Amount",
     cell: ({ row }) => (
       <span className="text-xs font-bold text-green-600">
-         {row.original.usedCredit}
+        {row.original.usedCredit}
       </span>
     ),
   },
