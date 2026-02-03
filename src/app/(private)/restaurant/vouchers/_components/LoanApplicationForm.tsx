@@ -4,15 +4,11 @@ import { useState, useEffect, useMemo } from "react";
 import { CardContent} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { useVoucherOperations } from "@/hooks/useVoucher";
 import { subscriptionService } from "@/app/services/subscriptionService";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface LoanApplicationFormProps {
   onSuccess: () => void;
@@ -24,7 +20,6 @@ export default function LoanApplicationForm({
   const [formData, setFormData] = useState({
     requestedAmount: "",
     purpose: "",
-    customPurpose: "",
     selectedDays: "",
   });
   const [maxVoucherDays, setMaxVoucherDays] = useState(7);
@@ -46,11 +41,7 @@ export default function LoanApplicationForm({
   }, []);
 
   const voucherReasons = [
-    "Increase stock inventory",
-    "Purchase fresh ingredients",
-    "Equipment maintenance and repairs",
-    "Seasonal menu preparation",
-    "Emergency cash flow support",
+    "Increase stock",
     "Other",
   ];
 
@@ -66,7 +57,7 @@ export default function LoanApplicationForm({
   const handleSubmit = async () => {
     if (!formData.requestedAmount) return;
 
-    const finalPurpose = formData.purpose === "Other" ? formData.customPurpose : formData.purpose;
+    const finalPurpose = formData.purpose;
     
     const result = await applyForLoan({
       requestedAmount: parseFloat(formData.requestedAmount),
@@ -78,7 +69,6 @@ export default function LoanApplicationForm({
       setFormData({
         requestedAmount: "",
         purpose: "",
-        customPurpose: "",
         selectedDays: "",
       });
       onSuccess();
@@ -86,16 +76,16 @@ export default function LoanApplicationForm({
   };
 
   return (
-    <div className="mb-8">
+    <div className="mb-2">
       <h2 className="text-[16px] text-center font-medium mb-4">
         Apply for Voucher
       </h2>
       <div className="flex justify-center">
-        <div className="w-75 h-100 flex flex-col p-6 border rounded shadow-none bg-white">
+        <div className="w-75 h-86 flex flex-col p-6 border rounded shadow-none bg-white">
           <CardContent className="p-0 flex-1 flex flex-col">
             <div className="space-y-3 flex-1">
               <div>
-                <label className="block text-[14px] font-medium text-gray-700 mb-2">
+                <label className="block text-sm text-gray-900 mb-2">
                   Requested Amount *
                 </label>
                 <Input
@@ -114,54 +104,32 @@ export default function LoanApplicationForm({
               </div>
 
               <div>
-                <label className="block text-[14px] font-medium text-gray-700 mb-2">
+                <label className="block text-sm text-gray-900 mb-2">
                   Reason for Voucher
                 </label>
-                <Select
+                <RadioGroup
                   value={formData.purpose}
                   onValueChange={(value) =>
                     setFormData((prev) => ({ ...prev, purpose: value }))
                   }
+                  className=" text-gray-700 "
                 >
-                  <SelectTrigger className="w-full h-10 text-sm">
-                    <SelectValue placeholder="Select reason" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {voucherReasons.map((reason) => (
-                      <SelectItem
-                        key={reason}
-                        value={reason}
-                        className="text-sm"
-                      >
+                  {voucherReasons.map((reason) => (
+                    <div
+                      key={reason}
+                      className="flex items-center space-x-2 "
+                    >
+                      <RadioGroupItem value={reason} id={reason} />
+                      <Label htmlFor={reason} className=" text-sm p-0">
                         {reason}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
               </div>
 
-              {formData.purpose === "Other" && (
-                <div>
-                  <label className="block text-[14px] font-medium text-gray-700 mb-2">
-                    Custom Reason *
-                  </label>
-                  <Input
-                    type="text"
-                    value={formData.customPurpose}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        customPurpose: e.target.value,
-                      }))
-                    }
-                    placeholder="Enter your reason"
-                    className="w-full rounded text-sm h-10"
-                  />
-                </div>
-              )}
-
               <div>
-                <label className="block text-[14px] font-medium text-gray-700 mb-2">
+                <label className="block text-sm text-gray-900 mb-2">
                   Days for Payment
                 </label>
                 <Select
@@ -192,10 +160,14 @@ export default function LoanApplicationForm({
 
               {error && (
                 <div className="text-red-600 text-xs">
-                  {error === "No active subscription. Subscribe to create new vouchers." ? (
+                  {error ===
+                  "No active subscription. Subscribe to create new vouchers." ? (
                     <>
                       {error}{" "}
-                      <a href="/restaurant/vouchers/subscribe" className="text-blue-600 hover:underline">
+                      <a
+                        href="/restaurant/vouchers/subscribe"
+                        className="text-blue-600 hover:underline"
+                      >
                         Subscribe
                       </a>
                     </>

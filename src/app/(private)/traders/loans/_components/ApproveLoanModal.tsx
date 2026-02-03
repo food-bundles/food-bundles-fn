@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { traderService, LoanApplication } from "@/app/services/traderService";
-import toast from "react-hot-toast";
+import {toast } from "sonner";
 
 interface ApproveLoanModalProps {
   isOpen: boolean;
@@ -35,7 +35,8 @@ export function ApproveLoanModal({ isOpen, onClose, loan, onSuccess }: ApproveLo
       }
     } catch (error: any) {
       console.error("Loan approval error:", error);
-      toast.error(error.response?.data?.message || "Failed to approve loan");
+      const errorMessage = error.response?.data?.message || "Failed to approve loan";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

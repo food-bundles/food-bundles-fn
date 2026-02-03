@@ -33,10 +33,12 @@ export default function LoanApplicationsList() {
   };
 
   if (loading) return (
-    <div className="mb-8 ">
-      <h2 className="text-[16px] text-center font-medium mb-4">My Voucher Application</h2>
+    <div className="mb-2 ">
+      <h2 className="text-[16px] text-center font-medium mb-4">
+        My Voucher Application
+      </h2>
       <div className="flex justify-center">
-        <div className="w-[300px] h-[400px] flex flex-col p-6 border rounded relative">
+        <div className="w-75 h-86 flex flex-col p-6 border rounded relative">
           <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
             <Skeleton className=" h-6 w-20 rounded" />
           </div>
@@ -61,7 +63,7 @@ export default function LoanApplicationsList() {
   if (error) return <div className="p-6 text-red-600">Error: {error}</div>;
 
   return (
-    <div className="mb-8">
+    <div className="mb-2">
       <h2 className="text-[16px] text-center font-medium mb-4">My Voucher Application</h2>
       {!loading && myLoanApplications.length === 0 ? (
         <div className="text-center py-8">
@@ -76,13 +78,15 @@ export default function LoanApplicationsList() {
             return (
               <Card
                 key={application.id}
-                className="w-[300px] h-[400px] flex flex-col p-6 border-green-400 hover:border-green-600 transition-colors relative rounded shadow-none"
+                className="w-75 h-86 flex flex-col p-6 border-green-400 hover:border-green-600 transition-colors relative rounded shadow-none"
               >
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                   <div
                     className={`px-2 rounded h-6 ${statusConfig.bg}  flex items-center justify-center`}
                   >
-                    <p className="text-white text-[14px]">{statusConfig.text}</p>
+                    <p className="text-white text-[14px]">
+                      {statusConfig.text}
+                    </p>
                   </div>
                 </div>
 
@@ -115,7 +119,7 @@ export default function LoanApplicationsList() {
                   {application.notes && (
                     <div className="text-center">
                       <p className="text-blue-600 text-xs">
-                        Admin Notes: {application.notes}
+                        {application.notes}
                       </p>
                     </div>
                   )}
@@ -135,11 +139,10 @@ export default function LoanApplicationsList() {
                       <div className="flex items-center justify-center gap-1">
                         Disbursed:{" "}
                         {new Date(
-                          application.disbursementDate
+                          application.disbursementDate,
                         ).toLocaleDateString()}
                       </div>
                     )}
-          
                   </div>
                 </div>
               </Card>

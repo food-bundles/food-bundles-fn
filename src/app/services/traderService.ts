@@ -5,6 +5,9 @@ export interface TraderWallet {
   id: string;
   traderId: string;
   balance: number;
+  pendingApprovedAmount: number;
+  commissionEarned: number;
+  commission: number;
   currency: string;
   isActive: boolean;
   createdAt: string;
@@ -17,6 +20,9 @@ export interface TraderWallet {
   _count?: {
     transactions: number;
   };
+  totalVouchersAmount: number;
+  totalVouchersCount: number;
+  availableBalance: number;
 }
 
 export interface LoanApplication {
