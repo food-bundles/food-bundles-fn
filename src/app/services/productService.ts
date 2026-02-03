@@ -17,7 +17,7 @@ export interface CreateProductData {
 }
 
 export const productService = {
-  createProduct: async (productData: ProductFormData) => {
+  createProduct: async (productData: ProductFormData & { tableTronicProductId?: number; unitId?: string }) => {
     const axiosClient = createAxiosClient();
 
     // Create FormData for file upload
@@ -27,21 +27,24 @@ export const productService = {
     formData.append("productName", productData.productName);
     formData.append("unitPrice", productData.unitPrice.toString());
     formData.append("purchasePrice", productData.purchasePrice.toString());
-    formData.append("categoryId", productData.categoryId); // Changed from category to categoryId
+    formData.append("categoryId", productData.categoryId);
     formData.append("bonus", productData.bonus.toString());
     formData.append("sku", productData.sku);
     formData.append("quantity", productData.quantity.toString());
     formData.append("unit", productData.unit);
+    if (productData.tableTronicProductId) {
+      formData.append("tableTronicProductId", productData.tableTronicProductId.toString());
+    }
+    if (productData.unitId) {
+      formData.append("unitId", productData.unitId);
+    }
 
     if (productData.expiryDate) {
       formData.append("expiryDate", productData.expiryDate.toISOString());
     }
-
-    // Add images
     productData.images.forEach((image, index) => {
       formData.append("images", image);
     });
-
 
     const response = await axiosClient.post("/products", formData, {
       headers: {
@@ -61,7 +64,6 @@ export const productService = {
     sortOrder?: 'asc' | 'desc';
   }) => {
     const axiosClient = createAxiosClient();
-    // Set default limit to 30 if not provided
     const requestParams = {
       ...params,
       limit: params?.limit || 30
@@ -80,7 +82,6 @@ export const productService = {
   }) => {
     try {
       const axiosClient = createAxiosClient();
-      // Set default limit to 30 if not provided
       const requestParams = {
         ...params,
         limit: params?.limit || 30
@@ -111,7 +112,6 @@ export const productService = {
     }
   },
 
-  // update product category
   updateProductCategory: async (categoryId: string, data: { name: string; description: string; isActive: boolean }) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.patch(`/category/${categoryId}`, data);
@@ -150,7 +150,6 @@ export const productService = {
     const axiosClient = createAxiosClient();
     const requestBody: any = { status };
     
-    // Only add reason for INACTIVE status
     if (status === "INACTIVE" && reason) {
       requestBody.reason = reason;
     }
