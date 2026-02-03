@@ -95,7 +95,7 @@ export const createOrderColumns = ({
       const voucher = row.original.Voucher;
       return voucher ? (
         <div className="bg-blue-50 px-2 py-1 rounded">
-          <p className="text-xs font-bold text-blue-800">{voucher.voucherCode}</p>
+          <p className="text-xs font-bold text-blue-600">{voucher.voucherCode}</p>
           <p className="text-xs text-blue-600">{voucher.discountPercentage}% Off</p>
         </div>
       ) : (

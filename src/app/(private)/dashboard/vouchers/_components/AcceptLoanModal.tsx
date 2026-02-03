@@ -109,7 +109,7 @@ export default function AcceptLoanModal({
             <Button
               onClick={handleAccept}
               disabled={!isFormValid || isLoading}
-              className="bg-teal-600 hover:bg-teal-700"
+              className="bg-green-600 hover:bg-green-700"
             >
               {isLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               {isLoading ? "Accepting..." : "Accept Loan"}

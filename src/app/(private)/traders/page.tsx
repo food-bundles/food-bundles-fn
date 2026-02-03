@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import {
   traderService,
-  type TraderDashboard,
   type TraderWallet,
   type TraderTransaction,
 } from "@/app/services/traderService";
@@ -34,9 +33,6 @@ import toast from "react-hot-toast";
   };
 
 export default function TraderDashboardPage() {
-  const [dashboardData, setDashboardData] = useState<TraderDashboard | null>(
-    null,
-  );
   const [wallet, setWallet] = useState<TraderWallet | null>(null);
   const [transactions, setTransactions] = useState<TraderTransaction[]>([]);
   const [transactionsPagination, setTransactionsPagination] = useState({
@@ -101,12 +97,10 @@ export default function TraderDashboardPage() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [dashboardResponse] = await Promise.all([
-          traderService.getDashboardStats(),
+        await Promise.all([
           fetchWallet(),
           fetchTransactions(1),
         ]);
-        setDashboardData(dashboardResponse.data);
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
       } finally {
@@ -273,22 +267,22 @@ export default function TraderDashboardPage() {
 
   const stats = [
     {
-      title: "Wallet Balance",
-      value: `${(dashboardData?.walletBalance || 0).toLocaleString()} RWF`,
+      title: "Balance deposted in FB",
+      value: `${(wallet?.balance || 0).toLocaleString()} RWF`,
       icon: Wallet,
       color: "text-green-600",
       bgColor: "bg-green-100",
     },
     {
       title: "Total Vouchers Approved",
-      value: dashboardData?.totalVouchersApproved || 0,
+      value: wallet?.totalVouchersCount || 0,
       icon: Ticket,
       color: "text-blue-600",
       bgColor: "bg-blue-100",
     },
     {
-      title: "Active Vouchers",
-      value: dashboardData?.activeVouchers || 0,
+      title: "Commission Earned",
+      value: `${(wallet?.commissionEarned || 0).toLocaleString()} RWF`,
       icon: CreditCard,
       color: "text-purple-600",
       bgColor: "bg-purple-100",
@@ -320,25 +314,11 @@ export default function TraderDashboardPage() {
               percent: "text-blue-600",
             },
             {
-              bg: "bg-purple-50",
-              text: "text-purple-600",
-              percent: "text-purple-600",
-            },
-            {
-              bg: "bg-orange-50",
-              text: "text-orange-600",
-              percent: "text-orange-600",
-            },
-            {
-              bg: "bg-emerald-50",
-              text: "text-emerald-600",
-              percent: "text-emerald-600",
-            },
-            {
               bg: "bg-yellow-50",
               text: "text-yellow-600",
               percent: "text-yellow-600",
             },
+        
           ];
           const colors = cardColors[index % cardColors.length];
 
@@ -349,16 +329,6 @@ export default function TraderDashboardPage() {
             >
               <div className="flex items-center justify-between mb-2">
                 <stat.icon className={`w-5 h-5 ${colors.text}`} />
-                <div
-                  className={`flex items-center gap-1 text-xs ${colors.percent}`}
-                >
-                  <div className="w-3 h-3">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M7 14l5-5 5 5z" />
-                    </svg>
-                  </div>
-                  +{(Math.random() * 20).toFixed(1)}%
-                </div>
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-gray-600 font-medium">
@@ -401,25 +371,25 @@ export default function TraderDashboardPage() {
           <Card className="lg:col-span-2">
             <CardContent>
               <div className="space-y-4">
-                <div className="bg-linear-to-r from-yellow-500 to-yellow-600 rounded-lg p-6 text-white">
+                <div className="bg-gray-100 rounded-lg p-6 text-gray-900">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-yellow-100 text-sm">
+                      <p className="text-gray-700 text-sm">
                         Available Balance
                       </p>
-                      <p className="text-3xl font-bold">
+                      <p className="text-2xl font-bold">
                         {wallet.balance.toLocaleString()} {wallet.currency}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-yellow-100 text-sm">Status</p>
-                      <p className="text-lg font-semibold">
+                      <p className="text-gray-700 text-sm">Status</p>
+                      <p className="text-lg font-semibold text-yellow-700">
                         {wallet.isActive ? "Active" : "Inactive"}
                       </p>
                     </div>
                   </div>
-                  <div className="mt-4 pt-4 border-t border-yellow-400">
-                    <div className="flex justify-between text-sm text-yellow-100">
+                  <div className="mt-4 pt-4 border-t border-gray-400">
+                    <div className="flex justify-between text-sm text-gray-600">
                       <span>Wallet Type: Food Store</span>
                       <span>
                         Transactions: {wallet._count?.transactions || 0}
@@ -435,11 +405,12 @@ export default function TraderDashboardPage() {
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Top Up Wallet
-                  </Button>
-                  <Button variant="outline" className="flex-1">
+                    </Button>
+                    {/* don't remove this commented codes */}
+                  {/* <Button variant="outline" className="flex-1">
                     <ArrowDownRight className="h-4 w-4 mr-2" />
                     Withdraw
-                  </Button>
+                  </Button> */}
                 </div>
               </div>
             </CardContent>
@@ -463,8 +434,8 @@ export default function TraderDashboardPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-xs">Orders Processed</span>
                   </div>
-                  <span className="font-semibold text-orange-600">
-                    {dashboardData?.totalOrdersProcessed || 0}
+                  <span className="font-semibold text-yellow-600">
+                    {wallet?.totalVouchersCount || 0}
                   </span>
                 </div>
               </div>
@@ -474,17 +445,16 @@ export default function TraderDashboardPage() {
                   <span className="text-xs">Total Commission</span>
                 </div>
                 <span className="font-semibold text-sm text-emerald-600">
-                  {(dashboardData?.totalCommissionEarned || 0).toLocaleString()}{" "}
-                  Rwf
+                  {(wallet?.commissionEarned || 0).toLocaleString()} RWF
                 </span>
               </div>
 
               <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs">Pending Commission</span>
+                  <span className="text-xs">Pending commission</span>
                 </div>
                 <span className="font-semibold text-sm text-yellow-600">
-                  {(dashboardData?.pendingCommission || 0).toLocaleString()} Rwf
+                  *** RWF
                 </span>
               </div>
             </CardContent>

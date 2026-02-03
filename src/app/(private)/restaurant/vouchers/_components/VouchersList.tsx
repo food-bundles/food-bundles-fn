@@ -37,7 +37,7 @@ export default function VouchersList() {
   };
 
   if (loading) return (
-    <div className="mb-8">
+    <div className="mb-2">
       <h2 className="text-[16px] font-medium text-center mb-4">My Voucher</h2>
       <div className="flex justify-center">
         <div className="w-[320px] h-100 flex flex-col p-6 border rounded relative">
@@ -84,7 +84,7 @@ export default function VouchersList() {
   if (error) return <div className="p-6 text-red-600">Somenting went wrong</div>;
 
   return (
-    <div className="mb-8">
+    <div className="mb-2">
       <h2 className="text-[16px] font-medium text-center mb-4">My Voucher</h2>
       {!loading && myVouchers.length === 0 ? (
         <div className="text-center py-8">
@@ -99,7 +99,7 @@ export default function VouchersList() {
             return (
               <Card
                 key={voucher.id}
-                className={`w-[320px] h-100 flex flex-col p-6 ${
+                className={`w-75 h-86 flex flex-col p-6 ${
                   isActive
                     ? "border-yellow-300 hover:border-yellow-400"
                     : "border-gray-200"

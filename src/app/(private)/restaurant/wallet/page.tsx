@@ -12,7 +12,7 @@ import { CreateWalletCard } from "./_components/CreateWalletCard";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function WalletPage() {
-  const { myWallet, getMyWallet, loading } = useWallet();
+  const { wallet, getMyWallet, loading } = useWallet();
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [showTransactions, setShowTransactions] = useState(false);
 
@@ -23,11 +23,11 @@ export default function WalletPage() {
   }, [getMyWallet]);
 
   // Show create wallet if no wallet exists and not loading
-  if (!loading && !myWallet) {
+  if (!loading && !wallet) {
     return <CreateWalletCard />;
   }
 
-  if (loading && !myWallet) {
+  if (loading && !wallet) {
     return (
       <div className="p-6 space-y-6">
         <div className="flex items-center gap-2">
@@ -68,8 +68,8 @@ export default function WalletPage() {
           <Wallet className="h-6 w-6" />
           <h1 className="text-2xl font-bold">Wallet Management</h1>
         </div>
-        <Badge variant={myWallet?.isActive ? "default" : "destructive"}>
-          {myWallet?.isActive ? "Active" : "Inactive"}
+        <Badge variant={wallet?.isActive ? "default" : "destructive"}>
+          {wallet?.isActive ? "Active" : "Inactive"}
         </Badge>
       </div>
 
@@ -85,12 +85,12 @@ export default function WalletPage() {
           <CardContent>
             <div className="space-y-4">
               <div className="text-3xl font-bold text-green-600">
-                {myWallet?.balance?.toLocaleString() || 0} {myWallet?.currency || "RWF"}
+                {wallet?.balance?.toLocaleString() || 0} {wallet?.currency || "RWF"}
               </div>
               <Button 
                 onClick={() => setShowTopUpModal(true)}
                 className="w-full"
-                disabled={!myWallet?.isActive}
+                disabled={!wallet?.isActive}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Top Up Wallet
@@ -119,7 +119,7 @@ export default function WalletPage() {
                 variant="outline" 
                 className="w-full justify-start"
                 onClick={() => setShowTopUpModal(true)}
-                disabled={!myWallet?.isActive}
+                disabled={!wallet?.isActive}
               >
                 <CreditCard className="h-4 w-4 mr-2" />
                 Top Up with Card
@@ -128,7 +128,7 @@ export default function WalletPage() {
                 variant="outline" 
                 className="w-full justify-start"
                 onClick={() => setShowTopUpModal(true)}
-                disabled={!myWallet?.isActive}
+                disabled={!wallet?.isActive}
               >
                 <Smartphone className="h-4 w-4 mr-2" />
                 Top Up with Mobile Money
@@ -139,7 +139,7 @@ export default function WalletPage() {
       </div>
 
       {/* Wallet Info */}
-      {myWallet && (
+      {wallet && (
         <Card>
           <CardHeader>
             <CardTitle>Wallet Information</CardTitle>
@@ -148,19 +148,19 @@ export default function WalletPage() {
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <p className="text-sm text-gray-600">Wallet ID</p>
-                <p className="font-mono text-sm">{myWallet.id}</p>
+                <p className="font-mono text-sm">{wallet.id}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Currency</p>
-                <p className="font-semibold">{myWallet.currency}</p>
+                <p className="font-semibold">{wallet.currency}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Created</p>
-                <p className="text-sm">{new Date(myWallet.createdAt).toLocaleDateString()}</p>
+                <p className="text-sm">{new Date(wallet.createdAt).toLocaleDateString()}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Total Transactions</p>
-                <p className="font-semibold">{myWallet._count?.transactions || 0}</p>
+                <p className="font-semibold">{wallet._count?.transactions || 0}</p>
               </div>
             </div>
           </CardContent>
