@@ -2,8 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { CreditCard, Download, Printer } from "lucide-react";
-import { jsPDF } from "jspdf";
+import { Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -29,142 +28,129 @@ export function ViewOrderModal({ open, onOpenChange, order }: ViewOrderModalProp
       }
 
      printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <title>${
-            order.originalData?.billingName || order.customerName
-          }-Order Invoice-${
-       order.originalData?.orderNumber || order.orderId
-     }</title>
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            .invoice { max-width: 700px; margin: 0 auto; border: 2px solid #22c55e; border-radius: 8px; padding: 20px; }
-            .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #22c55e; padding-bottom: 15px; }
-            .logo { width: 50px; height: 50px; margin: 0 auto 10px; background: #22c55e; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; }
-            .header h1 { color: #22c55e; margin-bottom: 5px; }
-            .info-section { margin: 20px 0; }
-            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-            .info-item { background: #f8fafc; padding: 10px; border-radius: 5px; border-left: 3px solid #22c55e; }
-            .info-label { font-size: 11px; color: #64748b; text-transform: uppercase; margin-bottom: 3px; }
-            .info-value { font-weight: 600; color: #1f2937; }
-            .items { margin: 20px 0; }
-            .items table { width: 100%; border-collapse: collapse; }
-            .items th, .items td { padding: 8px; border: 1px solid #e5e7eb; text-align: left; }
-            .items th { background: #22c55e; color: white; }
-            .total { background: #f0fdf4; font-weight: bold; color: #22c55e; text-align: right; padding: 15px; margin-top: 10px; border-radius: 5px; }
-            .footer { text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #e5e7eb; color: #64748b; font-size: 12px; }
-          </style>
-        </head>
-        <body>
-          <div class="invoice">
-            <div class="header">
-              <img src="https://res.cloudinary.com/dzxyelclu/image/upload/v1760111270/Food_bundle_logo_cfsnsw.png" alt="Logo" style="width: 50px; height: 50px; margin: 0 auto 10px; border-radius: 50%;">
-              <h1>Food Bundles Ltd</h1>
-              <p>Order Invoice</p>
-            </div>
-            <div class="info-section">
-              <h3>Order Information</h3>
-              <div class="info-grid">
-                <div class="info-item">
-                  <div class="info-label">Order Number</div>
-                  <div class="info-value">${
-                    order.originalData?.orderNumber || order.orderId
-                  }</div>
-                </div>
-                <div class="info-item">
-                  <div class="info-label">Order Date</div>
-                  <div class="info-value">${
-                    order.originalData?.createdAt
-                      ? new Date(
-                          order.originalData.createdAt
-                        ).toLocaleDateString()
-                      : order.orderedDate
-                  }</div>
-                </div>
-                <div class="info-item">
-                  <div class="info-label">Restaurant</div>
-                  <div class="info-value">${
-                    order.originalData?.restaurant?.name || "N/A"
-                  }</div>
-                </div>
-                <div class="info-item">
-                  <div class="info-label">Status</div>
-                  <div class="info-value">${
-                    order.originalData?.status || order.status
-                  }</div>
-                </div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">Customer</div>
-                <div class="info-value">${
-                  order.originalData?.billingName || order.customerName
-                } - ${order.originalData?.billingPhone || "N/A"}</div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">Delivery Address</div>
-                <div class="info-value">${
-                  order.originalData?.billingAddress || order.deliveryAddress
-                }</div>
-              </div>
-            </div>
-            <div class="items">
-              <h3>Order Items</h3>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Product</th>
-                    <th>Quantity</th>
-                    <th>Unit Price</th>
-                    <th>Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${
-                    order.originalData?.orderItems
-                      ?.map(
-                        (item: any) => `
-                    <tr>
-                      <td>${item.productName}</td>
-                      <td>${item.quantity} ${item.unit}</td>
-                      <td>${item.unitPrice.toLocaleString()} RWF</td>
-                      <td>${item.subtotal.toLocaleString()} RWF</td>
-                    </tr>
-                  `
-                      )
-                      .join("") ||
-                    `
-                    <tr>
-                      <td colspan="3">${order.items}</td>
-                      <td>${order.totalAmount} RWF</td>
-                    </tr>
-                  `
-                  }
-                </tbody>
-              </table>
-            </div>
-            <div class="total">
-              ${
-                order.originalData?.originalAmount && order.originalData.originalAmount !== order.originalData.totalAmount ? `
-                  <div style="text-align: right; margin-bottom: 10px;">
-                    <div style="color: #6b7280; text-decoration: line-through; font-size: 14px;">Original Amount: ${order.originalData.originalAmount.toLocaleString()} RWF</div>
-                    <div style="color: #22c55e; font-size: 14px;">Discount: -${(order.originalData.originalAmount - order.originalData.totalAmount).toLocaleString()} RWF</div>
-                  </div>
-                  <strong>Final Amount: ${order.originalData.totalAmount.toLocaleString()} RWF</strong>
-                ` : `
-                  <strong>Total Amount: ${order.originalData?.totalAmount?.toLocaleString() || order.totalAmount} RWF</strong>
-                `
-              }
-            </div>
-            <div class="footer">
-              <p>Thank you for your order!</p>
-              <p>Generated on ${new Date().toLocaleString()}</p>
-            </div>
-          </div>
-        </body>
-        </html>
+       <!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${order.originalData?.billingName || order.customerName}-Order Invoice-${order.originalData?.orderNumber || order.orderId}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Arial', sans-serif; padding: 20px; font-size: 0.875rem; color: #1f2937; }
+    .invoice { max-width: 700px; margin: 0 auto;  padding: 20px; }
+    .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #22c55e; padding-bottom: 15px; }
+    .header h1 { color: #22c55e; font-size: 1.25rem; margin-bottom: 5px; font-weight: 600; }
+    .header p { font-size: 0.875rem; color: #64748b; }
+    .info-section { margin: 20px 0; font-size: 0.875rem; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .info-item { background: #f8fafc; padding: 10px; border-left: 3px solid #22c55e; }
+    .info-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; margin-bottom: 2px; }
+    .info-value { color: #1f2937; }
+    .items { margin: 20px 0; font-size: 0.875rem; }
+    .items table { width: 100%; border-collapse: collapse; }
+    .items th, .items td { padding: 6px; border: 1px solid #e5e7eb; text-align: left; font-weight: normal; font-size: 0.875rem; }
+    .items th { background: #22c55e; color: white; font-weight: 600; font-size: 0.875rem; }
+    .total { background: #f0fdf4; text-align: right; padding: 12px; margin-top: 10px; border-radius: 5px; font-size: 0.875rem; color: #22c55e; }
+    .total strong { font-size: 1rem; }
+    .footer { text-align: center; margin-top: 20px; padding-top: 10px; border-top: 1px solid #e5e7eb; color: #64748b; font-size: 0.75rem; }
+  </style>
+</head>
+<body>
+  <div class="invoice">
+    <div class="header">
+      <img src="https://res.cloudinary.com/dzxyelclu/image/upload/v1760111270/Food_bundle_logo_cfsnsw.png" alt="Logo" style="width: 50px; height: 50px; margin: 0 auto 8px; border-radius: 50%;">
+      <h1>Food Bundles Ltd</h1>
+      <p>Order Invoice</p>
+    </div>
+
+<div class="info-section">
+  <div class="info-flex-container" style="display: flex; flex-wrap: wrap; gap: 12px;">
+
+    <!-- Row 1 -->
+    <div class="info-item" style="flex: 1 1 calc(33.33% - 8px);">
+      <div class="info-label">Order Number</div>
+      <div class="info-value">${order.originalData?.orderNumber || order.orderId}</div>
+    </div>
+
+    <div class="info-item" style="flex: 1 1 calc(33.33% - 8px);">
+      <div class="info-label">Order Date</div>
+      <div class="info-value">${order.originalData?.createdAt ? new Date(order.originalData.createdAt).toLocaleDateString() : order.orderedDate}</div>
+    </div>
+
+    <div class="info-item" style="flex: 1 1 calc(33.33% - 8px);">
+      <div class="info-label">Restaurant</div>
+      <div class="info-value">${order.originalData?.restaurant?.name || "N/A"}</div>
+    </div>
+
+    <!-- Row 2 -->
+    <div class="info-item" style="flex: 1 1 calc(33.33% - 8px);">
+      <div class="info-label">Status</div>
+      <div class="info-value">${order.originalData?.status || order.status}</div>
+    </div>
+
+    <div class="info-item" style="flex: 1 1 calc(33.33% - 8px);">
+      <div class="info-label">Customer</div>
+      <div class="info-value">${order.originalData?.billingName || order.customerName} - ${order.originalData?.billingPhone || "N/A"}</div>
+    </div>
+
+    <div class="info-item" style="flex: 1 1 calc(33.33% - 8px);">
+      <div class="info-label">Delivery Address</div>
+      <div class="info-value">${order.originalData?.billingAddress || order.deliveryAddress}</div>
+    </div>
+
+  </div>
+</div>
+
+
+
+    <div class="items">
+      <h3 style="font-size: 0.875rem; margin-bottom: 8px;">Order Items</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Unit Price</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${
+            order.originalData?.orderItems
+              ?.map(
+                (item: any) => `
+            <tr>
+              <td>${item.productName}</td>
+              <td>${item.quantity} ${item.unit}</td>
+              <td>${item.unitPrice.toLocaleString()} RWF</td>
+              <td>${item.subtotal.toLocaleString()} RWF</td>
+            </tr>
+          `,
+              )
+              .join("") ||
+            `<tr><td colspan="3">${order.items}</td><td>${order.totalAmount} RWF</td></tr>`
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="total">
+      <div style="margin-bottom: 6px; font-size: 0.875rem; color: #374151;">
+        Subtotal: ${order.originalData?.originalAmount?.toLocaleString() || order.totalAmount} RWF
+      </div>
+      ${order.originalData?.deliveryFee > 0 ? `<div style="color: #374151; margin-bottom: 4px;">Delivery Fee: +${order.originalData.deliveryFee.toLocaleString()} RWF</div>` : ""}
+      ${order.originalData?.packagingFee > 0 ? `<div style="color: #374151; margin-bottom: 4px;">Packaging Fee: +${order.originalData.packagingFee.toLocaleString()} RWF</div>` : ""}
+      ${order.originalData?.originalAmount && order.originalData.totalAmount < order.originalData.originalAmount ? `<div style="color: #22c55e; margin-bottom: 4px;">Discount Applied: -${(order.originalData.originalAmount - order.originalData.totalAmount).toLocaleString()} RWF</div>` : ""}
+      <strong>Total Amount: ${order.originalData?.totalAmount?.toLocaleString() || order.totalAmount} RWF</strong>
+    </div>
+
+    <div class="footer">
+      <p>Thank you for your order!</p>
+      <p>Generated on ${new Date().toLocaleString()}</p>
+    </div>
+  </div>
+</body>
+</html>
+
       `);
 
       printWindow.document.close();
@@ -188,7 +174,7 @@ export function ViewOrderModal({ open, onOpenChange, order }: ViewOrderModalProp
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-10xl  max-h-[90vh] overflow-y-auto p-0">
         <DialogHeader className="px-6 pt-6 pb-2">
-          <DialogTitle>Order Details - {order.originalData?.orderNumber || order.orderId}</DialogTitle>
+          <DialogTitle className="text-sm">Order Details - {order.originalData?.orderNumber || order.orderId}</DialogTitle>
         </DialogHeader>
         
         <div className="px-6 pb-6">
@@ -215,32 +201,32 @@ export function ViewOrderModal({ open, onOpenChange, order }: ViewOrderModalProp
 
               {/* Order Information Header */}
               <div className="mb-6 sm:mb-8">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6">
+                <h2 className="text-sm font-semibold text-gray-900 mb-4 sm:mb-6">
                   Order Information
                 </h2>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Order Number</p>
-                    <p className="font-semibold text-gray-900 text-sm sm:text-base">
+                    <p className="font-semibold text-gray-900 text-sm">
                       {order.originalData?.orderNumber || order.orderId}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Order Date</p>
-                    <p className="font-semibold text-gray-900 text-sm sm:text-base">
+                    <p className="font-semibold text-gray-900 text-sm">
                       {order.originalData?.createdAt ? new Date(order.originalData.createdAt).toLocaleDateString() : order.orderedDate}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Customer Name</p>
-                    <p className="font-semibold text-gray-900 text-sm sm:text-base">
+                    <p className="font-semibold text-gray-900 text-sm ">
                       {order.originalData?.billingName || order.customerName}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Phone Number</p>
-                    <p className="font-semibold text-gray-900 text-sm sm:text-base">
+                    <p className="font-semibold text-gray-900 text-sm ">
                       {order.originalData?.billingPhone || order.phoneNumber || "N/A"}
                     </p>
                   </div>
@@ -259,7 +245,7 @@ export function ViewOrderModal({ open, onOpenChange, order }: ViewOrderModalProp
                   </div>
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Restaurant</p>
-                    <p className="font-semibold text-gray-900 text-sm sm:text-base">
+                    <p className="font-semibold text-gray-900 text-sm">
                       {order.originalData?.restaurant?.name || "N/A"}
                     </p>
                   </div>
@@ -268,7 +254,7 @@ export function ViewOrderModal({ open, onOpenChange, order }: ViewOrderModalProp
 
               {/* Order Items */}
               <div className="mb-6 sm:mb-8">
-                <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4">
+                <h3 className="text-sm font-bold text-gray-900 mb-3 sm:mb-4">
                   Order Items
                 </h3>
                 <div className="bg-white rounded-lg border border-green-100">
@@ -286,15 +272,14 @@ export function ViewOrderModal({ open, onOpenChange, order }: ViewOrderModalProp
                           />
                         </div>
                         
-                        {/* Product Details */}
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-gray-900 text-sm sm:text-base">
+                          <h4 className="font-semibold text-gray-900 text-sm">
                             {item.productName}
                           </h4>
                           <p className="text-xs text-gray-500 mb-1">
                             Category: {item.category || "N/A"}
                           </p>
-                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <div className="flex items-center gap-4 text-xs text-gray-600">
                             <span>Qty: {item.quantity} {item.unit}</span>
                             <span>Unit Price: {item.unitPrice?.toLocaleString()} RWF</span>
                           </div>
@@ -302,7 +287,7 @@ export function ViewOrderModal({ open, onOpenChange, order }: ViewOrderModalProp
                         
                         {/* Subtotal */}
                         <div className="text-right">
-                          <p className="font-semibold text-gray-900 text-sm sm:text-base">
+                          <p className="font-semibold text-gray-900 text-sm">
                             {item.subtotal?.toLocaleString()} RWF
                           </p>
                         </div>
@@ -320,39 +305,53 @@ export function ViewOrderModal({ open, onOpenChange, order }: ViewOrderModalProp
                     
                     {/* Total Section */}
                     <div className="border-t border-gray-300 pt-3 mt-4">
-                      {order.originalData?.originalAmount && order.originalData.originalAmount !== order.originalData.totalAmount ? (
-                        <div className="space-y-2">
+                      <div className="space-y-2">
+                        {/* Subtotal */}
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Subtotal</span>
+                          <span className="text-sm text-gray-900">
+                            {order.originalData?.originalAmount?.toLocaleString() || order.originalData?.totalAmount?.toLocaleString() || order.totalAmount} RWF
+                          </span>
+                        </div>
+                        
+                        {order.originalData?.deliveryFee > 0 && (
                           <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Original Amount</span>
-                            <span className="text-sm text-gray-500 line-through">
-                              {order.originalData.originalAmount.toLocaleString()} RWF
+                            <span className="text-sm text-gray-600">Delivery Fee</span>
+                            <span className="text-sm text-gray-900">
+                              +{order.originalData.deliveryFee.toLocaleString()} RWF
                             </span>
                           </div>
+                        )}
+                        
+                        {order.originalData?.packagingFee > 0 && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">Packaging Fee</span>
+                            <span className="text-sm text-gray-900">
+                              +{order.originalData.packagingFee.toLocaleString()} RWF
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* Discount (if total is less than original) */}
+                        {order.originalData?.originalAmount && order.originalData.totalAmount < order.originalData.originalAmount && (
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-green-600">Discount Applied</span>
                             <span className="text-sm text-green-600">
                               -{(order.originalData.originalAmount - order.originalData.totalAmount).toLocaleString()} RWF
                             </span>
                           </div>
-                          <div className="flex justify-between items-center border-t pt-2">
-                            <span className="text-base sm:text-lg font-bold text-gray-900">
-                              Final Amount
-                            </span>
-                            <span className="text-base sm:text-lg font-bold text-green-600">
-                              {order.originalData.totalAmount.toLocaleString()} RWF
-                            </span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex justify-between items-center">
-                          <span className="text-base sm:text-lg font-bold text-gray-900">
+                        )}
+                        
+                        {/* Final Total */}
+                        <div className="flex justify-between items-center border-t pt-2">
+                          <span className="text-sm font-semibold text-gray-900">
                             Total Amount
                           </span>
-                          <span className="text-base sm:text-lg font-bold text-green-600">
+                          <span className="text-sm font-semibold text-green-600">
                             {order.originalData?.totalAmount?.toLocaleString() || order.totalAmount} RWF
                           </span>
                         </div>
-                      )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -361,15 +360,12 @@ export function ViewOrderModal({ open, onOpenChange, order }: ViewOrderModalProp
               {/* Payment & Delivery Info */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6 sm:mb-8">
                 <div className="flex items-start gap-3">
-                  <div className="bg-green-100 p-2 rounded-full shrink-0">
-                    <CreditCard className="h-4 w-4 text-green-600" />
-                  </div>
                   <div className="min-w-0">
-                    <p className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">
+                    <p className="font-semibold text-gray-900 mb-1 text-sm ">
                       Payment Method
                     </p>
                     <p className="text-xs sm:text-sm text-gray-600">
-                      {order.originalData?.paymentMethod || order.paymentMethod || "N/A"}
+                      {order.originalData?.paymentMethod || order.paymentMethod}
                     </p>
                     {order.originalData?.voucherCode && (
                       <p className="text-xs text-blue-600 mt-1">
@@ -380,14 +376,8 @@ export function ViewOrderModal({ open, onOpenChange, order }: ViewOrderModalProp
                 </div>
                 
                 <div className="flex items-start gap-3">
-                  <div className="bg-blue-100 p-2 rounded-full shrink-0">
-                    <svg className="h-4 w-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
                   <div className="min-w-0">
-                    <p className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">
+                    <p className="font-semibold text-gray-900 mb-1 text-sm">
                       Delivery Info
                     </p>
                     <p className="text-xs sm:text-sm text-gray-600">
@@ -412,7 +402,7 @@ export function ViewOrderModal({ open, onOpenChange, order }: ViewOrderModalProp
                 <Button
                   variant="outline"
                   onClick={handlePrint}
-                  className="flex items-center justify-center cursor-pointer gap-2 bg-transparent text-sm"
+                  className="flex items-center justify-center cursor-pointer gap-2 bg-transparent text-sm "
                 >
                   <Printer className="h-4 w-4" />
                   Print Receipt

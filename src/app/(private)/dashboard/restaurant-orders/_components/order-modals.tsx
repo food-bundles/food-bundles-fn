@@ -17,7 +17,9 @@ import { orderService } from "@/app/services/orderService";
 import { toast } from "sonner";
 import { Order } from "./order-colmuns";
 
-// View Order Modal
+/* =========================
+   View Order Modal
+========================= */
 interface ViewOrderModalProps {
   open: boolean;
   onClose: () => void;
@@ -27,126 +29,138 @@ interface ViewOrderModalProps {
 export function ViewOrderModal({ open, onClose, order }: ViewOrderModalProps) {
   if (!order) return null;
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-RW", {
+  const formatDate = (date: string) =>
+    new Date(date).toLocaleDateString("en-RW", {
       year: "numeric",
-      month: "long",
+      month: "short",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "PENDING": return "bg-yellow-100 text-yellow-800";
-      case "CONFIRMED": return "bg-blue-100 text-blue-800";
-      case "PROCESSING": return "bg-purple-100 text-purple-800";
-      case "READY": return "bg-cyan-100 text-cyan-800";
-      case "DELIVERED": return "bg-green-100 text-green-800";
-      case "CANCELLED": return "bg-red-100 text-red-800";
-      case "REFUNDED": return "bg-gray-100 text-gray-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "PENDING":
+        return "bg-yellow-100 text-yellow-800";
+      case "CONFIRMED":
+        return "bg-blue-100 text-blue-800";
+      case "PROCESSING":
+        return "bg-purple-100 text-purple-800";
+      case "READY":
+        return "bg-cyan-100 text-cyan-800";
+      case "DELIVERED":
+        return "bg-green-100 text-green-800";
+      case "CANCELLED":
+        return "bg-red-100 text-red-800";
+      case "REFUNDED":
+        return "bg-gray-100 text-gray-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto scrollbar-thin">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Order Details - {order.orderNumber}</DialogTitle>
+          <DialogTitle className="text-sm font-semibold">
+            Order Details – {order.orderNumber}
+          </DialogTitle>
         </DialogHeader>
+
         <div className="space-y-6">
-          {/* Order Information */}
-          <div className=" grid grid-cols-2 gap-6">
+          {/* Order + Customer */}
+          <div className="grid grid-cols-2 gap-6">
+            {/* Order Info */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">Order Information</h3>
-              <div className="space-y-3">
-                <div className="grid grid-cols-3 gap-2">
-                  <span className="text-sm font-medium">Order #:</span>
+              <h3 className="text-sm font-semibold mb-3">Order Information</h3>
+
+              <div className="space-y-2">
+                <div className="grid grid-cols-3">
+                  <span className="text-xs text-gray-500">Order #</span>
                   <span className="col-span-2 text-sm">
                     {order.orderNumber}
                   </span>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <span className="text-sm font-medium">Status:</span>
-                  <div className="col-span-2">
-                    <Badge className={getStatusColor(order.status)}>
+
+                <div className="grid grid-cols-3">
+                  <span className="text-xs text-gray-500">Status</span>
+                  <span className="col-span-2">
+                    <Badge
+                      className={`text-xs ${getStatusColor(order.status)}`}
+                    >
                       {order.status}
                     </Badge>
-                  </div>
+                  </span>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <span className="text-sm font-medium">Payment:</span>
-                  <div className="col-span-2">
-                    <Badge className={getStatusColor(order.paymentStatus)}>
+
+                <div className="grid grid-cols-3">
+                  <span className="text-xs text-gray-500">Payment</span>
+                  <span className="col-span-2">
+                    <Badge
+                      className={`text-xs ${getStatusColor(
+                        order.paymentStatus,
+                      )}`}
+                    >
                       {order.paymentStatus}
                     </Badge>
-                  </div>
+                  </span>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <span className="text-sm font-medium">Total:</span>
-                  <div className="col-span-2">
-                    {order.originalAmount && order.originalAmount !== order.totalAmount ? (
-                      <div>
-                        <div className="text-gray-500 line-through text-xs">
-                          {order.originalAmount.toLocaleString()} RWF
-                        </div>
-                        <div className="text-green-600 font-medium">
-                          {order.totalAmount.toLocaleString()} RWF
-                        </div>
-                        <div className="text-xs text-green-500">
-                          Saved: {(order.originalAmount - order.totalAmount).toLocaleString()} RWF
-                        </div>
-                      </div>
-                    ) : (
-                      <span className="text-sm font-medium">
-                        {order.totalAmount.toLocaleString()} RWF
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <span className="text-sm font-medium">Payment Method:</span>
+
+                <div className="grid grid-cols-3">
+                  <span className="text-xs text-gray-500">Method</span>
                   <span className="col-span-2 text-sm">
                     {order.paymentMethod}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-3">
+                  <span className="text-xs text-gray-500">Total</span>
+                  <span className="col-span-2 text-sm font-medium text-green-600">
+                    {order.totalAmount.toLocaleString()} RWF
                   </span>
                 </div>
               </div>
             </div>
 
+            {/* Customer Info */}
             <div>
-              <h3 className="text-lg font-semibold mb-4">
+              <h3 className="text-sm font-semibold mb-3">
                 Customer Information
               </h3>
-              <div className="space-y-3">
-                <div className="grid grid-cols-3 gap-2">
-                  <span className="text-sm font-medium">Name:</span>
+
+              <div className="space-y-2">
+                <div className="grid grid-cols-3">
+                  <span className="text-xs text-gray-500">Name</span>
                   <span className="col-span-2 text-sm">
                     {order.billingName}
                   </span>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <span className="text-sm font-medium">Email:</span>
+
+                <div className="grid grid-cols-3">
+                  <span className="text-xs text-gray-500">Email</span>
                   <span className="col-span-2 text-sm">
                     {order.billingEmail}
                   </span>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <span className="text-sm font-medium">Phone:</span>
+
+                <div className="grid grid-cols-3">
+                  <span className="text-xs text-gray-500">Phone</span>
                   <span className="col-span-2 text-sm">
                     {order.billingPhone}
                   </span>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <span className="text-sm font-medium">Address:</span>
+
+                <div className="grid grid-cols-3">
+                  <span className="text-xs text-gray-500">Address</span>
                   <span className="col-span-2 text-sm">
                     {order.billingAddress}
                   </span>
                 </div>
+
                 {order.notes && (
-                  <div className="grid grid-cols-3 gap-2">
-                    <span className="text-sm font-medium">Notes:</span>
+                  <div className="grid grid-cols-3">
+                    <span className="text-xs text-gray-500">Notes</span>
                     <span className="col-span-2 text-sm">{order.notes}</span>
                   </div>
                 )}
@@ -154,104 +168,82 @@ export function ViewOrderModal({ open, onClose, order }: ViewOrderModalProps) {
             </div>
           </div>
 
-          {/* Restaurant Information */}
+          {/* Products */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">
-              Restaurant Information
+            <h3 className="text-sm font-semibold mb-3">
+              Order Items ({order.orderItems.length})
             </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid grid-cols-3 gap-2">
-                <span className="text-sm font-medium">Name:</span>
-                <span className="col-span-2 text-sm">
-                  {order.restaurant.name}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                <span className="text-sm font-medium">Email:</span>
-                <span className="col-span-2 text-sm">
-                  {order.restaurant.email}
-                </span>
-              </div>
-            </div>
-          </div>
 
-          {/* Order Items */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">
-              Order Items ({order._count.orderItems})
-            </h3>
-            <div className="space-y-3">
+            <div className="flex flex-wrap gap-3">
               {order.orderItems.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center gap-4 p-3 border rounded-lg"
+                  className="flex gap-3 p-3 border rounded-md w-[calc(50%-6px)]"
                 >
-                  {item.images[0] && (
+                  {item.images?.[0] && (
                     <img
                       src={item.images[0]}
                       alt={item.productName}
-                      className="w-16 h-16 object-cover rounded"
+                      className="w-14 h-14 object-cover rounded"
                     />
                   )}
+
                   <div className="flex-1">
-                    <div className="font-medium">{item.productName}</div>
-                    <div className="text-sm text-gray-600">{item.category}</div>
-                    <div className="text-sm">
+                    <p className="text-sm font-medium truncate">
+                      {item.productName}
+                    </p>
+                    <p className="text-xs text-gray-500">{item.category}</p>
+                    <p className="text-xs text-gray-600 mt-1">
                       {item.quantity} {item.unit} ×{" "}
-                      {item.unitPrice.toLocaleString()} RWF ={" "}
+                      {item.unitPrice.toLocaleString()} RWF
+                    </p>
+                    <p className="text-xs font-medium mt-1">
                       {item.subtotal.toLocaleString()} RWF
-                    </div>
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Dates */}
+          {/* Timeline */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Timeline</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid grid-cols-3 gap-2">
-                <span className="text-sm font-medium">Created:</span>
-                <span className="col-span-2 text-sm">
-                  {formatDate(order.createdAt)}
-                </span>
+            <h3 className="text-sm font-semibold mb-3">Timeline</h3>
+
+            <div className="flex flex-wrap gap-6">
+              <div>
+                <p className="text-xs text-gray-500">Created</p>
+                <p className="text-sm">{formatDate(order.createdAt)}</p>
               </div>
-              <div className="grid grid-cols-3 gap-2">
-                <span className="text-sm font-medium">Updated:</span>
-                <span className="col-span-2 text-sm">
-                  {formatDate(order.updatedAt)}
-                </span>
+
+              <div>
+                <p className="text-xs text-gray-500">Updated</p>
+                <p className="text-sm">{formatDate(order.updatedAt)}</p>
               </div>
+
               {order.requestedDelivery && (
-                <div className="grid grid-cols-3 gap-2">
-                  <span className="text-sm font-medium">Requested:</span>
-                  <span className="col-span-2 text-sm">
+                <div>
+                  <p className="text-xs text-gray-500">Requested</p>
+                  <p className="text-sm">
                     {formatDate(order.requestedDelivery)}
-                  </span>
+                  </p>
                 </div>
               )}
+
               {order.estimatedDelivery && (
-                <div className="grid grid-cols-3 gap-2">
-                  <span className="text-sm font-medium">Estimated:</span>
-                  <span className="col-span-2 text-sm">
+                <div>
+                  <p className="text-xs text-gray-500">Estimated</p>
+                  <p className="text-sm">
                     {formatDate(order.estimatedDelivery)}
-                  </span>
-                </div>
-              )}
-              {order.actualDelivery && (
-                <div className="grid grid-cols-3 gap-2">
-                  <span className="text-sm font-medium">Delivered:</span>
-                  <span className="col-span-2 text-sm">
-                    {formatDate(order.actualDelivery)}
-                  </span>
+                  </p>
                 </div>
               )}
             </div>
           </div>
         </div>
+
         <div className="flex justify-end pt-4">
-          <Button variant="outline" onClick={onClose}>
+          <Button size="sm" variant="outline" onClick={onClose}>
             Close
           </Button>
         </div>
@@ -260,9 +252,9 @@ export function ViewOrderModal({ open, onClose, order }: ViewOrderModalProps) {
   );
 }
 
-
-
-// Cancel Order Modal
+/* =========================
+   Cancel Order Modal
+========================= */
 interface CancelOrderModalProps {
   open: boolean;
   onClose: () => void;
@@ -270,7 +262,12 @@ interface CancelOrderModalProps {
   onCancel: () => void;
 }
 
-export function CancelOrderModal({ open, onClose, order, onCancel }: CancelOrderModalProps) {
+export function CancelOrderModal({
+  open,
+  onClose,
+  order,
+  onCancel,
+}: CancelOrderModalProps) {
   const [loading, setLoading] = useState(false);
   const [reason, setReason] = useState("");
 
@@ -279,19 +276,13 @@ export function CancelOrderModal({ open, onClose, order, onCancel }: CancelOrder
 
     try {
       setLoading(true);
-      
-      // Close modal immediately for better UX
       onClose();
       setReason("");
-      
-      // Cancel order in backend
+
       await orderService.cancelOrder(order.id, { reason });
       toast.success("Order cancelled successfully");
-      
-      // Trigger silent refresh in parent
       onCancel();
     } catch (error: any) {
-      console.error("Failed to cancel order:", error);
       toast.error(error.response?.data?.message || "Failed to cancel order");
     } finally {
       setLoading(false);
@@ -302,25 +293,32 @@ export function CancelOrderModal({ open, onClose, order, onCancel }: CancelOrder
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Cancel Order</DialogTitle>
+          <DialogTitle className="text-sm font-semibold">
+            Cancel Order
+          </DialogTitle>
         </DialogHeader>
+
         <div className="space-y-3">
-          <p className="text-sm text-gray-900">
-            Are you sure you want to cancel order <strong>{order?.orderNumber}</strong>? This action cannot be undone.
+          <p className="text-sm">
+            Cancel order <strong>{order?.orderNumber}</strong>?
           </p>
 
           <div>
-            <Label className="mb-2">Reason for cancellation</Label>
+            <Label className="text-xs mb-1">Reason</Label>
             <Textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Enter reason for cancellation..."
+              placeholder="Reason for cancellation..."
             />
           </div>
         </div>
+
         <div className="flex justify-end gap-2 pt-4">
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button size="sm" variant="outline" onClick={onClose}>
+            Back
+          </Button>
           <Button
+            size="sm"
             variant="destructive"
             onClick={handleCancel}
             disabled={loading}
