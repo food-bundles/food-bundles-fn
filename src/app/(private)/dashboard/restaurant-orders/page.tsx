@@ -203,34 +203,34 @@ export default function AdminOrdersPage() {
           <title>${order.billingName}-Order Invoice-${order.orderNumber}</title>
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            .invoice { max-width: 700px; margin: 0 auto; border: 2px solid #22c55e; border-radius: 8px; padding: 20px; }
+            body { font-family: 'Arial', sans-serif; padding: 20px; font-size: 0.875rem; color: #1f2937; }
+            .invoice { max-width: 700px; margin: 0 auto; padding: 20px; }
             .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #22c55e; padding-bottom: 15px; }
-            .logo { width: 50px; height: 50px; margin: 0 auto 10px; background: #22c55e; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 20px; }
-            .header h1 { color: #22c55e; margin-bottom: 5px; }
-            .info-section { margin: 20px 0; }
-            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-            .info-item { background: #f8fafc; padding: 10px; border-radius: 5px; border-left: 3px solid #22c55e; }
-            .info-label { font-size: 11px; color: #64748b; text-transform: uppercase; margin-bottom: 3px; }
-            .info-value { font-weight: 600; color: #1f2937; }
-            .items { margin: 20px 0; }
+            .header h1 { color: #22c55e; font-size: 1.25rem; margin-bottom: 5px; font-weight: 600; }
+            .header p { font-size: 0.875rem; color: #64748b; }
+            .info-section { margin: 20px 0; font-size: 0.875rem; }
+            .info-flex-container { display: flex; flex-wrap: wrap; gap: 12px; }
+            .info-item { background: #f8fafc; padding: 10px; border-left: 3px solid #22c55e; flex: 1 1 calc(33.33% - 8px); }
+            .info-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; margin-bottom: 2px; }
+            .info-value { color: #1f2937; }
+            .items { margin: 20px 0; font-size: 0.875rem; }
             .items table { width: 100%; border-collapse: collapse; }
-            .items th, .items td { padding: 8px; border: 1px solid #e5e7eb; text-align: left; }
-            .items th { background: #22c55e; color: white; }
-            .total { background: #f0fdf4; font-weight: bold; color: #22c55e; text-align: right; padding: 15px; margin-top: 10px; border-radius: 5px; }
-            .footer { text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #e5e7eb; color: #64748b; font-size: 12px; }
+            .items th, .items td { padding: 6px; border: 1px solid #e5e7eb; text-align: left; font-weight: normal; font-size: 0.875rem; }
+            .items th { background: #22c55e; color: white; font-weight: 600; font-size: 0.875rem; }
+            .total { background: #f0fdf4; text-align: right; padding: 12px; margin-top: 10px; border-radius: 5px; font-size: 0.875rem; color: #22c55e; }
+            .total strong { font-size: 1rem; }
+            .footer { text-align: center; margin-top: 20px; padding-top: 10px; border-top: 1px solid #e5e7eb; color: #64748b; font-size: 0.75rem; }
           </style>
         </head>
         <body>
           <div class="invoice">
             <div class="header">
-              <img src="https://res.cloudinary.com/dzxyelclu/image/upload/v1760111270/Food_bundle_logo_cfsnsw.png" alt="Logo" style="width: 50px; height: 50px; margin: 0 auto 10px; border-radius: 50%;">
-              <h1>FoodBundles</h1>
+              <img src="https://res.cloudinary.com/dzxyelclu/image/upload/v1760111270/Food_bundle_logo_cfsnsw.png" alt="Logo" style="width: 50px; height: 50px; margin: 0 auto 8px; border-radius: 50%;">
+              <h1>Food Bundles Ltd</h1>
               <p>Order Invoice</p>
             </div>
             <div class="info-section">
-              <h3>Order Information</h3>
-              <div class="info-grid">
+              <div class="info-flex-container">
                 <div class="info-item">
                   <div class="info-label">Order Number</div>
                   <div class="info-value">${order.orderNumber}</div>
@@ -247,18 +247,18 @@ export default function AdminOrdersPage() {
                   <div class="info-label">Status</div>
                   <div class="info-value">${order.status}</div>
                 </div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">Customer</div>
-                <div class="info-value">${order.billingName} - ${order.billingPhone}</div>
-              </div>
-              <div class="info-item">
-                <div class="info-label">Delivery Address</div>
-                <div class="info-value">${order.billingAddress}</div>
+                <div class="info-item">
+                  <div class="info-label">Customer</div>
+                  <div class="info-value">${order.billingName} - ${order.billingPhone}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">Delivery Address</div>
+                  <div class="info-value">${order.billingAddress}</div>
+                </div>
               </div>
             </div>
             <div class="items">
-              <h3>Order Items</h3>
+              <h3 style="font-size: 0.875rem; margin-bottom: 8px;">Order Items</h3>
               <table>
                 <thead>
                   <tr>
@@ -281,15 +281,13 @@ export default function AdminOrdersPage() {
               </table>
             </div>
             <div class="total">
-              ${order.originalAmount && order.originalAmount !== order.totalAmount ? `
-                <div style="text-align: right; margin-bottom: 10px;">
-                  <div style="color: #6b7280; text-decoration: line-through; font-size: 14px;">Original Amount: ${order.originalAmount.toLocaleString()} RWF</div>
-                  <div style="color: #22c55e; font-size: 14px;">Discount: -${(order.originalAmount - order.totalAmount).toLocaleString()} RWF</div>
-                </div>
-                <strong>Final Amount: ${order.totalAmount.toLocaleString()} RWF</strong>
-              ` : `
-                <strong>Total Amount: ${order.totalAmount.toLocaleString()} RWF</strong>
-              `}
+              <div style="margin-bottom: 6px; font-size: 0.875rem; color: #374151;">
+                Subtotal: ${order.orderItems.reduce((sum, item) => sum + item.subtotal, 0).toLocaleString()} RWF
+              </div>
+              ${(order.deliveryFee ?? 0) > 0 ? `<div style="color: #374151; margin-bottom: 4px;">Delivery Fee: +${(order.deliveryFee ?? 0).toLocaleString()} RWF</div>` : ''}
+              ${(order.packagingFee ?? 0) > 0 ? `<div style="color: #374151; margin-bottom: 4px;">Packaging Fee: +${(order.packagingFee ?? 0).toLocaleString()} RWF</div>` : ''}
+              ${order.originalAmount && order.totalAmount < order.originalAmount ? `<div style="color: #22c55e; margin-bottom: 4px;">Discount Applied: -${(order.originalAmount - order.totalAmount).toLocaleString()} RWF</div>` : ''}
+              <strong>Total Amount: ${order.totalAmount.toLocaleString()} RWF</strong>
             </div>
             <div class="footer">
               <p>Thank you for your order!</p>

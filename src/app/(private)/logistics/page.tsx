@@ -8,13 +8,11 @@ import { orderService } from "@/app/services/orderService";
 import {
   Package,
   CheckCircle,
-  MapPin,
   User,
   ArrowRight,
   Eye,
   Clock,
   Truck,
-  RefreshCw,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -841,8 +839,10 @@ export default function LogisticsPage() {
                           className="flex items-center gap-3 sm:gap-4 p-3 border-2 rounded-lg bg-white hover:border-green-400 transition-colors"
                         >
                           {item.images && item.images[0] && (
-                            <img
+                            <Image
                               src={item.images[0]}
+                              width={40}
+                              height={40}
                               alt={item.productName}
                               className="w-14 h-14 sm:w-20 sm:h-20 object-cover rounded-lg border-2 border-gray-200"
                             />

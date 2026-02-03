@@ -103,6 +103,8 @@ export interface Order {
   restaurantId: string;
   totalAmount: number;
   originalAmount?: number;
+  deliveryFee?: number;
+  packagingFee?: number;
   status: "PENDING" | "CONFIRMED" | "PREPARING" | "READY" |"IN_TRANSIT" | "DELIVERED" | "CANCELLED" | "REFUNDED";
   paymentStatus: "PENDING" | "PROCESSING" | "COMPLETED" | "VOUCHER_CREDIT" | "FAILED" | "CANCELLED" | "REFUNDED";
   paymentMethod: "CASH" | "MOBILE_MONEY" | "CARD" | "BANK_TRANSFER"| "VOUCHER";
@@ -376,14 +378,8 @@ export const createOrdersColumns = (actions: {
         <div className="font-medium">
           {originalAmount && originalAmount !== totalAmount ? (
             <div>
-              <div className="text-gray-500 line-through text-xs">
-                RWF {originalAmount.toLocaleString()}
-              </div>
               <div className="text-green-600">
-                RWF {totalAmount.toLocaleString()}
-              </div>
-              <div className="text-xs text-green-500">
-                Saved: {(originalAmount - totalAmount).toLocaleString()}
+                {totalAmount.toLocaleString()} RWF
               </div>
             </div>
           ) : (
@@ -391,7 +387,7 @@ export const createOrdersColumns = (actions: {
           )}
           <div
             className={`text-[12px] lowercase rounded-full border px-2 mt-1 ${getPaymentMethodColor(
-              row.original.paymentMethod
+              row.original.paymentMethod,
             )}`}
           >
             {row.original.paymentMethod}

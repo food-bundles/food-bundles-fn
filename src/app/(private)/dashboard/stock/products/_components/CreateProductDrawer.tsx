@@ -190,7 +190,7 @@ export function CreateProductDrawer({
   const fetchUnits = async () => {
     try {
       setIsUnitsLoading(true);
-      const response = await unitService.getAllUnits();
+      const response = await unitService.getAllUnits({ limit: 100 }); // Increased limit to get all units
       if (response.data) {
         const activeUnits = response.data.filter((unit: any) => unit.isActive);
         setUnits(activeUnits);
@@ -247,7 +247,6 @@ export function CreateProductDrawer({
 
     if (
       !formData.productName ||
-      !formData.description ||
       !formData.categoryId ||
       !formData.sku ||
       !formData.unit ||
@@ -259,7 +258,23 @@ export function CreateProductDrawer({
       !formData.ebmQuantityUnit ||
       !formData.ebmItemClassCode.value
     ) {
-      toast.error("Please fill in all required fields with valid values");
+      // Log missing fields for debugging
+      const missingFields = [];
+      if (!formData.productName) missingFields.push('Product Name');
+      // if (!formData.description) missingFields.push('Description');
+      if (!formData.categoryId) missingFields.push('Category');
+      if (!formData.sku) missingFields.push('SKU');
+      if (!formData.unit) missingFields.push('Unit');
+      if (formData.quantity <= 0) missingFields.push('Quantity (must be > 0)');
+      if (formData.unitPrice <= 0) missingFields.push('Unit Price (must be > 0)');
+      if (formData.purchasePrice <= 0) missingFields.push('Purchase Price (must be > 0)');
+      if (!formData.taxId) missingFields.push('Tax');
+      if (!formData.ebmPackagingUnit) missingFields.push('EBM Packaging Unit');
+      if (!formData.ebmQuantityUnit) missingFields.push('EBM Quantity Unit');
+      if (!formData.ebmItemClassCode.value) missingFields.push('EBM Item Class Code');
+      
+      console.log('Missing required fields:', missingFields);
+      toast.error(`Please fill in all required fields: ${missingFields.join(', ')}`);
       return;
     }
 
@@ -275,72 +290,59 @@ export function CreateProductDrawer({
         return;
       }
 
-      // Check if Table Tronic product ID exists in localStorage
-      const storedTableTronicId = localStorage.getItem('pendingTableTronicId');
-      let tableTronicProductId = null;
+      // Create product in Table Tronic first - REQUIRED
+      const categoryId = selectedCategory.tableTronicId || 1;
+      const unitId = crypto.randomUUID();
+      
+      const tableTronicData = {
+        name: formData.productName,
+        description: formData.description || formData.productName, // Use product name as description if empty
+        photo: "",
+        itemCode: formData.sku,
+        categoryId: categoryId,
+        taxId: formData.taxId,
+        units: [{
+          id: unitId,
+          unitId: selectedUnit.tableTronicId?.toString() || "1",
+          cost: formData.purchasePrice,
+          price: formData.unitPrice
+        }],
+        baseUnitId: unitId,
+        ebmProductType: formData.ebmProductType,
+        ebmCountryOfOrigin: formData.ebmCountryOfOrigin,
+        ebmPackagingUnit: formData.ebmPackagingUnit,
+        ebmQuantityUnit: formData.ebmQuantityUnit,
+        ebmItemClassCode: formData.ebmItemClassCode,
+        ebmOpeningStock: formData.quantity.toString()
+      };
 
-      if (storedTableTronicId) {
-        // Use existing Table Tronic ID from localStorage
-        tableTronicProductId = parseInt(storedTableTronicId);
-        console.log("Using stored Table Tronic ID:", tableTronicProductId);
-      } else {
-        // Create product in Table Tronic first
-        const categoryId = selectedCategory.tableTronicId || 1;
-        const unitId = crypto.randomUUID();
-        
-        const tableTronicData = {
-          name: formData.productName,
-          description: formData.description,
-          photo: "",
-          itemCode: formData.sku,
-          categoryId: categoryId,
-          taxId: formData.taxId,
-          units: [{
-            id: unitId,
-            unitId: selectedUnit.tableTronicId.toString(),
-            cost: formData.purchasePrice,
-            price: formData.unitPrice
-          }],
-          baseUnitId: unitId,
-          ebmProductType: formData.ebmProductType,
-          ebmCountryOfOrigin: formData.ebmCountryOfOrigin,
-          ebmPackagingUnit: formData.ebmPackagingUnit,
-          ebmQuantityUnit: formData.ebmQuantityUnit,
-          ebmItemClassCode: formData.ebmItemClassCode,
-          ebmOpeningStock: formData.quantity.toString()
-        };
-
-        const tableTronicResponse = await tableTronicService.createProduct(tableTronicData);
-        
-        if (!tableTronicResponse || !tableTronicResponse.id) {
-          throw new Error("Failed to create product in Table Tronic - no ID returned");
-        }
-
-        tableTronicProductId = tableTronicResponse.id;
-        // Store Table Tronic ID in localStorage
-        localStorage.setItem('pendingTableTronicId', tableTronicProductId.toString());
-        console.log("Created and stored Table Tronic ID:", tableTronicProductId);
+      console.log('Creating product in Table Tronic with data:', tableTronicData);
+      const tableTronicResponse = await tableTronicService.createProduct(tableTronicData);
+      
+      if (!tableTronicResponse || !tableTronicResponse.id) {
+        throw new Error("Failed to create product in Table Tronic - no ID returned");
       }
+
+      const tableTronicProductId = tableTronicResponse.id;
+      console.log("Successfully created Table Tronic product with ID:", tableTronicProductId);
 
       // Create product in Food Bundles with Table Tronic ID
       const foodBundlesData = {
         ...formData,
-        tableTronicId: tableTronicProductId,
+        tableTronicProductId: tableTronicProductId, // Changed from tableTronicId to tableTronicProductId
         unitId: selectedUnit.id
       };
 
       const response = await productService.createProduct(foodBundlesData);
       
       if (response.success) {
-        // Remove stored Table Tronic ID after successful Food Bundles creation
-        localStorage.removeItem('pendingTableTronicId');
-        console.log("Removed stored Table Tronic ID after successful creation");
-        
         onSubmit?.(formData);
         toast.success("Product created successfully in both systems!");
         resetForm();
         onClose();
       } else {
+        // If Food Bundles creation fails, we should ideally delete the Table Tronic product
+        // but for now just show error
         toast.error(response.message || "Failed to create product in Food Bundles");
       }
     } catch (error: any) {
@@ -579,7 +581,7 @@ export function CreateProductDrawer({
                       onChange={(e) =>
                         handleInputChange(
                           "unitPrice",
-                          Number.parseFloat(e.target.value) || 0
+                          Number.parseFloat(e.target.value) || 0,
                         )
                       }
                       placeholder="0"
@@ -635,7 +637,7 @@ export function CreateProductDrawer({
                       onChange={(e) =>
                         handleInputChange(
                           "bonus",
-                          Number.parseFloat(e.target.value) || 0
+                          Number.parseFloat(e.target.value) || 0,
                         )
                       }
                       placeholder="0"
@@ -662,7 +664,7 @@ export function CreateProductDrawer({
                       onChange={(e) =>
                         handleInputChange(
                           "purchasePrice",
-                          Number.parseFloat(e.target.value) || 0
+                          Number.parseFloat(e.target.value) || 0,
                         )
                       }
                       placeholder="0"
@@ -682,7 +684,7 @@ export function CreateProductDrawer({
                       onChange={(e) =>
                         handleInputChange(
                           "quantity",
-                          Number.parseInt(e.target.value) || 0
+                          Number.parseInt(e.target.value) || 0,
                         )
                       }
                       placeholder="0"
@@ -698,7 +700,7 @@ export function CreateProductDrawer({
                           variant="outline"
                           className={cn(
                             "w-full justify-start text-left font-normal focus:ring-2 focus:ring-green-500 focus:border-green-500",
-                            !formData.expiryDate && "text-muted-foreground"
+                            !formData.expiryDate && "text-muted-foreground",
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
@@ -750,7 +752,7 @@ export function CreateProductDrawer({
                       onChange={(e) =>
                         handleInputChange(
                           "purchasePrice",
-                          Number.parseFloat(e.target.value) || 0
+                          Number.parseFloat(e.target.value) || 0,
                         )
                       }
                       placeholder="0"
@@ -777,7 +779,7 @@ export function CreateProductDrawer({
                           {formData.ebmCountryOfOrigin
                             ? countries.find(
                                 (country) =>
-                                  country.code === formData.ebmCountryOfOrigin
+                                  country.code === formData.ebmCountryOfOrigin,
                               )?.name
                             : "Select country..."}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -795,7 +797,7 @@ export function CreateProductDrawer({
                                 onSelect={() => {
                                   handleInputChange(
                                     "ebmCountryOfOrigin",
-                                    country.code
+                                    country.code,
                                   );
                                   setCountrySearchOpen(false);
                                 }}
@@ -805,7 +807,7 @@ export function CreateProductDrawer({
                                     "mr-2 h-4 w-4",
                                     formData.ebmCountryOfOrigin === country.code
                                       ? "opacity-100"
-                                      : "opacity-0"
+                                      : "opacity-0",
                                   )}
                                 />
                                 {country.name}
@@ -899,20 +901,21 @@ export function CreateProductDrawer({
                           variant="outline"
                           role="combobox"
                           aria-expanded={itemClassSearchOpen}
-                          className="w-full justify-between focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                          className="w-full justify-between focus:ring-2 text-gray-500 hover:text-gray-600  focus:ring-green-500 focus:border-green-500"
                         >
                           {formData.ebmItemClassCode.value
                             ? `${formData.ebmItemClassCode.value} - ${formData.ebmItemClassCode.label}`
-                            : "Search agriculture, food..."}
+                            : "Item class code"}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-full p-0">
                         <Command>
                           <CommandInput
-                            placeholder="Search agriculture, food, fruits, vegetables..."
+                            placeholder="item class code"
                             value={itemClassSearchTerm}
                             onValueChange={setItemClassSearchTerm}
+                            className="placeholder:text-gray-500 text-sm"
                           />
                           {isLoadingItemClass ? (
                             <div className="p-4 text-center text-xs text-gray-500">
@@ -945,7 +948,7 @@ export function CreateProductDrawer({
                                       formData.ebmItemClassCode.value ===
                                         item.itemClsCd
                                         ? "opacity-100"
-                                        : "opacity-0"
+                                        : "opacity-0",
                                     )}
                                   />
                                   <div className="flex flex-col">
