@@ -43,6 +43,8 @@ export default function InventoryPage() {
           id: product.id,
           productName: product.productName,
           unitPrice: product.unitPrice,
+          restaurantPrice: product.restaurantPrice,
+          hotelPrice: product.hotelPrice,
           purchasePrice: product.purchasePrice,
           category: {
             id: product.category?.id || "",

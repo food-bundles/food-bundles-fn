@@ -6,6 +6,8 @@ export function getRedirectPath(userRole: UserRole): string {
       return "/farmers";
     case UserRole.RESTAURANT:
       return "/restaurant";
+    case UserRole.HOTEL:
+      return "/restaurant";
     case UserRole.AFFILIATOR:
       return "/restaurant";
     case UserRole.AGGREGATOR:

@@ -145,6 +145,13 @@ export function OrderProvider({ children }: OrderProviderProps) {
       }
       return response;
     } catch (err: any) {
+      // Handle 403 errors gracefully
+      if (err.response?.status === 403) {
+        console.warn('Access denied to orders - user may not have permission');
+        setOrders([]);
+        setError(null); // Don't show error for permission issues
+        return { success: false, data: [], message: 'Access denied' };
+      }
       setError(err.response?.data?.message || "Failed to fetch orders");
       throw err;
     } finally {
@@ -241,10 +248,15 @@ export function OrderProvider({ children }: OrderProviderProps) {
   }, []);
 
   const refreshOrders = useCallback(async () => {
-    if (user?.role === "ADMIN") {
-      await getAllOrders();
-    } else {
-      await getMyOrders();
+    try {
+      if (user?.role === "ADMIN") {
+        await getAllOrders();
+      } else {
+        await getMyOrders();
+      }
+    } catch (error) {
+      // Silently handle errors in refresh to prevent crashes
+      console.warn('Failed to refresh orders:', error);
     }
   }, [user?.role, getAllOrders, getMyOrders]);
 

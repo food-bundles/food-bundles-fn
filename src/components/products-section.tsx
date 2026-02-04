@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/exhaustive-deps */
 "use client";
@@ -47,6 +48,17 @@ import RestaurantAvailablePromos from "@/app/(private)/restaurant/_components/Re
 // import { ChristmasAnimation } from "@/components/ChristmasAnimation";
 import Link from "next/link";
 
+// Helper function to get role-based price
+const getRoleBasedPrice = (product: any, userRole: string) => {
+  if (userRole === "HOTEL" && product.hotelPrice !== null && product.hotelPrice !== undefined) {
+    return product.hotelPrice;
+  }
+  if ((userRole === "RESTAURANT" || userRole === "AFFILIATOR") && product.restaurantPrice !== null && product.restaurantPrice !== undefined) {
+    return product.restaurantPrice;
+  }
+  return product.unitPrice || 0;
+};
+
 interface ProductCardProps {
   id: string;
   name: string;
@@ -58,17 +70,19 @@ interface ProductCardProps {
   unit?: string;
   category?: string;
   productData?: Product;
+  userRole?: string;
 }
 
 const ProductCard = memo(function ProductCard({
   id,
   name,
   price,
-  originalPrice,
   image,
   rating,
   discountPercent,
   unit,
+  productData,
+  userRole,
 }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
@@ -81,6 +95,10 @@ const ProductCard = memo(function ProductCard({
   const isInCart = !!cartItem;
   const cartQuantity = cartItem?.quantity || 0;
   const isUpdateDisabled = isInCart && quantity === cartQuantity;
+
+  // Get role-based price with fallback
+  const displayPrice = productData ? getRoleBasedPrice(productData, userRole || 'RESTAURANT') : (price || 0);
+  const safeDisplayPrice = typeof displayPrice === 'number' && displayPrice > 0 ? displayPrice : (price || 0);
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -143,7 +161,9 @@ const ProductCard = memo(function ProductCard({
             width={200}
             height={200}
             className="object-contain w-full max-h-full transition-transform duration-300 group-hover:scale-105"
-            transformation={[{ width: 400, height: 400, crop: "pad", quality: "80" }]}
+            transformation={[
+              { width: 400, height: 400, crop: "pad", quality: "80" },
+            ]}
           />
 
           {discountPercent ? (
@@ -170,7 +190,9 @@ const ProductCard = memo(function ProductCard({
                 onClick={handleCartAction}
                 disabled={isAddingToCart || isUpdateDisabled}
                 className={`text-white hover:text-gray-200 transition-colors font-bold ${
-                  isAddingToCart || isUpdateDisabled ? "opacity-50 cursor-not-allowed" : ""
+                  isAddingToCart || isUpdateDisabled
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
                 }`}
               >
                 {isAddingToCart ? (
@@ -179,7 +201,10 @@ const ProductCard = memo(function ProductCard({
                   <ShoppingCart className="w-6 h-6" />
                 )}
               </button>
-              <button onClick={handleWishlist} className="text-white hover:text-gray-200">
+              <button
+                onClick={handleWishlist}
+                className="text-white hover:text-gray-200"
+              >
                 <Heart
                   className={`w-6 h-6 transition-all ${isWishlisted ? "fill-orange-500 text-orange-500 scale-110" : ""}`}
                 />
@@ -193,7 +218,7 @@ const ProductCard = memo(function ProductCard({
                   onClick={() => {
                     const newValue = Math.max(
                       1,
-                      (Number.parseFloat(inputValue) || 1) - 1
+                      (Number.parseFloat(inputValue) || 1) - 1,
                     );
                     setInputValue(newValue.toString());
                     setQuantity(newValue);
@@ -236,24 +261,19 @@ const ProductCard = memo(function ProductCard({
           </h3>
           <div className="flex items-center gap-2 my-1">
             <div className="flex">{renderStars(rating || 0)}</div>
-            <span className="text-gray-500 text-xs">({(rating || 0).toFixed(1)})</span>
+            <span className="text-gray-500 text-xs">
+              ({(rating || 0).toFixed(1)})
+            </span>
           </div>
           <div className="flex items-center gap-2">
-            {originalPrice ? (
-              <span className="font-bold text-green-500 text-base">
-                {(price || 0).toLocaleString()}/
-                <span className="text-gray-500 line-through text-base ml-2">
-                {(originalPrice || 0).toLocaleString()}
-                </span>
-                {unit && <span className="text-sm font-md text-gray-900"> Rwf/{unit}</span>}
-                
-              </span>
-            ) : (
               <span className="font-bold text-gray-900 text-base">
-                {(price || 0).toLocaleString()} Rwf
-                {unit && <span className="text-sm font-normal text-gray-600">/{unit}</span>}
-              </span>
-            )}
+                {safeDisplayPrice.toLocaleString()} Rwf
+                {unit && (
+                  <span className="text-sm font-normal text-gray-600">
+                    /{unit}
+                  </span>
+                )}
+              </span>        
           </div>
         </div>
       </Card>
@@ -267,6 +287,8 @@ interface Product {
   name: string;
   price: number;
   originalPrice?: number;
+  restaurantPrice?: number;
+  hotelPrice?: number;
   image: string;
   category: {
     id: string;
@@ -635,21 +657,24 @@ export function ProductsSection({
                             console.log('Fetching discounted products...');
                             const data = await productService.getDiscountedProducts();
                             console.log('Discounted products response:', data);
-                            const transformedProducts = data.data.map((product: any) => ({
-                              id: product.id,
-                              name: product.productName,
-                              price: product.discountedPrice,
-                              originalPrice: product.unitPrice,
-                              image: product.images[0] || '/placeholder.svg',
-                              category: product.category,
-                              inStock: product.quantity > 0,
-                              rating: 4.5,
-                              discountPercent: product.bonus,
-                              createdAt: new Date().toISOString(),
-                              unit: product.unit,
-                              discountedPrice: product.discountedPrice,
-                              bonus: product.bonus
-                            }));
+                            const transformedProducts = data.data.map((product: any) => {
+                              const roleBasedPrice = getRoleBasedPrice(product, user?.role || 'RESTAURANT');
+                              return {
+                                id: product.id,
+                                name: product.productName,
+                                price: product.discountedPrice || roleBasedPrice,
+                                originalPrice: roleBasedPrice,
+                                image: product.images[0] || '/placeholder.svg',
+                                category: product.category,
+                                inStock: product.quantity > 0,
+                                rating: 4.5,
+                                discountPercent: product.bonus,
+                                createdAt: new Date().toISOString(),
+                                unit: product.unit,
+                                discountedPrice: product.discountedPrice,
+                                bonus: product.bonus
+                              };
+                            });
                             console.log('Transformed products:', transformedProducts);
                             setDiscountedProducts(transformedProducts);
                           } catch (error) {
@@ -751,6 +776,7 @@ export function ProductsSection({
                         discountPercent={product.discountPercent}
                         unit={product.unit}
                         productData={product}
+                        userRole={user?.role}
                       />
                     ))}
                   </div>

@@ -8,6 +8,18 @@ import { categoryService } from "@/app/services/categoryService";
 import { productService } from "@/app/services/productService";
 import { useProductSection } from "@/hooks/useProductSection";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
+import { useAuth } from "@/app/contexts/auth-context";
+
+// Helper function to get role-based price
+const getRoleBasedPrice = (product: any, userRole: string) => {
+  if (userRole === "HOTEL" && product.hotelPrice) {
+    return product.hotelPrice;
+  }
+  if ((userRole === "RESTAURANT" || userRole === "AFFILIATOR") && product.restaurantPrice) {
+    return product.restaurantPrice;
+  }
+  return product.unitPrice;
+};
 
 function SearchLoading() {
   return (
@@ -29,6 +41,7 @@ export default function RestaurantPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [itemsPerPage, setItemsPerPage] = useState(30);
   const { selectedCategory, setSelectedCategory } = useProductSection();
+  const { user } = useAuth();
   
 
   const fetchCategories = useCallback(async () => {
@@ -83,32 +96,35 @@ export default function RestaurantPage() {
       const productsData = response.data || [];
       const pagination = response.pagination || {};
 
-      const transformedProducts = productsData.map((product: any) => ({
-        id: product.id,
-        name: product.productName,
-        price: product.unitPrice,
-        originalPrice: product.discountedPrice || undefined,
-        image: product.images?.[0] || "/placeholder.svg",
-        category: {
-          id: product.category?.id || "",
-          name: product.category?.name || "OTHER",
-          description: product.category?.description
-        },
-        inStock: product.quantity > 0,
-        rating: Math.random() * 2 + 3,
-        isNew: Math.random() > 0.5,
-        isFeatured: Math.random() > 0.7,
-        createdAt: product.createdAt,
-        unit: product.unit,
-        discountPercent:
-          product.discountedPrice && product.unitPrice
-            ? Math.round(
-                ((product.unitPrice - product.discountedPrice) /
-                  product.unitPrice) *
-                  100
-              )
-            : undefined,
-      }));
+      const transformedProducts = productsData.map((product: any) => {
+        const roleBasedPrice = getRoleBasedPrice(product, user?.role || 'RESTAURANT');
+        return {
+          id: product.id,
+          name: product.productName,
+          price: roleBasedPrice,
+          originalPrice: product.discountedPrice || undefined,
+          image: product.images?.[0] || "/placeholder.svg",
+          category: {
+            id: product.category?.id || "",
+            name: product.category?.name || "OTHER",
+            description: product.category?.description
+          },
+          inStock: product.quantity > 0,
+          rating: Math.random() * 2 + 3,
+          isNew: Math.random() > 0.5,
+          isFeatured: Math.random() > 0.7,
+          createdAt: product.createdAt,
+          unit: product.unit,
+          discountPercent:
+            product.discountedPrice && roleBasedPrice
+              ? Math.round(
+                  ((roleBasedPrice - product.discountedPrice) /
+                    roleBasedPrice) *
+                    100
+                )
+              : undefined,
+        };
+      });
 
       setProducts(transformedProducts);
       setTotalPages(pagination.totalPages || 1);

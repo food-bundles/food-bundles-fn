@@ -117,7 +117,7 @@ export async function middleware(req: NextRequest) {
       // Role check logic
       const isAuthorized =
         userRole === requiredRole ||
-        (requiredRole === "RESTAURANT" && userRole === "AFFILIATOR");
+        (requiredRole === "RESTAURANT" && (userRole === "AFFILIATOR" || userRole === "HOTEL"));
 
       if (!userRole || !isAuthorized) {
         return NextResponse.redirect(new URL("/unauthorized", req.url));

@@ -490,9 +490,7 @@ export const ordersColumns = (
         <div className="font-medium">
           {originalAmount && originalAmount !== totalAmount ? (
             <div>
-              <div className="text-gray-500 line-through text-xs">{originalAmount} Rwf</div>
               <div className="text-green-600">{totalAmount} Rwf</div>
-              <div className="text-xs text-green-500">Saved: {originalAmount - totalAmount} Rwf</div>
             </div>
           ) : (
             <div className="text-green-600">{totalAmount} Rwf</div>

@@ -33,6 +33,7 @@ export interface ICreateRestaurantData {
   location: string;
   password: string;
   tin: string;
+  role?: "RESTAURANT" | "HOTEL";
 }
 export interface ICreateAdministratorsData {
   username: string;
@@ -83,6 +84,7 @@ export interface IPaginationResult<T> {
 export enum UserRole {
   FARMER = "FARMER",
   RESTAURANT = "RESTAURANT",
+  HOTEL = "HOTEL",
   ADMIN = "ADMIN",
   TRADER = "TRADER",
   LOGISTICS = "LOGISTICS",

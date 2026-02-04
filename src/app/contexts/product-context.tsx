@@ -25,6 +25,8 @@ export interface Product {
   productName: string;
   purchasePrice: number;
   unitPrice: number;
+  restaurantPrice?: number;
+  hotelPrice?: number;
   unit: string;
   bonus: number;
   admin: {

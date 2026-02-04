@@ -40,6 +40,8 @@ export interface ProductFormData {
   productName: string;
   description: string;
   unitPrice: number;
+  restaurantPrice?: number;
+  hotelPrice?: number;
   purchasePrice: number;
   categoryId: string;
   bonus: number;
@@ -71,6 +73,8 @@ export function CreateProductDrawer({
     productName: "",
     description: "",
     unitPrice: 0,
+    restaurantPrice: undefined,
+    hotelPrice: undefined,
     purchasePrice: 0,
     categoryId: "",
     bonus: 0,
@@ -358,6 +362,8 @@ export function CreateProductDrawer({
       productName: "",
       description: "",
       unitPrice: 0,
+      restaurantPrice: undefined,
+      hotelPrice: undefined,
       purchasePrice: 0,
       categoryId: "",
       bonus: 0,
@@ -570,7 +576,7 @@ export function CreateProductDrawer({
                 <div className="flex-1 space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="unitPrice" className="text-xs font-medium">
-                      Selling Price *
+                      Default Price *
                     </Label>
                     <Input
                       id="unitPrice"
@@ -587,6 +593,46 @@ export function CreateProductDrawer({
                       placeholder="0"
                       className="focus:ring-2 focus:ring-green-500 focus:border-green-500"
                       required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="restaurantPrice" className="text-xs font-medium">
+                      Restaurant Price
+                    </Label>
+                    <Input
+                      id="restaurantPrice"
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={formData.restaurantPrice || ""}
+                      onChange={(e) =>
+                        handleInputChange(
+                          "restaurantPrice",
+                          e.target.value ? Number.parseFloat(e.target.value) : undefined,
+                        )
+                      }
+                      placeholder="Optional - defaults to unit price"
+                      className="focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="hotelPrice" className="text-xs font-medium">
+                      Hotel Price
+                    </Label>
+                    <Input
+                      id="hotelPrice"
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={formData.hotelPrice || ""}
+                      onChange={(e) =>
+                        handleInputChange(
+                          "hotelPrice",
+                          e.target.value ? Number.parseFloat(e.target.value) : undefined,
+                        )
+                      }
+                      placeholder="Optional - defaults to unit price"
+                      className="focus:ring-2 focus:ring-green-500 focus:border-green-500"
                     />
                   </div>
                   <div className="space-y-2">
