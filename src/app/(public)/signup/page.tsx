@@ -536,6 +536,7 @@ function LocationModal({
 // Main signup form component
 function SignupForm() {
   const [selectedRole, setSelectedRole] = useState(UserRole.RESTAURANT);
+  const [selectedBusinessType, setSelectedBusinessType] = useState<"RESTAURANT" | "HOTEL">("RESTAURANT");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -763,6 +764,7 @@ function SignupForm() {
           tin: (formData.get("tin") as string) || "",
           location: locationToSave,
           phone,
+          role: selectedBusinessType,
         };
         const response = await authService.registerRestaurant(restaurantData);
 
@@ -845,9 +847,10 @@ function SignupForm() {
 
       {/* Left side: role selection */}
       <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col justify-center bg-white">
-        <h2 className="text-[16px] font-medium text-black mb-4">
-          Choose Your Role
-        </h2>
+        <p className="text-gray-900 text-[14px] mb-6">
+          Thank you for choosing Food Bundles.
+        </p>
+        <p className="text-xs font-medium text-black mb-4">Choose Your Role</p>
 
         <div className="flex flex-col space-y-4">
           <button
@@ -859,7 +862,7 @@ function SignupForm() {
             }`}
             disabled={!isBackendAvailable}
           >
-            <h3 className="text-left text-gray-900">I'm a Restaurant</h3>
+            <h3 className="text-left text-gray-900">I'm a Restaurant/Hotel</h3>
             {selectedRole === UserRole.RESTAURANT && (
               <UserRoundCheck className="absolute top-3 right-3 h-5 w-5 text-green-600" />
             )}
@@ -906,36 +909,64 @@ function SignupForm() {
         )}
 
         <div>
-          <h2 className="text-[18px] font-bold text-gray-900 mt-6 mb-4">
-            Create {selectedRole === UserRole.FARMER ? "Farmer" : "Restaurant"}{" "}
-            Account
-          </h2>
-          <p className="text-gray-900 text-[14px] mb-6">
-            Thank you for choosing Food Bundles.
-          </p>
+          <div className="mt-6 lg:mt-20"></div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {selectedRole === UserRole.RESTAURANT && (
-              <div className="relative">
-                <Building2 className="absolute left-3 top-3 h-4 w-4 text-gray-900" />
-                <Input
-                  type="text"
-                  name="name"
-                  placeholder="Restaurant Name"
-                  className={`pl-10 h-10 border-gray-300 text-gray-900 focus:border-green-500 focus:ring-green-500 rounded-none ${
-                    validationErrors.name
-                      ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                      : ""
-                  }`}
-                  disabled={!isBackendAvailable || isLoading}
-                  onChange={() => handleInputChange("name")}
-                />
-                {validationErrors.name && (
-                  <p className="text-red-600 text-xs mt-1">
-                    {validationErrors.name}
-                  </p>
-                )}
-              </div>
+              <>
+                <div className="relative">
+                  <Building2 className="absolute left-3 top-3 h-4 w-4 text-gray-900" />
+                  <Input
+                    type="text"
+                    name="name"
+                    placeholder={`${selectedBusinessType === "RESTAURANT" ? "Restaurant" : "Hotel"} Name`}
+                    className={`pl-10 h-10 border-gray-300 text-gray-900 focus:border-green-500 focus:ring-green-500 rounded-none ${
+                      validationErrors.name
+                        ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                        : ""
+                    }`}
+                    disabled={!isBackendAvailable || isLoading}
+                    onChange={() => handleInputChange("name")}
+                  />
+                  {validationErrors.name && (
+                    <p className="text-red-600 text-xs mt-1">
+                      {validationErrors.name}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-xs text-gray-700">
+                    Business Type
+                  </label>
+                  <div className="flex gap-4">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedBusinessType("RESTAURANT")}
+                      className={`flex-1 h-10 border rounded text-sm font-medium transition-colors ${
+                        selectedBusinessType === "RESTAURANT"
+                          ? "border-green-500 bg-green-50 text-green-700"
+                          : "border-gray-300 text-gray-700 hover:border-green-300"
+                      }`}
+                      disabled={!isBackendAvailable || isLoading}
+                    >
+                      Restaurant
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedBusinessType("HOTEL")}
+                      className={`flex-1 h-10 border rounded text-sm font-medium transition-colors ${
+                        selectedBusinessType === "HOTEL"
+                          ? "border-green-500 bg-green-50 text-green-700"
+                          : "border-gray-300 text-gray-700 hover:border-green-300"
+                      }`}
+                      disabled={!isBackendAvailable || isLoading}
+                    >
+                      Hotel
+                    </button>
+                  </div>
+                </div>
+              </>
             )}
 
             <div className="relative">

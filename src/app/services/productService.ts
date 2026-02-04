@@ -26,6 +26,12 @@ export const productService = {
     // Add product data
     formData.append("productName", productData.productName);
     formData.append("unitPrice", productData.unitPrice.toString());
+    if (productData.restaurantPrice) {
+      formData.append("restaurantPrice", productData.restaurantPrice.toString());
+    }
+    if (productData.hotelPrice) {
+      formData.append("hotelPrice", productData.hotelPrice.toString());
+    }
     formData.append("purchasePrice", productData.purchasePrice.toString());
     formData.append("categoryId", productData.categoryId);
     formData.append("bonus", productData.bonus.toString());

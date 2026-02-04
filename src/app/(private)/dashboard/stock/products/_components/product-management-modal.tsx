@@ -69,6 +69,8 @@ export function ProductManagementModal({
   const [editData, setEditData] = useState({
     productName: "",
     unitPrice: 0,
+    restaurantPrice: 0,
+    hotelPrice: 0,
     purchasePrice: 0,
     categoryId: "",
     bonus: 0,
@@ -83,6 +85,8 @@ export function ProductManagementModal({
       setEditData({
         productName: product.productName,
         unitPrice: product.unitPrice,
+        restaurantPrice: product.restaurantPrice || 0,
+        hotelPrice: product.hotelPrice || 0,
         purchasePrice: product.purchasePrice || 0,
         categoryId: product.category?.id || "",
         bonus: product.bonus || 0,
@@ -139,6 +143,8 @@ export function ProductManagementModal({
         sku: product.sku,
         quantity: product.quantity,
         unit: product.unit,
+        restaurantPrice: product.restaurantPrice || 0,
+        hotelPrice: product.hotelPrice || 0,
         expiryDate: product.expiryDate
           ? new Date(product.expiryDate).toISOString().split("T")[0]
           : "",
@@ -372,6 +378,47 @@ export function ProductManagementModal({
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
+                  <Label htmlFor="restaurantPrice" className="text-gray-900">
+                    Restaurant Price (RWF)
+                  </Label>
+                  <Input
+                    id="restaurantPrice"
+                    type="number"
+                    value={editData.restaurantPrice}
+                    onChange={(e) =>
+                      setEditData((prev) => ({
+                        ...prev,
+                        restaurantPrice: Number(e.target.value),
+                      }))
+                    }
+                    disabled={isLoading}
+                    className="bg-white border-gray-300 text-gray-900"
+                    placeholder="Optional"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="hotelPrice" className="text-gray-900">
+                    Hotel Price (RWF)
+                  </Label>
+                  <Input
+                    id="hotelPrice"
+                    type="number"
+                    value={editData.hotelPrice}
+                    onChange={(e) =>
+                      setEditData((prev) => ({
+                        ...prev,
+                        hotelPrice: Number(e.target.value),
+                      }))
+                    }
+                    disabled={isLoading}
+                    className="bg-white border-gray-300 text-gray-900"
+                    placeholder="Optional"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <Label htmlFor="bonus" className="text-gray-900">
                     Bonus (%)
                   </Label>
@@ -594,6 +641,26 @@ export function ProductManagementModal({
                     {(product.purchasePrice || 0).toLocaleString()} RWF
                   </div>
                 </div>
+                {product.restaurantPrice && (
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="text-sm font-medium text-gray-600">
+                      Restaurant Price:
+                    </div>
+                    <div className="text-sm col-span-2 text-orange-600 font-medium">
+                      {product.restaurantPrice.toLocaleString()} RWF
+                    </div>
+                  </div>
+                )}
+                {product.hotelPrice && (
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="text-sm font-medium text-gray-600">
+                      Hotel Price:
+                    </div>
+                    <div className="text-sm col-span-2 text-purple-600 font-medium">
+                      {product.hotelPrice.toLocaleString()} RWF
+                    </div>
+                  </div>
+                )}
                 <div className="grid grid-cols-3 gap-2">
                   <div className="text-sm font-medium text-gray-600">
                     Bonus:

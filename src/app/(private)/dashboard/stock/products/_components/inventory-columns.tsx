@@ -142,15 +142,14 @@ export const getInventoryColumns = (
       return (
         <div className="flex flex-col">
           <span className="text-xs text-gray-900">
-            {purchasePrice.toLocaleString()} RWF
+            {(purchasePrice || 0).toLocaleString()} RWF
           </span>
           <span className="text-xs text-gray-600">per {unit}</span>
         </div>
       );
     },
   },
-  {
-    accessorKey: "unitPrice",
+  {    accessorKey: "unitPrice",
     header: ({ column }) => {
       return (
         <Button
@@ -158,7 +157,7 @@ export const getInventoryColumns = (
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 text-xs"
         >
-          Price
+          Unit Price
         </Button>
       );
     },
@@ -167,8 +166,60 @@ export const getInventoryColumns = (
       const unit = row.original.unit;
       return (
         <div className="flex flex-col">
-          <span className="text-xs text-gray-900">{price.toLocaleString()} RWF</span>
+          <span className="text-xs text-gray-900">{(price || 0).toLocaleString()} RWF</span>
           <span className="text-xs text-gray-600">per {unit}</span>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "restaurantPrice",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 text-xs"
+        >
+          Restaurant Price
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const restaurantPrice = row.original.restaurantPrice;
+      const unit = row.original.unit;
+      return (
+        <div className="flex flex-col">
+          <span className="text-xs text-gray-900">
+            {restaurantPrice !== null && restaurantPrice !== undefined ? `${restaurantPrice.toLocaleString()} RWF` : 'N/A'}
+          </span>
+          {restaurantPrice !== null && restaurantPrice !== undefined && <span className="text-xs text-gray-600">per {unit}</span>}
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: "hotelPrice",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-auto p-0 text-xs"
+        >
+          Hotel Price
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const hotelPrice = row.original.hotelPrice;
+      const unit = row.original.unit;
+      return (
+        <div className="flex flex-col">
+          <span className="text-xs text-gray-900">
+            {hotelPrice !== null && hotelPrice !== undefined ? `${hotelPrice.toLocaleString()} RWF` : 'N/A'}
+          </span>
+          {hotelPrice !== null && hotelPrice !== undefined && <span className="text-xs text-gray-600">per {unit}</span>}
         </div>
       );
     },
