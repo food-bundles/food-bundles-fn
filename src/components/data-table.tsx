@@ -192,8 +192,13 @@ export function DataTable<TData, TValue>({
     const currentPage = pagination?.page || (table.getState().pagination.pageIndex + 1);
     const pages = [];
 
-    const startPage = Math.max(1, currentPage - 2);
-    const endPage = Math.min(totalPages, startPage + 4);
+    // Show 3 buttons on mobile, 5 on desktop
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+    const maxButtons = isMobile ? 3 : 5;
+    const sideButtons = Math.floor((maxButtons - 1) / 2);
+
+    const startPage = Math.max(1, currentPage - sideButtons);
+    const endPage = Math.min(totalPages, startPage + maxButtons - 1);
 
     for (let i = startPage; i <= endPage; i++) {
       pages.push(i);
@@ -303,7 +308,23 @@ export function DataTable<TData, TValue>({
       )}
 
       {/* Table */}
-      <div className="rounded-md border bg-white">
+      <div className="rounded-md border bg-white relative">
+        {/* Loading bar */}
+        {isLoading && (
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gray-200 overflow-hidden z-10">
+            <div className="h-full bg-green-600 animate-[loading_1s_ease-in-out_infinite]" 
+                 style={{
+                   width: '30%',
+                   animation: 'loading 1s ease-in-out infinite'
+                 }} />
+          </div>
+        )}
+        <style jsx>{`
+          @keyframes loading {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(400%); }
+          }
+        `}</style>
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -325,12 +346,12 @@ export function DataTable<TData, TValue>({
           </TableHeader>
           <TableBody>
             {isLoading
-              ? [...Array(10)].map((_, i) => (
+              ? [...Array(5)].map((_, i) => (
                   <TableRow key={i}>
                     {columns.map((_, colIndex) => (
                       <TableCell
                         key={colIndex}
-                        className="text-xs text-gray-800 whitespace-nowrap"
+                        className="text-xs py-4 text-gray-800 whitespace-nowrap"
                       >
                         <Skeleton className="h-4 w-full" />
                       </TableCell>
@@ -357,34 +378,40 @@ export function DataTable<TData, TValue>({
                     ))}
                   </TableRow>
                 ))
-              : [...Array(5)].map((_, i) => (
-                  <TableRow key={i}>
-                    {columns.map((_, colIndex) => (
-                      <TableCell
-                        key={colIndex}
-                        className="text-xs text-gray-800 whitespace-nowrap"
-                      >
-                        <Skeleton className="h-4 w-full" />
-                      </TableCell>
-                    ))}
+              : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center"
+                    >
+                      <div className="flex flex-col items-center justify-center py-8 text-gray-500">
+                        <svg
+                          className="w-12 h-12 mb-2 text-gray-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                          />
+                        </svg>
+                        <p className="text-sm font-medium">No data available.</p>
+                      </div>
+                    </TableCell>
                   </TableRow>
-                ))}
+                )}
           </TableBody>
         </Table>
       </div>
 
       {/* Pagination */}
       {(showPagination || showRowSelection) && (
-        <div className="flex items-center justify-between py-4">
-          {/* {showRowSelection && (
-            <div className="hidden md:flex text-sm text-gray-700 text-[13px]">
-              {table.getFilteredSelectedRowModel().rows.length} of{" "}
-              {table.getFilteredRowModel().rows.length} row(s) selected.
-            </div>
-          )} */}
-
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 py-4">
           {showPagination && (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 order-1 sm:order-1">
               <button
                 onClick={() => {
                   const currentPage =
@@ -417,7 +444,7 @@ export function DataTable<TData, TValue>({
                   <button
                     key={pageNumber}
                     onClick={() => handlePageChange(pageNumber)}
-                    className={`px-3 rounded ${
+                    className={`px-3 sm:px-2 py-1 text-xs rounded ${
                       currentPage === pageNumber
                         ? "bg-green-700 hover:bg-green-800 text-white"
                         : "bg-white hover:bg-gray-100 text-gray-900"
@@ -458,7 +485,7 @@ export function DataTable<TData, TValue>({
           )}
 
           {showPagination && (
-            <div className="flex items-center space-x-2 mr-4">
+            <div className="flex items-center space-x-2 order-2 sm:order-2">
               <Select
                 value={`${
                   pagination?.limit || table.getState().pagination.pageSize

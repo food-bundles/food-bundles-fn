@@ -208,8 +208,6 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
 
   return (
     <div className="relative w-60 min-w-60 h-screen overflow-hidden bg-green-800">
-      {/* Animated Squares Background */}
-      <div className="absolute inset-0 animated-squares z-0" />
 
       <div
         className={`

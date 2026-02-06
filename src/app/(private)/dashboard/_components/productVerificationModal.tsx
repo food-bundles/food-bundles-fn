@@ -34,6 +34,7 @@ import {
   FarmerSubmission,
   useSubmissions,
 } from "@/app/contexts/submission-context";
+import { formatDateTime } from "@/lib/reusableFunctions";
 
 interface ProductVerificationModalProps {
   submission: FarmerSubmission | null;
@@ -78,16 +79,6 @@ export function ProductVerificationModal({
     }).format(amount);
   };
 
-  const formatDateTime = (dateString: string | null) => {
-    if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString("en-RW", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
 
   const getStatusColor = (status: string) => {
     switch (status.toUpperCase()) {

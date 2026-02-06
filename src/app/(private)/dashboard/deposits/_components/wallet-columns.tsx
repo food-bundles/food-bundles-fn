@@ -9,17 +9,24 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowUpRight, MoreHorizontal } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 
 export interface WalletData {
   id: string;
   balance: number;
   isActive: boolean;
-  restaurantId: string;
-  restaurant: {
+  restaurantId: string | null;
+  traderId: string | null;
+  restaurant?: {
     name: string;
     phone: string;
-  };
+  } | null;
+  trader?: {
+    id: string;
+    email: string;
+    username: string;
+    phone: string;
+  } | null;
   _count: {
     transactions: number;
   };
@@ -30,6 +37,7 @@ interface WalletColumnsProps {
   onDeposit: (restaurantId: string) => void;
   currentPage: number;
   pageSize: number;
+  walletType?: "restaurant" | "trader";
 }
 
 export const createWalletColumns = ({
@@ -37,6 +45,7 @@ export const createWalletColumns = ({
   onDeposit,
   currentPage,
   pageSize,
+  walletType = "restaurant",
 }: WalletColumnsProps): ColumnDef<WalletData>[] => [
   {
     id: "index",
@@ -44,23 +53,38 @@ export const createWalletColumns = ({
     cell: ({ row }) => {
       const index = row.index;
       return (
-        <span className="text-xs   text-gray-900">
+        <span className="text-xs text-gray-900">
           {(currentPage - 1) * pageSize + index + 1}
         </span>
       );
     },
   },
   {
-    accessorKey: "restaurant",
-    header: "Restaurant",
+    accessorKey: walletType === "restaurant" ? "restaurant" : "trader",
+    header: walletType === "restaurant" ? "Restaurant" : "Trader",
     cell: ({ row }) => {
-      const restaurant = row.getValue("restaurant") as WalletData["restaurant"];
-      return (
+      if (walletType === "restaurant") {
+        const restaurant = row.getValue("restaurant") as WalletData["restaurant"];
+        return (
           <div>
-            <p className="text-xs   text-gray-900">{restaurant?.name}</p>
+            <p className="text-xs text-gray-900">
+              {restaurant?.name && restaurant?.name.length > 20
+                ? restaurant?.name.slice(0, 20) + "..."
+                : restaurant?.name}
+            </p>
+
             <p className="text-xs text-gray-600">{restaurant?.phone}</p>
-        </div>
-      );
+          </div>
+        );
+      } else {
+        const trader = row.getValue("trader") as WalletData["trader"];
+        return (
+          <div>
+            <p className="text-xs text-gray-900">{trader?.username && trader?.username.length > 20 ? trader?.username.slice(0, 10) + "..." : trader?.username}</p>
+            <p className="text-xs text-gray-600">{trader?.phone}</p>
+          </div>
+        );
+      }
     },
   },
   {
@@ -69,8 +93,8 @@ export const createWalletColumns = ({
     cell: ({ row }) => {
       const balance = row.getValue("balance") as number;
       return (
-        <div className="flex flex-col">
-          <span className="text-sm   text-gray-900">
+        <div className="flex items-baseline gap-1">
+          <span className="text-sm text-gray-900">
             {balance?.toLocaleString()}
           </span>
           <span className="text-xs text-gray-600">RWF</span>
@@ -80,13 +104,13 @@ export const createWalletColumns = ({
   },
   {
     accessorKey: "_count.transactions",
-    header: "Activity",
+    header: "Transactions",
     cell: ({ row }) => {
       const count = row.original._count?.transactions || 0;
       return (
         <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-100 w-fit">
-          <ArrowUpRight className="h-3.5 w-3.5" />
-          <span className="text-xs  ">{count}</span>
+          <ArrowUpDown className="h-3.5 w-3.5" />
+          <span className="text-xs">{count}</span>
         </div>
       );
     },
@@ -97,11 +121,11 @@ export const createWalletColumns = ({
     cell: ({ row }) => {
       const isActive = row.getValue("isActive") as boolean;
       return isActive ? (
-        <Badge className="bg-green-100/50 text-green-700 border-none px-3 py-1 text-xs   rounded-full">
+        <Badge className="bg-green-100/50 text-green-700 border-none px-3 py-1 text-xs rounded-full">
           Active
         </Badge>
       ) : (
-        <Badge className="bg-red-100/50 text-red-700 border-none px-3 py-1 text-xs   rounded-full">
+        <Badge className="bg-red-100/50 text-red-700 border-none px-3 py-1 text-xs rounded-full">
           Inactive
         </Badge>
       );
@@ -125,11 +149,13 @@ export const createWalletColumns = ({
             >
               {wallet.isActive ? "Deactivate" : "Activate"}
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => onDeposit(wallet.restaurantId)}
-            >
-              Deposit
-            </DropdownMenuItem>
+            {walletType === "restaurant" && wallet.restaurantId && (
+              <DropdownMenuItem
+                onClick={() => onDeposit(wallet.restaurantId!)}
+              >
+                Deposit
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       );

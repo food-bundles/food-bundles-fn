@@ -18,6 +18,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { formatDateTime } from "@/lib/reusableFunctions";
 
 // Helper functions
 const getStatusColor = (status: string) => {
@@ -50,16 +51,6 @@ const formatLocation = (submission: FarmerSubmission) => {
   return `${submission.village}, ${submission.cell}, ${submission.sector}`;
 };
 
-const formatDateTime = (dateString: string | null) => {
-  if (!dateString) return "-";
-  return new Date(dateString).toLocaleDateString("en-RW", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
 
 const formatDate = (dateString: string | null) => {
   if (!dateString) return "-";

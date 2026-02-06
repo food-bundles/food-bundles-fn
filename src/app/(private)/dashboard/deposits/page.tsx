@@ -47,12 +47,10 @@ import {
   Calendar,
   Mail,
   Phone,
-  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import { walletService } from "@/app/services/walletService";
 import { restaurantService } from "@/app/services/restaurantService";
-import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import { DataTable } from "@/components/data-table";
 import { TableFilters } from "@/components/filters";
 import { createWalletColumns, WalletData } from "./_components/wallet-columns";
@@ -62,15 +60,29 @@ import Image from "next/image";
 
 export default function DepositsManagementPage() {
   const { getMyWallet } = useWallet();
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [wallets, setWallets] = useState<any[]>([]);
-  const [walletPagination, setWalletPagination] = useState({
+  const [restaurantTransactions, setRestaurantTransactions] = useState<any[]>([]);
+  const [traderTransactions, setTraderTransactions] = useState<any[]>([]);
+  const [restaurantWallets, setRestaurantWallets] = useState<any[]>([]);
+  const [traderWallets, setTraderWallets] = useState<any[]>([]);
+  const [restaurantPagination, setRestaurantPagination] = useState({
     page: 1,
     limit: 5,
     total: 0,
     totalPages: 0,
   });
-  const [pagination, setPagination] = useState({
+  const [traderPagination, setTraderPagination] = useState({
+    page: 1,
+    limit: 5,
+    total: 0,
+    totalPages: 0,
+  });
+  const [restaurantTransactionPagination, setRestaurantTransactionPagination] = useState({
+    page: 1,
+    limit: 5,
+    total: 0,
+    totalPages: 0,
+  });
+  const [traderTransactionPagination, setTraderTransactionPagination] = useState({
     page: 1,
     limit: 5,
     total: 0,
@@ -85,13 +97,18 @@ export default function DepositsManagementPage() {
     payment: 0,
     total: 0,
   });
-  const [searchQuery, setSearchQuery] = useState("");
+  const [restaurantSearchQuery, setRestaurantSearchQuery] = useState("");
+  const [traderSearchQuery, setTraderSearchQuery] = useState("");
   const [depositSearchQuery, setDepositSearchQuery] = useState("");
   const [filteredRestaurants, setFilteredRestaurants] = useState<any[]>([]);
-  const [transactionSearchQuery, setTransactionSearchQuery] = useState("");
-  const [walletStatusFilter, setWalletStatusFilter] = useState("all");
-  const [transactionTypeFilter, setTransactionTypeFilter] = useState("all");
-  const [transactionStatusFilter, setTransactionStatusFilter] = useState("all");
+  const [restaurantTransactionSearchQuery, setRestaurantTransactionSearchQuery] = useState("");
+  const [traderTransactionSearchQuery, setTraderTransactionSearchQuery] = useState("");
+  const [restaurantStatusFilter, setRestaurantStatusFilter] = useState("all");
+  const [traderStatusFilter, setTraderStatusFilter] = useState("all");
+  const [restaurantTransactionTypeFilter, setRestaurantTransactionTypeFilter] = useState("all");
+  const [traderTransactionTypeFilter, setTraderTransactionTypeFilter] = useState("all");
+  const [restaurantTransactionStatusFilter, setRestaurantTransactionStatusFilter] = useState("all");
+  const [traderTransactionStatusFilter, setTraderTransactionStatusFilter] = useState("all");
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showOTPModal, setShowOTPModal] = useState(false);
   const [otpCode, setOtpCode] = useState("");
@@ -102,43 +119,65 @@ export default function DepositsManagementPage() {
   const [transactionDetails, setTransactionDetails] = useState<any>(null);
   const [isDepositLoading, setIsDepositLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [restaurantWalletsLoading, setRestaurantWalletsLoading] = useState(false);
+  const [traderWalletsLoading, setTraderWalletsLoading] = useState(false);
+  const [restaurantTransactionsLoading, setRestaurantTransactionsLoading] = useState(false);
+  const [traderTransactionsLoading, setTraderTransactionsLoading] = useState(false);
   const [restaurants, setRestaurants] = useState<any[]>([]);
   const [selectedWallet, setSelectedWallet] = useState<any>(null);
   const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>("");
   const [orderDetails, setOrderDetails] = useState<any>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [orderLoading, setOrderLoading] = useState(false);
+  const [activeWalletTab, setActiveWalletTab] = useState("restaurants");
 
-  const walletFilters = useMemo(() => {
+  const restaurantFilters = useMemo(() => {
     return [
-      createCommonFilters.search(searchQuery, setSearchQuery, "Search restaurants..."),
-      createCommonFilters.status(walletStatusFilter, setWalletStatusFilter, [
+      createCommonFilters.search(restaurantSearchQuery, setRestaurantSearchQuery, "Search restaurants..."),
+      createCommonFilters.status(restaurantStatusFilter, setRestaurantStatusFilter, [
         { label: "All Status", value: "all" },
         { label: "Active", value: "true" },
         { label: "Inactive", value: "false" },
       ]),
     ];
-  }, [searchQuery, walletStatusFilter]);
+  }, [restaurantSearchQuery, restaurantStatusFilter]);
 
-  const transactionFilters = useMemo(() => {
+  const traderFilters = useMemo(() => {
     return [
-      createCommonFilters.search(transactionSearchQuery, setTransactionSearchQuery, "Search restaurants..."),
-      createCommonFilters.type(transactionTypeFilter, setTransactionTypeFilter, [
+      createCommonFilters.search(traderSearchQuery, setTraderSearchQuery, "Search traders..."),
+      createCommonFilters.status(traderStatusFilter, setTraderStatusFilter, [
+        { label: "All Status", value: "all" },
+        { label: "Active", value: "true" },
+        { label: "Inactive", value: "false" },
+      ]),
+    ];
+  }, [traderSearchQuery, traderStatusFilter]);
+
+  const restaurantTransactionFilters = useMemo(() => {
+    return [
+      createCommonFilters.search(restaurantTransactionSearchQuery, setRestaurantTransactionSearchQuery, "Search restaurants..."),
+      createCommonFilters.type(restaurantTransactionTypeFilter, setRestaurantTransactionTypeFilter, [
         { label: "All Types", value: "all" },
         { label: "Top-up", value: "TOP_UP" },
         { label: "Payment", value: "PAYMENT" },
         { label: "Refund", value: "REFUND" },
       ]),
-      createCommonFilters.status(transactionStatusFilter, setTransactionStatusFilter, [
-        { label: "All Status", value: "all" },
-        { label: "Completed", value: "COMPLETED" },
-        { label: "Processing", value: "PROCESSING" },
-        { label: "Failed", value: "FAILED" },
+    ];
+  }, [restaurantTransactionSearchQuery, restaurantTransactionTypeFilter]);
+
+  const traderTransactionFilters = useMemo(() => {
+    return [
+      createCommonFilters.search(traderTransactionSearchQuery, setTraderTransactionSearchQuery, "Search traders..."),
+      createCommonFilters.type(traderTransactionTypeFilter, setTraderTransactionTypeFilter, [
+        { label: "All Types", value: "all" },
+        { label: "Top-up", value: "TOP_UP" },
+        { label: "Payment", value: "PAYMENT" },
+        { label: "Refund", value: "REFUND" },
       ]),
     ];
-  }, [transactionSearchQuery, transactionTypeFilter, transactionStatusFilter]);
+  }, [traderTransactionSearchQuery, traderTransactionTypeFilter]);
 
-  const walletColumns = useMemo(() => {
+  const restaurantColumns = useMemo(() => {
     return createWalletColumns({
       onToggleStatus: (walletId: string, currentStatus: boolean) => {
         handleWalletToggle(walletId, currentStatus);
@@ -147,43 +186,75 @@ export default function DepositsManagementPage() {
         setSelectedRestaurantId(restaurantId);
         setShowDepositModal(true);
       },
-      currentPage: walletPagination.page,
+      currentPage: restaurantPagination.page,
       pageSize: 20,
+      walletType: "restaurant",
     });
-  }, [walletPagination.page]);
+  }, [restaurantPagination.page]);
 
-  const transactionColumns = useMemo(() => {
+  const traderColumns = useMemo(() => {
+    return createWalletColumns({
+      onToggleStatus: (walletId: string, currentStatus: boolean) => {
+        handleWalletToggle(walletId, currentStatus);
+      },
+      onDeposit: (restaurantId: string) => {
+        setSelectedRestaurantId(restaurantId);
+        setShowDepositModal(true);
+      },
+      currentPage: traderPagination.page,
+      pageSize: 20,
+      walletType: "trader",
+    });
+  }, [traderPagination.page]);
+
+  const restaurantTransactionColumns = useMemo(() => {
     return createTransactionColumns({
       onViewDetails: (transaction: any) => {
         handleTransactionClick(transaction);
       },
-      currentPage: pagination.page,
-      pageSize: pagination.limit,
+      currentPage: restaurantTransactionPagination.page,
+      pageSize: restaurantTransactionPagination.limit,
+      walletType: "restaurant",
     });
-  }, [pagination.page, pagination.limit]);
+  }, [restaurantTransactionPagination.page, restaurantTransactionPagination.limit]);
+
+  const traderTransactionColumns = useMemo(() => {
+    return createTransactionColumns({
+      onViewDetails: (transaction: any) => {
+        handleTransactionClick(transaction);
+      },
+      currentPage: traderTransactionPagination.page,
+      pageSize: traderTransactionPagination.limit,
+      walletType: "trader",
+    });
+  }, [traderTransactionPagination.page, traderTransactionPagination.limit]);
 
   const [depositData, setDepositData] = useState({
     amount: "",
     description: "",
   });
 
-  const fetchWallets = async (page = 1, search = searchQuery, statusFilter = walletStatusFilter, limit = walletPagination.limit) => {
+  const fetchRestaurantWallets = async (page = 1, search = restaurantSearchQuery, statusFilter = restaurantStatusFilter, limit = restaurantPagination.limit) => {
+    setRestaurantWalletsLoading(true);
     try {
       const filters: any = {
         page,
         limit,
-        restaurantName: search || undefined,
       };
+      
+      if (search) {
+        filters.search = search;
+      }
       
       if (statusFilter !== "all") {
         filters.isActive = statusFilter === "true";
       }
 
-      const response = await walletService.getAllWallets(filters);
+      const response = await walletService.getRestaurantWallets(filters);
       if (response && response.data) {
-        setWallets(response.data);
+        setRestaurantWallets(response.data);
         if (response.pagination) {
-          setWalletPagination({
+          setRestaurantPagination({
             page: response.pagination.page,
             limit: limit,
             total: response.pagination.total,
@@ -192,17 +263,55 @@ export default function DepositsManagementPage() {
         }
       }
     } catch (error) {
-      console.error("Failed to fetch wallets:", error);
+      console.error("Failed to fetch restaurant wallets:", error);
+    } finally {
+      setRestaurantWalletsLoading(false);
     }
   };
 
-  const fetchTransactions = async (
+  const fetchTraderWallets = async (page = 1, search = traderSearchQuery, statusFilter = traderStatusFilter, limit = traderPagination.limit) => {
+    setTraderWalletsLoading(true);
+    try {
+      const filters: any = {
+        page,
+        limit,
+      };
+      
+      if (search) {
+        filters.search = search;
+      }
+      
+      if (statusFilter !== "all") {
+        filters.isActive = statusFilter === "true";
+      }
+
+      const response = await walletService.getTraderWallets(filters);
+      if (response && response.data) {
+        setTraderWallets(response.data);
+        if (response.pagination) {
+          setTraderPagination({
+            page: response.pagination.page,
+            limit: limit,
+            total: response.pagination.total,
+            totalPages: response.pagination.totalPages,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch trader wallets:", error);
+    } finally {
+      setTraderWalletsLoading(false);
+    }
+  };
+
+  const fetchRestaurantTransactions = async (
     page = 1,
-    search = transactionSearchQuery,
-    limit = pagination.limit,
-    typeFilter = transactionTypeFilter,
-    statusFilter = transactionStatusFilter
+    search = restaurantTransactionSearchQuery,
+    limit = restaurantTransactionPagination.limit,
+    typeFilter = restaurantTransactionTypeFilter,
+    statusFilter = restaurantTransactionStatusFilter
   ) => {
+    setRestaurantTransactionsLoading(true);
     try {
       const filters: any = { page, limit };
       
@@ -215,13 +324,14 @@ export default function DepositsManagementPage() {
       }
       
       if (search) {
-        filters.restaurantName = search;
+        filters.search = search;
       }
 
-      const response = await walletService.getAllWalletTransactions(filters);
+      const response = await walletService.getRestaurantTransactions(filters);
+      
       if (response && response.data) {
-        setTransactions(response.data);
-        setPagination({
+        setRestaurantTransactions(response.data);
+        setRestaurantTransactionPagination({
           page: response.pagination?.page || page,
           limit: limit,
           total: response.pagination?.total || 0,
@@ -229,7 +339,50 @@ export default function DepositsManagementPage() {
         });
       }
     } catch (error) {
-      console.error("Failed to fetch transactions:", error);
+      console.error("Failed to fetch restaurant transactions:", error);
+    } finally {
+      setRestaurantTransactionsLoading(false);
+    }
+  };
+
+  const fetchTraderTransactions = async (
+    page = 1,
+    search = traderTransactionSearchQuery,
+    limit = traderTransactionPagination.limit,
+    typeFilter = traderTransactionTypeFilter,
+    statusFilter = traderTransactionStatusFilter
+  ) => {
+    setTraderTransactionsLoading(true);
+    try {
+      const filters: any = { page, limit };
+      
+      if (typeFilter !== "all") {
+        filters.type = typeFilter;
+      }
+      
+      if (statusFilter !== "all") {
+        filters.status = statusFilter;
+      }
+      
+      if (search) {
+        filters.search = search;
+      }
+
+      const response = await walletService.getTraderTransactions(filters);
+      
+      if (response && response.data) {
+        setTraderTransactions(response.data);
+        setTraderTransactionPagination({
+          page: response.pagination?.page || page,
+          limit: limit,
+          total: response.pagination?.total || 0,
+          totalPages: response.pagination?.totalPages || 0,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch trader transactions:", error);
+    } finally {
+      setTraderTransactionsLoading(false);
     }
   };
 
@@ -325,10 +478,11 @@ export default function DepositsManagementPage() {
     const fetchData = async () => {
       setInitialLoading(true);
       try {
-        // Load data in parallel for better performance and to ensure one failure doesn't block others
         await Promise.allSettled([
-          fetchWallets(1),
-          fetchTransactions(1),
+          fetchRestaurantWallets(1),
+          fetchTraderWallets(1),
+          fetchRestaurantTransactions(1),
+          fetchTraderTransactions(1),
           fetchTransactionStats(),
           fetchRestaurants(),
         ]);
@@ -341,39 +495,73 @@ export default function DepositsManagementPage() {
     fetchData();
   }, []);
 
-  // Refetch wallets when search query changes (real-time search)
+  // Refetch restaurant wallets when search query changes
   useEffect(() => {
     if (!initialLoading) {
       const timeoutId = setTimeout(() => {
-        fetchWallets(1, searchQuery, walletStatusFilter, walletPagination.limit);
-      }, 300); // Debounce search
+        fetchRestaurantWallets(1, restaurantSearchQuery, restaurantStatusFilter, restaurantPagination.limit);
+      }, 300);
       return () => clearTimeout(timeoutId);
     }
-  }, [searchQuery]);
+  }, [restaurantSearchQuery]);
 
-  // Refetch wallets when filters change
+  // Refetch restaurant wallets when filters change
   useEffect(() => {
     if (!initialLoading) {
-      fetchWallets(1, searchQuery, walletStatusFilter, walletPagination.limit);
+      fetchRestaurantWallets(1, restaurantSearchQuery, restaurantStatusFilter, restaurantPagination.limit);
     }
-  }, [walletStatusFilter]);
+  }, [restaurantStatusFilter]);
 
-  // Refetch transactions when search query changes (real-time search)
+  // Refetch trader wallets when search query changes
   useEffect(() => {
     if (!initialLoading) {
       const timeoutId = setTimeout(() => {
-        fetchTransactions(1, transactionSearchQuery, pagination.limit, transactionTypeFilter, transactionStatusFilter);
-      }, 300); // Debounce search
+        fetchTraderWallets(1, traderSearchQuery, traderStatusFilter, traderPagination.limit);
+      }, 300);
       return () => clearTimeout(timeoutId);
     }
-  }, [transactionSearchQuery]);
+  }, [traderSearchQuery]);
 
-  // Refetch transactions when filters change
+  // Refetch trader wallets when filters change
   useEffect(() => {
     if (!initialLoading) {
-      fetchTransactions(1, transactionSearchQuery, pagination.limit, transactionTypeFilter, transactionStatusFilter);
+      fetchTraderWallets(1, traderSearchQuery, traderStatusFilter, traderPagination.limit);
     }
-  }, [transactionTypeFilter, transactionStatusFilter]);
+  }, [traderStatusFilter]);
+
+  // Refetch restaurant transactions when search query changes
+  useEffect(() => {
+    if (!initialLoading) {
+      const timeoutId = setTimeout(() => {
+        fetchRestaurantTransactions(1, restaurantTransactionSearchQuery, restaurantTransactionPagination.limit, restaurantTransactionTypeFilter, restaurantTransactionStatusFilter);
+      }, 300);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [restaurantTransactionSearchQuery]);
+
+  // Refetch restaurant transactions when filters change
+  useEffect(() => {
+    if (!initialLoading) {
+      fetchRestaurantTransactions(1, restaurantTransactionSearchQuery, restaurantTransactionPagination.limit, restaurantTransactionTypeFilter, restaurantTransactionStatusFilter);
+    }
+  }, [restaurantTransactionTypeFilter, restaurantTransactionStatusFilter]);
+
+  // Refetch trader transactions when search query changes
+  useEffect(() => {
+    if (!initialLoading) {
+      const timeoutId = setTimeout(() => {
+        fetchTraderTransactions(1, traderTransactionSearchQuery, traderTransactionPagination.limit, traderTransactionTypeFilter, traderTransactionStatusFilter);
+      }, 300);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [traderTransactionSearchQuery]);
+
+  // Refetch trader transactions when filters change
+  useEffect(() => {
+    if (!initialLoading) {
+      fetchTraderTransactions(1, traderTransactionSearchQuery, traderTransactionPagination.limit, traderTransactionTypeFilter, traderTransactionStatusFilter);
+    }
+  }, [traderTransactionTypeFilter, traderTransactionStatusFilter]);
 
 
 
@@ -409,7 +597,8 @@ export default function DepositsManagementPage() {
             maxWidth: "300px",
           },
         });
-        await fetchWallets(walletPagination.page);
+        await fetchRestaurantWallets(restaurantPagination.page);
+        await fetchTraderWallets(traderPagination.page);
       }
     } catch (error: any) {
       toast.error(
@@ -480,8 +669,10 @@ export default function DepositsManagementPage() {
         setSessionId("");
         setDepositData({ amount: "", description: "" });
         setSelectedRestaurantId("");
-        await fetchWallets(1);
-        await fetchTransactions(pagination.page);
+        await fetchRestaurantWallets(1);
+        await fetchTraderWallets(1);
+        await fetchRestaurantTransactions(restaurantTransactionPagination.page);
+        await fetchTraderTransactions(traderTransactionPagination.page);
         await fetchTransactionStats();
       }
     } catch (error: any) {
@@ -519,32 +710,14 @@ export default function DepositsManagementPage() {
     }
   };
 
-  const totalBalance = wallets.reduce(
+  const totalBalance = [...restaurantWallets, ...traderWallets].reduce(
     (sum, wallet) => sum + (wallet.balance || 0),
     0
   );
-  const activeWallets = wallets.filter((wallet) => wallet.isActive).length;
+  const activeWallets = [...restaurantWallets, ...traderWallets].filter((wallet) => wallet.isActive).length;
 
   return (
     <div className="p-6 space-y-6">
-      {/* Static content - shows immediately */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/50 backdrop-blur-sm p-6 rounded-2xl border border-gray-100 shadow-sm">
-        <div>
-          <h1 className="text-lg font-semibold">Deposit Management</h1>
-          <p className="text-xs text-gray-600 mt-1">
-            Manage restaurant cash deposits and monitor transactions
-          </p>
-        </div>
-        <Button
-          onClick={() => setShowDepositModal(true)}
-          className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
-        >
-          <Plus className="h-5 w-5" />
-          New Deposit
-        </Button>
-      </div>
-
-      {/* Stats Cards - only this section shows loading */}
       {initialLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {[...Array(5)].map((_, i) => (
@@ -610,7 +783,7 @@ export default function DepositsManagementPage() {
             <div className="space-y-1">
               <p className="text-xs text-gray-600 font-medium">Total Cash</p>
               <p className="text-sm font-bold text-purple-600">
-                {walletPagination.total}
+                {restaurantPagination.total + traderPagination.total}
               </p>
             </div>
           </div>
@@ -657,93 +830,267 @@ export default function DepositsManagementPage() {
         </div>
       )}
 
-      {/* Data tables - show immediately with their own loading states */}
-      <div className="space-y-4">
-        {/* Wallets Table */}
-        <Card className="border-none shadow-xl shadow-gray-100 rounded-2xl overflow-hidden">
-          <CardHeader className="bg-white pb-0 ">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-              <div>
-                <CardTitle className="text-sm font-semibold">
+      {/* Data tables with flex layout */}
+      <Card className="border-none shadow-xl shadow-gray-100 rounded-md space-y-0 overflow-hidden h-[600px]">
+        <CardHeader className="bg-white pb-0 shrink-0">
+          <CardTitle className="text-sm font-semibold">
+            <div className="mx-4 shrink-0">
+              <nav className="-mb-px flex space-x-8">
+                <button
+                  onClick={() => setActiveWalletTab("restaurants")}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
+                    activeWalletTab === "restaurants"
+                      ? "border-green-500 text-green-600"
+                      : "border-transparent text-gray-700 hover:text-gray-700 hover:border-gray-300"
+                  }`}
+                >
                   Restaurant Wallets
-                </CardTitle>
-                <CardDescription className="text-xs text-gray-600 mt-1">
-                  Manage cash and monitor status per restaurant
-                </CardDescription>
-              </div>
+                </button>
+                <button
+                  onClick={() => setActiveWalletTab("traders")}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
+                    activeWalletTab === "traders"
+                      ? "border-green-500 text-green-600"
+                      : "border-transparent text-gray-700 hover:text-gray-700 hover:border-gray-300"
+                  }`}
+                >
+                  Trader Wallets
+                </button>
+              </nav>
             </div>
-          </CardHeader>
-          <CardContent className="px-4">
-            <DataTable
-              columns={walletColumns}
-              data={wallets as WalletData[]}
-              customFilters={<TableFilters filters={walletFilters} />}
-              showSearch={false}
-              showExport={true}
-              showColumnVisibility={true}
-              showPagination={true}
-              showRowSelection={false}
-              showAddButton={true}
-              addButtonLabel="New Deposit"
-              onAddButton={() => setShowDepositModal(true)}
-              pagination={walletPagination}
-              onPaginationChange={(page, limit) => {
-                setWalletPagination(prev => ({ ...prev, page, limit }));
-                fetchWallets(page, searchQuery, walletStatusFilter, limit);
-              }}
-              onPageSizeChange={(newPageSize) => {
-                setWalletPagination(prev => ({ ...prev, limit: newPageSize, page: 1 }));
-                fetchWallets(1, searchQuery, walletStatusFilter, newPageSize);
-              }}
-            />
-          </CardContent>
-        </Card>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0 h-full flex flex-col">
+          <div className="flex flex-col lg:flex-row h-full">
+            {/* Left side - Wallets with tabs */}
+            <div className="w-full lg:w-1/2 lg:border-r border-gray-200 flex flex-col">
+              <div className="p-4 border-gray-200 flex-shrink-0">
+                <p className="text-sm text-gray-600">
+                  {activeWalletTab === "restaurants" ? "Restaurant" : "Trader"}{" "}
+                  Wallets
+                </p>
+              </div>
 
-        {/* All Transactions Table */}
-        <Card className="border-none shadow-xl shadow-gray-100 rounded-2xl overflow-hidden">
-          <CardHeader className="bg-white  py-0">
-            <CardTitle className="text-sm font-semibold">
-              All Transactions
-            </CardTitle>
-            <CardDescription className="text-xs text-gray-600">
-              Complete cash transaction history
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="px-4">
-            <DataTable
-              columns={transactionColumns}
-              data={transactions as TransactionData[]}
-              customFilters={<TableFilters filters={transactionFilters} />}
-              showSearch={false}
-              showExport={true}
-              showColumnVisibility={true}
-              showPagination={true}
-              showRowSelection={false}
-              showAddButton={false}
-              pagination={pagination}
-              onPaginationChange={(page, limit) => {
-                setPagination(prev => ({ ...prev, page, limit }));
-                fetchTransactions(page, transactionSearchQuery, limit, transactionTypeFilter, transactionStatusFilter);
-              }}
-              onPageSizeChange={(newPageSize) => {
-                setPagination(prev => ({ ...prev, limit: newPageSize, page: 1 }));
-                fetchTransactions(1, transactionSearchQuery, newPageSize, transactionTypeFilter, transactionStatusFilter);
-              }}
-            />
-          </CardContent>
-        </Card>
-      </div>
+              {activeWalletTab === "restaurants" && (
+                <div className="flex-1 overflow-hidden px-4">
+                  <div className="h-full pb-10 overflow-x-auto overflow-y-auto">
+                    <DataTable
+                      columns={restaurantColumns}
+                      data={restaurantWallets as WalletData[]}
+                      customFilters={
+                        <TableFilters filters={restaurantFilters} />
+                      }
+                      showSearch={false}
+                      showExport={true}
+                      showColumnVisibility={false}
+                      showPagination={true}
+                      showRowSelection={false}
+                      showAddButton={true}
+                      addButtonLabel="New Deposit"
+                      onAddButton={() => setShowDepositModal(true)}
+                      pagination={restaurantPagination}
+                      isLoading={restaurantWalletsLoading}
+                      onPaginationChange={(page, limit) => {
+                        setRestaurantPagination((prev) => ({
+                          ...prev,
+                          page,
+                          limit,
+                        }));
+                        fetchRestaurantWallets(
+                          page,
+                          restaurantSearchQuery,
+                          restaurantStatusFilter,
+                          limit,
+                        );
+                      }}
+                      onPageSizeChange={(newPageSize) => {
+                        setRestaurantPagination((prev) => ({
+                          ...prev,
+                          limit: newPageSize,
+                          page: 1,
+                        }));
+                        fetchRestaurantWallets(
+                          1,
+                          restaurantSearchQuery,
+                          restaurantStatusFilter,
+                          newPageSize,
+                        );
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {activeWalletTab === "traders" && (
+                <div className="flex-1 overflow-hidden px-4">
+                  <div className="h-full pb-10 overflow-x-auto overflow-y-auto">
+                    <DataTable
+                      columns={traderColumns}
+                      data={traderWallets as WalletData[]}
+                      customFilters={<TableFilters filters={traderFilters} />}
+                      showSearch={false}
+                      showExport={true}
+                      showColumnVisibility={false}
+                      showPagination={true}
+                      showRowSelection={false}
+                      showAddButton={false}
+                      pagination={traderPagination}
+                      isLoading={traderWalletsLoading}
+                      onPaginationChange={(page, limit) => {
+                        setTraderPagination((prev) => ({
+                          ...prev,
+                          page,
+                          limit,
+                        }));
+                        fetchTraderWallets(
+                          page,
+                          traderSearchQuery,
+                          traderStatusFilter,
+                          limit,
+                        );
+                      }}
+                      onPageSizeChange={(newPageSize) => {
+                        setTraderPagination((prev) => ({
+                          ...prev,
+                          limit: newPageSize,
+                          page: 1,
+                        }));
+                        fetchTraderWallets(
+                          1,
+                          traderSearchQuery,
+                          traderStatusFilter,
+                          newPageSize,
+                        );
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Right side - Transactions */}
+            <div className="w-full lg:w-1/2 flex flex-col">
+              <div className="p-4 border-gray-200 flex-shrink-0">
+                <p className="text-sm text-gray-600">
+                  {activeWalletTab === "restaurants" ? "Restaurant" : "Trader"}{" "}
+                  Transactions
+                </p>
+              </div>
+
+              {activeWalletTab === "restaurants" && (
+                <div className="flex-1 overflow-hidden px-4">
+                  <div className="h-full pb-10 overflow-x-auto overflow-y-auto">
+                    <DataTable
+                      columns={restaurantTransactionColumns}
+                      data={restaurantTransactions as TransactionData[]}
+                      customFilters={
+                        <TableFilters filters={restaurantTransactionFilters} />
+                      }
+                      showSearch={false}
+                      showExport={true}
+                      showColumnVisibility={false}
+                      showPagination={true}
+                      showRowSelection={false}
+                      showAddButton={false}
+                      pagination={restaurantTransactionPagination}
+                      isLoading={restaurantTransactionsLoading}
+                      onPaginationChange={(page, limit) => {
+                        setRestaurantTransactionPagination((prev) => ({ ...prev, page, limit }));
+                        fetchRestaurantTransactions(
+                          page,
+                          restaurantTransactionSearchQuery,
+                          limit,
+                          restaurantTransactionTypeFilter,
+                          restaurantTransactionStatusFilter,
+                        );
+                      }}
+                      onPageSizeChange={(newPageSize) => {
+                        setRestaurantTransactionPagination((prev) => ({
+                          ...prev,
+                          limit: newPageSize,
+                          page: 1,
+                        }));
+                        fetchRestaurantTransactions(
+                          1,
+                          restaurantTransactionSearchQuery,
+                          newPageSize,
+                          restaurantTransactionTypeFilter,
+                          restaurantTransactionStatusFilter,
+                        );
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {activeWalletTab === "traders" && (
+                <div className="flex-1 overflow-hidden px-4">
+                  <div className="h-full pb-10 overflow-x-auto overflow-y-auto">
+                    <DataTable
+                      columns={traderTransactionColumns}
+                      data={traderTransactions as TransactionData[]}
+                      customFilters={
+                        <TableFilters filters={traderTransactionFilters} />
+                      }
+                      showSearch={false}
+                      showExport={true}
+                      showColumnVisibility={false}
+                      showPagination={true}
+                      showRowSelection={false}
+                      showAddButton={false}
+                      pagination={traderTransactionPagination}
+                      isLoading={traderTransactionsLoading}
+                      onPaginationChange={(page, limit) => {
+                        setTraderTransactionPagination((prev) => ({ ...prev, page, limit }));
+                        fetchTraderTransactions(
+                          page,
+                          traderTransactionSearchQuery,
+                          limit,
+                          traderTransactionTypeFilter,
+                          traderTransactionStatusFilter,
+                        );
+                      }}
+                      onPageSizeChange={(newPageSize) => {
+                        setTraderTransactionPagination((prev) => ({
+                          ...prev,
+                          limit: newPageSize,
+                          page: 1,
+                        }));
+                        fetchTraderTransactions(
+                          1,
+                          traderTransactionSearchQuery,
+                          newPageSize,
+                          traderTransactionTypeFilter,
+                          traderTransactionStatusFilter,
+                        );
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Deposit Modal */}
       <Dialog open={showDepositModal} onOpenChange={setShowDepositModal}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-green-600">Add New Deposit</DialogTitle>
+            <DialogTitle className="text-green-600">
+              Add New Deposit
+            </DialogTitle>
             <DialogDescription>
               Add promotional credit or top up restaurant wallet manually
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); handleDeposit(); }} className="space-y-6">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleDeposit();
+            }}
+            className="space-y-6"
+          >
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="restaurant">Select Restaurant *</Label>
@@ -762,7 +1109,9 @@ export default function DepositsManagementPage() {
                           placeholder="Type to search..."
                           className="h-10 pl-10 bg-gray-50 border-none rounded-lg text-sm"
                           value={depositSearchQuery}
-                          onChange={(e) => handleDepositSearchChange(e.target.value)}
+                          onChange={(e) =>
+                            handleDepositSearchChange(e.target.value)
+                          }
                           onKeyDown={(e) => e.stopPropagation()}
                           onClick={(e) => e.stopPropagation()}
                         />
@@ -770,7 +1119,11 @@ export default function DepositsManagementPage() {
                     </div>
                     <div className="max-h-[150px] overflow-y-auto">
                       {filteredRestaurants.map((res) => (
-                        <SelectItem key={res.id} value={res.id} className="hover:text-green-600 hover:bg-green-50">
+                        <SelectItem
+                          key={res.id}
+                          value={res.id}
+                          className="hover:text-green-600 hover:bg-green-50"
+                        >
                           {res.name}
                         </SelectItem>
                       ))}
@@ -786,7 +1139,12 @@ export default function DepositsManagementPage() {
                   required
                   placeholder="250000"
                   value={depositData.amount}
-                  onChange={(e) => setDepositData(prev => ({ ...prev, amount: e.target.value }))}
+                  onChange={(e) =>
+                    setDepositData((prev) => ({
+                      ...prev,
+                      amount: e.target.value,
+                    }))
+                  }
                 />
               </div>
             </div>
@@ -797,7 +1155,12 @@ export default function DepositsManagementPage() {
                 id="description"
                 placeholder="Admin deposit for promotional credit"
                 value={depositData.description}
-                onChange={(e) => setDepositData(prev => ({ ...prev, description: e.target.value }))}
+                onChange={(e) =>
+                  setDepositData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
               />
             </div>
 
@@ -815,7 +1178,11 @@ export default function DepositsManagementPage() {
               </Button>
               <Button
                 type="submit"
-                disabled={isDepositLoading || !selectedRestaurantId || !depositData.amount}
+                disabled={
+                  isDepositLoading ||
+                  !selectedRestaurantId ||
+                  !depositData.amount
+                }
                 className="bg-green-600 hover:bg-green-700"
               >
                 {isDepositLoading ? (
@@ -859,7 +1226,7 @@ export default function DepositsManagementPage() {
                 maxLength={6}
                 className="h-14 text-center text-2xl font-black rounded-xl border-gray-100 bg-gray-50/50 focus:ring-green-500/20 focus:border-green-500 transition-all placeholder:text-gray-300 tracking-widest"
                 value={otpCode}
-                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
               />
             </div>
           </div>
@@ -937,11 +1304,23 @@ export default function DepositsManagementPage() {
 
                 <div className="space-y-1">
                   <p className="text-xs font-bold tracking-wider text-gray-500">
-                    Restaurant
+                    {activeWalletTab === "restaurants"
+                      ? "Restaurant"
+                      : "Trader"}
                   </p>
-                  <p className="text-xs font-bold text-gray-900">
-                    {transactionDetails.wallet?.restaurant?.name} 
-                  </p>
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-gray-900">
+                      {activeWalletTab === "restaurants"
+                        ? transactionDetails.wallet?.restaurant?.name
+                        : transactionDetails.wallet?.trader?.email}
+                    </p>
+                    {activeWalletTab === "traders" &&
+                      transactionDetails.wallet?.trader?.phone && (
+                        <p className="text-xs text-gray-500">
+                          {transactionDetails.wallet.trader.phone}
+                        </p>
+                      )}
+                  </div>
                 </div>
 
                 <div className="space-y-1">
@@ -1091,7 +1470,7 @@ export default function DepositsManagementPage() {
                         <Calendar className="h-3 w-3 text-gray-500" />
                         <span className="text-xs text-gray-600">
                           {new Date(
-                            orderDetails.requestedDelivery
+                            orderDetails.requestedDelivery,
                           ).toLocaleDateString()}
                         </span>
                       </div>
@@ -1166,7 +1545,7 @@ export default function DepositsManagementPage() {
                             {orderDetails.orderItems
                               .reduce(
                                 (sum: number, item: any) => sum + item.subtotal,
-                                0
+                                0,
                               )
                               .toLocaleString()}{" "}
                             {orderDetails.currency}

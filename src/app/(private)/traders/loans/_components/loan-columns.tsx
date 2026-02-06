@@ -14,11 +14,6 @@ import { LoanApplication } from "@/app/services/traderService";
 import { useState } from "react";
 import { ApproveLoanModal } from "./ApproveLoanModal";
 
-const formatDateTime = (dateString: string | null) => {
-  if (!dateString) return "-";
-  return new Date(dateString).toLocaleDateString("en-RW", { year: "numeric", month: "short", day: "numeric" });
-};
-
 const ActionsCell = ({ loan }: { loan: LoanApplication }) => {
   const [showApproveModal, setShowApproveModal] = useState(false);
 
