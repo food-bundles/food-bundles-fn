@@ -10,6 +10,7 @@ import {
   User,
   Mail,
   ChevronDown,
+  Settings,
 } from "lucide-react";
 import NotificationsDrawer from "@/app/(private)/restaurant/_components/notificationDrawer";
 import { usePathname } from "next/navigation";
@@ -23,6 +24,7 @@ const menuItems = [
   { icon: CreditCard, label: "Voucher Applications", href: "/traders/loans" },
   { icon: Ticket, label: "Vouchers", href: "/traders/vouchers" },
   { icon: ShoppingCart, label: "Orders", href: "/traders/orders" },
+  { icon: Settings, label: "Settings", href: "/traders/settings" },
 ];
 
 interface TraderSidebarProps {
