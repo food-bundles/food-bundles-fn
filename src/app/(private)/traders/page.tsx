@@ -20,17 +20,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { TopUpModal } from "./_components/TopUpModal";
 import toast from "react-hot-toast";
-
-  const formatDateTime = (dateString: string | null) => {
-    if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString("en-RW", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+import { formatDateTime } from "@/lib/reusableFunctions";
 
 export default function TraderDashboardPage() {
   const [wallet, setWallet] = useState<TraderWallet | null>(null);

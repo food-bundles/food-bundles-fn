@@ -20,6 +20,8 @@ export interface WalletTransactionFilters {
   page?: number;
   limit?: number;
   restaurantName?: string;
+  walletType?: "restaurant" | "trader";
+  search?: string;
 }
 
 export interface AdminWalletFilters {
@@ -27,6 +29,7 @@ export interface AdminWalletFilters {
   limit?: number;
   isActive?: boolean;
   restaurantName?: string;
+  search?: string;
 }
 
 export interface AdjustWalletData {
@@ -100,10 +103,31 @@ export const walletService = {
     return response.data;
   },
 
-  // Get all transactions (admin)
-  getAllTransactions: async (filters?: WalletTransactionFilters) => {
+  // Get restaurant wallets only (admin)
+  getRestaurantWallets: async (filters?: AdminWalletFilters) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.get("/wallets/all-transactions", { params: filters });
+    const response = await axiosClient.get("/wallets/restaurants", { params: filters });
+    return response.data;
+  },
+
+  // Get trader wallets only (admin)
+  getTraderWallets: async (filters?: AdminWalletFilters) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/wallets/traders", { params: filters });
+    return response.data;
+  },
+
+  // Get restaurant transactions only (admin)
+  getRestaurantTransactions: async (filters?: WalletTransactionFilters) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/wallets/restaurants/transactions", { params: filters });
+    return response.data;
+  },
+
+  // Get trader transactions only (admin)
+  getTraderTransactions: async (filters?: WalletTransactionFilters) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/wallets/traders/transactions", { params: filters });
     return response.data;
   },
 

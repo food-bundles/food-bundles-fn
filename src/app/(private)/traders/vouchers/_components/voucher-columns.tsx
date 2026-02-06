@@ -12,55 +12,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Voucher } from "@/app/services/traderService";
+import { formatDateTime } from "@/lib/reusableFunctions";
 
 interface VoucherColumnsProps {
   onViewDetails: (voucher: Voucher) => void;
   currentPage: number;
   pageSize: number;
 }
-
-  const formatDateTime = (dateString: string | null) => {
-    if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString("en-RW", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "ACTIVE":
-      return "bg-green-100 text-green-800";
-    case "EXPIRED":
-      return "bg-red-100 text-red-800";
-    case "USED":
-      return "bg-gray-100 text-gray-800";
-    case "MATURED":
-      return "bg-orange-100 text-orange-800";
-    default:
-      return "bg-yellow-100 text-yellow-800";
-  }
-};
-
-const getVoucherTypeLabel = (type: string) => {
-  switch (type) {
-    case "DISCOUNT_10":
-      return "10% Discount";
-    case "DISCOUNT_20":
-      return "20% Discount";
-    case "DISCOUNT_50":
-      return "50% Discount";
-    case "DISCOUNT_80":
-      return "80% Discount";
-    case "DISCOUNT_100":
-      return "100% Discount";
-    default:
-      return type;
-  }
-};
 
 export const createVoucherColumns = ({
   onViewDetails,
@@ -119,15 +77,7 @@ export const createVoucherColumns = ({
       </span>
     ),
   },
-  // {
-  //   accessorKey: "status",
-  //   header: "Status",
-  //   cell: ({ row }) => (
-  //     <Badge className={getStatusColor(row.original.status)}>
-  //       {row.original.status}
-  //     </Badge>
-  //   ),
-  // },
+
   {
     accessorKey: "serviceFeeRate",
     header: "Commission",

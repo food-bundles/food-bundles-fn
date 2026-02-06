@@ -3,7 +3,8 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpRight, ArrowDownRight, Wallet, Eye } from "lucide-react";
+import { Eye } from "lucide-react";
+import { formatDateTime } from "@/lib/reusableFunctions";
 
 export interface TransactionData {
   id: string;
@@ -13,8 +14,14 @@ export interface TransactionData {
   previousBalance: number;
   createdAt: string;
   wallet: {
-    restaurant: {
+    restaurant?: {
       name: string;
+      phone: string;
+    };
+    trader?: {
+      email: string;
+      username: string;
+      phone: string;
     };
   };
 }
@@ -23,20 +30,8 @@ interface TransactionColumnsProps {
   onViewDetails: (transaction: TransactionData) => void;
   currentPage: number;
   pageSize: number;
+  walletType: "restaurant" | "trader";
 }
-
-const getTransactionIcon = (type: string) => {
-  switch (type) {
-    case "TOP_UP":
-      return <ArrowUpRight className="h-4 w-4 text-green-600" />;
-    case "PAYMENT":
-      return <ArrowDownRight className="h-4 w-4 text-red-600" />;
-    case "REFUND":
-      return <ArrowUpRight className="h-4 w-4 text-blue-600" />;
-    default:
-      return <Wallet className="h-4 w-4 text-gray-600" />;
-  }
-};
 
 const getStatusBadge = (status: string) => {
   switch (status.toLowerCase()) {
@@ -57,6 +52,7 @@ export const createTransactionColumns = ({
   onViewDetails,
   currentPage,
   pageSize,
+  walletType,
 }: TransactionColumnsProps): ColumnDef<TransactionData>[] => [
   {
     id: "index",
@@ -71,11 +67,33 @@ export const createTransactionColumns = ({
     },
   },
   {
-    accessorKey: "wallet.restaurant.name",
-    header: "Restaurant",
+    accessorKey: walletType === "restaurant" ? "wallet.restaurant.name" : "wallet.trader.email",
+    header: walletType === "restaurant" ? "Restaurant" : "Trader",
     cell: ({ row }) => {
-      const name = row.original.wallet?.restaurant?.name;
-      return <span className="text-xs   text-gray-900">{name}</span>;
+      const transaction = row.original;
+      if (walletType === "restaurant") {
+        const name = transaction.wallet?.restaurant?.name;
+         const phone = transaction.wallet?.restaurant?.phone;
+        return (
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-900">{name &&name.length>20? name.slice(0, 10) + "..." : name}</span>
+             {phone && <span className="text-xs text-gray-500">{phone}</span>}
+          </div>
+        );
+      } else {
+        const username = transaction.wallet?.trader?.username;
+        const phone = transaction.wallet?.trader?.phone;
+        return (
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-900 font-medium">
+              {username && username.length > 20
+                ? username.slice(0, 10) + "..."
+                : username}
+            </span>
+            {phone && <span className="text-xs text-gray-500">{phone}</span>}
+          </div>
+        );
+      }
     },
   },
   {
@@ -93,7 +111,6 @@ export const createTransactionColumns = ({
       const type = row.getValue("type") as string;
       return (
         <div className="flex items-center gap-2">
-          {getTransactionIcon(type)}
           <span className="text-xs   text-gray-900">{type}</span>
         </div>
       );
@@ -135,15 +152,12 @@ export const createTransactionColumns = ({
       const date = new Date(row.getValue("createdAt"));
       return (
         <div className="flex flex-col">
-          <span className="text-xs text-gray-900 font-medium">
-            {date.toLocaleDateString()}
-          </span>
-          <span className="text-xs text-gray-500">
-            {date.toLocaleTimeString()}
+          <span className="text-xs   text-gray-900">
+            {formatDateTime(date.toISOString())}
           </span>
         </div>
       );
-    },
+    }
   },
   {
     id: "actions",
