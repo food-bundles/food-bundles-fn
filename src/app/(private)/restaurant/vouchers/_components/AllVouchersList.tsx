@@ -34,21 +34,6 @@ export default function AllVouchersList() {
     payingVoucherId,
   });
 
-  if (loading) {
-    return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="p-4 space-y-3">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div
-              key={i}
-              className="animate-pulse h-16 bg-gray-100 rounded"
-            ></div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <>
       <DataTable
@@ -59,6 +44,7 @@ export default function AllVouchersList() {
         showPagination={true}
         showColumnVisibility={false}
         showRowSelection={false}
+        isLoading={loading}
       />
       
       <VoucherPaymentModal

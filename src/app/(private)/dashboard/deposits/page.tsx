@@ -51,11 +51,13 @@ import {
 import { toast } from "sonner";
 import { walletService } from "@/app/services/walletService";
 import { restaurantService } from "@/app/services/restaurantService";
+import { traderService } from "@/app/services/traderService";
 import { DataTable } from "@/components/data-table";
 import { TableFilters } from "@/components/filters";
 import { createWalletColumns, WalletData } from "./_components/wallet-columns";
 import { createTransactionColumns, TransactionData } from "./_components/transaction-columns";
 import { createCommonFilters } from "./_components/filter-helpers";
+import { DelegationApprovalModal } from "./_components/DelegationApprovalModal";
 import Image from "next/image";
 
 export default function DepositsManagementPage() {
@@ -130,6 +132,15 @@ export default function DepositsManagementPage() {
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [orderLoading, setOrderLoading] = useState(false);
   const [activeWalletTab, setActiveWalletTab] = useState("restaurants");
+  const [showDelegationModal, setShowDelegationModal] = useState(false);
+  const [delegationCode, setDelegationCode] = useState("");
+  const [isDelegationLoading, setIsDelegationLoading] = useState(false);
+  const [pendingDepositData, setPendingDepositData] = useState<any>(null);
+  const [selectedTraderId, setSelectedTraderId] = useState("");
+  const [delegationCommission, setDelegationCommission] = useState("2");
+  const [showDelegationApprovalModal, setShowDelegationApprovalModal] = useState(false);
+  const [delegationTraderId, setDelegationTraderId] = useState("");
+  const [delegationCurrentCommission, setDelegationCurrentCommission] = useState(5);
 
   const restaurantFilters = useMemo(() => {
     return [
@@ -200,6 +211,20 @@ export default function DepositsManagementPage() {
       onDeposit: (restaurantId: string) => {
         setSelectedRestaurantId(restaurantId);
         setShowDepositModal(true);
+      },
+      onApproveDelegation: (traderId: string, currentCommission: number) => {
+        setDelegationTraderId(traderId);
+        setDelegationCurrentCommission(currentCommission);
+        setShowDelegationApprovalModal(true);
+      },
+      onRevokeDelegation: async (traderId: string) => {
+        try {
+          await traderService.revokeDelegation(traderId);
+          toast.success("Delegation revoked successfully");
+          await fetchTraderWallets(traderPagination.page);
+        } catch (error: any) {
+          toast.error(error.response?.data?.message || "Failed to revoke delegation");
+        }
       },
       currentPage: traderPagination.page,
       pageSize: 20,
@@ -627,18 +652,51 @@ export default function DepositsManagementPage() {
       return;
     }
 
+    setPendingDepositData({
+      restaurantId: selectedRestaurantId,
+      amount: parseFloat(depositData.amount),
+      description: depositData.description || "Admin deposit for promotional credit",
+    });
+    setShowDepositModal(false);
+    setShowDelegationModal(true);
+  };
+
+  const handleDelegationApproval = async () => {
+    if (!selectedTraderId) {
+      toast.error("Trader ID is required");
+      return;
+    }
+
+    if (!delegationCommission || parseFloat(delegationCommission) <= 0) {
+      toast.error("Please enter a valid commission rate");
+      return;
+    }
+
+    setIsDelegationLoading(true);
+    try {
+      await traderService.approveDelegation(selectedTraderId, parseFloat(delegationCommission));
+      toast.success("Delegation approved successfully");
+      setShowDelegationModal(false);
+      setDelegationCode("");
+      setSelectedTraderId("");
+      setDelegationCommission("2");
+      await proceedWithDeposit();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to approve delegation");
+    } finally {
+      setIsDelegationLoading(false);
+    }
+  };
+
+  const proceedWithDeposit = async () => {
+    if (!pendingDepositData) return;
+
     setIsDepositLoading(true);
     try {
-      const response = await walletService.adminDepositRequestOTP({
-        restaurantId: selectedRestaurantId,
-        amount: parseFloat(depositData.amount),
-        description:
-          depositData.description || "Admin deposit for promotional credit",
-      });
+      const response = await walletService.adminDepositRequestOTP(pendingDepositData);
 
       if (response.requiresOTP && response.sessionId) {
         setSessionId(response.sessionId);
-        setShowDepositModal(false);
         setShowOTPModal(true);
         toast.success(response.message || "OTP sent for verification");
       }
@@ -646,6 +704,7 @@ export default function DepositsManagementPage() {
       toast.error(error.response?.data?.message || "Failed to request OTP");
     } finally {
       setIsDepositLoading(false);
+      setPendingDepositData(null);
     }
   };
 
@@ -1194,6 +1253,95 @@ export default function DepositsManagementPage() {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delegation Approval Modal */}
+      <DelegationApprovalModal
+        isOpen={showDelegationApprovalModal}
+        onClose={() => setShowDelegationApprovalModal(false)}
+        traderId={delegationTraderId}
+        currentCommission={delegationCurrentCommission}
+        onSuccess={async () => {
+          await fetchTraderWallets(traderPagination.page);
+        }}
+      />
+
+      {/* Delegation Approval Modal */}
+      <Dialog open={showDelegationModal} onOpenChange={setShowDelegationModal}>
+        <DialogContent className="sm:max-w-md bg-white border-none rounded-3xl shadow-2xl overflow-hidden p-0">
+          <div className="bg-blue-700 p-8 text-white relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
+            <DialogHeader className="text-left relative z-10">
+              <DialogTitle className="text-2xl font-black tracking-tight">
+                Delegation Approval
+              </DialogTitle>
+              <DialogDescription className="text-blue-50/80 font-medium">
+                Approve trader delegation to proceed with deposit
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          <div className="p-8 space-y-6">
+            <div className="space-y-2">
+              <Label
+                htmlFor="traderId"
+                className="text-xs font-bold tracking-wider text-gray-500 ml-1"
+              >
+                Trader ID *
+              </Label>
+              <Input
+                id="traderId"
+                type="text"
+                placeholder="Enter trader ID"
+                className="h-12 rounded-xl border-gray-100 bg-gray-50/50 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                value={selectedTraderId}
+                onChange={(e) => setSelectedTraderId(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label
+                htmlFor="commission"
+                className="text-xs font-bold tracking-wider text-gray-500 ml-1"
+              >
+                Commission Rate (%) *
+              </Label>
+              <Input
+                id="commission"
+                type="number"
+                step="0.1"
+                min="0"
+                placeholder="2"
+                className="h-12 rounded-xl border-gray-100 bg-gray-50/50 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                value={delegationCommission}
+                onChange={(e) => setDelegationCommission(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter className="p-8 pt-0 flex gap-3">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setShowDelegationModal(false);
+                setSelectedTraderId("");
+                setDelegationCommission("2");
+                setPendingDepositData(null);
+                setShowDepositModal(true);
+              }}
+              className="flex-1 h-12 rounded-xl font-bold text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDelegationApproval}
+              disabled={isDelegationLoading || !selectedTraderId || !delegationCommission}
+              className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-200 transition-all active:scale-95 disabled:opacity-70"
+            >
+              {isDelegationLoading ? (
+                <Loader2 className="h-5 w-5 animate-spin mr-2" />
+              ) : null}
+              Approve & Continue
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
