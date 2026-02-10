@@ -163,9 +163,11 @@ export interface DelegationStatus {
   delegationRequestedAt: string | null;
   delegationApprovedAt: string | null;
   delegationApprovedBy: string | null;
+  delegationAcceptedAt: string | null;
   canTradeOnBehalf: boolean;
   commission: number;
-  status: 'NOT_REQUESTED' | 'PENDING' | 'APPROVED' | 'REJECTED';
+  delegationStatus: 'NORMAL' | 'PENDING' | 'APPROVED' | 'ACCEPTED';
+  status: 'NOT_REQUESTED' | 'PENDING' | 'APPROVED' | 'ACCEPTED';
 }
 
 export const traderService = {
@@ -287,31 +289,15 @@ export const traderService = {
     return response.data;
   },
 
-  verifyDelegationOTP: async (data: {
-    sessionId: string;
-    otp: string;
-    commission: number;
-  }) => {
+  acceptDelegation: async (otp: string) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.post("/traders/delegation/verify-otp", data);
+    const response = await axiosClient.post("/traders/delegation/accept", { otp });
     return response.data;
   },
 
-  revokeDelegation: async (traderId: string) => {
+  reverseDelegation: async () => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.delete(`/traders/delegation/${traderId}/revoke`);
-    return response.data;
-  },
-
-  approveDelegation: async (traderId: string) => {
-    const axiosClient = createAxiosClient();
-    const response = await axiosClient.post(`/traders/delegation/${traderId}/approve`);
-    return response.data;
-  },
-
-  reverseDelegation: async (otp: string) => {
-    const axiosClient = createAxiosClient();
-    const response = await axiosClient.post("/traders/delegation/reverse", { otp });
+    const response = await axiosClient.post("/traders/delegation/reverse");
     return response.data;
   },
 
@@ -321,9 +307,16 @@ export const traderService = {
     return response.data;
   },
 
-  requestDelegationReversal: async () => {
+  // Admin delegation endpoints
+  approveDelegation: async (traderId: string, commission: number) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.post("/traders/delegation/reverse/request");
+    const response = await axiosClient.post(`/traders/delegation/${traderId}/approve`, { commission });
+    return response.data;
+  },
+
+  revokeDelegation: async (traderId: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.delete(`/traders/delegation/${traderId}/revoke`);
     return response.data;
   },
 };

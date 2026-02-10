@@ -17,6 +17,9 @@ export interface WalletData {
   isActive: boolean;
   restaurantId: string | null;
   traderId: string | null;
+  commission?: number;
+  canTradeOnBehalf?: boolean;
+  delegationStatus?: string;
   restaurant?: {
     name: string;
     phone: string;
@@ -35,14 +38,88 @@ export interface WalletData {
 interface WalletColumnsProps {
   onToggleStatus: (walletId: string, currentStatus: boolean) => void;
   onDeposit: (restaurantId: string) => void;
+  onApproveDelegation?: (traderId: string, currentCommission: number) => void;
+  onRevokeDelegation?: (traderId: string) => void;
   currentPage: number;
   pageSize: number;
   walletType?: "restaurant" | "trader";
 }
 
+const getDelegationStatusColor = (status: string) => {
+  switch (status) {
+    case "ACCEPTED":
+      return "bg-green-100 text-green-700 border-green-200";
+    case "APPROVED":
+      return "bg-blue-100 text-blue-700 border-blue-200";
+    case "PENDING":
+      return "bg-yellow-100 text-yellow-700 border-yellow-200";
+    case "NORMAL":
+    default:
+      return "bg-gray-100 text-gray-700 border-gray-200";
+  }
+};
+
+function DelegationStatusBadge({
+  currentStatus,
+  traderId,
+  commission,
+  onApproveDelegation,
+  onRevokeDelegation,
+}: {
+  currentStatus: string;
+  traderId: string;
+  commission: number;
+  onApproveDelegation?: (traderId: string, commission: number) => void;
+  onRevokeDelegation?: (traderId: string) => void;
+}) {
+  const handleAction = () => {
+    if (currentStatus === "PENDING" && onApproveDelegation) {
+      onApproveDelegation(traderId, commission);
+    } else if (currentStatus === "ACCEPTED" && onRevokeDelegation) {
+      onRevokeDelegation(traderId);
+    }
+  };
+
+  const getStatusLabel = () => {
+    switch (currentStatus) {
+      case "ACCEPTED":
+        return "Accepted";
+      case "APPROVED":
+        return "Approved";
+      case "PENDING":
+        return "Pending";
+      case "NORMAL":
+      default:
+        return "Normal";
+    }
+  };
+
+  const showActionButton = currentStatus === "PENDING" || currentStatus === "ACCEPTED";
+
+  return (
+    <div className="flex items-center gap-2">
+      <Badge className={`${getDelegationStatusColor(currentStatus)} border px-3 py-1 text-xs rounded-full`}>
+        {getStatusLabel()}
+      </Badge>
+      {showActionButton && (
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={handleAction}
+          className="h-6 px-2 text-xs"
+        >
+          {currentStatus === "PENDING" ? "Approve" : "Revoke"}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export const createWalletColumns = ({
   onToggleStatus,
   onDeposit,
+  onApproveDelegation,
+  onRevokeDelegation,
   currentPage,
   pageSize,
   walletType = "restaurant",
@@ -131,6 +208,26 @@ export const createWalletColumns = ({
       );
     },
   },
+  ...(walletType === "trader"
+    ? [
+        {
+          accessorKey: "delegationStatus",
+          header: "Delegation",
+          cell: ({ row }: any) => {
+            const wallet = row.original;
+            return (
+              <DelegationStatusBadge
+                currentStatus={wallet.delegationStatus || "NORMAL"}
+                traderId={wallet.traderId!}
+                commission={wallet.commission || 5}
+                onApproveDelegation={onApproveDelegation}
+                onRevokeDelegation={onRevokeDelegation}
+              />
+            );
+          },
+        } as ColumnDef<WalletData>,
+      ]
+    : []),
   {
     id: "actions",
     header: "Actions",
@@ -154,6 +251,13 @@ export const createWalletColumns = ({
                 onClick={() => onDeposit(wallet.restaurantId!)}
               >
                 Deposit
+              </DropdownMenuItem>
+            )}
+            {walletType === "trader" && wallet.traderId && onApproveDelegation && (
+              <DropdownMenuItem
+                onClick={() => onApproveDelegation(wallet.traderId!, wallet.commission || 5)}
+              >
+                {wallet.delegationStatus === "PENDING" ? "Approve Delegation" : "Resend OTP"}
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
