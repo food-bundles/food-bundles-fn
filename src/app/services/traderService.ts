@@ -282,6 +282,7 @@ export const traderService = {
     return response.data;
   },
 
+<<<<<<< Updated upstream
   // Delegation Management
   requestDelegation: async () => {
     const axiosClient = createAxiosClient();
@@ -320,3 +321,19 @@ export const traderService = {
     return response.data;
   },
 };
+=======
+  setTraderCommission: async (traderId: string, commission: number) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(`/traders/${traderId}/commission`, {
+      commission,
+    });
+    return response.data;
+  },
+
+  getTraderWalletById: async (traderId: string): Promise<{ success: boolean; data: TraderWallet }> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get(`/traders/${traderId}/wallet`);
+    return response.data;
+  },
+};
+>>>>>>> Stashed changes

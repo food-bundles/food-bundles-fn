@@ -417,7 +417,7 @@ export default function TraderDashboardPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-xs">Commission Rate</span>
                   </div>
-                  <span className="font-semibold text-green-600">5%</span>
+                  <span className="font-semibold text-green-600">{wallet?.commission || 0}%</span>
                 </div>
 
                 <div className="flex flex-col items-center justify-center">
