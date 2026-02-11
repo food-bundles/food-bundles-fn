@@ -319,4 +319,18 @@ export const traderService = {
     const response = await axiosClient.delete(`/traders/delegation/${traderId}/revoke`);
     return response.data;
   },
+
+  setTraderCommission: async (traderId: string, commission: number) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(`/traders/${traderId}/commission`, {
+      commission,
+    });
+    return response.data;
+  },
+
+  getTraderWalletById: async (traderId: string): Promise<{ success: boolean; data: TraderWallet }> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get(`/traders/${traderId}/wallet`);
+    return response.data;
+  },
 };

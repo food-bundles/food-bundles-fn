@@ -10,9 +10,10 @@ import { toast } from "sonner";
 import dynamic from "next/dynamic";
 import { AdminManagementModal } from "./_components/admin-management-modal";
 import { CreateAdminModal } from "./_components/create-admin-modal";
+import { UpdateCommissionModal } from "./_components/update-commission-modal";
 
 function AdministrationPageContent() {
-  const { admins,  error, getAllAdmins, createAdmin, updateAdmin, deleteAdmin, clearError } = useAdmins();
+  const { admins, error, getAllAdmins, createAdmin, updateAdmin, deleteAdmin, clearError } = useAdmins();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateRange, setDateRange] = useState<Date | undefined>(undefined);
@@ -20,6 +21,7 @@ function AdministrationPageContent() {
   const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCommissionModalOpen, setIsCommissionModalOpen] = useState(false);
 
   // All hooks must be called before any conditional returns
   const filteredData = useMemo(() => {
@@ -40,11 +42,19 @@ function AdministrationPageContent() {
     });
   }, [searchTerm, statusFilter, dateRange, admins, mounted]);
 
+  const handleUpdateCommission = (admin: Admin) => {
+    setSelectedAdmin(admin);
+    setIsCommissionModalOpen(true);
+  };
+
   const adminColumns = useMemo(() => {
-    return getAdminColumns((admin: Admin) => {
-      setSelectedAdmin(admin);
-      setIsModalOpen(true);
-    });
+    return getAdminColumns(
+      (admin: Admin) => {
+        setSelectedAdmin(admin);
+        setIsModalOpen(true);
+      },
+      handleUpdateCommission
+    );
   }, []);
 
   const filters = useMemo(() => {
@@ -70,11 +80,14 @@ function AdministrationPageContent() {
 
   const handleModalClose = () => {
     setIsModalOpen(false);
-    setSelectedAdmin(null);
   };
 
   const handleCreateModalClose = () => {
     setIsCreateModalOpen(false);
+  };
+
+  const handleCommissionModalClose = (open: boolean) => {
+    setIsCommissionModalOpen(open);
   };
 
   const handleUpdate = () => {
@@ -106,7 +119,7 @@ function AdministrationPageContent() {
   }, [error, clearError, mounted]);
 
   return (
-    <div className="p-6">
+    <div className="p-6 space-y-6">
       <DataTable
         columns={adminColumns}
         data={filteredData}
@@ -122,7 +135,7 @@ function AdministrationPageContent() {
         showPagination={true}
         showRowSelection={true}
       />
-      
+
       <AdminManagementModal
         admin={selectedAdmin}
         open={isModalOpen}
@@ -131,16 +144,24 @@ function AdministrationPageContent() {
         onEdit={updateAdmin}
         onDelete={deleteAdmin}
       />
-      
+
       <CreateAdminModal
         open={isCreateModalOpen}
         onOpenChange={handleCreateModalClose}
         onUpdate={handleUpdate}
         onCreate={createAdmin}
       />
+
+      <UpdateCommissionModal
+        admin={selectedAdmin}
+        open={isCommissionModalOpen}
+        onOpenChange={handleCommissionModalClose}
+        onUpdate={handleUpdate}
+      />
     </div>
   );
 }
+
 
 const AdministrationPage = dynamic(() => Promise.resolve(AdministrationPageContent), {
   ssr: false,
