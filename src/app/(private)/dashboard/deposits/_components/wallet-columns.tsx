@@ -38,6 +38,7 @@ export interface WalletData {
 interface WalletColumnsProps {
   onToggleStatus: (walletId: string, currentStatus: boolean) => void;
   onDeposit: (restaurantId: string) => void;
+  onUpdateCommission?: (traderId: string) => void;
   onApproveDelegation?: (traderId: string, currentCommission: number) => void;
   onRevokeDelegation?: (traderId: string) => void;
   currentPage: number;
@@ -120,6 +121,7 @@ export const createWalletColumns = ({
   onDeposit,
   onApproveDelegation,
   onRevokeDelegation,
+  onUpdateCommission,
   currentPage,
   pageSize,
   walletType = "restaurant",
@@ -213,7 +215,7 @@ export const createWalletColumns = ({
         {
           accessorKey: "delegationStatus",
           header: "Delegation",
-          cell: ({ row }: any) => {
+          cell: ({ row }) => {
             const wallet = row.original;
             return (
               <DelegationStatusBadge
@@ -258,6 +260,13 @@ export const createWalletColumns = ({
                 onClick={() => onApproveDelegation(wallet.traderId!, wallet.commission || 5)}
               >
                 {wallet.delegationStatus === "PENDING" ? "Approve Delegation" : "Resend OTP"}
+              </DropdownMenuItem>
+            )}
+            {walletType === "trader" && wallet.traderId && onUpdateCommission && (
+              <DropdownMenuItem
+                onClick={() => onUpdateCommission(wallet.traderId!)}
+              >
+                Update Commission
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>

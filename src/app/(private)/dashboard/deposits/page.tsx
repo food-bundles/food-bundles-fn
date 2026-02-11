@@ -57,6 +57,7 @@ import { TableFilters } from "@/components/filters";
 import { createWalletColumns, WalletData } from "./_components/wallet-columns";
 import { createTransactionColumns, TransactionData } from "./_components/transaction-columns";
 import { createCommonFilters } from "./_components/filter-helpers";
+import { UpdateCommissionModal } from "../users/administration/_components/update-commission-modal";
 import { DelegationApprovalModal } from "./_components/DelegationApprovalModal";
 import Image from "next/image";
 
@@ -141,6 +142,8 @@ export default function DepositsManagementPage() {
   const [showDelegationApprovalModal, setShowDelegationApprovalModal] = useState(false);
   const [delegationTraderId, setDelegationTraderId] = useState("");
   const [delegationCurrentCommission, setDelegationCurrentCommission] = useState(5);
+  const [showCommissionModal, setShowCommissionModal] = useState(false);
+  const [selectedTrader, setSelectedTrader] = useState<any>(null);
 
   const restaurantFilters = useMemo(() => {
     return [
@@ -226,11 +229,18 @@ export default function DepositsManagementPage() {
           toast.error(error.response?.data?.message || "Failed to revoke delegation");
         }
       },
+      onUpdateCommission: (traderId: string) => {
+        const trader = traderWallets.find(w => w.traderId === traderId)?.trader;
+        if (trader) {
+          setSelectedTrader({ id: traderId, username: trader.username, role: "TRADER" });
+          setShowCommissionModal(true);
+        }
+      },
       currentPage: traderPagination.page,
       pageSize: 20,
       walletType: "trader",
     });
-  }, [traderPagination.page]);
+  }, [traderPagination.page, traderWallets]);
 
   const restaurantTransactionColumns = useMemo(() => {
     return createTransactionColumns({
@@ -1744,6 +1754,16 @@ export default function DepositsManagementPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Update Commission Modal */}
+      <UpdateCommissionModal
+        admin={selectedTrader}
+        open={showCommissionModal}
+        onOpenChange={setShowCommissionModal}
+        onUpdate={() => {
+          fetchTraderWallets(traderPagination.page);
+        }}
+      />
     </div>
   );
 }

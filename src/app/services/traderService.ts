@@ -282,7 +282,6 @@ export const traderService = {
     return response.data;
   },
 
-<<<<<<< Updated upstream
   // Delegation Management
   requestDelegation: async () => {
     const axiosClient = createAxiosClient();
@@ -320,8 +319,7 @@ export const traderService = {
     const response = await axiosClient.delete(`/traders/delegation/${traderId}/revoke`);
     return response.data;
   },
-};
-=======
+
   setTraderCommission: async (traderId: string, commission: number) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.patch(`/traders/${traderId}/commission`, {
@@ -336,4 +334,3 @@ export const traderService = {
     return response.data;
   },
 };
->>>>>>> Stashed changes
