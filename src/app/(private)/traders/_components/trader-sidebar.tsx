@@ -10,7 +10,10 @@ import {
   User,
   Mail,
   ChevronDown,
+  ChevronRight,
   Settings,
+  Handshake,
+  NotebookPen,
 } from "lucide-react";
 import NotificationsDrawer from "@/app/(private)/restaurant/_components/notificationDrawer";
 import { usePathname } from "next/navigation";
@@ -24,7 +27,23 @@ const menuItems = [
   { icon: CreditCard, label: "Voucher Applications", href: "/traders/loans" },
   { icon: Ticket, label: "Vouchers", href: "/traders/vouchers" },
   { icon: ShoppingCart, label: "Orders", href: "/traders/orders" },
-  { icon: Settings, label: "Settings", href: "/traders/settings" },
+  {
+    icon: Settings,
+    label: "Settings",
+    href: "/traders/settings",
+    subItems: [
+      {
+        icon: Handshake,
+        label: "Delegation",
+        href: "/traders/settings/manage",
+      },
+      {
+        icon: NotebookPen,
+        label: "Historic",
+        href: "/traders/settings/delegation-history",
+      },
+    ],
+  },
 ];
 
 interface TraderSidebarProps {
@@ -34,9 +53,20 @@ interface TraderSidebarProps {
 
 export function TraderSidebar({ isOpen, onClose }: TraderSidebarProps) {
   const pathname = usePathname();
+  const [expandedItems, setExpandedItems] = useState(new Set());
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [userData, setUserData] = useState<any>(null);
+
+  const toggleExpanded = (index: number) => {
+    const newExpanded = new Set(expandedItems);
+    if (newExpanded.has(index)) {
+      newExpanded.delete(index);
+    } else {
+      newExpanded.add(index);
+    }
+    setExpandedItems(newExpanded);
+  };
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -75,7 +105,21 @@ export function TraderSidebar({ isOpen, onClose }: TraderSidebarProps) {
   };
 
   const isItemActive = (item: any) => {
+    if (item.subItems) {
+      return pathname === item.href;
+    }
     return pathname === item.href;
+  };
+
+  const hasActiveSubItem = (item: any) => {
+    if (item.subItems) {
+      return item.subItems.some((subItem: any) => pathname === subItem.href);
+    }
+    return false;
+  };
+
+  const isSubItemActive = (subItem: any) => {
+    return pathname === subItem.href;
   };
 
   return (
@@ -115,27 +159,87 @@ export function TraderSidebar({ isOpen, onClose }: TraderSidebarProps) {
           <ul className="space-y-1 px-2 md:px-3 pb-4">
             {menuItems.map((item, index) => {
               const isActive = isItemActive(item);
+              const hasActiveSub = hasActiveSubItem(item);
+              const isExpanded = expandedItems.has(index);
+              const hasSubItems = item.subItems && item.subItems.length > 0;
 
               return (
                 <li key={index}>
-                  <Link
-                    href={item.href}
-                    onClick={() => onClose()}
-                    className={cn(
-                      "flex items-center px-2 md:px-3 py-3 text-sm transition-colors whitespace-nowrap rounded-md",
-                      isActive
-                        ? "bg-green-700 hover:bg-green-700 text-green-200"
-                        : "text-green-200 hover:bg-green-700 hover:text-white"
-                    )}
-                  >
-                    <item.icon
-                      className={cn(
-                        "mr-2 md:mr-3 h-4 w-4 md:h-5 md:w-5",
-                        isActive ? "text-white" : "text-green-500"
+                  {hasSubItems ? (
+                    <>
+                      <button
+                        onClick={() => toggleExpanded(index)}
+                        className={cn(
+                          "w-full flex items-center px-3 py-2 rounded-md text-xs transition-colors whitespace-nowrap justify-between",
+                          isActive && !hasActiveSub
+                            ? "bg-green-500 hover:bg-green-600 text-white"
+                            : "text-green-200 hover:bg-green-700 hover:text-white"
+                        )}
+                      >
+                        <div className="flex items-center">
+                          <item.icon
+                            className={cn(
+                              "mr-2 md:mr-3 h-4 w-4 md:h-5 md:w-5",
+                              isActive && !hasActiveSub
+                                ? "text-green-200"
+                                : "text-green-500"
+                            )}
+                          />
+                          {item.label}
+                        </div>
+                        {isExpanded ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
+                      </button>
+                      {isExpanded && (
+                        <ul className="mt-1 ml-6 space-y-1">
+                          {item.subItems.map((subItem, subIndex) => {
+                            const isSubActive = isSubItemActive(subItem);
+                            return (
+                              <li key={subIndex}>
+                                <Link
+                                  href={subItem.href}
+                                  onClick={() => onClose()}
+                                  className={cn(
+                                    "flex items-center px-2 md:px-3 py-2 rounded text-xs transition-colors whitespace-nowrap",
+                                    isSubActive
+                                      ? "bg-green-600 text-white"
+                                      : "text-green-200 hover:bg-green-600 hover:text-white"
+                                  )}
+                                >
+                                  <subItem.icon className="mr-2 md:mr-3 h-2 w-2 md:h-3 md:w-3" />
+                                  <span className="truncate text-[13px]">
+                                    {subItem.label}
+                                  </span>
+                                </Link>
+                              </li>
+                            );
+                          })}
+                        </ul>
                       )}
-                    />
-                    <span className="truncate">{item.label}</span>
-                  </Link>
+                    </>
+                  ) : (
+                    <Link
+                      href={item.href}
+                      onClick={() => onClose()}
+                      className={cn(
+                        "flex items-center px-2 md:px-3 py-2 text-xs transition-colors whitespace-nowrap rounded-md",
+                        isActive
+                          ? "bg-green-700 hover:bg-green-700 text-green-200"
+                          : "text-green-200 hover:bg-green-700 hover:text-white"
+                      )}
+                    >
+                      <item.icon
+                        className={cn(
+                          "mr-2 md:mr-3 h-4 w-4 md:h-5 md:w-5",
+                          isActive ? "text-white" : "text-green-500"
+                        )}
+                      />
+                      <span className="truncate">{item.label}</span>
+                    </Link>
+                  )}
                 </li>
               );
             })}

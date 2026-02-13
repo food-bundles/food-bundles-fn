@@ -415,4 +415,34 @@ export const traderService = {
     const response = await axiosClient.delete(`/traders/withdraw/${withdrawId}/cancel`);
     return response.data;
   },
-};
+
+  // Delegation History
+  getAllDelegationHistory: async (params?: { page?: number; limit?: number; traderId?: string }) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/traders/delegation/history", { params });
+    return response.data;
+  },
+
+  getMyDelegationHistory: async (params?: { page?: number; limit?: number }) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/traders/delegation/my-history", { params });
+    return response.data;
+  },
+
+  // Admin loan approval on behalf of trader
+  getAcceptedDelegations: async (): Promise<{ success: boolean; data: Array<{ id: string; name: string; availableBalance: number }> }> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/traders/accepted-delegations");
+    return response.data;
+  },
+
+  adminApproveLoanOnBehalf: async (traderId: string, data: {
+    loanId: string;
+    approvedAmount: number;
+    repaymentDays: number;
+  }) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(`/traders/admin/${traderId}/approve-loan`, data);
+    return response.data;
+  },
+}

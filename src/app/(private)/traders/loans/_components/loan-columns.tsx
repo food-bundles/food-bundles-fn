@@ -57,9 +57,7 @@ export const loanColumns: ColumnDef<LoanApplication>[] = [
     accessorKey: "#",
     header: "#",
     cell: ({ row }) => {
-      return (
-        <span className="text-xs   text-gray-900">{row.index + 1}</span>
-      );
+      return <span className="text-xs   text-gray-900">{row.index + 1}</span>;
     },
   },
   {
@@ -76,10 +74,10 @@ export const loanColumns: ColumnDef<LoanApplication>[] = [
     },
   },
   {
-    accessorKey: "requestedAmount",
+    accessorKey: "approvedAmount",
     header: "Requested Amount",
     cell: ({ row }) => {
-      const amount = row.getValue("requestedAmount") as number;
+      const amount = row.getValue("approvedAmount") as number;
       return <span className="font-medium">{amount.toLocaleString()} RWF</span>;
     },
   },
@@ -121,11 +119,7 @@ export const loanColumns: ColumnDef<LoanApplication>[] = [
         }
       };
 
-      return (
-        <Badge className={getStatusColor(status)}>
-          {status}
-        </Badge>
-      );
+      return <Badge className={getStatusColor(status)}>{status}</Badge>;
     },
   },
   {

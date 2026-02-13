@@ -16,6 +16,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { formatDateTime } from "@/lib/reusableFunctions";
 
 export function DelegationSettings() {
   const [status, setStatus] = useState<DelegationStatus | null>(null);
@@ -165,86 +166,75 @@ export function DelegationSettings() {
 
   return (
     <>
-      <Card className="p-6">
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900">
-              Delegation Settings
-            </h2>
-            <p className="text-sm text-gray-600 mt-1">
-              Manage your authorization to trade on behalf of Food Bundles
-            </p>
-          </div>
-
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <h3 className="font-semibold text-gray-900">
-                  Delegation Status:
-                </h3>
-                {getStatusBadge()}
+      <Card className="p-6 rounded-md border border-gray-300 shadow-none">
+        <div className="flex gap-6">
+          <div className="space-y-4 p-4 w-1/3 border-r border-gray-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-700">
+                  {(status?.status || status?.delegationStatus) === "ACCEPTED" ? "Delegation Commission" : "Commission Rate"}
+                </p>
               </div>
-              <p className="text-sm text-gray-600">
-                {(status?.status || status?.delegationStatus) === "ACCEPTED"
-                  ? "Food Bundles is now authorized to trade on your behalf with the specified commission. You can reverse this at any time."
-                  : (status?.status || status?.delegationStatus) === "APPROVED"
-                  ? "Admin approved your request. Accept to activate delegation."
-                  : (status?.status || status?.delegationStatus) === "PENDING"
-                  ? "Your delegation request is pending admin approval"
-                  : "Enable delegation to trade on behalf of Food Bundles"}
-              </p>
+              <span className="text-2xl font-bold text-green-600">
+                {status?.commission || 0}%
+              </span>
             </div>
-            {(status?.status || status?.delegationStatus) === "NORMAL" && (
-              <Switch
-                checked={false}
-                onCheckedChange={handleToggleDelegation}
-                disabled={isProcessing}
-              />
-            )}
-            {(status?.status || status?.delegationStatus) === "APPROVED" && (
-              <Button
-                onClick={() => setShowAcceptModal(true)}
-                disabled={isProcessing}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                Accept
-              </Button>
-            )}
-            {(status?.status || status?.delegationStatus) === "ACCEPTED" && (
-              <Button
-                onClick={() => setShowReverseModal(true)}
-                disabled={isProcessing}
-                variant="outline"
-                className="border-red-300 text-red-600 hover:bg-red-50"
-              >
-                Reverse
-              </Button>
-            )}
-          </div>
-
-          {(status?.status || status?.delegationStatus) === "ACCEPTED" && status && (
-            <div className="space-y-4 p-4 bg-green-50 rounded-lg border border-green-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">
-                    Commission Rate
-                  </p>
-                  <p className="text-xs text-gray-600">
-                    Your commission on delegated trades
-                  </p>
-                </div>
-                <span className="text-2xl font-bold text-green-600">
-                  {status.commission}%
+            {status?.delegationAcceptedAt && (
+              <div className="text-xs ">
+                Accepted on:{" "}
+                <span className="text-gray-600">
+                  {formatDateTime(status.delegationAcceptedAt)}
                 </span>
               </div>
-              {status.delegationAcceptedAt && (
-                <div className="text-xs text-gray-600">
-                  Accepted on:{" "}
-                  {new Date(status.delegationAcceptedAt).toLocaleDateString()}
-                </div>
+            )}
+          </div>
+
+          <div className="flex-1 p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Manage Delegation
+              </h3>
+              <Switch
+                checked={
+                  (status?.status || status?.delegationStatus) === "ACCEPTED"
+                }
+                onCheckedChange={handleToggleDelegation}
+                disabled={
+                  isProcessing ||
+                  (status?.status || status?.delegationStatus) === "PENDING"
+                }
+              />
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-gray-700">
+                  Status:
+                </span>
+                {getStatusBadge()}
+              </div>
+
+              <p className="text-sm text-gray-600">
+                {(status?.status || status?.delegationStatus) === "ACCEPTED"
+                  ? "Food Bundles is now authorized to trade on your behalf. Toggle off to reverse."
+                  : (status?.status || status?.delegationStatus) === "APPROVED"
+                    ? "Admin approved your request. Click Accept below to activate delegation."
+                    : (status?.status || status?.delegationStatus) === "PENDING"
+                      ? "Your delegation request is pending admin approval. Please wait."
+                      : "Toggle on to request delegation and allow Food Bundles to trade on your behalf."}
+              </p>
+
+              {(status?.status || status?.delegationStatus) === "APPROVED" && (
+                <Button
+                  onClick={() => setShowAcceptModal(true)}
+                  disabled={isProcessing}
+                  className="bg-green-600 hover:bg-green-700 w-full"
+                >
+                  Accept Delegation
+                </Button>
               )}
             </div>
-          )}
+          </div>
         </div>
       </Card>
 
@@ -327,7 +317,8 @@ export function DelegationSettings() {
           <div className="space-y-4 py-4">
             <div className="p-3 bg-green-50 border border-blue-200 rounded">
               <p className="text-sm text-green-800">
-                <strong>Commission:</strong> {status?.commission}% on delegated trades
+                <strong>Commission:</strong> {status?.commission}% on delegated
+                trades
               </p>
             </div>
             <div>
@@ -389,8 +380,8 @@ export function DelegationSettings() {
             <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
               <p className="text-sm text-yellow-800">
                 <strong>Note:</strong> Reversing delegation will allow you to
-                approve vouchers and loans directly again. Food Bundles will no longer
-                have control of your wallet.
+                approve vouchers and loans directly again. Food Bundles will no
+                longer have control of your wallet.
               </p>
             </div>
 

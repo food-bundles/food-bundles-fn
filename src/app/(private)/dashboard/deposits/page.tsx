@@ -38,8 +38,6 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Loader2,
-  CreditCard,
-  Smartphone,
   Users,
   DollarSign,
   Search,
@@ -57,10 +55,10 @@ import { TableFilters } from "@/components/filters";
 import { createWalletColumns, WalletData } from "./_components/wallet-columns";
 import { createTransactionColumns, TransactionData } from "./_components/transaction-columns";
 import { createWithdrawalColumns, WithdrawalData } from "./_components/withdrawal-columns";
+import { createDelegationHistoryColumns, DelegationHistoryData } from "./_components/delegation-history-columns";
 import { createCommonFilters } from "./_components/filter-helpers";
 import { UpdateCommissionModal } from "../users/administration/_components/update-commission-modal";
 import { DelegationApprovalModal } from "./_components/DelegationApprovalModal";
-import { AdminWithdrawRequests } from "./_components/AdminWithdrawRequests";
 import Image from "next/image";
 
 export default function DepositsManagementPage() {
@@ -115,10 +113,10 @@ export default function DepositsManagementPage() {
   const [restaurantTransactionStatusFilter, setRestaurantTransactionStatusFilter] = useState("all");
   const [traderTransactionStatusFilter, setTraderTransactionStatusFilter] = useState("all");
   const [showDepositModal, setShowDepositModal] = useState(false);
-  const [showOTPModal, setShowOTPModal] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [sessionId, setSessionId] = useState("");
   const [isOTPLoading, setIsOTPLoading] = useState(false);
+  const [showOTPSection, setShowOTPSection] = useState(false);
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   const [transactionDetails, setTransactionDetails] = useState<any>(null);
@@ -135,7 +133,6 @@ export default function DepositsManagementPage() {
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [orderLoading, setOrderLoading] = useState(false);
   const [activeWalletTab, setActiveWalletTab] = useState("restaurants");
-  const [showDelegationModal, setShowDelegationModal] = useState(false);
   const [delegationCode, setDelegationCode] = useState("");
   const [isDelegationLoading, setIsDelegationLoading] = useState(false);
   const [pendingDepositData, setPendingDepositData] = useState<any>(null);
@@ -158,6 +155,15 @@ export default function DepositsManagementPage() {
   const [withdrawalTransactions, setWithdrawalTransactions] = useState<any[]>([]);
   const [withdrawalTransactionPagination, setWithdrawalTransactionPagination] = useState({ page: 1, limit: 5, total: 0, totalPages: 0 });
   const [withdrawalTransactionsLoading, setWithdrawalTransactionsLoading] = useState(false);
+  const [delegationHistory, setDelegationHistory] = useState<any[]>([]);
+  const [delegationHistoryLoading, setDelegationHistoryLoading] = useState(false);
+  const [delegationHistoryPagination, setDelegationHistoryPagination] = useState({
+    page: 1,
+    limit: 5,
+    total: 0,
+    totalPages: 0,
+  });
+  const [selectedTraderForHistory, setSelectedTraderForHistory] = useState<string | null>(null);
 
   const restaurantFilters = useMemo(() => {
     return [
@@ -250,6 +256,10 @@ export default function DepositsManagementPage() {
           setShowCommissionModal(true);
         }
       },
+      onViewHistory: (traderId: string) => {
+        setSelectedTraderForHistory(traderId);
+        fetchDelegationHistory(1, delegationHistoryPagination.limit, traderId);
+      },
       currentPage: traderPagination.page,
       pageSize: 20,
       walletType: "trader",
@@ -327,6 +337,10 @@ export default function DepositsManagementPage() {
     });
   }, [withdrawalTransactionPagination.page, withdrawalTransactionPagination.limit]);
 
+  const delegationHistoryColumns = useMemo(() => {
+    return createDelegationHistoryColumns();
+  }, []);
+
   const [depositData, setDepositData] = useState({
     amount: "",
     description: "",
@@ -374,8 +388,28 @@ export default function DepositsManagementPage() {
     }
   };
 
+  const fetchDelegationHistory = async (page = 1, limit = 5, traderId?: string) => {
+    setDelegationHistoryLoading(true);
+    try {
+      const filters: any = { page, limit };
+      if (traderId) {
+        filters.traderId = traderId;
+      }
+      const response = await traderService.getAllDelegationHistory(filters);
+      if (response && response.data) {
+        setDelegationHistory(response.data);
+        if (response.pagination) {
+          setDelegationHistoryPagination(response.pagination);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch delegation history:", error);
+    } finally {
+      setDelegationHistoryLoading(false);
+    }
+  };
+
   const fetchRestaurantWallets = async (page = 1, search = restaurantSearchQuery, statusFilter = restaurantStatusFilter, limit = restaurantPagination.limit) => {
-    setRestaurantWalletsLoading(true);
     try {
       const filters: any = {
         page,
@@ -660,6 +694,7 @@ export default function DepositsManagementPage() {
           fetchTraderTransactions(1),
           fetchTransactionStats(),
           fetchRestaurants(),
+          fetchDelegationHistory(1),
         ]);
       } catch (error) {
         console.error("Error in initial data fetch:", error);
@@ -809,13 +844,24 @@ export default function DepositsManagementPage() {
       return;
     }
 
-    setPendingDepositData({
-      restaurantId: selectedRestaurantId,
-      amount: parseFloat(depositData.amount),
-      description: depositData.description || "Admin deposit for promotional credit",
-    });
-    setShowDepositModal(false);
-    setShowDelegationModal(true);
+    setIsDepositLoading(true);
+    try {
+      const response = await walletService.adminDepositRequestOTP({
+        restaurantId: selectedRestaurantId,
+        amount: parseFloat(depositData.amount),
+        description: depositData.description || "Admin deposit for promotional credit",
+      });
+
+      if (response.requiresOTP && response.sessionId) {
+        setSessionId(response.sessionId);
+        setShowOTPSection(true);
+        toast.success(response.message || "OTP sent for verification");
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to request OTP");
+    } finally {
+      setIsDepositLoading(false);
+    }
   };
 
   const handleDelegationApproval = async () => {
@@ -833,7 +879,7 @@ export default function DepositsManagementPage() {
     try {
       await traderService.approveDelegation(selectedTraderId, parseFloat(delegationCommission));
       toast.success("Delegation approved successfully");
-      setShowDelegationModal(false);
+      // setShowDelegationModal(false);
       setDelegationCode("");
       setSelectedTraderId("");
       setDelegationCommission("2");
@@ -854,7 +900,6 @@ export default function DepositsManagementPage() {
 
       if (response.requiresOTP && response.sessionId) {
         setSessionId(response.sessionId);
-        setShowOTPModal(true);
         toast.success(response.message || "OTP sent for verification");
       }
     } catch (error: any) {
@@ -880,7 +925,8 @@ export default function DepositsManagementPage() {
 
       if (response.data?.success) {
         toast.success("Deposit successful!");
-        setShowOTPModal(false);
+        setShowDepositModal(false);
+        setShowOTPSection(false);
         setOtpCode("");
         setSessionId("");
         setDepositData({ amount: "", description: "" });
@@ -1053,7 +1099,10 @@ export default function DepositsManagementPage() {
             <div className="mx-4 shrink-0">
               <nav className="-mb-px flex space-x-8">
                 <button
-                  onClick={() => setActiveWalletTab("restaurants")}
+                  onClick={() => {
+                    setActiveWalletTab("restaurants");
+                    setSelectedTraderForHistory(null);
+                  }}
                   className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
                     activeWalletTab === "restaurants"
                       ? "border-green-500 text-green-600"
@@ -1063,7 +1112,10 @@ export default function DepositsManagementPage() {
                   Restaurant Wallets
                 </button>
                 <button
-                  onClick={() => setActiveWalletTab("traders")}
+                  onClick={() => {
+                    setActiveWalletTab("traders");
+                    setSelectedTraderForHistory(null);
+                  }}
                   className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
                     activeWalletTab === "traders"
                       ? "border-green-500 text-green-600"
@@ -1092,8 +1144,7 @@ export default function DepositsManagementPage() {
             <div className="w-full lg:w-1/2 lg:border-r border-gray-200 flex flex-col">
               <div className="p-4 border-gray-200 flex-shrink-0">
                 <p className="text-sm text-gray-600">
-                  {activeWalletTab === "restaurants" ? "Restaurant" : "Trader"}{" "}
-                  Wallets
+                  {activeWalletTab === "restaurants" ? "Restaurant" : "Trader"} Wallets
                 </p>
               </div>
 
@@ -1114,9 +1165,6 @@ export default function DepositsManagementPage() {
                       showAddButton={true}
                       addButtonLabel="New Deposit"
                       onAddButton={() => setShowDepositModal(true)}
-                      showSecondaryButton={true}
-                      secondaryButtonLabel="Withdrawals"
-                      onSecondaryButton={() => setShowWithdrawRequestsModal(true)}
                       pagination={restaurantPagination}
                       isLoading={restaurantWalletsLoading}
                       onPaginationChange={(page, limit) => {
@@ -1224,14 +1272,60 @@ export default function DepositsManagementPage() {
               )}
             </div>
 
-            {/* Right side - Transactions */}
+            {/* Right side - Transactions or Delegation History */}
             <div className="w-full lg:w-1/2 flex flex-col">
               <div className="p-4 border-gray-200 flex-shrink-0">
                 <p className="text-sm text-gray-600">
-                  {activeWalletTab === "withdrawals" ? "Trader" : activeWalletTab === "restaurants" ? "Restaurant" : "Trader"}{" "}
-                  Transactions
+                  {selectedTraderForHistory 
+                    ? "Delegation History" 
+                    : activeWalletTab === "withdrawals" 
+                    ? "Trader Transactions" 
+                    : activeWalletTab === "restaurants" 
+                    ? "Restaurant Transactions" 
+                    : "Trader Transactions"}
                 </p>
+                {selectedTraderForHistory && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedTraderForHistory(null)}
+                    className="text-xs mt-2"
+                  >
+                    ← Back to Transactions
+                  </Button>
+                )}
               </div>
+
+              {selectedTraderForHistory && activeWalletTab === "traders" && (
+                <div className="flex-1 overflow-hidden px-4">
+                  <div className="h-full pb-10 overflow-x-auto overflow-y-auto">
+                    <DataTable
+                      columns={delegationHistoryColumns}
+                      data={delegationHistory as DelegationHistoryData[]}
+                      showSearch={false}
+                      showExport={false}
+                      showColumnVisibility={false}
+                      showPagination={true}
+                      showRowSelection={false}
+                      showAddButton={false}
+                      pagination={delegationHistoryPagination}
+                      isLoading={delegationHistoryLoading}
+                      onPaginationChange={(page, limit) => {
+                        setDelegationHistoryPagination((prev) => ({ ...prev, page, limit }));
+                        fetchDelegationHistory(page, limit, selectedTraderForHistory || undefined);
+                      }}
+                      onPageSizeChange={(newPageSize) => {
+                        setDelegationHistoryPagination((prev) => ({
+                          ...prev,
+                          limit: newPageSize,
+                          page: 1,
+                        }));
+                        fetchDelegationHistory(1, newPageSize, selectedTraderForHistory || undefined);
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
 
               {activeWalletTab === "restaurants" && (
                 <div className="flex-1 overflow-hidden px-4">
@@ -1279,7 +1373,7 @@ export default function DepositsManagementPage() {
                 </div>
               )}
 
-              {activeWalletTab === "traders" && (
+              {activeWalletTab === "traders" && !selectedTraderForHistory && (
                 <div className="flex-1 overflow-hidden px-4">
                   <div className="h-full pb-10 overflow-x-auto overflow-y-auto">
                     <DataTable
@@ -1357,95 +1451,133 @@ export default function DepositsManagementPage() {
       </Card>
 
       {/* Deposit Modal */}
-      <Dialog open={showDepositModal} onOpenChange={setShowDepositModal}>
+      <Dialog open={showDepositModal} onOpenChange={(open) => {
+        setShowDepositModal(open);
+        if (!open) {
+          setShowOTPSection(false);
+          setOtpCode("");
+          setSessionId("");
+          setSelectedRestaurantId("");
+          setDepositData({ amount: "", description: "" });
+        }
+      }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-green-600">
-              Add New Deposit
+            <DialogTitle className="text-green-700">
+              {showOTPSection ? "Verify OTP" : "Add New Deposit"}
             </DialogTitle>
             <DialogDescription>
-              Add promotional credit or top up restaurant wallet manually
+              {showOTPSection 
+                ? "Enter the 6-digit OTP sent to complete the deposit"
+                : "Add promotional credit or top up restaurant wallet manually"}
             </DialogDescription>
           </DialogHeader>
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              handleDeposit();
+              if (showOTPSection) {
+                handleOTPVerification();
+              } else {
+                handleDeposit();
+              }
             }}
             className="space-y-6"
           >
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="restaurant">Select Restaurant *</Label>
-                <Select
-                  value={selectedRestaurantId}
-                  onValueChange={(value) => setSelectedRestaurantId(value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Search and select restaurant..." />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[200px] overflow-hidden">
-                    <div className="sticky top-0 bg-white z-50 p-2 border-b border-gray-50">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <Input
-                          placeholder="Type to search..."
-                          className="h-10 pl-10 bg-gray-50 border-none rounded-lg text-sm"
-                          value={depositSearchQuery}
-                          onChange={(e) =>
-                            handleDepositSearchChange(e.target.value)
-                          }
-                          onKeyDown={(e) => e.stopPropagation()}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </div>
-                    </div>
-                    <div className="max-h-[150px] overflow-y-auto">
-                      {filteredRestaurants.map((res) => (
-                        <SelectItem
-                          key={res.id}
-                          value={res.id}
-                          className="hover:text-green-600 hover:bg-green-50"
-                        >
-                          {res.name}
-                        </SelectItem>
-                      ))}
-                    </div>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="amount">Amount (RWF) *</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  required
-                  placeholder="250000"
-                  value={depositData.amount}
-                  onChange={(e) =>
-                    setDepositData((prev) => ({
-                      ...prev,
-                      amount: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-            </div>
+            {!showOTPSection && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="restaurant">Select Restaurant *</Label>
+                    <Select
+                      value={selectedRestaurantId}
+                      onValueChange={(value) => setSelectedRestaurantId(value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Search and select restaurant..." />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[200px] overflow-hidden">
+                        <div className="sticky top-0 bg-white z-50 p-2 border-b border-gray-50">
+                          <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <Input
+                              placeholder="Type to search..."
+                              className="h-10 pl-10 bg-gray-50 border-none rounded-lg text-sm"
+                              value={depositSearchQuery}
+                              onChange={(e) =>
+                                handleDepositSearchChange(e.target.value)
+                              }
+                              onKeyDown={(e) => e.stopPropagation()}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                        </div>
+                        <div className="max-h-[150px] overflow-y-auto">
+                          {filteredRestaurants.map((res) => (
+                            <SelectItem
+                              key={res.id}
+                              value={res.id}
+                              className="hover:text-green-600 hover:bg-green-50"
+                            >
+                              {res.name}
+                            </SelectItem>
+                          ))}
+                        </div>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="amount">Amount (RWF) *</Label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      required
+                      placeholder="250000"
+                      value={depositData.amount}
+                      onChange={(e) =>
+                        setDepositData((prev) => ({
+                          ...prev,
+                          amount: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                placeholder="Admin deposit for promotional credit"
-                value={depositData.description}
-                onChange={(e) =>
-                  setDepositData((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Admin deposit for promotional credit"
+                    value={depositData.description}
+                    onChange={(e) =>
+                      setDepositData((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </>
+            )}
+
+            {showOTPSection && (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="otp" className="text-sm font-medium">
+                    OTP Code *
+                  </Label>
+                  <Input
+                    id="otp"
+                    type="text"
+                    placeholder="000000"
+                    maxLength={6}
+                    className="h-14 text-center text-xl font-bold tracking-widest"
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="flex justify-end gap-3 pt-6">
               <Button
@@ -1453,6 +1585,9 @@ export default function DepositsManagementPage() {
                 variant="outline"
                 onClick={() => {
                   setShowDepositModal(false);
+                  setShowOTPSection(false);
+                  setOtpCode("");
+                  setSessionId("");
                   setSelectedRestaurantId("");
                   setDepositData({ amount: "", description: "" });
                 }}
@@ -1462,18 +1597,18 @@ export default function DepositsManagementPage() {
               <Button
                 type="submit"
                 disabled={
-                  isDepositLoading ||
-                  !selectedRestaurantId ||
-                  !depositData.amount
+                  showOTPSection
+                    ? isOTPLoading || otpCode.length !== 6
+                    : isDepositLoading || !selectedRestaurantId || !depositData.amount
                 }
                 className="bg-green-600 hover:bg-green-700"
               >
-                {isDepositLoading ? (
+                {(isDepositLoading || isOTPLoading) ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : (
                   <Plus className="h-4 w-4 mr-2" />
                 )}
-                Request OTP
+                {showOTPSection ? "Complete Top-up" : "Request OTP"}
               </Button>
             </div>
           </form>
@@ -1491,142 +1626,7 @@ export default function DepositsManagementPage() {
         }}
       />
 
-      {/* Delegation Approval Modal */}
-      <Dialog open={showDelegationModal} onOpenChange={setShowDelegationModal}>
-        <DialogContent className="sm:max-w-md bg-white border-none rounded-3xl shadow-2xl overflow-hidden p-0">
-          <div className="bg-blue-700 p-8 text-white relative">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
-            <DialogHeader className="text-left relative z-10">
-              <DialogTitle className="text-2xl font-black tracking-tight">
-                Delegation Approval
-              </DialogTitle>
-              <DialogDescription className="text-blue-50/80 font-medium">
-                Approve trader delegation to proceed with deposit
-              </DialogDescription>
-            </DialogHeader>
-          </div>
-          <div className="p-8 space-y-6">
-            <div className="space-y-2">
-              <Label
-                htmlFor="traderId"
-                className="text-xs font-bold tracking-wider text-gray-500 ml-1"
-              >
-                Trader ID *
-              </Label>
-              <Input
-                id="traderId"
-                type="text"
-                placeholder="Enter trader ID"
-                className="h-12 rounded-xl border-gray-100 bg-gray-50/50 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                value={selectedTraderId}
-                onChange={(e) => setSelectedTraderId(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label
-                htmlFor="commission"
-                className="text-xs font-bold tracking-wider text-gray-500 ml-1"
-              >
-                Commission Rate (%) *
-              </Label>
-              <Input
-                id="commission"
-                type="number"
-                step="0.1"
-                min="0"
-                placeholder="2"
-                className="h-12 rounded-xl border-gray-100 bg-gray-50/50 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-                value={delegationCommission}
-                onChange={(e) => setDelegationCommission(e.target.value)}
-              />
-            </div>
-          </div>
-          <DialogFooter className="p-8 pt-0 flex gap-3">
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setShowDelegationModal(false);
-                setSelectedTraderId("");
-                setDelegationCommission("2");
-                setPendingDepositData(null);
-                setShowDepositModal(true);
-              }}
-              className="flex-1 h-12 rounded-xl font-bold text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleDelegationApproval}
-              disabled={isDelegationLoading || !selectedTraderId || !delegationCommission}
-              className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-200 transition-all active:scale-95 disabled:opacity-70"
-            >
-              {isDelegationLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin mr-2" />
-              ) : null}
-              Approve & Continue
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
-      {/* OTP Verification Modal */}
-      <Dialog open={showOTPModal} onOpenChange={setShowOTPModal}>
-        <DialogContent className="sm:max-w-md bg-white border-none rounded-3xl shadow-2xl overflow-hidden p-0">
-          <div className="bg-green-700 p-8 text-white relative">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
-            <DialogHeader className="text-left relative z-10">
-              <DialogTitle className="text-2xl font-black tracking-tight">
-                Verify OTP
-              </DialogTitle>
-              <DialogDescription className="text-green-50/80 font-medium">
-                Enter the 6-digit OTP sent to verify the deposit
-              </DialogDescription>
-            </DialogHeader>
-          </div>
-          <div className="p-8 space-y-6">
-            <div className="space-y-2">
-              <Label
-                htmlFor="otp"
-                className="text-xs font-bold tracking-wider text-gray-500 ml-1"
-              >
-                OTP Code
-              </Label>
-              <Input
-                id="otp"
-                type="text"
-                placeholder="000000"
-                maxLength={6}
-                className="h-14 text-center text-2xl font-black rounded-xl border-gray-100 bg-gray-50/50 focus:ring-green-500/20 focus:border-green-500 transition-all placeholder:text-gray-300 tracking-widest"
-                value={otpCode}
-                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-              />
-            </div>
-          </div>
-          <DialogFooter className="p-8 pt-0 flex gap-3">
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setShowOTPModal(false);
-                setOtpCode("");
-                setSessionId("");
-              }}
-              className="flex-1 h-12 rounded-xl font-bold text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleOTPVerification}
-              disabled={isOTPLoading || otpCode.length !== 6}
-              className="flex-1 h-12 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold shadow-lg shadow-green-200 transition-all active:scale-95 disabled:opacity-70"
-            >
-              {isOTPLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin mr-2" />
-              ) : null}
-              Verify & Deposit
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Transaction Details Modal */}
       <Dialog
@@ -2009,12 +2009,6 @@ export default function DepositsManagementPage() {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Admin Withdraw Requests Modal */}
-      <AdminWithdrawRequests
-        isOpen={showWithdrawRequestsModal}
-        onClose={() => setShowWithdrawRequestsModal(false)}
-      />
     </div>
   );
 }

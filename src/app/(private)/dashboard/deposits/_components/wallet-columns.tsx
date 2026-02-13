@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
@@ -41,6 +42,7 @@ interface WalletColumnsProps {
   onUpdateCommission?: (traderId: string) => void;
   onApproveDelegation?: (traderId: string, currentCommission: number) => void;
   onRevokeDelegation?: (traderId: string) => void;
+  onViewHistory?: (traderId: string) => void;
   currentPage: number;
   pageSize: number;
   walletType?: "restaurant" | "trader";
@@ -122,6 +124,7 @@ export const createWalletColumns = ({
   onApproveDelegation,
   onRevokeDelegation,
   onUpdateCommission,
+    onViewHistory,
   currentPage,
   pageSize,
   walletType = "restaurant",
@@ -255,7 +258,8 @@ export const createWalletColumns = ({
                 Deposit
               </DropdownMenuItem>
             )}
-            {walletType === "trader" && wallet.traderId && onApproveDelegation && (
+            {walletType === "trader" && wallet.traderId && onApproveDelegation && 
+              (wallet.delegationStatus === "PENDING" || wallet.delegationStatus === "APPROVED") && (
               <DropdownMenuItem
                 onClick={() => onApproveDelegation(wallet.traderId!, wallet.commission || 5)}
               >
@@ -267,6 +271,13 @@ export const createWalletColumns = ({
                 onClick={() => onUpdateCommission(wallet.traderId!)}
               >
                 Update Commission
+              </DropdownMenuItem>
+            )}
+            {walletType === "trader" && wallet.traderId && onViewHistory && (
+              <DropdownMenuItem
+                onClick={() => onViewHistory(wallet.traderId!)}
+              >
+                View History
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
