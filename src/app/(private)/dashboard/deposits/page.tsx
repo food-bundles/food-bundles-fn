@@ -56,9 +56,11 @@ import { DataTable } from "@/components/data-table";
 import { TableFilters } from "@/components/filters";
 import { createWalletColumns, WalletData } from "./_components/wallet-columns";
 import { createTransactionColumns, TransactionData } from "./_components/transaction-columns";
+import { createWithdrawalColumns, WithdrawalData } from "./_components/withdrawal-columns";
 import { createCommonFilters } from "./_components/filter-helpers";
 import { UpdateCommissionModal } from "../users/administration/_components/update-commission-modal";
 import { DelegationApprovalModal } from "./_components/DelegationApprovalModal";
+import { AdminWithdrawRequests } from "./_components/AdminWithdrawRequests";
 import Image from "next/image";
 
 export default function DepositsManagementPage() {
@@ -144,6 +146,18 @@ export default function DepositsManagementPage() {
   const [delegationCurrentCommission, setDelegationCurrentCommission] = useState(5);
   const [showCommissionModal, setShowCommissionModal] = useState(false);
   const [selectedTrader, setSelectedTrader] = useState<any>(null);
+  const [showWithdrawRequestsModal, setShowWithdrawRequestsModal] = useState(false);
+  const [withdrawalRequests, setWithdrawalRequests] = useState<any[]>([]);
+  const [withdrawalPagination, setWithdrawalPagination] = useState({ page: 1, limit: 5, total: 0, totalPages: 0 });
+  const [withdrawalLoading, setWithdrawalLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [otpModal, setOtpModal] = useState<{ sessionId: string; withdrawId: string } | null>(null);
+  const [otp, setOtp] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [selectedWithdrawal, setSelectedWithdrawal] = useState<any>(null);
+  const [withdrawalTransactions, setWithdrawalTransactions] = useState<any[]>([]);
+  const [withdrawalTransactionPagination, setWithdrawalTransactionPagination] = useState({ page: 1, limit: 5, total: 0, totalPages: 0 });
+  const [withdrawalTransactionsLoading, setWithdrawalTransactionsLoading] = useState(false);
 
   const restaurantFilters = useMemo(() => {
     return [
@@ -264,10 +278,101 @@ export default function DepositsManagementPage() {
     });
   }, [traderTransactionPagination.page, traderTransactionPagination.limit]);
 
+  const withdrawalColumns = useMemo(() => {
+    return createWithdrawalColumns({
+      onApprove: (withdrawId: string) => {
+        setActionLoading(withdrawId);
+        traderService.approveWithdrawal(withdrawId)
+          .then((response) => {
+            toast.success(response.message || "OTP sent to trader");
+            setOtpModal({ sessionId: response.sessionId, withdrawId });
+          })
+          .catch((error: any) => {
+            toast.error(error.response?.data?.message || "Failed to approve withdrawal");
+          })
+          .finally(() => {
+            setActionLoading(null);
+          });
+      },
+      onCancel: (withdrawId: string) => {
+        setActionLoading(withdrawId);
+        traderService.cancelWithdrawal(withdrawId)
+          .then((response) => {
+            toast.success(response.message || "Withdrawal cancelled");
+            fetchWithdrawalRequests(withdrawalPagination.page);
+          })
+          .catch((error: any) => {
+            toast.error(error.response?.data?.message || "Failed to cancel withdrawal");
+          })
+          .finally(() => {
+            setActionLoading(null);
+          });
+      },
+      onViewTrader: (withdrawal: any) => {
+        setSelectedWithdrawal(withdrawal);
+        fetchWithdrawalTransactions(1, withdrawal.wallet?.trader?.username || "");
+      },
+      actionLoading,
+    });
+  }, [actionLoading, withdrawalPagination.page]);
+
+  const withdrawalTransactionColumns = useMemo(() => {
+    return createTransactionColumns({
+      onViewDetails: (transaction: any) => {
+        handleTransactionClick(transaction);
+      },
+      currentPage: withdrawalTransactionPagination.page,
+      pageSize: withdrawalTransactionPagination.limit,
+      walletType: "trader",
+    });
+  }, [withdrawalTransactionPagination.page, withdrawalTransactionPagination.limit]);
+
   const [depositData, setDepositData] = useState({
     amount: "",
     description: "",
   });
+
+  const handleApproveWithdrawal = async (withdrawId: string) => {
+    setActionLoading(withdrawId);
+    try {
+      const response = await traderService.approveWithdrawal(withdrawId);
+      toast.success(response.message || "OTP sent to trader");
+      setOtpModal({ sessionId: response.sessionId, withdrawId });
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to approve withdrawal");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleVerifyOTP = async () => {
+    if (!otp || !otpModal) return;
+    setVerifying(true);
+    try {
+      const response = await traderService.verifyWithdrawalOTP({ sessionId: otpModal.sessionId, otp });
+      toast.success(response.message || "Withdrawal completed successfully");
+      setOtpModal(null);
+      setOtp("");
+      fetchWithdrawalRequests(withdrawalPagination.page);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Invalid OTP");
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleCancelWithdrawal = async (withdrawId: string) => {
+    setActionLoading(withdrawId);
+    try {
+      const response = await traderService.cancelWithdrawal(withdrawId);
+      toast.success(response.message || "Withdrawal cancelled");
+      fetchWithdrawalRequests(withdrawalPagination.page);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to cancel withdrawal");
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const fetchRestaurantWallets = async (page = 1, search = restaurantSearchQuery, statusFilter = restaurantStatusFilter, limit = restaurantPagination.limit) => {
     setRestaurantWalletsLoading(true);
@@ -421,6 +526,41 @@ export default function DepositsManagementPage() {
     }
   };
 
+  const fetchWithdrawalRequests = async (page = 1, limit = withdrawalPagination.limit) => {
+    setWithdrawalLoading(true);
+    try {
+      const response = await traderService.getAllWithdrawRequests({ page, limit });
+      setWithdrawalRequests(response.data);
+      setWithdrawalPagination(response.pagination);
+    } catch (error) {
+      console.error("Failed to fetch withdrawal requests:", error);
+    } finally {
+      setWithdrawalLoading(false);
+    }
+  };
+
+  const fetchWithdrawalTransactions = async (page = 1, search = "", limit = withdrawalTransactionPagination.limit) => {
+    setWithdrawalTransactionsLoading(true);
+    try {
+      const filters: any = { page, limit, type: "WITHDRAWAL" };
+      if (search) filters.search = search;
+      const response = await walletService.getTraderTransactions(filters);
+      if (response && response.data) {
+        setWithdrawalTransactions(response.data);
+        setWithdrawalTransactionPagination({
+          page: response.pagination?.page || page,
+          limit: limit,
+          total: response.pagination?.total || 0,
+          totalPages: response.pagination?.totalPages || 0,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch withdrawal transactions:", error);
+    } finally {
+      setWithdrawalTransactionsLoading(false);
+    }
+  };
+
   const fetchTransactionStats = async () => {
     try {
       const topUpResponse = await walletService.getAllWalletTransactions({
@@ -529,6 +669,13 @@ export default function DepositsManagementPage() {
     };
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (activeWalletTab === "withdrawals") {
+      fetchWithdrawalRequests(1);
+      fetchWithdrawalTransactions(1);
+    }
+  }, [activeWalletTab]);
 
   // Refetch restaurant wallets when search query changes
   useEffect(() => {
@@ -925,6 +1072,16 @@ export default function DepositsManagementPage() {
                 >
                   Trader Wallets
                 </button>
+                <button
+                  onClick={() => setActiveWalletTab("withdrawals")}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
+                    activeWalletTab === "withdrawals"
+                      ? "border-green-500 text-green-600"
+                      : "border-transparent text-gray-700 hover:text-gray-700 hover:border-gray-300"
+                  }`}
+                >
+                  Withdrawals
+                </button>
               </nav>
             </div>
           </CardTitle>
@@ -957,6 +1114,9 @@ export default function DepositsManagementPage() {
                       showAddButton={true}
                       addButtonLabel="New Deposit"
                       onAddButton={() => setShowDepositModal(true)}
+                      showSecondaryButton={true}
+                      secondaryButtonLabel="Withdrawals"
+                      onSecondaryButton={() => setShowWithdrawRequestsModal(true)}
                       pagination={restaurantPagination}
                       isLoading={restaurantWalletsLoading}
                       onPaginationChange={(page, limit) => {
@@ -1035,13 +1195,40 @@ export default function DepositsManagementPage() {
                   </div>
                 </div>
               )}
+
+              {activeWalletTab === "withdrawals" && (
+                <div className="flex-1 overflow-hidden px-4">
+                  <div className="h-full pb-10 overflow-x-auto overflow-y-auto">
+                    <DataTable
+                      columns={withdrawalColumns}
+                      data={withdrawalRequests as WithdrawalData[]}
+                      showSearch={false}
+                      showExport={true}
+                      showColumnVisibility={false}
+                      showPagination={true}
+                      showRowSelection={false}
+                      showAddButton={false}
+                      pagination={withdrawalPagination}
+                      isLoading={withdrawalLoading}
+                      onPaginationChange={(page, limit) => {
+                        setWithdrawalPagination((prev) => ({ ...prev, page, limit }));
+                        fetchWithdrawalRequests(page, limit);
+                      }}
+                      onPageSizeChange={(newPageSize) => {
+                        setWithdrawalPagination((prev) => ({ ...prev, limit: newPageSize, page: 1 }));
+                        fetchWithdrawalRequests(1, newPageSize);
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Right side - Transactions */}
             <div className="w-full lg:w-1/2 flex flex-col">
               <div className="p-4 border-gray-200 flex-shrink-0">
                 <p className="text-sm text-gray-600">
-                  {activeWalletTab === "restaurants" ? "Restaurant" : "Trader"}{" "}
+                  {activeWalletTab === "withdrawals" ? "Trader" : activeWalletTab === "restaurants" ? "Restaurant" : "Trader"}{" "}
                   Transactions
                 </p>
               </div>
@@ -1132,6 +1319,33 @@ export default function DepositsManagementPage() {
                           traderTransactionTypeFilter,
                           traderTransactionStatusFilter,
                         );
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {activeWalletTab === "withdrawals" && (
+                <div className="flex-1 overflow-hidden px-4">
+                  <div className="h-full pb-10 overflow-x-auto overflow-y-auto">
+                    <DataTable
+                      columns={withdrawalTransactionColumns}
+                      data={withdrawalTransactions as TransactionData[]}
+                      showSearch={false}
+                      showExport={true}
+                      showColumnVisibility={false}
+                      showPagination={true}
+                      showRowSelection={false}
+                      showAddButton={false}
+                      pagination={withdrawalTransactionPagination}
+                      isLoading={withdrawalTransactionsLoading}
+                      onPaginationChange={(page, limit) => {
+                        setWithdrawalTransactionPagination((prev) => ({ ...prev, page, limit }));
+                        fetchWithdrawalTransactions(page, selectedWithdrawal?.wallet?.trader?.username || "", limit);
+                      }}
+                      onPageSizeChange={(newPageSize) => {
+                        setWithdrawalTransactionPagination((prev) => ({ ...prev, limit: newPageSize, page: 1 }));
+                        fetchWithdrawalTransactions(1, selectedWithdrawal?.wallet?.trader?.username || "", newPageSize);
                       }}
                     />
                   </div>
@@ -1763,6 +1977,43 @@ export default function DepositsManagementPage() {
         onUpdate={() => {
           fetchTraderWallets(traderPagination.page);
         }}
+      />
+
+      {/* OTP Verification Modal for Withdrawals */}
+      <Dialog open={!!otpModal} onOpenChange={() => { setOtpModal(null); setOtp(""); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Verify OTP</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">Enter the OTP sent to the trader</p>
+            <div>
+              <Label htmlFor="otp">OTP Code</Label>
+              <Input
+                id="otp"
+                placeholder="Enter 6-digit OTP"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                maxLength={6}
+              />
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={() => { setOtpModal(null); setOtp(""); }} className="flex-1">
+                Cancel
+              </Button>
+              <Button onClick={handleVerifyOTP} disabled={verifying || otp.length !== 6} className="flex-1 bg-green-600 hover:bg-green-700">
+                {verifying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Verify
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Admin Withdraw Requests Modal */}
+      <AdminWithdrawRequests
+        isOpen={showWithdrawRequestsModal}
+        onClose={() => setShowWithdrawRequestsModal(false)}
       />
     </div>
   );

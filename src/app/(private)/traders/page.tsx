@@ -19,6 +19,8 @@ import {
 } from "@/app/services/traderService";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TopUpModal } from "./_components/TopUpModal";
+import { WithdrawModal } from "./_components/WithdrawModal";
+import { WithdrawRequests } from "./_components/WithdrawRequests";
 import toast from "react-hot-toast";
 import { formatDateTime } from "@/lib/reusableFunctions";
 
@@ -34,6 +36,7 @@ export default function TraderDashboardPage() {
   const [transactionsLoading, setTransactionsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [creating, setCreating] = useState(false);
 
   const fetchWallet = async () => {
@@ -108,32 +111,15 @@ export default function TraderDashboardPage() {
 
       if (desc.includes("commission")) {
         const voucherCode = tx.description.split(" ").pop();
-        return (
-          <div>
-            <p className="text-sm  font-normal">
-              You earned a commission of{" "}
-              <span className="text-green-500">
-                {amount} {currency}
-              </span>{" "}
-              from voucher {" "}
-              <span className="font-semibold text-sm ">{voucherCode}</span>
-            </p>
-          </div>
-        );
+        return `You earned a commission of ${amount} ${currency} from voucher ${voucherCode}`;
       }
 
       if (desc.includes("loan")) {
-        return (
-          <div>
-            <p className="text-sm font-normal ">
-              A loan of{" "}
-              <span className="text-blue-500 font-medium">
-                {amount} {currency}
-              </span>{" "}
-              was approved and deducted from your wallet
-            </p>
-          </div>
-        );
+        return `A loan of ${amount} ${currency} was approved and deducted from your wallet`;
+      }
+
+      if (desc.includes("withdraw")) {
+        return `Withdraw request: ${amount} ${currency} from ${tx.withdrawType?.toLowerCase() || "balance"}`;
       }
 
       if (tx.amount > 0) {
@@ -395,12 +381,15 @@ export default function TraderDashboardPage() {
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Top Up Wallet
-                    </Button>
-                    {/* don't remove this commented codes */}
-                  {/* <Button variant="outline" className="flex-1">
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => setShowWithdrawModal(true)}
+                  >
                     <ArrowDownRight className="h-4 w-4 mr-2" />
                     Withdraw
-                  </Button> */}
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -452,10 +441,13 @@ export default function TraderDashboardPage() {
         </div>
       )}
 
-      <Card className="h-96">
-        <CardHeader className="py-3">
-          <CardTitle>Account Transactions</CardTitle>
-        </CardHeader>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <WithdrawRequests />
+        
+        <Card className="lg:col-span-2 h-96">
+          <CardHeader className="py-3">
+            <CardTitle>Account Transactions</CardTitle>
+          </CardHeader>
         <CardContent className="h-full flex flex-col pt-0">
           <div className="flex-1 overflow-y-auto pr-2" style={{ maxHeight: '280px' }}>
             {transactionsLoading ? (
@@ -546,13 +538,24 @@ export default function TraderDashboardPage() {
             </div>
           )}
         </CardContent>
-      </Card>
+        </Card>
+      </div>
 
       <TopUpModal
         isOpen={showTopUpModal}
         onClose={() => setShowTopUpModal(false)}
         onSuccess={() => {
           setShowTopUpModal(false);
+          fetchWallet();
+          fetchTransactions();
+        }}
+      />
+
+      <WithdrawModal
+        isOpen={showWithdrawModal}
+        onClose={() => setShowWithdrawModal(false)}
+        onSuccess={() => {
+          setShowWithdrawModal(false);
           fetchWallet();
           fetchTransactions();
         }}

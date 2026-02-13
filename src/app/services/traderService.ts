@@ -146,6 +146,7 @@ export interface TraderTransaction {
   description: string;
   metadata?: any;
   status: string;
+  withdrawType?: "BALANCE" | "COMMISSION";
   createdAt: string;
   updatedAt: string;
 }
@@ -168,6 +169,33 @@ export interface DelegationStatus {
   commission: number;
   delegationStatus: 'NORMAL' | 'PENDING' | 'APPROVED' | 'ACCEPTED';
   status: 'NOT_REQUESTED' | 'PENDING' | 'APPROVED' | 'ACCEPTED';
+}
+
+export interface WithdrawalRequest {
+  id: string;
+  walletId: string;
+  type: string;
+  amount: number;
+  previousBalance: number;
+  newBalance: number;
+  description: string;
+  paymentMethod: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  adminId: string | null;
+  traderId: string;
+  accountName: string;
+  accountNumber: string;
+  withdrawType: "BALANCE" | "COMMISSION";
+  otpVerified: boolean;
+  wallet?: {
+    trader: {
+      id: string;
+      username: string;
+      email: string;
+    };
+  };
 }
 
 export const traderService = {
@@ -331,6 +359,60 @@ export const traderService = {
   getTraderWalletById: async (traderId: string): Promise<{ success: boolean; data: TraderWallet }> => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.get(`/traders/${traderId}/wallet`);
+    return response.data;
+  },
+
+  // Withdrawal Management
+  requestWithdrawal: async (data: {
+    amount: number;
+    withdrawType: "BALANCE" | "COMMISSION";
+    paymentMethod: string;
+    accountNumber: string;
+    accountName: string;
+  }) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/traders/withdraw/request", data);
+    return response.data;
+  },
+
+  getMyWithdrawRequests: async (params?: {
+    status?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/traders/withdraw/my-requests", { params });
+    return response.data;
+  },
+
+  getAllWithdrawRequests: async (params?: {
+    status?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/traders/withdraw/all-requests", { params });
+    return response.data;
+  },
+
+  approveWithdrawal: async (withdrawId: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(`/traders/withdraw/${withdrawId}/approve`);
+    return response.data;
+  },
+
+  verifyWithdrawalOTP: async (data: {
+    sessionId: string;
+    otp: string;
+  }) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/traders/withdraw/verify-otp", data);
+    return response.data;
+  },
+
+  cancelWithdrawal: async (withdrawId: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.delete(`/traders/withdraw/${withdrawId}/cancel`);
     return response.data;
   },
 };
