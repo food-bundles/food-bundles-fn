@@ -103,6 +103,9 @@ interface DataTableProps<TData, TValue> {
   showAddButton?: boolean;
   addButtonLabel?: string;
   onAddButton?: () => void;
+  showSecondaryButton?: boolean;
+  secondaryButtonLabel?: string;
+  onSecondaryButton?: () => void;
 
   // Filter configuration
   filters?: FilterConfig[];
@@ -142,6 +145,9 @@ export function DataTable<TData, TValue>({
   showAddButton = false,
   addButtonLabel,
   onAddButton,
+  showSecondaryButton = false,
+  secondaryButtonLabel,
+  onSecondaryButton,
   filters = [],
   showColumnVisibility = true,
   showPagination = true,
@@ -254,6 +260,14 @@ export function DataTable<TData, TValue>({
               >
                 <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
                 <span className=" ">{addButtonLabel}</span>
+              </button>
+            )}
+            {showSecondaryButton && secondaryButtonLabel && onSecondaryButton && (
+              <button
+                onClick={onSecondaryButton}
+                className="bg-blue-700 hover:bg-blue-600 text-xs px-2 sm:px-3 py-2 text-white rounded cursor-pointer flex items-center gap-1 sm:gap-2 whitespace-nowrap"
+              >
+                <span className=" ">{secondaryButtonLabel}</span>
               </button>
             )}
             {/* Export button */}
