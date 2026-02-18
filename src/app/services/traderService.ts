@@ -8,6 +8,7 @@ export interface TraderWallet {
   pendingApprovedAmount: number;
   commissionEarned: number;
   commission: number;
+  totalDeposited: number;
   currency: string;
   isActive: boolean;
   createdAt: string;

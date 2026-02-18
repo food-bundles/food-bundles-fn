@@ -258,7 +258,7 @@ export default function TraderDashboardPage() {
   const stats = [
     {
       title: "Balance deposted in FB",
-      value: `${(wallet?.balance || 0).toLocaleString()} RWF`,
+      value: `${wallet?.totalDeposited.toLocaleString()} RWF`,
       icon: Wallet,
       color: "text-green-600",
       bgColor: "bg-green-100",
@@ -376,29 +376,34 @@ export default function TraderDashboardPage() {
             <CardContent>
               <div className="space-y-4">
                 <div className="bg-gray-100 rounded-lg p-6 text-gray-900">
-                  <div className="flex items-center justify-between">
+                  <div className="grid grid-cols-3 gap-4 mb-4">
                     <div>
-                      <p className="text-gray-700 text-sm">
-                        Available Balance
+                      <p className="text-gray-700 text-xs mb-1">Total Deposited</p>
+                      <p className="text-lg font-bold">
+                        {wallet.totalDeposited.toLocaleString()} {wallet.currency}
                       </p>
-                      <p className="text-2xl font-bold">
+                    </div>
+                    <div>
+                      <p className="text-gray-700 text-xs mb-1">Available Balance</p>
+                      <p className="text-lg font-bold text-green-600">
+                        {wallet.availableBalance.toLocaleString()} {wallet.currency}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-700 text-xs mb-1">Current Balance</p>
+                      <p className="text-lg font-bold text-yellow-600">
                         {wallet.balance.toLocaleString()} {wallet.currency}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-gray-700 text-sm">Status</p>
-                      <p className="text-lg font-semibold text-yellow-700">
-                        {wallet.isActive ? "Active" : "Inactive"}
-                      </p>
-                    </div>
                   </div>
-                  <div className="mt-4 pt-4 border-t border-gray-400">
-                    <div className="flex justify-between text-sm text-gray-600">
-                      <span>Wallet Type: Food Store</span>
-                      <span>
-                        Transactions: {wallet._count?.transactions || 0}
-                      </span>
-                    </div>
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-400">
+                    <span className="text-sm text-gray-600">Wallet Type: Food Store</span>
+                    <span className="text-sm text-gray-600">
+                      Transactions: {wallet._count?.transactions || 0}
+                    </span>
+                    <span className="text-lg font-semibold text-yellow-700">
+                      {wallet.isActive ? "Active" : "Inactive"}
+                    </span>
                   </div>
                 </div>
 
