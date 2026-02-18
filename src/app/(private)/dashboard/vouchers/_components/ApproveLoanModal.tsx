@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Loader2 } from "lucide-react";
 import { ILoanApplication, VoucherType } from "@/lib/types";
 import { SelectTraderModal } from "./SelectTraderModal";
+import { voucherService } from "@/app/services/voucherService";
 import { traderService } from "@/app/services/traderService";
 import toast from "react-hot-toast";
 
@@ -29,6 +30,27 @@ export default function ApproveLoanModal({ isOpen, onClose, selectedApp, onAppro
   const [isLoading, setIsLoading] = useState(false);
   const [showTraderModal, setShowTraderModal] = useState(false);
   const [selectedTraderId, setSelectedTraderId] = useState<string>("");
+  const [hasAcceptedTraders, setHasAcceptedTraders] = useState(false);
+  const [checkingTraders, setCheckingTraders] = useState(false);
+
+  // Check for accepted traders when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      checkAcceptedTraders();
+    }
+  }, [isOpen]);
+
+  const checkAcceptedTraders = async () => {
+    setCheckingTraders(true);
+    try {
+      const response = await traderService.getAcceptedDelegations();
+      setHasAcceptedTraders(response.data && response.data.length > 0);
+    } catch (error) {
+      setHasAcceptedTraders(false);
+    } finally {
+      setCheckingTraders(false);
+    }
+  };
 
   // Update form when selectedApp changes
   useEffect(() => {
@@ -50,29 +72,36 @@ export default function ApproveLoanModal({ isOpen, onClose, selectedApp, onAppro
     );
   };
 
-  const handleApproveClick = async () => {
+  const handleAdminApprove = async () => {
     if (!selectedApp || !isFormValid()) return;
 
-    // First, check if there are traders with accepted delegations
     setIsLoading(true);
     try {
-      const response = await traderService.getAcceptedDelegations();
-      if (response.data && response.data.length > 0) {
-        // Show trader selection modal
-        setShowTraderModal(true);
-      } else {
-        // No traders available, proceed with regular approval
-        toast.error("No traders with accepted delegations found. Cannot approve loan.");
-      }
+      await voucherService.approveLoan(selectedApp.id, {
+        approvedAmount: parseFloat(approvalData.approvedAmount),
+        repaymentDays: parseInt(approvalData.repaymentDays),
+        voucherType: approvalData.voucherType,
+        notes: approvalData.notes,
+      });
+      toast.success("Loan approved successfully by admin");
+      setApprovalData({ approvedAmount: "", repaymentDays: "30", voucherType: "", notes: "" });
+      onClose();
+      await onApprove();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to check traders");
+      toast.error(error.response?.data?.message || "Failed to approve loan");
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleApproveOnBehalfClick = async () => {
+    if (!selectedApp || !isFormValid()) return;
+    setShowTraderModal(true);
+  };
+
   const handleTraderSelected = async (traderId: string) => {
     setSelectedTraderId(traderId);
+    setShowTraderModal(false);
     await handleApproveOnBehalf(traderId);
   };
 
@@ -90,8 +119,7 @@ export default function ApproveLoanModal({ isOpen, onClose, selectedApp, onAppro
       setApprovalData({ approvedAmount: "", repaymentDays: "30", voucherType: "", notes: "" });
       setSelectedTraderId("");
       onClose();
-      // Refresh the list
-      await onApprove({});
+      await onApprove();
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to approve loan");
     } finally {
@@ -182,12 +210,20 @@ export default function ApproveLoanModal({ isOpen, onClose, selectedApp, onAppro
             </div>
             <div className="flex gap-2 pt-4">
               <Button
-                onClick={handleApproveClick}
+                onClick={handleAdminApprove}
                 className="bg-green-600 hover:bg-green-700"
-                disabled={!isFormValid() || isLoading}
+                disabled={!isFormValid() || isLoading || checkingTraders}
               >
                 {isLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                {isLoading ? "Processing..." : "Approve Voucher"}
+                {isLoading ? "Processing..." : "Approve (Admin)"}
+              </Button>
+              <Button
+                onClick={handleApproveOnBehalfClick}
+                className="bg-blue-600 hover:bg-blue-700"
+                disabled={!isFormValid() || isLoading || !hasAcceptedTraders || checkingTraders}
+              >
+                {checkingTraders && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Approve (On Behalf)
               </Button>
               <Button variant="outline" onClick={onClose}>
                 Cancel
