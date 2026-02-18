@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Eye, Trash2, MoreHorizontal, Plus, Search } from "lucide-react";
+import { Eye, Trash2, MoreHorizontal, Plus, Search, ChevronDown } from "lucide-react";
 import { DataTable } from "@/components/data-table";
 import { useVouchers } from "@/app/contexts/VoucherContext";
 import { IVoucher, VoucherStatus, VoucherType } from "@/lib/types";
@@ -33,7 +33,8 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [paginationLoading, setPaginationLoading] = useState(false);
-  const [restaurantFilter, setRestaurantFilter] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -48,7 +49,12 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
       } else {
         setLoading(true);
       }
-      const response = await getAllVouchers({ page, limit });
+      const response = await getAllVouchers({ 
+        page, 
+        limit,
+        search: searchQuery || undefined,
+        status: statusFilter || undefined
+      });
       
       if (response?.pagination) {
         setPagination({
@@ -72,7 +78,7 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
 
   useEffect(() => {
     fetchVouchers(1, 10);
-  }, []);
+  }, [searchQuery, statusFilter]);
 
   const formatDate = (date: string | Date) =>
     new Date(date).toLocaleDateString("en-US", {
@@ -114,13 +120,7 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
     return "N/A";
   };
 
-  const filteredVouchers = useMemo(() => {
-    if (!restaurantFilter) return allVouchers;
-    return allVouchers.filter((voucher: any) => {
-      const restaurantName = voucher.restaurant?.name || "";
-      return restaurantName.toLowerCase().includes(restaurantFilter.toLowerCase());
-    });
-  }, [allVouchers, restaurantFilter]);
+  const filteredVouchers = allVouchers;
 
   const handleDeactivate = async (id: string) => {
     try {
@@ -432,19 +432,58 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="Filter by restaurant name..."
-            value={restaurantFilter}
-            onChange={(e) => setRestaurantFilter(e.target.value)}
-            className="pl-10 bg-gray-50 border-gray-300 focus:border-green-500 focus:ring-green-500 text-sm"
-          />
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex flex-col sm:flex-row gap-2 flex-1 w-full">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search by restaurant name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 bg-gray-50 border-gray-300 focus:border-green-500 focus:ring-green-500 text-sm"
+            />
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto justify-between min-w-[180px] border-gray-300 hover:border-gray-400"
+              >
+                <span className="truncate">
+                  {statusFilter ? statusFilter.charAt(0) + statusFilter.slice(1).toLowerCase() : "All Statuses"}
+                </span>
+                <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-[180px]">
+              <DropdownMenuItem onClick={() => setStatusFilter("")}>
+                All Statuses
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setStatusFilter("ACTIVE")}>
+                Active
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("USED")}>
+                Used
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("EXPIRED")}>
+                Expired
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("SUSPENDED")}>
+                Suspended
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("SETTLED")}>
+                Settled
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("MATURED")}>
+                Matured
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         <Button
           onClick={onCreateVoucher}
-          className="bg-green-600 hover:bg-green-700"
+          className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
         >
           <Plus className="h-4 w-4 mr-2" />
           Create Voucher

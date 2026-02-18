@@ -69,13 +69,13 @@ export default function DepositsManagementPage() {
   const [traderWallets, setTraderWallets] = useState<any[]>([]);
   const [restaurantPagination, setRestaurantPagination] = useState({
     page: 1,
-    limit: 5,
+    limit: 10,
     total: 0,
     totalPages: 0,
   });
   const [traderPagination, setTraderPagination] = useState({
     page: 1,
-    limit: 5,
+    limit: 10,
     total: 0,
     totalPages: 0,
   });

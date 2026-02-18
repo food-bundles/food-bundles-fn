@@ -1,7 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { createContext, useContext, useCallback, useState } from "react";
+import type React from "react";
+import {
+  createContext,
+  useContext,
+  useCallback,
+  useMemo,
+} from "react";
 import { adminsService } from "@/app/services/adminsService";
 
 export interface Admin {
@@ -20,121 +26,111 @@ export interface Admin {
   status?: "active" | "inactive" | "suspended";
 }
 
+export interface AdminsResponse {
+  success: boolean;
+  data: Admin[];
+  message?: string;
+}
+
 interface AdminsContextType {
-  admins: Admin[];
-  loading: boolean;
-  error: string | null;
-  getAllAdmins: () => Promise<any>;
+  getAllAdmins: (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }) => Promise<AdminsResponse & { pagination?: any }>;
   getAdminById: (id: string) => Promise<any>;
   createAdmin: (data: any) => Promise<any>;
   updateAdmin: (id: string, data: any) => Promise<any>;
   deleteAdmin: (id: string) => Promise<any>;
-  clearError: () => void;
 }
 
 const AdminsContext = createContext<AdminsContextType | undefined>(undefined);
 
-interface AdminsProviderProps {
-  children: React.ReactNode;
-}
-
-export function AdminsProvider({ children }: AdminsProviderProps) {
-  const [admins, setAdmins] = useState<Admin[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const clearError = useCallback(() => {
-    setError(null);
-  }, []);
-
-  const getAllAdmins = useCallback(async () => {
+export function AdminsProvider({ children }: { children: React.ReactNode }) {
+  const getAllAdmins = useCallback(async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }): Promise<AdminsResponse & { pagination?: any }> => {
     try {
-      setLoading(true);
-      const response = await adminsService.getAllAdmins();
-      if (response && response.data) {
-        setAdmins(response.data.admins || response.data || []);
+      const response = await adminsService.getAllAdmins(params);
+
+      if (response.success && response.data?.admins) {
+        return {
+          success: true,
+          data: response.data.admins,
+          pagination: response.data.pagination,
+        };
       }
-      return response;
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to fetch admins");
-      throw err;
-    } finally {
-      setLoading(false);
+
+      return {
+        success: false,
+        data: [],
+        message: "Failed to fetch admins",
+      };
+    } catch (error) {
+      console.error("Failed to fetch admins:", error);
+      return {
+        success: false,
+        data: [],
+        message: "Failed to fetch admins",
+      };
     }
   }, []);
 
   const getAdminById = useCallback(async (id: string) => {
     try {
-      setLoading(true);
       const response = await adminsService.getAdminById(id);
       return response;
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to fetch admin");
+      console.error("Failed to fetch admin:", err);
       throw err;
-    } finally {
-      setLoading(false);
     }
   }, []);
 
   const createAdmin = useCallback(async (data: any) => {
     try {
-      setLoading(true);
       const response = await adminsService.createAdmin(data);
-      if (response.success) {
-        await getAllAdmins(); // Refresh the list
-      }
       return response;
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to create admin");
+      console.error("Failed to create admin:", err);
       throw err;
-    } finally {
-      setLoading(false);
     }
-  }, [getAllAdmins]);
+  }, []);
 
   const updateAdmin = useCallback(async (id: string, data: any) => {
     try {
-      setLoading(true);
       const response = await adminsService.updateAdmin(id, data);
-      if (response.success) {
-        await getAllAdmins(); // Refresh the list
-      }
       return response;
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to update admin");
+      console.error("Failed to update admin:", err);
       throw err;
-    } finally {
-      setLoading(false);
     }
-  }, [getAllAdmins]);
+  }, []);
 
   const deleteAdmin = useCallback(async (id: string) => {
     try {
-      setLoading(true);
       const response = await adminsService.deleteAdmin(id);
-      if (response.success) {
-        await getAllAdmins(); // Refresh the list
-      }
       return response;
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to delete admin");
+      console.error("Failed to delete admin:", err);
       throw err;
-    } finally {
-      setLoading(false);
     }
-  }, [getAllAdmins]);
+  }, []);
 
-  const contextValue: AdminsContextType = {
-    admins,
-    loading,
-    error,
+  const contextValue: AdminsContextType = useMemo(() => ({
     getAllAdmins,
     getAdminById,
     createAdmin,
     updateAdmin,
     deleteAdmin,
-    clearError,
-  };
+  }), [getAllAdmins, getAdminById, createAdmin, updateAdmin, deleteAdmin]);
 
   return (
     <AdminsContext.Provider value={contextValue}>
@@ -145,7 +141,7 @@ export function AdminsProvider({ children }: AdminsProviderProps) {
 
 export function useAdmins() {
   const context = useContext(AdminsContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useAdmins must be used within an AdminsProvider");
   }
   return context;

@@ -8,14 +8,14 @@ export const adminsService = {
   getAllAdmins: async (params?: any) => {
     try {
       const response = await axiosClient.get("/admins", { params });
-      return {
-        success: true,
-        data: response.data.data,
-        pagination: response.data.pagination,
-      };
+      return response.data;
     } catch (error: any) {
       console.error("Get admins error:", error);
-      throw error;
+      return {
+        success: false,
+        data: [],
+        message: error.response?.data?.message || "Failed to fetch admins",
+      };
     }
   },
 

@@ -51,6 +51,7 @@ export const voucherService = {
   getAllVouchers: async (params?: {
     status?: string;
     restaurantId?: string;
+    search?: string;
     page?: number;
     limit?: number;
   }) => {

@@ -41,7 +41,7 @@ export default function LoansPage() {
       <DataTable
         columns={loanColumns}
         data={loans}
-        title="Loan Applications"
+        title="voucher Applications"
         showExport={true}
         showSearch={true}
         showColumnVisibility={true}

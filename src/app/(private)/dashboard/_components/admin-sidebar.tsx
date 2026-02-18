@@ -24,6 +24,8 @@ import {
   Tags,
   Boxes,
   BarChart3,
+  Bell,
+  Settings,
 } from "lucide-react";
 import NotificationsDrawer from "@/app/(private)/restaurant/_components/notificationDrawer";
 import { usePathname } from "next/navigation";
@@ -128,6 +130,18 @@ const menuItems = [
     label: "Promo Codes",
     href: "/dashboard/promo-codes",
   },
+  {
+    icon: Settings,
+    label: "Settings",
+    href: "/dashboard/settings",
+    subItems: [
+      {
+        icon: Bell,
+        label: "SMS Recipients",
+        href: "/dashboard/settings/notification-recipient",
+      },
+    ],
+  },
 ];
 
 interface AdminSidebarProps {
@@ -162,7 +176,14 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
       }
     };
     fetchUserData();
-  }, []);
+
+    // Auto-expand menu items with active sub-items
+    menuItems.forEach((item, index) => {
+      if (item.subItems && hasActiveSubItem(item)) {
+        setExpandedItems(prev => new Set(prev).add(index));
+      }
+    });
+  }, [pathname]);
 
   const handleUserDropdownToggle = () => {
     setUserDropdownOpen(!userDropdownOpen);
@@ -259,7 +280,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                         onClick={() => toggleExpanded(index)}
                         className={cn(
                           "w-full flex items-center px-3 py-2 rounded-md text-xs transition-colors whitespace-nowrap justify-between",
-                          isActive && !hasActiveSub
+                          (isActive && !hasActiveSub) || hasActiveSub
                             ? "bg-green-500 hover:bg-green-600 text-white"
                             : "text-green-200 hover:bg-green-700 hover:text-white"
                         )}
@@ -268,7 +289,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                           <item.icon
                             className={cn(
                               "mr-2 md:mr-3 h-4 w-4 md:h-5 md:w-5",
-                              isActive && !hasActiveSub
+                              (isActive && !hasActiveSub) || hasActiveSub
                                 ? "text-green-200"
                                 : "text-green-500"
                             )}
