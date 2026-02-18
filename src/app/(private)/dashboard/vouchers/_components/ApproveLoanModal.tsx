@@ -17,7 +17,7 @@ interface ApproveLoanModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedApp: ILoanApplication | null;
-  onApprove: (approvalData: any) => Promise<void>;
+  onApprove: () => Promise<void>;
 }
 
 export default function ApproveLoanModal({ isOpen, onClose, selectedApp, onApprove }: ApproveLoanModalProps) {
