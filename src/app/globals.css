@@ -137,6 +137,25 @@
     .scrollbar-hide::-webkit-scrollbar {
       display: none;
     }
+
+    /* Green scrollbar for tables */
+    [data-slot="table-container"]::-webkit-scrollbar {
+      height: 10px;
+      width: 10px;
+    }
+
+    [data-slot="table-container"]::-webkit-scrollbar-track {
+      background: #e5e7eb;
+    }
+
+    [data-slot="table-container"]::-webkit-scrollbar-thumb {
+      background: #16a34a;
+      border-radius: 5px;
+    }
+
+    [data-slot="table-container"]::-webkit-scrollbar-thumb:hover {
+      background: #15803d;
+    }
   }
 
   @keyframes slide-x {

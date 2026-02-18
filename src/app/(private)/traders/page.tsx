@@ -11,6 +11,8 @@ import {
   Plus,
   ArrowUpRight,
   ArrowDownRight,
+  Settings,
+  CircleCheckBig,
 } from "lucide-react";
 import {
   traderService,
@@ -23,6 +25,7 @@ import { WithdrawModal } from "./_components/WithdrawModal";
 import { WithdrawRequests } from "./_components/WithdrawRequests";
 import toast from "react-hot-toast";
 import { formatDateTime } from "@/lib/reusableFunctions";
+import Link from "next/link";
 
 export default function TraderDashboardPage() {
   const [wallet, setWallet] = useState<TraderWallet | null>(null);
@@ -38,6 +41,7 @@ export default function TraderDashboardPage() {
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [delegationStatus, setDelegationStatus] = useState<string | null>(null);
 
   const fetchWallet = async () => {
     try {
@@ -49,6 +53,15 @@ export default function TraderDashboardPage() {
       } else {
         console.error("Failed to fetch wallet:", error);
       }
+    }
+  };
+
+  const fetchDelegationStatus = async () => {
+    try {
+      const response = await traderService.getDelegationStatus();
+      setDelegationStatus(response.data?.status || response.data?.delegationStatus);
+    } catch (error) {
+      console.error("Failed to fetch delegation status:", error);
     }
   };
 
@@ -93,6 +106,7 @@ export default function TraderDashboardPage() {
         await Promise.all([
           fetchWallet(),
           fetchTransactions(1),
+          fetchDelegationStatus(),
         ]);
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
@@ -267,13 +281,27 @@ export default function TraderDashboardPage() {
 
   return (
     <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-gray-900">
-          Digital Food Store Dashboard
-        </h1>
-        <p className="text-gray-600 text-sm">
-          Overview of your Digital Food Store activities and performance
-        </p>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">
+            Digital Food Store Dashboard
+          </h1>
+          <p className="text-gray-600 text-sm">
+            Overview of your Digital Food Store activities and performance
+          </p>
+        </div>
+        {delegationStatus === "APPROVED" && (
+          <Link href="/traders/settings/manage">
+            <Button className="relative bg-green-600 hover:bg-green-700 flex items-center gap-2 cursor-pointer shadow-lg">
+              <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+              </span>
+              Accept Delegation
+               <CircleCheckBig />
+            </Button>
+          </Link>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">

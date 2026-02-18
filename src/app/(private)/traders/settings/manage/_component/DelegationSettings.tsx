@@ -166,21 +166,19 @@ export function DelegationSettings() {
 
   return (
     <>
-      <Card className="p-6 rounded-md border border-gray-300 shadow-none">
-        <div className="flex gap-6">
-          <div className="space-y-4 p-4 w-1/3 border-r border-gray-300">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-700">
-                  {(status?.status || status?.delegationStatus) === "ACCEPTED" ? "Delegation Commission" : "Commission Rate"}
-                </p>
-              </div>
+      <Card className="p-4 sm:p-6 rounded-md border border-gray-300 shadow-none">
+        <div className="block md:flex md:gap-6">
+          <div className="space-y-4 p-4 md:w-1/3 border-b md:border-b-0 md:border-r border-gray-300">
+            <div className="block sm:flex sm:items-center sm:justify-between">
+              <p className="text-sm font-medium text-gray-700 mb-2 sm:mb-0">
+                {(status?.status || status?.delegationStatus) === "ACCEPTED" ? "Delegation Commission" : "Commission Rate"}
+              </p>
               <span className="text-2xl font-bold text-green-600">
                 {status?.commission || 0}%
               </span>
             </div>
             {status?.delegationAcceptedAt && (
-              <div className="text-xs ">
+              <div className="text-xs">
                 Accepted on:{" "}
                 <span className="text-gray-600">
                   {formatDateTime(status.delegationAcceptedAt)}
@@ -191,7 +189,7 @@ export function DelegationSettings() {
 
           <div className="flex-1 p-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900">
                 Manage Delegation
               </h3>
               <Switch

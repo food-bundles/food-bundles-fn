@@ -64,7 +64,7 @@ export default function TraderLayout({
         </div>
 
         <main className="flex-1 bg-gray-100 overflow-y-auto">
-          <div className="min-h-full px-4 py-4">{children}</div>
+          <div className="min-h-full  py-4">{children}</div>
         </main>
       </div>
     </div>

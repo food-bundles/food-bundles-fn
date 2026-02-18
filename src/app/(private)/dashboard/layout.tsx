@@ -7,6 +7,7 @@ import { CategoryProvider } from "@/app/contexts/category-context";
 import { ProductProvider } from "@/app/contexts/product-context";
 import { useState, useEffect } from "react";
 import { RestaurantProvider } from "@/app/contexts/RestaurantContext";
+import { NotificationRecipientProvider } from "@/app/contexts/NotificationRecipientContext";
 
 export default function AdminLayout({
   children,
@@ -34,7 +35,8 @@ export default function AdminLayout({
       <RestaurantProvider>
         <CategoryProvider>
           <ProductProvider>
-            <div className="flex h-screen bg-white">
+            <NotificationRecipientProvider>
+              <div className="flex h-screen bg-white">
               {/* Sidebar */}
               <div
                 className={`${
@@ -68,6 +70,7 @@ export default function AdminLayout({
                 </main>
               </div>
             </div>
+            </NotificationRecipientProvider>
           </ProductProvider>
         </CategoryProvider>
       </RestaurantProvider>
