@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 
 export function DashboardContent() {
-  const { stats, loading, error, refreshStats } = useDashboard();
+  const { stats, error, refreshStats, sectionLoading } = useDashboard();
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -103,7 +103,7 @@ export function DashboardContent() {
             previousValue={stats?.users?.growth?.totalChange}
             icon={Users}
             color="from-yellow-500 to-yellow-600"
-            loading={loading}
+            loading={sectionLoading.users}
             subMetrics={[
               {
                 label: "Restaurants",
@@ -128,7 +128,7 @@ export function DashboardContent() {
             previousValue={stats?.orders?.growth?.totalChange}
             icon={ShoppingCart}
             color="from-yellow-500 to-yellow-600"
-            loading={loading}
+            loading={sectionLoading.orders}
             subMetrics={[
               {
                 label: "Completed",
@@ -154,7 +154,7 @@ export function DashboardContent() {
             icon={DollarSign}
             color="from-yellow-500 to-yellow-600"
             suffix=" RWF"
-            loading={loading}
+            loading={sectionLoading.finance}
             subMetrics={[
               {
                 label: "Revenue",
@@ -174,7 +174,7 @@ export function DashboardContent() {
             previousValue={stats?.subscriptions?.growth?.totalChange}
             icon={CreditCard}
             color="from-yellow-500 to-yellow-600"
-            loading={loading}
+            loading={sectionLoading.subscriptions}
             subMetrics={[
               {
                 label: "Active",
@@ -198,7 +198,7 @@ export function DashboardContent() {
             previousValue={stats?.vouchers?.growth?.totalChange}
             icon={Package}
             color="from-green-600 to-green-700"
-            loading={loading}
+            loading={sectionLoading.vouchers}
             subMetrics={[
               {
                 label: "Used",
@@ -212,24 +212,24 @@ export function DashboardContent() {
               },
             ]}
           />
-          <QuickStats loading={loading} stats={stats} />
+          <QuickStats loading={sectionLoading.quickStats} stats={stats} />
         </div>
 
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <OrdersChart loading={loading} data={stats?.orders} />
-          <FinanceChart loading={loading} data={stats?.finance} />
+          <OrdersChart loading={sectionLoading.orders} data={stats?.orders} />
+          <FinanceChart loading={sectionLoading.finance} data={stats?.finance} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Users Chart */}
           <div className="lg:col-span-2">
-            <UsersChart loading={loading} data={stats?.users} />
+            <UsersChart loading={sectionLoading.users} data={stats?.users} />
           </div>
 
           {/* Recent Activities */}
           <div>
-            <RecentActivity activities={stats?.recentActivities || []} loading={loading} />
+            <RecentActivity activities={stats?.recentActivities || []} loading={sectionLoading.activities} />
           </div>
         </div>
 

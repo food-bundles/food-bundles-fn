@@ -78,17 +78,8 @@ export default function LoanApplicationsTable() {
     });
   }, [allLoanApplications, restaurantFilter]);
 
-  const handleApprove = async (approvalData: any) => {
-    if (!selectedApp) return;
-    try {
-      await approveLoan(selectedApp.id, approvalData);
-      toast.success("Loan application approved successfully!");
-      await getAllLoanApplications(); // Refresh data
-      setSelectedApp(null);
-    } catch (error) {
-      toast.error("Failed to approve loan application");
-      console.error("Failed to approve loan:", error);
-    }
+  const handleApprove = async () => {
+    await getAllLoanApplications(); // Just refresh data
   };
 
 const handleAccept = async (data: {
