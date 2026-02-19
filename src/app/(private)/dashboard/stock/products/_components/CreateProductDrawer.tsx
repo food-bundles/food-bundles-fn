@@ -256,26 +256,16 @@ export function CreateProductDrawer({
       !formData.unit ||
       formData.quantity <= 0 ||
       formData.unitPrice <= 0 ||
-      formData.purchasePrice <= 0 ||
-      !formData.taxId ||
-      !formData.ebmPackagingUnit ||
-      !formData.ebmQuantityUnit ||
-      !formData.ebmItemClassCode.value
+      formData.purchasePrice <= 0
     ) {
-      // Log missing fields for debugging
       const missingFields = [];
       if (!formData.productName) missingFields.push('Product Name');
-      // if (!formData.description) missingFields.push('Description');
       if (!formData.categoryId) missingFields.push('Category');
       if (!formData.sku) missingFields.push('SKU');
       if (!formData.unit) missingFields.push('Unit');
       if (formData.quantity <= 0) missingFields.push('Quantity (must be > 0)');
       if (formData.unitPrice <= 0) missingFields.push('Unit Price (must be > 0)');
       if (formData.purchasePrice <= 0) missingFields.push('Purchase Price (must be > 0)');
-      if (!formData.taxId) missingFields.push('Tax');
-      if (!formData.ebmPackagingUnit) missingFields.push('EBM Packaging Unit');
-      if (!formData.ebmQuantityUnit) missingFields.push('EBM Quantity Unit');
-      if (!formData.ebmItemClassCode.value) missingFields.push('EBM Item Class Code');
       
       console.log('Missing required fields:', missingFields);
       toast.error(`Please fill in all required fields: ${missingFields.join(', ')}`);
@@ -285,7 +275,6 @@ export function CreateProductDrawer({
     try {
       setIsSubmitting(true);
       
-      // Find selected unit and category
       const selectedUnit = units.find(u => u.name === formData.unit);
       const selectedCategory = activeCategories.find(c => c.id === formData.categoryId);
       
@@ -294,46 +283,60 @@ export function CreateProductDrawer({
         return;
       }
 
-      // Create product in Table Tronic first - REQUIRED
-      const categoryId = selectedCategory.tableTronicId || 1;
-      const unitId = crypto.randomUUID();
-      
-      const tableTronicData = {
-        name: formData.productName,
-        description: formData.description || formData.productName, // Use product name as description if empty
-        photo: "",
-        itemCode: formData.sku,
-        categoryId: categoryId,
-        taxId: formData.taxId,
-        units: [{
-          id: unitId,
-          unitId: selectedUnit.tableTronicId?.toString() || "1",
-          cost: formData.purchasePrice,
-          price: formData.unitPrice
-        }],
-        baseUnitId: unitId,
-        ebmProductType: formData.ebmProductType,
-        ebmCountryOfOrigin: formData.ebmCountryOfOrigin,
-        ebmPackagingUnit: formData.ebmPackagingUnit,
-        ebmQuantityUnit: formData.ebmQuantityUnit,
-        ebmItemClassCode: formData.ebmItemClassCode,
-        ebmOpeningStock: formData.quantity.toString()
-      };
+      let tableTronicProductId: number | null = null;
 
-      console.log('Creating product in Table Tronic with data:', tableTronicData);
-      const tableTronicResponse = await tableTronicService.createProduct(tableTronicData);
-      
-      if (!tableTronicResponse || !tableTronicResponse.id) {
-        throw new Error("Failed to create product in Table Tronic - no ID returned");
+      // Only try Table Tronic if all required fields are filled
+      const hasTableTronicData = formData.taxId && 
+        formData.ebmPackagingUnit && 
+        formData.ebmQuantityUnit && 
+        formData.ebmItemClassCode.value;
+
+      if (hasTableTronicData) {
+        try {
+        const categoryId = selectedCategory.tableTronicId || 1;
+        const unitId = crypto.randomUUID();
+        
+        const tableTronicData = {
+          name: formData.productName,
+          description: formData.description || formData.productName,
+          photo: "",
+          itemCode: formData.sku,
+          categoryId: categoryId,
+          taxId: formData.taxId,
+          units: [{
+            id: unitId,
+            unitId: selectedUnit.tableTronicId?.toString() || "1",
+            cost: formData.purchasePrice,
+            price: formData.unitPrice
+          }],
+          baseUnitId: unitId,
+          ebmProductType: formData.ebmProductType,
+          ebmCountryOfOrigin: formData.ebmCountryOfOrigin,
+          ebmPackagingUnit: formData.ebmPackagingUnit,
+          ebmQuantityUnit: formData.ebmQuantityUnit,
+          ebmItemClassCode: formData.ebmItemClassCode,
+          ebmOpeningStock: formData.quantity.toString()
+        };
+
+        console.log('Creating product in Table Tronic with data:', tableTronicData);
+        const tableTronicResponse = await tableTronicService.createProduct(tableTronicData);
+        
+        if (tableTronicResponse?.id) {
+          tableTronicProductId = tableTronicResponse.id;
+          console.log("Successfully created Table Tronic product with ID:", tableTronicProductId);
+        }
+      } catch (tableTronicError: any) {
+        console.error("Table Tronic API failed:", tableTronicError);
+        toast.warning("Table Tronic is unavailable. Product created in Fb");
       }
+    } else {
+      console.log('Skipping Table Tronic - missing required fields');
+    }
 
-      const tableTronicProductId = tableTronicResponse.id;
-      console.log("Successfully created Table Tronic product with ID:", tableTronicProductId);
-
-      // Create product in Food Bundles with Table Tronic ID
+      // Create product in Food Bundles (with or without Table Tronic ID)
       const foodBundlesData = {
         ...formData,
-        tableTronicProductId: tableTronicProductId, // Changed from tableTronicId to tableTronicProductId
+        tableTronicProductId: tableTronicProductId,
         unitId: selectedUnit.id
       };
 
@@ -341,12 +344,14 @@ export function CreateProductDrawer({
       
       if (response.success) {
         onSubmit?.(formData);
-        toast.success("Product created successfully in both systems!");
+        if (tableTronicProductId) {
+          toast.success("Product created successfully in both systems!");
+        } else {
+          toast.success("Product created in FB! (Table Tronic unavailable)");
+        }
         resetForm();
         onClose();
       } else {
-        // If Food Bundles creation fails, we should ideally delete the Table Tronic product
-        // but for now just show error
         toast.error(response.message || "Failed to create product in Food Bundles");
       }
     } catch (error: any) {
