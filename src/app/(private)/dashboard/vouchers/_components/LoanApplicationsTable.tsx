@@ -49,6 +49,7 @@ export default function LoanApplicationsTable() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [restaurantFilter, setRestaurantFilter] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
 
   const formatDate = (date: string | Date) =>
@@ -67,7 +68,12 @@ export default function LoanApplicationsTable() {
 
 
   useEffect(() => {
-    getAllLoanApplications();
+    const fetchData = async () => {
+      setIsLoading(true);
+      await getAllLoanApplications();
+      setIsLoading(false);
+    };
+    fetchData();
   }, [getAllLoanApplications]);
 
   const filteredApplications = useMemo(() => {
@@ -79,7 +85,9 @@ export default function LoanApplicationsTable() {
   }, [allLoanApplications, restaurantFilter]);
 
   const handleApprove = async () => {
-    await getAllLoanApplications(); // Just refresh data
+    setIsLoading(true);
+    await getAllLoanApplications();
+    setIsLoading(false);
   };
 
 const handleAccept = async (data: {
@@ -180,8 +188,19 @@ const handleAccept = async (data: {
     },
     {
       accessorKey: "requestedAmount",
-      header: "Amount",
+      header: "Requested",
       cell: ({ row }) => `${row.original.requestedAmount.toLocaleString()} RWF`,
+    },
+    {
+      accessorKey: "approvedAmount",
+      header: "Approved",
+      cell: ({ row }) => (
+        <div className="text-green-600 font-medium">
+          {row.original.approvedAmount
+            ? `${row.original.approvedAmount.toLocaleString()} RWF`
+            : "N/A"}
+        </div>
+      ),
     },
     {
       accessorKey: "voucherDays",
@@ -200,7 +219,7 @@ const handleAccept = async (data: {
           (v: any) =>
             v.status === "ACTIVE" ||
             v.status === "USED" ||
-            v.status === "SETTLED"
+            v.status === "SETTLED"|| v.status === "EXPIRED"|| v.status === "MATURED"
         );
 
         if (approvedVouchers.length === 0) {
@@ -210,21 +229,11 @@ const handleAccept = async (data: {
         return (
           <div className="text-sm space-y-1">
             {approvedVouchers.map((voucher: any, index: number) => (
-              <div key={voucher.id} className="flex items-center gap-2">
+              <div key={voucher.id} className="flex flex-col items-center">
                 <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
-                  {voucher.voucherCode}
-                </span>
-                <span
-                  className={`text-xs px-2 py-1 rounded ${voucher.status === "ACTIVE"
-                      ? "bg-green-100 text-green-700"
-                      : voucher.status === "USED"
-                        ? "bg-blue-100 text-blue-700"
-                        : voucher.status === "SETTLED"
-                          ? "bg-gray-100 text-gray-700"
-                          : "bg-red-100 text-red-700"
-                    }`}
-                >
-                  {voucher.status}
+                  {voucher.voucherCode}:{" "}
+                  {voucher.status.toLowerCase().charAt(0).toUpperCase() +
+                    voucher.status.toLowerCase().slice(1)}
                 </span>
               </div>
             ))}
@@ -351,6 +360,7 @@ const handleAccept = async (data: {
           title={``}
           showColumnVisibility={true}
           showPagination={true}
+          isLoading={isLoading}
         />
       </div>
       <AcceptLoanModal
