@@ -497,7 +497,7 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
         showPagination={true}
         pagination={pagination}
         onPaginationChange={handlePaginationChange}
-        isLoading={paginationLoading}
+        isLoading={loading || paginationLoading}
       />
       <VoucherManagementModal
         voucher={selectedVoucher}
