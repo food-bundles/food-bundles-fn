@@ -102,8 +102,8 @@ export default function VouchersPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
+    <div className="p-2">
+      <div className="mb-4">
         <h1 className="text-xl font-bold text-gray-900">Voucher Management</h1>
         <p className="text-gray-600 text-sm">Manage vouchers you've approved for restaurants</p>
       </div>

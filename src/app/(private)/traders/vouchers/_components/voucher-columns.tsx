@@ -2,7 +2,6 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal, Eye} from "lucide-react";
 import {
@@ -82,7 +81,7 @@ export const createVoucherColumns = ({
     accessorKey: "serviceFeeRate",
     header: "Commission",
     cell: ({ row }) => {
-      const commission = row.original.serviceFeeRate;
+      // const commission = row.original.serviceFeeRate;
       const isUsed =
         row.original.status === "USED" || row.original.status === "SETTLED";
       return (
@@ -90,7 +89,7 @@ export const createVoucherColumns = ({
           <span
             className={isUsed ? "text-green-600 font-medium" : "text-gray-500"}
           >
-            {commission}%
+            {/* {commission}% */}
           </span>
           {isUsed && <div className="text-green-500 text-xs">Earned</div>}
         </div>

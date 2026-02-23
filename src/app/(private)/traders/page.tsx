@@ -11,8 +11,9 @@ import {
   Plus,
   ArrowUpRight,
   ArrowDownRight,
-  Settings,
   CircleCheckBig,
+  DollarSign,
+  TrendingUp,
 } from "lucide-react";
 import {
   traderService,
@@ -158,7 +159,7 @@ export default function TraderDashboardPage() {
               "bg-blue-50",
               "bg-purple-50",
               "bg-orange-50",
-              "bg-emerald-50",
+              "bg-green-50",
               "bg-yellow-50",
             ];
             return (
@@ -280,10 +281,10 @@ export default function TraderDashboardPage() {
   ];
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex items-start justify-between">
+    <div className="p-2">
+      <div className="mb-4 flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">
+          <h1 className="text-lg font-bold text-gray-900">
             Digital Food Store Dashboard
           </h1>
           <p className="text-gray-600 text-sm">
@@ -298,13 +299,13 @@ export default function TraderDashboardPage() {
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
               </span>
               Accept Delegation
-               <CircleCheckBig />
+              <CircleCheckBig />
             </Button>
           </Link>
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
         {stats.map((stat, index) => {
           const cardColors = [
             {
@@ -322,7 +323,6 @@ export default function TraderDashboardPage() {
               text: "text-yellow-600",
               percent: "text-yellow-600",
             },
-        
           ];
           const colors = cardColors[index % cardColors.length];
 
@@ -349,7 +349,7 @@ export default function TraderDashboardPage() {
 
       {/* Wallet Management Section */}
       {!wallet ? (
-        <Card className="mb-6">
+        <Card className="mb-4">
           <CardHeader className="text-center">
             <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
               <Wallet className="h-8 w-8 text-blue-600" />
@@ -370,40 +370,70 @@ export default function TraderDashboardPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-4">
           {/* Wallet Balance Card */}
           <Card className="lg:col-span-2">
             <CardContent>
               <div className="space-y-4">
-                <div className="bg-gray-100 rounded-lg p-6 text-gray-900">
-                  <div className="grid grid-cols-3 gap-4 mb-4">
-                    <div>
-                      <p className="text-gray-700 text-xs mb-1">Total Deposited</p>
+                <div className="bg-gray-100 rounded-lg px-6 pt-2 pb-6 text-gray-900">
+                  <div className="flex items-center justify-between mb-2 pt-2">
+                    <div className="flex flex-col">
+                      <span className=" text-xs mt-1 text-gray-600">
+                        {" "}
+                        Food Store
+                      </span>
+                      <span className="text-xs mt-1 text-gray-600">
+                        {wallet._count?.transactions || 0} Transactions
+                      </span>
+                    </div>
+                    <div
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        wallet.isActive
+                          ? "bg-green-500/20 text-green-600"
+                          : "bg-red-500/20 text-red-600"
+                      }`}
+                    >
+                      {wallet.isActive ? "Active" : "Inactive"}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 pt-4 border-t border-gray-400">
+                    <div className="flex flex-col items-center">
+                      <div className="mb-2 flex flex-col items-center">
+                        <div className="bg-gray-500/20 p-2 rounded-lg mb-1">
+                          <DollarSign className="h-5 w-5 text-gray-600" />
+                        </div>
+                        <p className="text-gray-700 text-xs text-center">Total Deposited</p>
+                      </div>
                       <p className="text-lg font-bold">
-                        {wallet.totalDeposited.toLocaleString()} {wallet.currency}
+                        {wallet.totalDeposited.toLocaleString()}{" "}
+                        {wallet.currency}
                       </p>
                     </div>
-                    <div>
-                      <p className="text-gray-700 text-xs mb-1">Available Balance</p>
+                    <div className="flex flex-col items-center">
+                      <div className="mb-2 flex flex-col items-center">
+                        <div className="bg-green-500/20 p-2 rounded-lg mb-1">
+                          <Wallet className="h-5 w-5 text-green-600" />
+                        </div>
+                        <p className="text-gray-700 text-xs text-center">
+                          Available Balance
+                        </p>
+                      </div>
                       <p className="text-lg font-bold text-green-600">
-                        {wallet.availableBalance.toLocaleString()} {wallet.currency}
+                        {wallet.availableBalance.toLocaleString()}{" "}
+                        {wallet.currency}
                       </p>
                     </div>
-                    <div>
-                      <p className="text-gray-700 text-xs mb-1">Current Balance</p>
+                    <div className="flex flex-col items-center">
+                      <div className="mb-2 flex flex-col items-center">
+                        <div className="bg-yellow-500/20 p-2 rounded-lg mb-1">
+                          <TrendingUp className="h-5 w-5 text-yellow-600" />
+                        </div>
+                        <p className="text-gray-700 text-xs text-center">Current Balance</p>
+                      </div>
                       <p className="text-lg font-bold text-yellow-600">
                         {wallet.balance.toLocaleString()} {wallet.currency}
                       </p>
                     </div>
-                  </div>
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-400">
-                    <span className="text-sm text-gray-600">Wallet Type: Food Store</span>
-                    <span className="text-sm text-gray-600">
-                      Transactions: {wallet._count?.transactions || 0}
-                    </span>
-                    <span className="text-lg font-semibold text-yellow-700">
-                      {wallet.isActive ? "Active" : "Inactive"}
-                    </span>
                   </div>
                 </div>
 
@@ -415,8 +445,8 @@ export default function TraderDashboardPage() {
                     <Plus className="h-4 w-4 mr-2" />
                     Top Up Wallet
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="flex-1"
                     onClick={() => setShowWithdrawModal(true)}
                   >
@@ -439,7 +469,9 @@ export default function TraderDashboardPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-xs">Commission Rate</span>
                   </div>
-                  <span className="font-semibold text-green-600">{wallet?.commission || 0}%</span>
+                  <span className="font-semibold text-green-600">
+                    {wallet?.commission || 0}%
+                  </span>
                 </div>
 
                 <div className="flex flex-col items-center justify-center">
@@ -452,11 +484,11 @@ export default function TraderDashboardPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                 <div className="flex items-center gap-2">
                   <span className="text-xs">Total Commission</span>
                 </div>
-                <span className="font-semibold text-sm text-emerald-600">
+                <span className="font-semibold text-sm text-green-600">
                   {(wallet?.commissionEarned || 0).toLocaleString()} RWF
                 </span>
               </div>
@@ -476,101 +508,128 @@ export default function TraderDashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <WithdrawRequests />
-        
+
         <Card className="lg:col-span-2 h-96">
           <CardHeader className="py-3">
-            <CardTitle>Account Transactions</CardTitle>
+            <CardTitle className="text-sm font-normal">
+              Account Transactions
+            </CardTitle>
           </CardHeader>
-        <CardContent className="h-full flex flex-col pt-0">
-          <div className="flex-1 overflow-y-auto pr-2" style={{ maxHeight: '280px' }}>
-            {transactionsLoading ? (
-              <div className="space-y-3">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="flex items-center justify-between p-4 border-b animate-pulse">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
-                      <div>
-                        <div className="h-4 bg-gray-200 rounded w-32 mb-1"></div>
-                        <div className="h-3 bg-gray-200 rounded w-20"></div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : transactions.length > 0 ? (
-              <div className="space-y-2">
-                {transactions.map((tx) => (
-                  <div
-                    key={tx.id}
-                    className="flex items-center justify-between p-4 border-b hover:bg-gray-100 transition-colors"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={`p-2 rounded-full ${
-                          tx.amount > 0 ? "bg-green-100" : "bg-red-100"
-                        }`}
-                      >
-                        {tx.amount > 0 ? (
-                          <ArrowUpRight className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <ArrowDownRight className="h-4 w-4 text-red-600" />
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-800">
-                          {getReadableTransactionText(tx)}
-                        </p>
-                        <div className="flex mt-1 gap-4">
-                          <p className="text-xs text-gray-500">
-                            {formatDateTime(tx.createdAt)}
-                          </p>
-                          <p className="text-xs text-gray-500 capitalize">
-                            {tx.status.toLowerCase()}
-                          </p>
+          <CardContent className="h-full flex flex-col pt-0">
+            <div
+              className="flex-1 overflow-y-auto pr-2"
+              style={{ maxHeight: "280px" }}
+            >
+              {transactionsLoading ? (
+                <div className="space-y-3">
+                  {[...Array(5)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between p-4 border-b animate-pulse"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+                        <div>
+                          <div className="h-4 bg-gray-200 rounded w-32 mb-1"></div>
+                          <div className="h-3 bg-gray-200 rounded w-20"></div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <Wallet className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>No transactions yet</p>
+                  ))}
+                </div>
+              ) : transactions.length > 0 ? (
+                <div className="space-y-2">
+                  {transactions.map((tx) => (
+                    <div
+                      key={tx.id}
+                      className="flex items-center justify-between p-4 border-b hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`p-2 rounded-full ${
+                            tx.amount > 0 ? "bg-green-100" : "bg-red-100"
+                          }`}
+                        >
+                          {tx.amount > 0 ? (
+                            <ArrowUpRight className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <ArrowDownRight className="h-4 w-4 text-red-600" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-800">
+                            {getReadableTransactionText(tx)}
+                          </p>
+                          <div className="flex mt-1 gap-4">
+                            <p className="text-xs text-gray-500">
+                              {formatDateTime(tx.createdAt)}
+                            </p>
+                            <p className="text-xs text-gray-500 capitalize">
+                              {tx.status.toLowerCase()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Wallet className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p>No transactions yet</p>
+                </div>
+              )}
+            </div>
+
+            {/* Pagination */}
+            {transactionsPagination.totalPages > 1 && (
+              <div className="flex items-center justify-between pt-4 border-t mt-4">
+                <div className="text-sm text-gray-500">
+                  Showing{" "}
+                  {(transactionsPagination.page - 1) *
+                    transactionsPagination.limit +
+                    1}{" "}
+                  to{" "}
+                  {Math.min(
+                    transactionsPagination.page * transactionsPagination.limit,
+                    transactionsPagination.total,
+                  )}{" "}
+                  of {transactionsPagination.total} transactions
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      fetchTransactions(transactionsPagination.page - 1)
+                    }
+                    disabled={
+                      transactionsPagination.page <= 1 || transactionsLoading
+                    }
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm px-3 py-1 bg-gray-100 rounded">
+                    {transactionsPagination.page} of{" "}
+                    {transactionsPagination.totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      fetchTransactions(transactionsPagination.page + 1)
+                    }
+                    disabled={
+                      transactionsPagination.page >=
+                        transactionsPagination.totalPages || transactionsLoading
+                    }
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
             )}
-          </div>
-          
-          {/* Pagination */}
-          {transactionsPagination.totalPages > 1 && (
-            <div className="flex items-center justify-between pt-4 border-t mt-4">
-              <div className="text-sm text-gray-500">
-                Showing {((transactionsPagination.page - 1) * transactionsPagination.limit) + 1} to {Math.min(transactionsPagination.page * transactionsPagination.limit, transactionsPagination.total)} of {transactionsPagination.total} transactions
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fetchTransactions(transactionsPagination.page - 1)}
-                  disabled={transactionsPagination.page <= 1 || transactionsLoading}
-                >
-                  Previous
-                </Button>
-                <span className="text-sm px-3 py-1 bg-gray-100 rounded">
-                  {transactionsPagination.page} of {transactionsPagination.totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fetchTransactions(transactionsPagination.page + 1)}
-                  disabled={transactionsPagination.page >= transactionsPagination.totalPages || transactionsLoading}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
+          </CardContent>
         </Card>
       </div>
 
