@@ -252,8 +252,8 @@ export function TraderSidebar({ isOpen, onClose }: TraderSidebarProps) {
               >
                 <User className="mr-3 h-5 w-5 text-green-500" />
                 <div className="flex-1 text-left mr-2">
-                  <div className="truncate">
-                    {userData?.name || userData?.username}
+                  <div className="text-xs">
+                    My Account
                   </div>
                 </div>
                 <ChevronDown

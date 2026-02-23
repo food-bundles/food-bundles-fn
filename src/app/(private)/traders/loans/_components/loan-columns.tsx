@@ -26,10 +26,6 @@ const ActionsCell = ({ loan }: { loan: LoanApplication }) => {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem>
-            <Eye className="mr-2 h-4 w-4" />
-            View Details
-          </DropdownMenuItem>
           {loan.status === "PENDING" || loan.status === "ACCEPTED" && (
             <DropdownMenuItem onClick={() => setShowApproveModal(true)}>
               <CheckCircle className="mr-2 h-4 w-4" />
