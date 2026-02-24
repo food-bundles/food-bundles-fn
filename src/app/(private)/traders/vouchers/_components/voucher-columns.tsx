@@ -34,11 +34,14 @@ export const createVoucherColumns = ({
   {
     accessorKey: "totalCredit",
     header: "Approved Amount",
-    cell: ({ row }) => (
-      <span className="text-xs">
-        {row.original.creditLimit.toLocaleString()} {row.original.currency}
-      </span>
-    ),
+    cell: ({ row }) => {
+      const isExpired = row.original.status === "EXPIRED";
+      return (
+        <span className={`text-xs ${isExpired ? "line-through text-gray-400" : ""}`}>
+          {row.original.creditLimit.toLocaleString()} {row.original.currency}
+        </span>
+      );
+    },
   },
   {
     accessorKey: "usedAmount",
@@ -78,10 +81,10 @@ export const createVoucherColumns = ({
   },
 
   {
-    accessorKey: "serviceFeeRate",
+    accessorKey: "commission",
     header: "Commission",
     cell: ({ row }) => {
-      // const commission = row.original.serviceFeeRate;
+      const commission = row.original.commission || 0;
       const isUsed =
         row.original.status === "USED" || row.original.status === "SETTLED";
       return (
@@ -89,7 +92,7 @@ export const createVoucherColumns = ({
           <span
             className={isUsed ? "text-green-600 font-medium" : "text-gray-500"}
           >
-            {/* {commission}% */}
+            {commission.toLocaleString()} {row.original.currency}
           </span>
           {isUsed && <div className="text-green-500 text-xs">Earned</div>}
         </div>

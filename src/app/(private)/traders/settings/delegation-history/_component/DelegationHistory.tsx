@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Card } from "@/components/ui/card";
 import { traderService } from "@/app/services/traderService";
 import { Calendar, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "react-hot-toast";

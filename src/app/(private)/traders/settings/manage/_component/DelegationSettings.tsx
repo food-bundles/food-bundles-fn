@@ -7,18 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { traderService, type DelegationStatus } from "@/app/services/traderService";
-import { Loader2, AlertCircle, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Loader2, UserCheck } from "lucide-react";
 import { toast } from "react-hot-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { formatDateTime } from "@/lib/reusableFunctions";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
-export function DelegationSettings() {
+export function DelegationSettings({ commission }: { commission: number }) {
   const [status, setStatus] = useState<DelegationStatus | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -49,13 +42,11 @@ export function DelegationSettings() {
     if (enabled) {
       if (delegationStatus === "APPROVED") {
         setShowAcceptModal(true);
-      } else if (delegationStatus === "NORMAL" || !delegationStatus) {
+      } else {
         setShowAgreementModal(true);
       }
     } else {
-      if (delegationStatus === "ACCEPTED") {
-        setShowReverseModal(true);
-      }
+      setShowReverseModal(true);
     }
   };
 
@@ -68,13 +59,10 @@ export function DelegationSettings() {
     try {
       setIsProcessing(true);
       const response = await traderService.requestDelegation();
-      
-      if (response.success) {
-        toast.success(response.message || "Delegation request submitted successfully");
-        setShowAgreementModal(false);
-        setAgreedToTerms(false);
-        fetchStatus();
-      }
+      toast.success(response.message || "Delegation request submitted successfully");
+      setShowAgreementModal(false);
+      setAgreedToTerms(false);
+      fetchStatus();
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to request delegation");
     } finally {
@@ -102,8 +90,6 @@ export function DelegationSettings() {
     }
   };
 
-
-
   const handleReverseDelegation = async () => {
     try {
       setIsProcessing(true);
@@ -118,125 +104,44 @@ export function DelegationSettings() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <Card className="p-6">
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-green-600" />
-        </div>
-      </Card>
-    );
-  }
-
-  const getStatusBadge = () => {
-    const delegationStatus = status?.status || status?.delegationStatus;
-    switch (delegationStatus) {
-      case "NORMAL":
-        return (
-          <div className="flex items-center gap-2 text-gray-600">
-            <span className="font-medium">Not Requested</span>
-          </div>
-        );
-      case "ACCEPTED":
-        return (
-          <div className="flex items-center gap-2 text-green-600">
-            <span className="font-medium">Active</span>
-          </div>
-        );
-      case "APPROVED":
-        return (
-          <div className="flex items-center gap-2 text-green-600">
-            <span className="font-medium">Approved</span>
-          </div>
-        );
-      case "PENDING":
-        return (
-          <div className="flex items-center gap-2 text-yellow-600">
-            <span className="font-medium">Pending</span>
-          </div>
-        );
-      default:
-        return (
-          <div className="flex items-center gap-2 text-gray-600">
-            <span className="font-medium">Not Requested</span>
-          </div>
-        );
-    }
-  };
+  const delegationStatus = status?.status || status?.delegationStatus;
+  const isActive = delegationStatus === "ACCEPTED";
+  const isPending = delegationStatus === "PENDING";
 
   return (
     <>
-      <Card className="p-4 sm:p-6 rounded-md border border-gray-300 shadow-none">
-        <div className="block md:flex md:gap-6">
-          <div className="space-y-4 p-4 md:w-1/3 border-b md:border-b-0 md:border-r border-gray-300">
-            <div className="block sm:flex sm:items-center sm:justify-between">
-              <p className="text-sm font-medium text-gray-700 mb-2 sm:mb-0">
-                {(status?.status || status?.delegationStatus) === "ACCEPTED" ? "Delegation Commission" : "Commission Rate"}
-              </p>
-              <span className="text-2xl font-bold text-green-600">
-                {status?.commission || 0}%
-              </span>
+      <Card className="p-4 h-35 w-full sm:w-64">
+        <div className="flex flex-col items-start space-y-3">
+          <div className="flex items-center w-full  gap-2 pb-2 border-b border-gray-200">
+            <div className="p-3 bg-green-50 rounded-full">
+              <UserCheck className="h-4 w-4 text-green-600" />
             </div>
-            {status?.delegationAcceptedAt && (
-              <div className="text-xs">
-                Accepted on:{" "}
-                <span className="text-gray-600">
-                  {formatDateTime(status.delegationAcceptedAt)}
-                </span>
-              </div>
-            )}
+            <h3 className="font-semibold text-gray-900">Delegation</h3>
           </div>
-
-          <div className="flex-1 p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900">
-                Manage Delegation
-              </h3>
-              <Switch
-                checked={
-                  (status?.status || status?.delegationStatus) === "ACCEPTED"
-                }
-                onCheckedChange={handleToggleDelegation}
-                disabled={
-                  isProcessing ||
-                  (status?.status || status?.delegationStatus) === "PENDING"
-                }
-              />
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-gray-700">
-                  Status:
-                </span>
-                {getStatusBadge()}
-              </div>
-
-              <p className="text-sm text-gray-600">
-                {(status?.status || status?.delegationStatus) === "ACCEPTED"
-                  ? "Food Bundles is now authorized to trade on your behalf. Toggle off to reverse."
-                  : (status?.status || status?.delegationStatus) === "APPROVED"
-                    ? "Admin approved your request. Click Accept below to activate delegation."
-                    : (status?.status || status?.delegationStatus) === "PENDING"
-                      ? "Your delegation request is pending admin approval. Please wait."
-                      : "Toggle on to request delegation and allow Food Bundles to trade on your behalf."}
-              </p>
-
-              {(status?.status || status?.delegationStatus) === "APPROVED" && (
-                <Button
-                  onClick={() => setShowAcceptModal(true)}
-                  disabled={isProcessing}
-                  className="bg-green-600 hover:bg-green-700 w-full"
-                >
-                  Accept Delegation
-                </Button>
-              )}
-            </div>
+          <div className="flex items-center justify-between w-full">
+            <p className="text-xs text-gray-600">
+              {isActive
+                ? "FB trading on your behalf"
+                : "Allow FB to approve loans"}
+            </p>
+            <Switch
+              checked={isActive}
+              onCheckedChange={handleToggleDelegation}
+              disabled={isProcessing || isPending || isLoading}
+            />
           </div>
+          {delegationStatus === "APPROVED" && (
+            <Button
+              onClick={() => setShowAcceptModal(true)}
+              size="sm"
+              className="w-full bg-green-600 hover:bg-green-700"
+            >
+              Accept Now
+            </Button>
+          )}
         </div>
       </Card>
 
-      {/* Agreement Modal */}
       <Dialog open={showAgreementModal} onOpenChange={setShowAgreementModal}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -246,7 +151,7 @@ export function DelegationSettings() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pb-4">
-            <div className="p-4 bg-gray-50 rounded-lg space-y-3">
+            <div className="p-4 bg-gray-50 rounded-lg">
               <p className="text-sm text-gray-700">
                 By submitting and confirming such a request, you grant Food
                 Bundles a limited, revocable authorization to act on your behalf
@@ -254,7 +159,6 @@ export function DelegationSettings() {
                 the Platform, effective upon confirmation.
               </p>
             </div>
-
             <div className="flex bg-yellow-50 items-start gap-3 p-3 border border-yellow-200 rounded">
               <input
                 type="checkbox"
@@ -272,7 +176,6 @@ export function DelegationSettings() {
                 through the platform.
               </label>
             </div>
-
             <div className="flex gap-3 justify-end">
               <Button
                 variant="outline"
@@ -303,20 +206,18 @@ export function DelegationSettings() {
         </DialogContent>
       </Dialog>
 
-      {/* Accept Delegation Modal */}
       <Dialog open={showAcceptModal} onOpenChange={setShowAcceptModal}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Accept Delegation</DialogTitle>
             <DialogDescription>
-              Enter the OTP sent to your email to accept delegation
+              Enter the OTP sent to your email
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="p-3 bg-green-50 border border-blue-200 rounded">
+            <div className="p-3 bg-green-50 border border-green-200 rounded">
               <p className="text-sm text-green-800">
-                <strong>Commission:</strong> {status?.commission}% on delegated
-                trades
+                <strong>Commission:</strong> {commission}% on delegated trades
               </p>
             </div>
             <div>
@@ -334,7 +235,6 @@ export function DelegationSettings() {
                 className="mt-1"
               />
             </div>
-
             <div className="flex gap-3 justify-end">
               <Button
                 variant="outline"
@@ -365,24 +265,21 @@ export function DelegationSettings() {
         </DialogContent>
       </Dialog>
 
-      {/* Reverse Delegation Modal */}
       <Dialog open={showReverseModal} onOpenChange={setShowReverseModal}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reverse Delegation</DialogTitle>
             <DialogDescription>
-              Are you sure you want to reverse your delegation status?
+              Are you sure you want to reverse your delegation?
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
               <p className="text-sm text-yellow-800">
-                <strong>Note:</strong> Reversing delegation will allow you to
-                approve vouchers and loans directly again. Food Bundles will no
-                longer have control of your wallet.
+                You will regain control and approve loans directly. Food Bundles
+                will no longer trade on your behalf.
               </p>
             </div>
-
             <div className="flex gap-3 justify-end">
               <Button
                 variant="outline"
@@ -402,7 +299,7 @@ export function DelegationSettings() {
                     Processing...
                   </>
                 ) : (
-                  "Reverse Delegation"
+                  "Yes, Reverse"
                 )}
               </Button>
             </div>
