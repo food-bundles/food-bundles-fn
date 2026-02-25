@@ -9,10 +9,14 @@ import { createVoucherColumns } from "./_components/voucher-columns";
 import { traderService, type Voucher } from "@/app/services/traderService";
 import { Skeleton } from "@/components/ui/skeleton";
 import { createCommonFilters } from "./_components/filter-helpers";
+import { VoucherDetailsDialog } from "./_components/voucher-details-dialog";
+
+type VoucherTab = "active"  | "expired";
 
 export default function VouchersPage() {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<VoucherTab>("active");
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -20,11 +24,25 @@ export default function VouchersPage() {
     totalPages: 0,
   });
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
-  const fetchVouchers = async (page = 1, limit = 10) => {
+  const getStatusForTab = (tab: VoucherTab) => {
+    switch (tab) {
+      case "active":
+        return "ACTIVE,USED,SETTLED,MATURED";
+      case "expired":
+        return "EXPIRED";
+      default:
+        return "";
+    }
+  };
+
+  const fetchVouchers = async (page = 1, limit = 10, tab: VoucherTab = activeTab) => {
     try {
-      const response = await traderService.getVouchers({ page, limit });
+      setLoading(true);
+      const status = getStatusForTab(tab);
+      const response = await traderService.getVouchers({ page, limit, status });
       const vouchersData = Array.isArray(response.data) ? response.data : response.data?.vouchers || [];
       setVouchers(vouchersData);
       if ((response as any).pagination) {
@@ -39,23 +57,21 @@ export default function VouchersPage() {
   };
 
   const handleViewDetails = (voucher: Voucher) => {
-    console.log("View voucher details:", voucher);
-    // Implement voucher details modal or navigation
+    setSelectedVoucher(voucher);
+    setDetailsOpen(true);
+  };
+
+  const handleTabChange = (tab: VoucherTab) => {
+    setActiveTab(tab);
+    setPagination({ page: 1, limit: 10, total: 0, totalPages: 0 });
+    fetchVouchers(1, 10, tab);
   };
 
   const voucherFilters = useMemo(() => {
     return [
       createCommonFilters.search(searchQuery, setSearchQuery, "Search vouchers..."),
-      createCommonFilters.status(statusFilter, setStatusFilter, [
-        { label: "All Status", value: "all" },
-        { label: "Active", value: "ACTIVE" },
-        { label: "Used", value: "USED" },
-        { label: "settled", value: "SETTLED" },
-        { label: "Expired", value: "EXPIRED" },
-        { label: "Matured", value: "MATURED" },
-      ]),
     ];
-  }, [searchQuery, statusFilter]);
+  }, [searchQuery]);
 
   const voucherColumns = useMemo(() => {
     return createVoucherColumns({
@@ -79,18 +95,14 @@ export default function VouchersPage() {
       );
     }
     
-    if (statusFilter !== "all") {
-      filtered = filtered.filter(voucher => voucher?.status === statusFilter);
-    }
-    
     return filtered;
-  }, [vouchers, searchQuery, statusFilter]);
+  }, [vouchers, searchQuery]);
 
   useEffect(() => {
     fetchVouchers();
   }, []);
 
-  if (loading) {
+  if (loading && vouchers.length === 0) {
     return (
       <div className="p-6">
         <div className="space-y-4">
@@ -108,6 +120,32 @@ export default function VouchersPage() {
         <p className="text-gray-600 text-sm">Manage vouchers you've approved for restaurants</p>
       </div>
 
+      {/* Tabs */}
+      <div className="border-b border-gray-400 mb-4">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => handleTabChange("active")}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === "active"
+                ? "border-green-500 text-green-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            Approved Vouchers
+          </button>
+          <button
+            onClick={() => handleTabChange("expired")}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === "expired"
+                ? "border-green-500 text-green-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            Expired Vouchers
+          </button>
+        </nav>
+      </div>
+
       <DataTable
         columns={voucherColumns}
         data={filteredVouchers}
@@ -118,6 +156,12 @@ export default function VouchersPage() {
         showPagination={true}
         showRowSelection={false}
         showAddButton={false}
+        isLoading={loading}
+      />
+      <VoucherDetailsDialog
+        voucher={selectedVoucher}
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
       />
     </div>
   );

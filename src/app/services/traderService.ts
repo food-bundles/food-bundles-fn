@@ -61,6 +61,7 @@ export interface Voucher {
   usedCredit: number;
   remainingCredit: number;
   status: string;
+  commission: number;
   expiryDate: string;
   issuedDate: string;
   approvedBy: string;
@@ -444,6 +445,25 @@ export const traderService = {
   }) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.post(`/traders/admin/${traderId}/approve-loan`, data);
+    return response.data;
+  },
+
+  // Commission Mode Management
+  toggleCommissionMode: async (mode: 'NORMAL' | 'FIXED') => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/traders/commission/toggle-mode", { mode });
+    return response.data;
+  },
+
+  processMonthlyCommission: async () => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/traders/commission/process-monthly");
+    return response.data;
+  },
+
+  processAllMonthlyCommissions: async () => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/traders/commission/process-all-monthly");
     return response.data;
   },
 }
