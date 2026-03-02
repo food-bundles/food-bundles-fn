@@ -24,7 +24,7 @@ import { OptimizedImage } from "@/components/OptimizedImage";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/traders" },
-  { icon: CreditCard, label: "Voucher Applications", href: "/traders/loans" },
+  { icon: CreditCard, label: "Credits Applications", href: "/traders/credit" },
   { icon: Ticket, label: "Vouchers", href: "/traders/vouchers" },
   { icon: ShoppingCart, label: "Orders", href: "/traders/orders" },
   {

@@ -122,7 +122,7 @@ export function DelegationSettings({ commission }: { commission: number }) {
             <p className="text-xs text-gray-600">
               {isActive
                 ? "FB trading on your behalf"
-                : "Allow FB to approve loans"}
+                : "Allow FB to approve Credits"}
             </p>
             <Switch
               checked={isActive}

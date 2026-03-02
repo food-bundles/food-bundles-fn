@@ -350,10 +350,19 @@ export const traderService = {
     return response.data;
   },
 
-  setTraderCommission: async (traderId: string, commission: number) => {
+  sendCommissionOTP: async (traderId: string, commission: number) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(`/traders/${traderId}/commission/send-otp`, {
+      commission,
+    });
+    return response.data;
+  },
+
+  setTraderCommission: async (traderId: string, sessionId: string, otp: string) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.patch(`/traders/${traderId}/commission`, {
-      commission,
+      sessionId,
+      otp,
     });
     return response.data;
   },
