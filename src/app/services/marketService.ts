@@ -31,6 +31,24 @@ export interface PriceHistory {
   };
 }
 
+export interface PriceByProduct {
+  id: string;
+  product: {
+    id: string;
+    name: string;
+  };
+  market: {
+    id: string;
+    name: string;
+    province: string;
+    district: string;
+  };
+  ourPrice: number;
+  marketPrice: number;
+  difference: number;
+  recordedDate: string;
+}
+
 export interface PriceAnalysis {
   product: {
     id: string;
@@ -186,6 +204,18 @@ export const marketService = {
     const response = await axiosClient.get(`/markets/export/comparison?format=${format}`, {
       responseType: 'blob',
     });
+    return response.data;
+  },
+
+  getLowestPriceComparison: async (limit = 5) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get(`/markets/prices/lowest-comparison?limit=${limit}`);
+    return response.data;
+  },
+
+  getPublicPriceComparison: async (limit = 5) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get(`/public/markets/prices/comparison?limit=${limit}`);
     return response.data;
   },
 };

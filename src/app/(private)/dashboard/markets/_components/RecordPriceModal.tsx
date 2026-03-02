@@ -24,6 +24,8 @@ export default function RecordPriceModal({
   markets,
 }: RecordPriceModalProps) {
   const [products, setProducts] = useState<any[]>([]);
+  const [productSearch, setProductSearch] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [formData, setFormData] = useState({
     productId: "",
     marketId: "",
@@ -40,7 +42,7 @@ export default function RecordPriceModal({
   const fetchProducts = async () => {
     try {
       const axiosClient = createAxiosClient();
-      const response = await axiosClient.get("/products");
+      const response = await axiosClient.get("/products?limit=1000");
       setProducts(response.data.data || []);
     } catch (error) {
       toast.error("Failed to fetch products");
@@ -60,6 +62,8 @@ export default function RecordPriceModal({
       onSuccess();
       onClose();
       setFormData({ productId: "", marketId: "", marketPrice: "" });
+      setProductSearch("");
+      setSelectedProduct(null);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to record price");
     } finally {
@@ -67,30 +71,60 @@ export default function RecordPriceModal({
     }
   };
 
+  const filteredProducts = products.filter(p => 
+    p.productName.toLowerCase().includes(productSearch.toLowerCase())
+  );
+
+  const handleProductSelect = (product: any) => {
+    setSelectedProduct(product);
+    setFormData({ ...formData, productId: product.id });
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-white">
+      <DialogContent className="bg-white max-w-2xl">
         <DialogHeader>
           <DialogTitle>Record Market Price</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="product">Product</Label>
-            <Select value={formData.productId} onValueChange={(value) => setFormData({ ...formData, productId: value })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select product" />
-              </SelectTrigger>
-              <SelectContent>
-                {products.map((product) => (
-                  <SelectItem key={product.id} value={product.id}>
-                    {product.productName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="product">Product *</Label>
+            <Input
+              placeholder="Search products..."
+              value={productSearch}
+              onChange={(e) => setProductSearch(e.target.value)}
+              className="mb-2"
+            />
+            <div className="border rounded p-2 space-y-2 h-60 overflow-y-auto">
+              {filteredProducts.map((product) => (
+                <div 
+                  key={product.id} 
+                  className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1 rounded" 
+                  onClick={() => handleProductSelect(product)}
+                >
+                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                    selectedProduct?.id === product.id
+                      ? 'bg-green-600 border-green-600'
+                      : 'border-gray-300'
+                  }`}>
+                    {selectedProduct?.id === product.id && (
+                      <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="text-sm">
+                    {product.productName} - {product.unitPrice.toLocaleString()} RWF
+                  </span>
+                </div>
+              ))}
+              {filteredProducts.length === 0 && (
+                <div className="text-sm text-gray-500 py-2">No products found</div>
+              )}
+            </div>
           </div>
           <div>
-            <Label htmlFor="market">Market</Label>
+            <Label htmlFor="market">Market *</Label>
             <Select value={formData.marketId} onValueChange={(value) => setFormData({ ...formData, marketId: value })}>
               <SelectTrigger>
                 <SelectValue placeholder="Select market" />
@@ -105,7 +139,7 @@ export default function RecordPriceModal({
             </Select>
           </div>
           <div>
-            <Label htmlFor="marketPrice">Market Price (RWF)</Label>
+            <Label htmlFor="marketPrice">Market Price (RWF) *</Label>
             <Input
               id="marketPrice"
               type="number"

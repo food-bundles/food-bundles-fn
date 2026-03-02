@@ -4,9 +4,9 @@ import { useState, useEffect } from "react";
 import { marketService } from "@/app/services/marketService";
 import { newsletterService } from "@/app/services/newsletterService";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useAuth } from "@/app/contexts/auth-context";
-import { UserRole } from "@/lib/types";
 import { useRouter } from "next/navigation";
 
 interface PriceComparisonData {
@@ -22,6 +22,8 @@ export function PriceComparisonPopup() {
   const [data, setData] = useState<PriceComparisonData[]>([]);
   const [loading, setLoading] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
+  const [marketNames, setMarketNames] = useState<string[]>([]);
+  const [email, setEmail] = useState("");
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
 
@@ -32,13 +34,17 @@ export function PriceComparisonPopup() {
   const fetchPriceComparison = async () => {
     setLoading(true);
     try {
-      // Use existing price history endpoint since lowest-comparison doesn't exist
-      const response = await marketService.getPriceHistory(1, 50);
-      console.log('Backend response:', response);
-      
-      // Transform backend response to expected format
+      const response = await marketService.getLowestPriceComparison(5);
       if (response.data && Array.isArray(response.data)) {
-        // Group by product
+        // Get unique market names (max 3)
+        const allMarkets = new Set<string>();
+        response.data.forEach((item: any) => {
+          allMarkets.add(item.market.name);
+        });
+        const uniqueMarkets = Array.from(allMarkets).slice(0, 3);
+        setMarketNames(uniqueMarkets);
+        
+        // Transform price history data to comparison format
         const productMap = new Map<string, any>();
         
         response.data.forEach((item: any) => {
@@ -56,23 +62,11 @@ export function PriceComparisonPopup() {
           });
         });
         
-        console.log('Product map:', Array.from(productMap.values()));
-        
-        // Filter products where our price is lower than all markets
-        const lowestPriceProducts = Array.from(productMap.values())
-          .filter(product => 
-            product.markets.every((m: any) => product.foodbundlesPrice < m.price)
-          )
-          .slice(0, 5);
-        
-        console.log('Filtered products:', lowestPriceProducts);
-        setData(lowestPriceProducts);
+        setData(Array.from(productMap.values()).slice(0, 5));
       } else {
-        console.log('No data or not array');
         setData([]);
       }
-    } catch (error) {
-      console.error('Error fetching:', error);
+    } catch (error: any) {
       setData([]);
     } finally {
       setLoading(false);
@@ -80,22 +74,24 @@ export function PriceComparisonPopup() {
   };
 
   const handleSubscribe = async () => {
-    if (!isAuthenticated) {
-      toast.error("Please login to subscribe");
-      router.push("/login");
+    if (!isAuthenticated && !email) {
+      toast.error("Please enter your email");
       return;
     }
 
     setSubscribing(true);
     try {
       await newsletterService.subscribe({
-        email: user.email,
-        name: user.name || user.username,
-        phone: user.phone,
+        email: isAuthenticated ? user.email : email,
+        name: isAuthenticated ? (user.name || user.username) : undefined,
+        phone: isAuthenticated ? user.phone : undefined,
       });
       toast.success("Successfully subscribed to newsletter!");
+      setEmail("");
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Failed to subscribe");
+      console.error('Subscribe error:', error);
+      const errorMsg = error.response?.data?.message || error.message || "Failed to subscribe";
+      toast.error(errorMsg);
     } finally {
       setSubscribing(false);
     }
@@ -111,8 +107,24 @@ export function PriceComparisonPopup() {
 
   if (!data.length) {
     return (
-      <div className="p-4 text-center text-sm text-gray-600">
-        Price comparison data will be available soon
+      <div className="p-4 text-center space-y-3">
+        <p className="text-sm text-gray-600">Price comparison coming soon. Subscribe to get notified!</p>
+        <div className="flex gap-2 w-full max-w-md mx-auto">
+          <Input
+            type="email"
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="flex-1"
+          />
+          <Button
+            onClick={handleSubscribe}
+            disabled={subscribing}
+            className="bg-green-700 hover:bg-green-600 text-white"
+          >
+            {subscribing ? "Subscribing..." : "Subscribe"}
+          </Button>
+        </div>
       </div>
     );
   }
@@ -125,41 +137,58 @@ export function PriceComparisonPopup() {
             <tr className="border-b bg-gray-50">
               <th className="px-4 py-2 text-left font-semibold text-gray-900">Product</th>
               <th className="px-4 py-2 text-left font-semibold text-green-700">FoodBundles</th>
-              {data[0]?.markets.map((market, idx) => (
+              {marketNames.map((marketName, idx) => (
                 <th key={idx} className="px-4 py-2 text-left font-semibold text-gray-900">
-                  {market.marketName}
+                  {marketName}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {data.map((item, idx) => (
-              <tr key={idx} className="border-b hover:bg-gray-50">
-                <td className="px-4 py-2 font-medium">{item.productName}</td>
-                <td className="px-4 py-2 text-green-700 font-bold">
-                  {item.foodbundlesPrice.toLocaleString()} RWF
-                </td>
-                {item.markets.map((market, mIdx) => (
-                  <td key={mIdx} className="px-4 py-2 text-gray-600">
-                    {market.price.toLocaleString()} RWF
+            {data.map((item, idx) => {
+              const marketPricesMap = new Map(item.markets.map(m => [m.marketName, m.price]));
+              return (
+                <tr key={idx} className="border-b hover:bg-gray-50">
+                  <td className="px-4 py-2 font-medium">{item.productName}</td>
+                  <td className="px-4 py-2 text-green-700 font-bold">
+                    {item.foodbundlesPrice.toLocaleString()} RWF
                   </td>
-                ))}
-              </tr>
-            ))}
+                  {marketNames.map((marketName, mIdx) => {
+                    const price = marketPricesMap.get(marketName);
+                    return (
+                      <td key={mIdx} className="px-4 py-2 text-gray-600">
+                        {price ? `${price.toLocaleString()} RWF` : '—'}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
       <div className="mt-4 flex flex-col items-center gap-2">
         <p className="text-xs text-gray-600 text-center">
-          Subscribe to get weekly price comparisons and market trends delivered to your inbox.
+          You need to subscribe as restaurant to get full comparison table
         </p>
-        <Button
-          onClick={handleSubscribe}
-          disabled={subscribing}
-          className="bg-green-700 hover:bg-green-600 text-white"
-        >
-          {subscribing ? "Subscribing..." : "Subscribe to Newsletter"}
-        </Button>
+        <div className="flex gap-2 w-full max-w-md">
+          {!isAuthenticated && (
+            <Input
+              type="email"
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="flex-1"
+            />
+          )}
+          <Button
+            onClick={handleSubscribe}
+            disabled={subscribing}
+            className="bg-green-700 hover:bg-green-600 text-white"
+          >
+            {subscribing ? "Subscribing..." : "Subscribe"}
+          </Button>
+        </div>
       </div>
     </div>
   );
