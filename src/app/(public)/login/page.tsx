@@ -36,7 +36,7 @@ function LoginForm() {
   const [isResending, setIsResending] = useState(false);
   const [verificationError, setVerificationError] = useState("");
   
-  // Terms agreement modal states
+  // Terms agreement modal states 
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [phoneForTerms, setPhoneForTerms] = useState("");
   const [phoneError, setPhoneError] = useState("");
