@@ -130,7 +130,7 @@ export default function TraderDashboardPage() {
       }
 
       if (desc.includes("loan")) {
-        return `A loan of ${amount} ${currency} was approved and deducted from your wallet`;
+        return `A Credit of ${amount} ${currency} was approved and deducted from your wallet`;
       }
 
       if (desc.includes("withdraw")) {

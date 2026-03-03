@@ -171,7 +171,7 @@ export const createWalletColumns = ({
   },
   {
     accessorKey: "balance",
-    header: "Balance",
+    header: "Balance & Rate",
     cell: ({ row }) => {
       const balance = row.getValue("balance") as number;
       return (
@@ -180,6 +180,8 @@ export const createWalletColumns = ({
             {balance?.toLocaleString()}
           </span>
           <span className="text-xs text-gray-600">RWF</span>
+          <span className="text-xs text-gray-900 ml-2">{row.original.commission || 0} <span className="text-gray-500">%</span></span>
+
         </div>
       );
     },
@@ -270,7 +272,7 @@ export const createWalletColumns = ({
               <DropdownMenuItem
                 onClick={() => onUpdateCommission(wallet.traderId!)}
               >
-                Update Commission
+                Set Commission
               </DropdownMenuItem>
             )}
             {walletType === "trader" && wallet.traderId && onViewHistory && (

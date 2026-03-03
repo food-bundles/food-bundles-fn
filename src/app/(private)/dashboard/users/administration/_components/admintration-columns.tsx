@@ -154,7 +154,7 @@ export const getAdminColumns = (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => onUpdateCommission(admin)}>
-                    Update Commission
+                    Set Commission
                   </DropdownMenuItem>
                 </>
               )}
