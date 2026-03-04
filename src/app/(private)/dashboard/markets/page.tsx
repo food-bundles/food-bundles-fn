@@ -368,7 +368,7 @@ export default function MarketsPage() {
                 </div>
               )}
             </div>
-            <div className={`text-[10px] ${diff > 0 ? 'text-red-600' : 'text-green-600'}`}>
+            <div className={`text-xs ${diff > 0 ? 'text-red-600' : 'text-green-600'}`}>
               {diff > 0 ? '+' : ''}{diff.toLocaleString()} RWF
             </div>
           </div>
