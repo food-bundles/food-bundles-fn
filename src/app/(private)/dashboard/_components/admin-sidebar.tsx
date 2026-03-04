@@ -27,6 +27,8 @@ import {
   Bell,
   Settings,
   DollarSign,
+  TrendingUp,
+  MailOpen,
 } from "lucide-react";
 import NotificationsDrawer from "@/app/(private)/restaurant/_components/notificationDrawer";
 import { usePathname } from "next/navigation";
@@ -85,6 +87,11 @@ const menuItems = [
     href: "/dashboard/subscriptions",
   },
   {
+    icon: TrendingUp,
+    label: "Market Prices",
+    href: "/dashboard/markets",
+  },
+  {
     icon: Ticket,
     label: "Voucher Management",
     href: "/dashboard/vouchers",
@@ -93,6 +100,11 @@ const menuItems = [
     icon: Wallet,
     label: "Deposit Management",
     href: "/dashboard/deposits",
+  },
+  {
+    icon: MailOpen,
+    label: "Newsletter",
+    href: "/dashboard/newsletter",
   },
   {
     icon: UserPlus,

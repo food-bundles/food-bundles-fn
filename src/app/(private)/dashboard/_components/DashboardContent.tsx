@@ -10,6 +10,7 @@ import { OrdersChart } from "./OrdersChart";
 import { FinanceChart } from "./FinanceChart";
 import { UsersChart } from "./UsersChart";
 import { SystemStatus } from "./SystemStatus";
+import { MarketPriceComparison } from "./MarketPriceComparison";
 import {
   Users,
   ShoppingCart,
@@ -26,11 +27,11 @@ export function DashboardContent() {
   useEffect(() => {
     setMounted(true);
     setCurrentTime(new Date());
-    
+
     const timeInterval = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
-    
+
     return () => clearInterval(timeInterval);
   }, []);
 
@@ -60,7 +61,7 @@ export function DashboardContent() {
         <div className="max-w-7xl mx-auto">
           <div className="bg-red-50 border flex gap-4 items-center border-red-200 rounded-md p-4">
             <p className="text-red-800">Something went wrong </p>
-            <button 
+            <button
               onClick={refreshStats}
               className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
             >
@@ -232,6 +233,9 @@ export function DashboardContent() {
             <RecentActivity activities={stats?.recentActivities || []} loading={sectionLoading.activities} />
           </div>
         </div>
+
+        {/* Market Price Comparison */}
+        <MarketPriceComparison />
 
         {/* System Status */}
         <SystemStatus />
