@@ -20,6 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { PriceComparisonPopup } from "@/components/PriceComparisonPopup";
 
 // Separate component for search params logic
 function SearchParamsHandler() {
@@ -73,6 +74,7 @@ export function Header() {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("home");
   const [isShopDropdownOpen, setIsShopDropdownOpen] = useState(false);
+  const [isPriceDropdownOpen, setIsPriceDropdownOpen] = useState(false);
   const [isAuthTransitioning, setIsAuthTransitioning] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -89,6 +91,7 @@ export function Header() {
   const navigationItems = [
     { label: "Home", href: "#home", id: "home" },
     { label: "Connect", href: "#connect", id: "connect" },
+    { label: "Price", href: "/dashboard/markets", id: "price", isExternal: true },
     { label: "Ask help", href: "#ask-help", id: "ask-help" },
   ];
 
@@ -169,7 +172,20 @@ export function Header() {
   const handleShopMouseLeave = () => {
     dropdownTimeout.current = setTimeout(() => {
       setIsShopDropdownOpen(false);
-    }, 150); // Small delay to prevent flickering
+    }, 150);
+  };
+
+  const handlePriceMouseEnter = () => {
+    if (dropdownTimeout.current) {
+      clearTimeout(dropdownTimeout.current);
+    }
+    setIsPriceDropdownOpen(true);
+  };
+
+  const handlePriceMouseLeave = () => {
+    dropdownTimeout.current = setTimeout(() => {
+      setIsPriceDropdownOpen(false);
+    }, 150);
   };
 
   const detectActiveSection = useCallback(() => {
@@ -291,16 +307,57 @@ export function Header() {
 
               {/* Desktop Navigation */}
               <nav className="hidden md:flex items-center gap-4 lg:gap-6">
-                {navigationItems.map((item) => (
-                  <a
-                    key={item.id}
-                    href={item.href}
-                    onClick={(e) => handleNavClick(e, item.id)}
-                    className="hover:border-b hover:border-orange-400 py-1  text-[14px] text-white cursor-pointer flex items-center gap-1"
-                  >
-                    {item.label}
-                  </a>
-                ))}
+                {navigationItems.map((item) => {
+                  if (item.id === "price") {
+                    return (
+                      <div
+                        key={item.id}
+                        className="relative"
+                        onMouseEnter={handlePriceMouseEnter}
+                        onMouseLeave={handlePriceMouseLeave}
+                      >
+                        <Link
+                          href={item.href}
+                          className="hover:border-b hover:border-orange-400 py-1 text-[14px] text-white cursor-pointer flex items-center gap-1"
+                        >
+                          {item.label}
+                        </Link>
+                        <div
+                          className={`absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl transition-all duration-300 z-50 ${
+                            isPriceDropdownOpen
+                              ? "opacity-100 visible transform translate-y-0"
+                              : "opacity-0 invisible transform -translate-y-2"
+                          }`}
+                          onMouseEnter={handlePriceMouseEnter}
+                          onMouseLeave={handlePriceMouseLeave}
+                        >
+                          <div className="p-4">
+                            <h3 className="text-sm font-bold text-gray-900 mb-3">Price Comparison</h3>
+                            <PriceComparisonPopup />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return item.isExternal ? (
+                    <Link
+                      key={item.id}
+                      href={item.href}
+                      className="hover:border-b hover:border-orange-400 py-1 text-[14px] text-white cursor-pointer flex items-center gap-1"
+                    >
+                      {item.label}
+                    </Link>
+                  ) : (
+                    <a
+                      key={item.id}
+                      href={item.href}
+                      onClick={(e) => handleNavClick(e, item.id)}
+                      className="hover:border-b hover:border-orange-400 py-1 text-[14px] text-white cursor-pointer flex items-center gap-1"
+                    >
+                      {item.label}
+                    </a>
+                  );
+                })}
 
                 {/* Enhanced Subscribe Button */}
                 <div
@@ -528,17 +585,31 @@ export function Header() {
               <div className="md:hidden pb-4 border-t border-green-600 mt-2">
                 <nav className="flex flex-col gap-3 pt-4">
                   {navigationItems.map((item) => (
-                    <a
-                      key={item.id}
-                      href={item.href}
-                      onClick={(e) => handleNavClick(e, item.id)}
-                      className={`hover:text-secondary transition-colors cursor-pointer px-2 py-1 rounded flex items-center justify-between ${activeSection === item.id
-                        ? "text-yellow-300 bg-green-800/50"
-                        : "text-primary-foreground"
+                    item.isExternal ? (
+                      <Link
+                        key={item.id}
+                        href={item.href}
+                        onClick={() => setIsMenuOpen(false)}
+                        className={`hover:text-secondary transition-colors cursor-pointer px-2 py-1 rounded flex items-center justify-between ${activeSection === item.id
+                          ? "text-yellow-300 bg-green-800/50"
+                          : "text-primary-foreground"
                         }`}
-                    >
-                      <span>{item.label}</span>
-                    </a>
+                      >
+                        <span>{item.label}</span>
+                      </Link>
+                    ) : (
+                      <a
+                        key={item.id}
+                        href={item.href}
+                        onClick={(e) => handleNavClick(e, item.id)}
+                        className={`hover:text-secondary transition-colors cursor-pointer px-2 py-1 rounded flex items-center justify-between ${activeSection === item.id
+                          ? "text-yellow-300 bg-green-800/50"
+                          : "text-primary-foreground"
+                        }`}
+                      >
+                        <span>{item.label}</span>
+                      </a>
+                    )
                   ))}
 
                   {/* Mobile Login/Profile */}
