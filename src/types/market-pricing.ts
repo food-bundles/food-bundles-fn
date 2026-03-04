@@ -66,3 +66,12 @@ export interface ToastItem {
   message: string;
   type: "success" | "error";
 }
+
+export interface ProductPriceCardProps {
+  group: ProductGroup;
+  onAnalyze: (id: string, name: string) => void;
+  isAnalyzing: boolean;
+  onRecordPrice: (productId: string) => void;
+  onEditRecord: (r: PriceRecord) => void;
+  onDeleteRecord: (r: PriceRecord) => void;
+}

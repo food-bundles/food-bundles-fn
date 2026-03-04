@@ -12,14 +12,11 @@ import {
   DeletePriceHistoryModal,
   ManageMarketsPanel,
 } from "./market-pricing-modals";
-import {
-  ProductGroup,
-  type Market,
-  type PriceRecord,
-} from "@/types/market-pricing";
+import type { Market, PriceRecord, ProductGroup } from "@/types/market-pricing";
 import AnalysisPanel from "./analysis-panel";
 import ProductPriceCard from "./product-price-card";
-import { daysAgo,  } from "./utils";
+import PriceTrendCarousel from "./price-trend-carousel";
+import { daysAgo } from "./utils";
 import {
   ErrorBanner,
   Skel,
@@ -30,13 +27,13 @@ import {
 } from "./shared-atoms";
 
 export default function MarketPricingManagement() {
-  // ── Data state ──
+  // ── data ──────────────────────────────────────────────────────────────────
   const [groups, setGroups] = useState<ProductGroup[]>([]);
   const [markets, setMarkets] = useState<Market[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // ── Filters ──
+  // ── filters ───────────────────────────────────────────────────────────────
   const [search, setSearch] = useState("");
   const [dataFilter, setDataFilter] = useState<"ALL" | "WITH_DATA" | "NO_DATA">(
     "ALL",
@@ -45,20 +42,19 @@ export default function MarketPricingManagement() {
     "30d",
   );
 
-  // ── Analysis panel ──
+  // ── analysis ──────────────────────────────────────────────────────────────
   const [analyzeTarget, setAnalyzeTarget] = useState<{
     id: string;
     name: string;
   } | null>(null);
 
-  // ── Modal state ──
+  // ── modals ────────────────────────────────────────────────────────────────
   const [createMarketOpen, setCreateMarketOpen] = useState(false);
   const [editMarketTarget, setEditMarketTarget] = useState<Market | null>(null);
   const [deleteMarketTarget, setDeleteMarketTarget] = useState<Market | null>(
     null,
   );
   const [manageMarketsOpen, setManageMarketsOpen] = useState(false);
-
   const [recordPriceOpen, setRecordPriceOpen] = useState(false);
   const [recordPriceDefaultProduct, setRecordPriceDefaultProduct] = useState<
     string | undefined
@@ -69,10 +65,10 @@ export default function MarketPricingManagement() {
   const [deleteRecordTarget, setDeleteRecordTarget] =
     useState<PriceRecord | null>(null);
 
-  // ── Toasts ──
+  // ── toasts ────────────────────────────────────────────────────────────────
   const { toasts, add: toast } = useToast();
 
-  // ── Data fetching ──
+  // ── fetch ─────────────────────────────────────────────────────────────────
   const load = useCallback(async () => {
     try {
       setLoading(true);
@@ -112,7 +108,7 @@ export default function MarketPricingManagement() {
     load();
   }, [load]);
 
-  // ── Filtered groups ──
+  // ── filtered ──────────────────────────────────────────────────────────────
   const filtered = useMemo(
     () =>
       groups.filter((g) => {
@@ -133,31 +129,26 @@ export default function MarketPricingManagement() {
     .flatMap((g) => g.records)
     .filter((r) => new Date(r.recordedDate) >= cutoff).length;
 
-  // ── Handlers: markets ──
+  // ── handlers ──────────────────────────────────────────────────────────────
   const handleMarketCreated = (m: Market) => {
-    setMarkets((prev) => [m, ...prev]);
+    setMarkets((p) => [m, ...p]);
     toast(`Market "${m.name}" created`);
   };
-
   const handleMarketUpdated = (m: Market) => {
-    setMarkets((prev) => prev.map((x) => (x.id === m.id ? m : x)));
+    setMarkets((p) => p.map((x) => (x.id === m.id ? m : x)));
     toast(`Market "${m.name}" updated`);
     setEditMarketTarget(null);
   };
-
   const handleMarketDeleted = (id: string) => {
-    setMarkets((prev) => prev.filter((m) => m.id !== id));
+    setMarkets((p) => p.filter((m) => m.id !== id));
     toast("Market deleted", "error");
     setDeleteMarketTarget(null);
-    load(); // refresh price groups (history is cascade-deleted)
+    load();
   };
-
-  // ── Handlers: price records ──
   const handlePriceRecorded = (_: PriceRecord) => {
     toast("Price recorded successfully");
     load();
   };
-
   const handleRecordUpdated = (updated: PriceRecord) => {
     setGroups((prev) =>
       prev.map((g) =>
@@ -174,7 +165,6 @@ export default function MarketPricingManagement() {
     toast("Price record updated");
     setEditRecordTarget(null);
   };
-
   const handleRecordDeleted = (id: string) => {
     setGroups((prev) =>
       prev.map((g) => ({
@@ -185,25 +175,22 @@ export default function MarketPricingManagement() {
     toast("Price record deleted", "error");
     setDeleteRecordTarget(null);
   };
-
-  // ── Open record modal pre-filled for a product ──
   const openRecordForProduct = (productId: string) => {
     setRecordPriceDefaultProduct(productId);
     setRecordPriceOpen(true);
   };
 
+  // ─────────────────────────────────────────────────────────────────────────
   return (
     <div
       className="min-h-screen"
       style={{ background: "linear-gradient(135deg,#fafaf8 0%,#f5f0e8 100%)" }}
     >
       <ToastStack toasts={toasts} />
-
-      {/* Top accent line */}
       <div className="h-1 w-full bg-gradient-to-r from-amber-400 via-orange-400 to-amber-600" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Breadcrumb */}
+        {/* breadcrumb */}
         <nav
           aria-label="Breadcrumb"
           className="flex items-center gap-1.5 text-xs text-stone-400 mb-7"
@@ -229,11 +216,14 @@ export default function MarketPricingManagement() {
           ))}
         </nav>
 
-        {/* ── Page Header ── */}
+        {/* page header */}
         <div className="flex flex-col sm:flex-row justify-between gap-4 mb-8">
           <div>
             <div className="flex items-center gap-2.5 mb-1">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-sm">
+              <div
+                className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500
+                              flex items-center justify-center text-white shadow-sm"
+              >
                 <svg
                   className="w-4 h-4"
                   fill="none"
@@ -257,7 +247,6 @@ export default function MarketPricingManagement() {
             </p>
           </div>
 
-          {/* Action buttons */}
           <div className="flex items-center gap-2 flex-wrap">
             {!loading && (
               <div className="flex items-center gap-1.5 text-xs text-stone-400 bg-white border border-stone-200 px-3 py-1.5 rounded-xl">
@@ -266,7 +255,6 @@ export default function MarketPricingManagement() {
               </div>
             )}
 
-            {/* Manage Markets */}
             <button
               onClick={() => setManageMarketsOpen(true)}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-stone-200 bg-white text-xs font-bold text-stone-700 hover:bg-stone-50 transition-colors shadow-sm"
@@ -287,7 +275,6 @@ export default function MarketPricingManagement() {
               Manage Markets
             </button>
 
-            {/* Quick: Add Market */}
             <button
               onClick={() => setCreateMarketOpen(true)}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-stone-200 bg-white text-xs font-bold text-stone-700 hover:bg-stone-50 transition-colors shadow-sm"
@@ -314,7 +301,6 @@ export default function MarketPricingManagement() {
               Add Market
             </button>
 
-            {/* Record Price */}
             <button
               onClick={() => {
                 setRecordPriceDefaultProduct(undefined);
@@ -338,7 +324,6 @@ export default function MarketPricingManagement() {
               Record Price
             </button>
 
-            {/* Refresh */}
             <button
               onClick={load}
               disabled={loading}
@@ -366,7 +351,7 @@ export default function MarketPricingManagement() {
           {error && <ErrorBanner message={error} onRetry={load} />}
         </AnimatePresence>
 
-        {/* ── Summary Cards ── */}
+        {/* summary cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           {[
             {
@@ -421,13 +406,16 @@ export default function MarketPricingManagement() {
           ))}
         </div>
 
-        {/* ── Main grid: product cards + sticky analysis panel ── */}
-        <div
-          className={`grid gap-5 ${analyzeTarget ? "lg:grid-cols-[1fr_360px]" : "grid-cols-1"}`}
-        >
-          <div>
-            {/* Filter bar */}
-            <div className="bg-white rounded-2xl border border-stone-200 shadow-sm px-4 py-3.5 mb-5 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+        {/* ── main grid ─────────────────────────────────────────────────── */}
+        {/*  lg: [product list flex-1] [right sidebar 300px]               */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5">
+          {/* LEFT — filter bar + product cards */}
+          <div className="min-w-0">
+            {/* filter bar */}
+            <div
+              className="bg-white rounded-2xl border border-stone-200 shadow-sm px-4 py-3.5 mb-5
+                            flex flex-col sm:flex-row gap-3 items-stretch sm:items-center"
+            >
               <div className="relative flex-1">
                 <svg
                   className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400"
@@ -448,25 +436,28 @@ export default function MarketPricingManagement() {
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search products…"
                   aria-label="Search products"
-                  className="w-full pl-8 pr-4 py-2 rounded-xl border border-stone-200 text-xs bg-stone-50 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  className="w-full pl-8 pr-4 py-2 rounded-xl border border-stone-200 text-xs bg-stone-50
+                             focus:outline-none focus:ring-2 focus:ring-amber-400"
                 />
               </div>
 
-              {/* Date range toggle */}
               <div className="flex gap-0.5 bg-stone-100 rounded-xl p-0.5">
                 {(["30d", "60d", "90d", "all"] as const).map((v) => (
                   <button
                     key={v}
                     onClick={() => setDateRange(v)}
                     aria-pressed={dateRange === v}
-                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${dateRange === v ? "bg-white shadow-sm text-stone-800" : "text-stone-500"}`}
+                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
+                      dateRange === v
+                        ? "bg-white shadow-sm text-stone-800"
+                        : "text-stone-500"
+                    }`}
                   >
                     {v === "all" ? "All" : v}
                   </button>
                 ))}
               </div>
 
-              {/* Data filter toggle */}
               <div className="flex gap-0.5 bg-stone-100 rounded-xl p-0.5">
                 {(
                   [
@@ -479,7 +470,11 @@ export default function MarketPricingManagement() {
                     key={v}
                     onClick={() => setDataFilter(v)}
                     aria-pressed={dataFilter === v}
-                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all ${dataFilter === v ? "bg-white shadow-sm text-stone-800" : "text-stone-500"}`}
+                    className={`px-3 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all ${
+                      dataFilter === v
+                        ? "bg-white shadow-sm text-stone-800"
+                        : "text-stone-500"
+                    }`}
                   >
                     {l}
                   </button>
@@ -487,7 +482,7 @@ export default function MarketPricingManagement() {
               </div>
             </div>
 
-            {/* Product cards */}
+            {/* product cards */}
             {loading ? (
               <div className="space-y-4">
                 {[1, 2, 3].map((i) => (
@@ -518,86 +513,104 @@ export default function MarketPricingManagement() {
                 />
               </div>
             ) : (
-              <div className="space-y-4">
-                <AnimatePresence mode="popLayout">
-                  {filtered.map((g) => (
-                    <ProductPriceCard
-                      key={g.productId}
-                      group={g}
-                      onAnalyze={(id, name) =>
-                        setAnalyzeTarget((p) =>
-                          p?.id === id ? null : { id, name },
-                        )
-                      }
-                      isAnalyzing={analyzeTarget?.id === g.productId}
-                      onRecordPrice={openRecordForProduct}
-                      onEditRecord={setEditRecordTarget}
-                      onDeleteRecord={setDeleteRecordTarget}
-                    />
-                  ))}
-                </AnimatePresence>
-              </div>
-            )}
-
-            {!loading && filtered.length > 0 && (
-              <p className="text-center text-[11px] text-stone-400 mt-6">
-                Showing {filtered.length} of {groups.length} products · Active =
-                last 30 days · Recent = older records
-              </p>
+              <>
+                <div className="space-y-4">
+                  <AnimatePresence mode="popLayout">
+                    {filtered.map((g) => (
+                      <ProductPriceCard
+                        key={g.productId}
+                        group={g}
+                        onAnalyze={(id, name) =>
+                          setAnalyzeTarget((p) =>
+                            p?.id === id ? null : { id, name },
+                          )
+                        }
+                        isAnalyzing={analyzeTarget?.id === g.productId}
+                        onRecordPrice={openRecordForProduct}
+                        onEditRecord={setEditRecordTarget}
+                        onDeleteRecord={setDeleteRecordTarget}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </div>
+                {!loading && filtered.length > 0 && (
+                  <p className="text-center text-[11px] text-stone-400 mt-6">
+                    Showing {filtered.length} of {groups.length} products ·
+                    Active = last 30 days · Recent = last 7 days
+                  </p>
+                )}
+              </>
             )}
           </div>
 
-          {/* Sticky analysis panel */}
-          <AnimatePresence>
-            {analyzeTarget && (
-              <div className="lg:sticky lg:top-6 lg:self-start">
-                <AnalysisPanel
-                  key={analyzeTarget.id}
-                  productId={analyzeTarget.id}
-                  productName={analyzeTarget.name}
-                  onClose={() => setAnalyzeTarget(null)}
-                />
+          {/* RIGHT — trend carousel + analysis panel (sticky) */}
+          <div className="flex flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
+            {/* carousel — always visible */}
+            {loading ? (
+              <div
+                className="rounded-2xl border border-stone-700/60 bg-[#181613] overflow-hidden"
+                style={{ height: 272 }}
+              >
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-stone-800/80">
+                  <Skel cls="w-2 h-2 rounded-full" />
+                  <Skel cls="h-2 w-20" />
+                </div>
+                <div className="p-4 space-y-2.5">
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <Skel cls="h-14 rounded-lg" />
+                    <Skel cls="h-14 rounded-lg" />
+                  </div>
+                  <Skel cls="h-24 rounded-lg" />
+                </div>
               </div>
+            ) : (
+              <PriceTrendCarousel groups={groups} interval={3200} />
             )}
-          </AnimatePresence>
+
+            {/* analysis panel — slides in below carousel */}
+            <AnimatePresence>
+              {analyzeTarget && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                >
+                  <AnalysisPanel
+                    key={analyzeTarget.id}
+                    productId={analyzeTarget.id}
+                    productName={analyzeTarget.name}
+                    onClose={() => setAnalyzeTarget(null)}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
 
-      {/* ════════════════════════════════════════
-          MODALS
-          ════════════════════════════════════════ */}
-
-      {/* Create Market */}
+      {/* ── modals ─────────────────────────────────────────────────────── */}
       <CreateMarketModal
         open={createMarketOpen}
         onClose={() => setCreateMarketOpen(false)}
         onSuccess={handleMarketCreated}
       />
-
-      {/* Edit Market */}
       <EditMarketModal
         open={!!editMarketTarget}
         market={editMarketTarget}
         onClose={() => setEditMarketTarget(null)}
         onSuccess={handleMarketUpdated}
       />
-
-      {/* Delete Market */}
       <DeleteMarketModal
         open={!!deleteMarketTarget}
         market={deleteMarketTarget}
         onClose={() => setDeleteMarketTarget(null)}
         onSuccess={handleMarketDeleted}
       />
-
-      {/* Manage Markets Panel */}
       <ManageMarketsPanel
         open={manageMarketsOpen}
         onClose={() => setManageMarketsOpen(false)}
         onMarketsChange={load}
       />
-
-      {/* Record Price */}
       <RecordPriceModal
         open={recordPriceOpen}
         defaultProductId={recordPriceDefaultProduct}
@@ -605,16 +618,12 @@ export default function MarketPricingManagement() {
         onClose={() => setRecordPriceOpen(false)}
         onSuccess={handlePriceRecorded}
       />
-
-      {/* Edit Price History */}
       <EditPriceHistoryModal
         open={!!editRecordTarget}
         record={editRecordTarget}
         onClose={() => setEditRecordTarget(null)}
         onSuccess={handleRecordUpdated}
       />
-
-      {/* Delete Price History */}
       <DeletePriceHistoryModal
         open={!!deleteRecordTarget}
         record={deleteRecordTarget}
