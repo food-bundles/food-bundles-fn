@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +40,6 @@ interface CreateWithdrawalColumnsProps {
 
 export const createWithdrawalColumns = ({
   onApprove,
-  onCancel,
   onViewTrader,
   actionLoading,
 }: CreateWithdrawalColumnsProps): ColumnDef<WithdrawalData>[] => [

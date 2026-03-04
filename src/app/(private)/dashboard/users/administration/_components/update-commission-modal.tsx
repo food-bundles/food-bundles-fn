@@ -66,8 +66,8 @@ export function UpdateCommissionModal({
         if (!admin || !commission) return;
 
         const commissionValue = parseFloat(commission);
-        if (isNaN(commissionValue) || commissionValue < 0 || commissionValue > 100) {
-            toast.error("Please enter a valid commission percentage (0-100)");
+        if (isNaN(commissionValue) || commissionValue < 0 || commissionValue > 3) {
+            toast.error("Please enter a valid commission percentage (0-3)");
             return;
         }
 
@@ -105,7 +105,7 @@ export function UpdateCommissionModal({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-106.25">
                 <DialogHeader>
                     <DialogTitle>Update Commission</DialogTitle>
                     <DialogDescription>
@@ -124,7 +124,7 @@ export function UpdateCommissionModal({
                             type="number"
                             step="0.1"
                             min="0"
-                            max="100"
+                            max="3"
                             value={commission}
                             onChange={(e) => setCommission(e.target.value)}
                             autoFocus
