@@ -182,12 +182,8 @@ export default function MarketPricingManagement() {
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div
-      className="min-h-screen"
-      style={{ background: "linear-gradient(135deg,#fafaf8 0%,#f5f0e8 100%)" }}
-    >
+    <div className="min-h-screen">
       <ToastStack toasts={toasts} />
-      <div className="h-1 w-full bg-gradient-to-r from-amber-400 via-orange-400 to-amber-600" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* breadcrumb */}
