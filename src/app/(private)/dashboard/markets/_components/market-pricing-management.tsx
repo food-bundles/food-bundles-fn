@@ -2,9 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import createAxiosClient from "@/app/hooks/axiosClient";
-
-const axiosClient = createAxiosClient();
+import { marketPricingService } from "@/app/services/marketPricingService";
 
 // ─── TypeScript Interfaces ─────────────────────────────────────────────────
 
@@ -72,45 +70,6 @@ interface PriceAnalysis {
     profitLoss: "PROFIT" | "LOSS" | "BREAK_EVEN";
   }>;
 }
-
-// ─── API Layer ─────────────────────────────────────────────────────────────
-
-/** GET /api/markets/prices/by-product */
-const fetchPricesByProduct = async (p?: {
-  startDate?: string;
-  endDate?: string;
-  limit?: number;
-}): Promise<ApiResponse<PriceRecord[]>> => {
-  const q = new URLSearchParams({ limit: String(p?.limit ?? 200) });
-  if (p?.startDate) q.set("startDate", p.startDate);
-  if (p?.endDate) q.set("endDate", p.endDate);
-  const res = await axiosClient.get(`/markets/prices/by-product?${q}`);
-
-  console.log("Received price response:", res.data);
-
-  return res.data;
-};
-
-/** GET /api/markets */
-const fetchMarkets = async (): Promise<ApiResponse<Market[]>> => {
-  const res = await axiosClient.get(`/markets?limit=100`);
-  console.log("Received market response:", res.data);
-
-  return res.data;
-};
-
-/** POST /api/markets/prices/analyze */
-const analyzePrice = async (b: {
-  productId: string;
-  startDate: string;
-  endDate: string;
-}): Promise<ApiResponse<PriceAnalysis>> => {
-  const res = await axiosClient.post(`/markets/prices/analyze`, b);
-
-  console.log("Received price analysis response:", res.data);
-
-  return res.data;
-};
 
 // ─── Utilities ─────────────────────────────────────────────────────────────
 
@@ -263,7 +222,7 @@ const AnalysisPanel = ({
     try {
       setLoading(true);
       setError(null);
-      const res = await analyzePrice({
+      const res = await marketPricingService.analyzePrice({
         productId,
         startDate: daysAgo(30),
         endDate: new Date().toISOString(),
@@ -650,9 +609,13 @@ export default function MarketPricingManagement() {
           }
         : { limit: 200 };
       const [pr, mr] = await Promise.all([
-        fetchPricesByProduct(params),
-        fetchMarkets(),
+        marketPricingService.getPricesByProduct(params),
+        marketPricingService.getAllMarkets({ limit: 100 }),
       ]);
+
+      console.log("Received pr:--", pr);
+      console.log("Received mr:--", mr);
+
       if (pr.success) setGroups(groupByProduct(pr.data));
       else setError(pr.message ?? "Failed to load market prices.");
       if (mr.success) setMarkets(mr.data);
@@ -701,7 +664,7 @@ export default function MarketPricingManagement() {
         >
           {[
             { l: "Dashboard", h: "/dashboard" },
-            { l: "Products", h: "/products" },
+            { l: "Products", h: "/dashboard/stock/products" },
             { l: "Market Pricing" },
           ].map((item, i) => (
             <span key={i} className="flex items-center gap-1.5">
