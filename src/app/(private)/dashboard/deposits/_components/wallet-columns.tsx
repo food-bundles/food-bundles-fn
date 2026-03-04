@@ -175,13 +175,14 @@ export const createWalletColumns = ({
     cell: ({ row }) => {
       const balance = row.getValue("balance") as number;
       return (
-        <div className="flex items-baseline gap-1">
-          <span className="text-sm text-gray-900">
-            {balance?.toLocaleString()}
-          </span>
-          <span className="text-xs text-gray-600">RWF</span>
-          <span className="text-xs text-gray-900 ml-2">{row.original.commission || 0} <span className="text-gray-500">%</span></span>
-
+        <div className="flex flex-col">
+          <div className="flex items-baseline gap-1">
+            <span className="text-sm font-semibold text-gray-900">
+              {balance?.toLocaleString()}
+            </span>
+            <span className="text-xs text-gray-600">RWF</span>
+          </div>
+            <span className="text-xs font-medium text-blue-700">{row.original.commission || 0}%</span>
         </div>
       );
     },

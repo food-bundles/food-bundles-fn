@@ -81,19 +81,15 @@ export default function DepositsManagementPage() {
   });
   const [restaurantTransactionPagination, setRestaurantTransactionPagination] = useState({
     page: 1,
-    limit: 5,
+    limit: 10,
     total: 0,
     totalPages: 0,
   });
   const [traderTransactionPagination, setTraderTransactionPagination] = useState({
     page: 1,
-    limit: 5,
+    limit: 10,
     total: 0,
     totalPages: 0,
-  });
-  const [transactionFilterState, setTransactionFilterState] = useState({
-    type: "",
-    restaurantName: "",
   });
   const [transactionStats, setTransactionStats] = useState({
     topUp: 0,
@@ -216,6 +212,7 @@ export default function DepositsManagementPage() {
       onToggleStatus: (walletId: string, currentStatus: boolean) => {
         handleWalletToggle(walletId, currentStatus);
       },
+
       onDeposit: (restaurantId: string) => {
         setSelectedRestaurantId(restaurantId);
         setShowDepositModal(true);
@@ -1001,7 +998,7 @@ export default function DepositsManagementPage() {
                     <path d="M7 14l5-5 5 5z" />
                   </svg>
                 </div>
-                +12.5%
+                {/* +12.5% */}
               </div>
             </div>
             <div className="space-y-1">
@@ -1021,7 +1018,7 @@ export default function DepositsManagementPage() {
                     <path d="M7 14l5-5 5 5z" />
                   </svg>
                 </div>
-                +8.2%
+                {/* +8.2% */}
               </div>
             </div>
             <div className="space-y-1">
@@ -1039,7 +1036,7 @@ export default function DepositsManagementPage() {
                     <path d="M7 14l5-5 5 5z" />
                   </svg>
                 </div>
-                +5.1%
+                {/* +5.1% */}
               </div>
             </div>
             <div className="space-y-1">
@@ -1059,7 +1056,7 @@ export default function DepositsManagementPage() {
                     <path d="M7 14l5-5 5 5z" />
                   </svg>
                 </div>
-                +15.3%
+                {/* +15.3% */}
               </div>
             </div>
             <div className="space-y-1">
@@ -1079,7 +1076,7 @@ export default function DepositsManagementPage() {
                     <path d="M17 10l-5 5-5-5z" />
                   </svg>
                 </div>
-                -3.7%
+                {/* -3.7% */}
               </div>
             </div>
             <div className="space-y-1">
@@ -1093,17 +1090,17 @@ export default function DepositsManagementPage() {
       )}
 
       {/* Data tables with flex layout */}
-      <Card className="border-none shadow-xl shadow-gray-100 rounded-md space-y-0 overflow-hidden h-[600px]">
+      <Card className="border-none shadow-xl shadow-gray-100 rounded-md space-y-0 overflow-hidden lg:h-220">
         <CardHeader className="bg-white pb-0 shrink-0">
           <CardTitle className="text-sm font-semibold">
             <div className="mx-4 shrink-0">
-              <nav className="-mb-px flex space-x-8">
+              <nav className="-mb-px flex space-x-8 overflow-x-auto">
                 <button
                   onClick={() => {
                     setActiveWalletTab("restaurants");
                     setSelectedTraderForHistory(null);
                   }}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
+                  className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 whitespace-nowrap ${
                     activeWalletTab === "restaurants"
                       ? "border-green-500 text-green-600"
                       : "border-transparent text-gray-700 hover:text-gray-700 hover:border-gray-300"
@@ -1116,7 +1113,7 @@ export default function DepositsManagementPage() {
                     setActiveWalletTab("traders");
                     setSelectedTraderForHistory(null);
                   }}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
+                  className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 whitespace-nowrap ${
                     activeWalletTab === "traders"
                       ? "border-green-500 text-green-600"
                       : "border-transparent text-gray-700 hover:text-gray-700 hover:border-gray-300"
@@ -1126,7 +1123,7 @@ export default function DepositsManagementPage() {
                 </button>
                 <button
                   onClick={() => setActiveWalletTab("withdrawals")}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
+                  className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 whitespace-nowrap ${
                     activeWalletTab === "withdrawals"
                       ? "border-green-500 text-green-600"
                       : "border-transparent text-gray-700 hover:text-gray-700 hover:border-gray-300"
@@ -1138,8 +1135,8 @@ export default function DepositsManagementPage() {
             </div>
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-0 h-full flex flex-col">
-          <div className="flex flex-col lg:flex-row h-full">
+        <CardContent className="p-0 lg:h-full flex flex-col">
+          <div className="flex flex-col lg:flex-row lg:h-full">
             {/* Left side - Wallets with tabs */}
             <div className="w-full lg:w-1/2 lg:border-r border-gray-200 flex flex-col">
               <div className="p-4 border-gray-200 flex-shrink-0">
@@ -1150,7 +1147,7 @@ export default function DepositsManagementPage() {
 
               {activeWalletTab === "restaurants" && (
                 <div className="flex-1 overflow-hidden px-4">
-                  <div className="h-full pb-10 overflow-x-auto overflow-y-auto">
+                  <div className="h-[400px] lg:h-full pb-10 overflow-x-auto overflow-y-auto">
                     <DataTable
                       columns={restaurantColumns}
                       data={restaurantWallets as WalletData[]}
@@ -1200,7 +1197,7 @@ export default function DepositsManagementPage() {
 
               {activeWalletTab === "traders" && (
                 <div className="flex-1 overflow-hidden px-4">
-                  <div className="h-full pb-10 overflow-x-auto overflow-y-auto">
+                  <div className="h-[400px] lg:h-full pb-10 overflow-x-auto overflow-y-auto">
                     <DataTable
                       columns={traderColumns}
                       data={traderWallets as WalletData[]}
@@ -1246,7 +1243,7 @@ export default function DepositsManagementPage() {
 
               {activeWalletTab === "withdrawals" && (
                 <div className="flex-1 overflow-hidden px-4">
-                  <div className="h-full pb-10 overflow-x-auto overflow-y-auto">
+                  <div className="h-[400px] lg:h-full pb-10 overflow-x-auto overflow-y-auto">
                     <DataTable
                       columns={withdrawalColumns}
                       data={withdrawalRequests as WithdrawalData[]}
@@ -1273,7 +1270,7 @@ export default function DepositsManagementPage() {
             </div>
 
             {/* Right side - Transactions or Delegation History */}
-            <div className="w-full lg:w-1/2 flex flex-col">
+            <div className="w-full lg:w-1/2 flex flex-col lg:border-t-0 border-t">
               <div className="p-4 border-gray-200 flex-shrink-0">
                 <p className="text-sm text-gray-600">
                   {selectedTraderForHistory 
@@ -1298,7 +1295,7 @@ export default function DepositsManagementPage() {
 
               {selectedTraderForHistory && activeWalletTab === "traders" && (
                 <div className="flex-1 overflow-hidden px-4">
-                  <div className="h-full pb-10 overflow-x-auto overflow-y-auto">
+                  <div className="h-[400px] lg:h-full pb-10 overflow-x-auto overflow-y-auto">
                     <DataTable
                       columns={delegationHistoryColumns}
                       data={delegationHistory as DelegationHistoryData[]}
@@ -1329,7 +1326,7 @@ export default function DepositsManagementPage() {
 
               {activeWalletTab === "restaurants" && (
                 <div className="flex-1 overflow-hidden px-4">
-                  <div className="h-full pb-10 overflow-x-auto overflow-y-auto">
+                  <div className="h-[400px] lg:h-full pb-10 overflow-x-auto overflow-y-auto">
                     <DataTable
                       columns={restaurantTransactionColumns}
                       data={restaurantTransactions as TransactionData[]}
@@ -1375,7 +1372,7 @@ export default function DepositsManagementPage() {
 
               {activeWalletTab === "traders" && !selectedTraderForHistory && (
                 <div className="flex-1 overflow-hidden px-4">
-                  <div className="h-full pb-10 overflow-x-auto overflow-y-auto">
+                  <div className="h-[400px] lg:h-full pb-10 overflow-x-auto overflow-y-auto">
                     <DataTable
                       columns={traderTransactionColumns}
                       data={traderTransactions as TransactionData[]}
@@ -1421,7 +1418,7 @@ export default function DepositsManagementPage() {
 
               {activeWalletTab === "withdrawals" && (
                 <div className="flex-1 overflow-hidden px-4">
-                  <div className="h-full pb-10 overflow-x-auto overflow-y-auto">
+                  <div className="h-[400px] lg:h-full pb-10 overflow-x-auto overflow-y-auto">
                     <DataTable
                       columns={withdrawalTransactionColumns}
                       data={withdrawalTransactions as TransactionData[]}
@@ -1743,19 +1740,6 @@ export default function DepositsManagementPage() {
                   </p>
                 </div>
 
-                {/* {transactionDetails.metadata && (
-                  <div className="space-y-1">
-                    <p className="text-xs font-bold tracking-wider text-gray-500">Additional Info</p>
-                    <div className="bg-gray-50 p-3 rounded-lg text-sm">
-                      {Object.entries(transactionDetails.metadata).map(([key, value]) => (
-                        <div key={key} className="flex justify-between">
-                          <span className="text-gray-600">{key}:</span>
-                          <span className="text-gray-900 font-medium">{String(value)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )} */}
 
                 {/* Order Details Button */}
                 {transactionDetails.metadata?.orderId && (
