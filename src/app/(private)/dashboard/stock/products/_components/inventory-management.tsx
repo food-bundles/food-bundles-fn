@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect} from "react";
 import { DataTable } from "@/components/data-table";
 import { getInventoryColumns } from "./inventory-columns";
 import { createCommonFilters, TableFilters } from "@/components/filters";
@@ -12,10 +12,13 @@ import {
 } from "./CreateProductDrawer";
 import { ProductManagementModal } from "./product-management-modal";
 import { ProductStatusModal } from "./product-status-modal";
+import { PricingCalculator } from "./pricing-calculator";
 import type { Product } from "@/app/contexts/product-context";
 import { toast } from "sonner";
 import { productService } from "@/app/services/productService";
 import { useCategory } from "@/app/contexts/category-context";
+import { Button } from "@/components/ui/button";
+import { Calculator } from "lucide-react";
 
 interface InventoryManagementProps {
   products: Product[];
@@ -90,6 +93,7 @@ export function InventoryManagement({
   const [isManagementOpen, setIsManagementOpen] = useState(false);
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [statusProduct, setStatusProduct] = useState<Product | null>(null);
+  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
 
   // Modal handlers
   const handleManageProduct = (product: Product) => {
@@ -256,6 +260,15 @@ export function InventoryManagement({
             <div className="flex flex-wrap items-center gap-2 flex-1">
               <TableFilters filters={filters} />
             </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setIsCalculatorOpen(true)}
+              className="gap-2 border-2 border-green-500 font-medium"
+            >
+              <Calculator className="h-4 w-4" />
+              Price Calculator
+            </Button>
           </div>
         }
         showSearch={false}
@@ -288,6 +301,11 @@ export function InventoryManagement({
         open={isStatusModalOpen}
         onOpenChange={setIsStatusModalOpen}
         onStatusUpdate={handleStatusUpdate}
+      />
+
+      <PricingCalculator
+        open={isCalculatorOpen}
+        onOpenChange={setIsCalculatorOpen}
       />
     </>
   );
