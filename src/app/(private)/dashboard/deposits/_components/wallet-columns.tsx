@@ -15,6 +15,7 @@ import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 export interface WalletData {
   id: string;
   balance: number;
+  totalDeposited: number;
   isActive: boolean;
   restaurantId: string | null;
   traderId: string | null;
@@ -124,7 +125,7 @@ export const createWalletColumns = ({
   onApproveDelegation,
   onRevokeDelegation,
   onUpdateCommission,
-    onViewHistory,
+  onViewHistory,
   currentPage,
   pageSize,
   walletType = "restaurant",
@@ -146,7 +147,9 @@ export const createWalletColumns = ({
     header: walletType === "restaurant" ? "Restaurant" : "Trader",
     cell: ({ row }) => {
       if (walletType === "restaurant") {
-        const restaurant = row.getValue("restaurant") as WalletData["restaurant"];
+        const restaurant = row.getValue(
+          "restaurant",
+        ) as WalletData["restaurant"];
         return (
           <div>
             <p className="text-xs text-gray-900">
@@ -162,7 +165,11 @@ export const createWalletColumns = ({
         const trader = row.getValue("trader") as WalletData["trader"];
         return (
           <div>
-            <p className="text-xs text-gray-900">{trader?.username && trader?.username.length > 20 ? trader?.username.slice(0, 10) + "..." : trader?.username}</p>
+            <p className="text-xs text-gray-900">
+              {trader?.username && trader?.username.length > 20
+                ? trader?.username.slice(0, 10) + "..."
+                : trader?.username}
+            </p>
             <p className="text-xs text-gray-600">{trader?.phone}</p>
           </div>
         );
@@ -170,18 +177,21 @@ export const createWalletColumns = ({
     },
   },
   {
-    accessorKey: "balance",
-    header: "Balance & Rate",
+    accessorKey: "totalDeposited",
+    header: "Deposite & Rate",
     cell: ({ row }) => {
-      const balance = row.getValue("balance") as number;
+      const totalDeposited = row.getValue("totalDeposited") as number;
       return (
-        <div className="flex items-baseline gap-1">
-          <span className="text-sm text-gray-900">
-            {balance?.toLocaleString()}
+        <div className="flex flex-col">
+          <div className="flex items-baseline gap-1">
+            <span className="text-sm font-semibold text-gray-900">
+              {totalDeposited?.toLocaleString()}
+            </span>
+            <span className="text-xs text-gray-600">RWF</span>
+          </div>
+          <span className="text-xs font-medium text-blue-700">
+            {row.original.commission || 0}%
           </span>
-          <span className="text-xs text-gray-600">RWF</span>
-          <span className="text-xs text-gray-900 ml-2">{row.original.commission || 0} <span className="text-gray-500">%</span></span>
-
         </div>
       );
     },
@@ -254,31 +264,39 @@ export const createWalletColumns = ({
               {wallet.isActive ? "Deactivate" : "Activate"}
             </DropdownMenuItem>
             {walletType === "restaurant" && wallet.restaurantId && (
-              <DropdownMenuItem
-                onClick={() => onDeposit(wallet.restaurantId!)}
-              >
+              <DropdownMenuItem onClick={() => onDeposit(wallet.restaurantId!)}>
                 Deposit
               </DropdownMenuItem>
             )}
-            {walletType === "trader" && wallet.traderId && onApproveDelegation && 
-              (wallet.delegationStatus === "PENDING" || wallet.delegationStatus === "APPROVED") && (
-              <DropdownMenuItem
-                onClick={() => onApproveDelegation(wallet.traderId!, wallet.commission || 5)}
-              >
-                {wallet.delegationStatus === "PENDING" ? "Approve Delegation" : "Resend OTP"}
-              </DropdownMenuItem>
-            )}
-            {walletType === "trader" && wallet.traderId && onUpdateCommission && (
-              <DropdownMenuItem
-                onClick={() => onUpdateCommission(wallet.traderId!)}
-              >
-                Set Commission
-              </DropdownMenuItem>
-            )}
+            {walletType === "trader" &&
+              wallet.traderId &&
+              onApproveDelegation &&
+              (wallet.delegationStatus === "PENDING" ||
+                wallet.delegationStatus === "APPROVED") && (
+                <DropdownMenuItem
+                  onClick={() =>
+                    onApproveDelegation(
+                      wallet.traderId!,
+                      wallet.commission || 5,
+                    )
+                  }
+                >
+                  {wallet.delegationStatus === "PENDING"
+                    ? "Approve Delegation"
+                    : "Resend OTP"}
+                </DropdownMenuItem>
+              )}
+            {walletType === "trader" &&
+              wallet.traderId &&
+              onUpdateCommission && (
+                <DropdownMenuItem
+                  onClick={() => onUpdateCommission(wallet.traderId!)}
+                >
+                  Set Commission
+                </DropdownMenuItem>
+              )}
             {walletType === "trader" && wallet.traderId && onViewHistory && (
-              <DropdownMenuItem
-                onClick={() => onViewHistory(wallet.traderId!)}
-              >
+              <DropdownMenuItem onClick={() => onViewHistory(wallet.traderId!)}>
                 View History
               </DropdownMenuItem>
             )}
