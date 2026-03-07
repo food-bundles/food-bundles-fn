@@ -36,6 +36,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { authService } from "@/app/services/authService";
 import { OptimizedImage } from "@/components/OptimizedImage";
+import { MdSystemSecurityUpdate } from "react-icons/md";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -157,6 +158,11 @@ const menuItems = [
         icon: Bell,
         label: "SMS Recipients",
         href: "/dashboard/settings/notification-recipient",
+      },
+      {
+        icon: MdSystemSecurityUpdate,
+        label: "Authenticator",
+        href: "/dashboard/settings/authenticator",
       },
     ],
   },

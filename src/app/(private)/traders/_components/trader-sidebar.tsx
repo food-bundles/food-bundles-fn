@@ -21,6 +21,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { authService } from "@/app/services/authService";
 import { OptimizedImage } from "@/components/OptimizedImage";
+import { MdSystemSecurityUpdate } from "react-icons/md";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/traders" },
@@ -41,6 +42,11 @@ const menuItems = [
         icon: NotebookPen,
         label: "Historic",
         href: "/traders/settings/delegation-history",
+      },
+      {
+        icon: MdSystemSecurityUpdate,
+        label: "Authenticator",
+        href: "/traders/settings/authenticator",
       },
     ],
   },
@@ -84,7 +90,7 @@ export function TraderSidebar({ isOpen, onClose }: TraderSidebarProps) {
     setUserDropdownOpen(!userDropdownOpen);
     if (!userDropdownOpen) {
       setTimeout(() => {
-        const nav = document.querySelector('nav');
+        const nav = document.querySelector("nav");
         if (nav) {
           nav.scrollTop = nav.scrollHeight;
         }
@@ -124,7 +130,6 @@ export function TraderSidebar({ isOpen, onClose }: TraderSidebarProps) {
 
   return (
     <div className="relative w-60 min-w-60 h-screen overflow-hidden bg-green-800">
-
       <div
         className={`
           fixed md:relative
@@ -173,7 +178,7 @@ export function TraderSidebar({ isOpen, onClose }: TraderSidebarProps) {
                           "w-full flex items-center px-3 py-2 rounded-md text-xs transition-colors whitespace-nowrap justify-between",
                           isActive && !hasActiveSub
                             ? "bg-green-500 hover:bg-green-600 text-white"
-                            : "text-green-200 hover:bg-green-700 hover:text-white"
+                            : "text-green-200 hover:bg-green-700 hover:text-white",
                         )}
                       >
                         <div className="flex items-center">
@@ -182,7 +187,7 @@ export function TraderSidebar({ isOpen, onClose }: TraderSidebarProps) {
                               "mr-2 md:mr-3 h-4 w-4 md:h-5 md:w-5",
                               isActive && !hasActiveSub
                                 ? "text-green-200"
-                                : "text-green-500"
+                                : "text-green-500",
                             )}
                           />
                           {item.label}
@@ -206,7 +211,7 @@ export function TraderSidebar({ isOpen, onClose }: TraderSidebarProps) {
                                     "flex items-center px-2 md:px-3 py-2 rounded text-xs transition-colors whitespace-nowrap",
                                     isSubActive
                                       ? "bg-green-600 text-white"
-                                      : "text-green-200 hover:bg-green-600 hover:text-white"
+                                      : "text-green-200 hover:bg-green-600 hover:text-white",
                                   )}
                                 >
                                   <subItem.icon className="mr-2 md:mr-3 h-2 w-2 md:h-3 md:w-3" />
@@ -228,13 +233,13 @@ export function TraderSidebar({ isOpen, onClose }: TraderSidebarProps) {
                         "flex items-center px-2 md:px-3 py-2 text-xs transition-colors whitespace-nowrap rounded-md",
                         isActive
                           ? "bg-green-700 hover:bg-green-700 text-green-200"
-                          : "text-green-200 hover:bg-green-700 hover:text-white"
+                          : "text-green-200 hover:bg-green-700 hover:text-white",
                       )}
                     >
                       <item.icon
                         className={cn(
                           "mr-2 md:mr-3 h-4 w-4 md:h-5 md:w-5",
-                          isActive ? "text-white" : "text-green-500"
+                          isActive ? "text-white" : "text-green-500",
                         )}
                       />
                       <span className="truncate">{item.label}</span>
@@ -252,14 +257,12 @@ export function TraderSidebar({ isOpen, onClose }: TraderSidebarProps) {
               >
                 <User className="mr-3 h-5 w-5 text-green-500" />
                 <div className="flex-1 text-left mr-2">
-                  <div className="text-xs">
-                    My Account
-                  </div>
+                  <div className="text-xs">My Account</div>
                 </div>
                 <ChevronDown
                   className={cn(
                     "h-4 w-4 transition-transform",
-                    userDropdownOpen && "rotate-180"
+                    userDropdownOpen && "rotate-180",
                   )}
                 />
               </button>
@@ -283,7 +286,7 @@ export function TraderSidebar({ isOpen, onClose }: TraderSidebarProps) {
                     className={cn(
                       "w-full flex items-center px-3 py-2 text-xs transition-colors",
                       "text-red-300 hover:text-red-400 hover:bg-green-700",
-                      isLoggingOut && "opacity-50 cursor-not-allowed"
+                      isLoggingOut && "opacity-50 cursor-not-allowed",
                     )}
                   >
                     <LogOut className="mr-2 h-4 w-4" />

@@ -1,7 +1,19 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Bell, HelpCircle, Crown, Ticket, Home, ShoppingCart, Wallet, Users, Plus, Gift } from "lucide-react";
+import {
+  Bell,
+  HelpCircle,
+  Crown,
+  Ticket,
+  Home,
+  ShoppingCart,
+  Wallet,
+  Users,
+  Plus,
+  Gift,
+  Settings,
+} from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { OptimizedImage } from "@/components/OptimizedImage";
@@ -16,6 +28,11 @@ const menuItems = [
   { icon: Ticket, label: "Vouchers", href: "/restaurant/vouchers" },
   { icon: Plus, label: "Affiliators", href: "/restaurant/affiliators" },
   { icon: HelpCircle, label: "Help & Support", href: "/restaurant/help" },
+  {
+    icon: Settings,
+    label: "Settings",
+    href: "/restaurant/settings/authenticator",
+  },
 ];
 
 interface RestaurantSidebarProps {
@@ -28,9 +45,12 @@ export function RestaurantSidebar({ isOpen, onClose }: RestaurantSidebarProps) {
   const { user } = useAuth();
 
   // Filter menu items based on user role
-  const filteredMenuItems = menuItems.filter(item => {
+  const filteredMenuItems = menuItems.filter((item) => {
     // Hide Affiliators menu for affiliator users
-    if (item.href === "/restaurant/affiliators" && user?.role === "AFFILIATOR") {
+    if (
+      item.href === "/restaurant/affiliators" &&
+      user?.role === "AFFILIATOR"
+    ) {
       return false;
     }
     return true;
@@ -48,7 +68,7 @@ export function RestaurantSidebar({ isOpen, onClose }: RestaurantSidebarProps) {
         "z-50 md:z-auto",
         "w-58 min-w-58 h-screen flex flex-col shrink-0",
         "transition-transform duration-300 ease-in-out",
-        "relative overflow-hidden"
+        "relative overflow-hidden",
       )}
     >
       <div className="absolute inset-0 z-0">
@@ -101,7 +121,7 @@ export function RestaurantSidebar({ isOpen, onClose }: RestaurantSidebarProps) {
                       "flex items-center gap-3 px-4 py-2 rounded text-sm font-medium transition-all duration-200",
                       isActive
                         ? "bg-green-600 text-white shadow-lg shadow-green-600/30"
-                        : "text-white"
+                        : "text-white",
                     )}
                   >
                     <item.icon className="w-5 h-5 shrink-0" />
