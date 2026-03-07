@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ProductGroup } from "@/types/market-pricing";
+import { TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
@@ -101,21 +102,14 @@ function Sparkline({
       aria-hidden
     >
       <defs>
-        <linearGradient id="cg-our" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.38" />
-          <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.03" />
+        <linearGradient id="cg-our-w" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#16a34a" stopOpacity="0.18" />
+          <stop offset="100%" stopColor="#16a34a" stopOpacity="0.02" />
         </linearGradient>
-        <linearGradient id="cg-mkt" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#34d399" stopOpacity="0.30" />
-          <stop offset="100%" stopColor="#34d399" stopOpacity="0.03" />
+        <linearGradient id="cg-mkt-w" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#111827" stopOpacity="0.10" />
+          <stop offset="100%" stopColor="#111827" stopOpacity="0.01" />
         </linearGradient>
-        <filter id="cg-glow">
-          <feGaussianBlur stdDeviation="2.5" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
       </defs>
 
       {/* grid */}
@@ -126,7 +120,7 @@ function Sparkline({
           x2={pL + iw}
           y1={pT + t * ih}
           y2={pT + t * ih}
-          stroke="rgba(255,255,255,0.07)"
+          stroke="rgba(0,0,0,0.06)"
           strokeWidth="0.6"
         />
       ))}
@@ -134,25 +128,26 @@ function Sparkline({
       {/* areas */}
       <motion.path
         d={area("mkt")}
-        fill="url(#cg-mkt)"
+        fill="url(#cg-mkt-w)"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       />
       <motion.path
         d={area("our")}
-        fill="url(#cg-our)"
+        fill="url(#cg-our-w)"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.08 }}
       />
 
-      {/* market line */}
+      {/* market line — dark */}
       <motion.path
         d={line("mkt")}
         fill="none"
-        stroke="#34d399"
+        stroke="#374151"
         strokeWidth="1.5"
+        strokeDasharray="4 2"
         strokeLinejoin="round"
         strokeLinecap="round"
         initial={{ pathLength: 0, opacity: 0 }}
@@ -160,29 +155,28 @@ function Sparkline({
         transition={{ duration: 0.7, ease: "easeOut" }}
       />
 
-      {/* our price line — glowing amber */}
+      {/* our price line — green */}
       <motion.path
         d={line("our")}
         fill="none"
-        stroke="#f59e0b"
+        stroke="#16a34a"
         strokeWidth="2"
         strokeLinejoin="round"
         strokeLinecap="round"
-        filter="url(#cg-glow)"
         initial={{ pathLength: 0, opacity: 0 }}
         animate={{ pathLength: 1, opacity: 1 }}
         transition={{ duration: 0.7, delay: 0.12, ease: "easeOut" }}
       />
 
-      {/* terminal dots at last point */}
+      {/* terminal dots */}
       {(["our", "mkt"] as const).map((k) => (
         <motion.circle
           key={k}
           cx={px(points.length - 1)}
           cy={py(points[points.length - 1][k])}
           r={3}
-          fill={k === "our" ? "#f59e0b" : "#34d399"}
-          stroke="rgba(20,18,16,0.85)"
+          fill={k === "our" ? "#16a34a" : "#374151"}
+          stroke="white"
           strokeWidth={1.5}
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -200,7 +194,7 @@ function Sparkline({
             i === 0 ? "start" : i === points.length - 1 ? "end" : "middle"
           }
           fontSize="7"
-          fill="rgba(168,162,158,0.75)"
+          fill="rgba(107,114,128,0.85)"
           fontFamily="system-ui"
         >
           {points[i].label}
@@ -245,18 +239,14 @@ function TrendSlide({
       {/* header row */}
       <div className="flex items-start justify-between mb-2.5 flex-shrink-0">
         <div className="flex items-center gap-2 min-w-0">
-          <div
-            className="w-7 h-7 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500
-                          flex items-center justify-center text-white text-[10px] font-black
-                          flex-shrink-0 shadow-lg shadow-amber-900/30"
-          >
+          <div className="w-7 h-7 rounded-xl bg-black flex items-center justify-center text-white text-[10px] font-black flex-shrink-0">
             {group.productName.slice(0, 2).toUpperCase()}
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] font-black text-white truncate">
+            <p className="text-[11px] font-black text-gray-900 truncate">
               {group.productName}
             </p>
-            <p className="text-[8px] text-stone-500 mt-0.5">
+            <p className="text-[8px] text-gray-500 mt-0.5">
               {group.records.length} records
             </p>
           </div>
@@ -264,24 +254,21 @@ function TrendSlide({
 
         <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
           {isEqual ? (
-            <span
-              className="text-[8px] font-black px-1.5 py-0.5 rounded-full
-                             bg-stone-700 text-stone-400 border border-stone-600"
-            >
+            <span className="text-[8px] font-black px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
               ≈ EQ
             </span>
           ) : (
             <span
               className={`text-[8px] font-black px-1.5 py-0.5 rounded-full border ${
                 isHigher
-                  ? "bg-amber-900/40 text-amber-300 border-amber-700/50"
-                  : "bg-emerald-900/40 text-emerald-300 border-emerald-700/50"
+                  ? "bg-gray-100 text-gray-700 border-gray-200"
+                  : "bg-green-50 text-green-700 border-green-200"
               }`}
             >
               {isHigher ? "▲" : "▼"} {absPct}%
             </span>
           )}
-          <span className="text-[8px] text-stone-600 tabular-nums">
+          <span className="text-[8px] text-gray-400 tabular-nums">
             {idx + 1}/{total}
           </span>
         </div>
@@ -289,32 +276,29 @@ function TrendSlide({
 
       {/* price mini-cards */}
       <div className="grid grid-cols-2 gap-1.5 mb-2.5 flex-shrink-0">
-        <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 px-2.5 py-1.5">
+        <div className="rounded-lg bg-green-50 border border-green-200 px-2.5 py-1.5">
           <div className="flex items-center gap-1 mb-0.5">
-            <span
-              className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0"
-              style={{ boxShadow: "0 0 4px #f59e0b" }}
-            />
-            <span className="text-[7px] font-bold text-amber-400 uppercase tracking-wider">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-600 flex-shrink-0" />
+            <span className="text-[7px] font-bold text-green-700 uppercase tracking-wider">
               Ours
             </span>
           </div>
-          <p className="text-sm font-black text-white tabular-nums">
+          <p className="text-sm font-black text-gray-900 tabular-nums">
             {kFmt(group.ourPrice)}
           </p>
-          <p className="text-[7px] text-stone-600">RWF</p>
+          <p className="text-[7px] text-gray-500">RWF</p>
         </div>
-        <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1.5">
+        <div className="rounded-lg bg-gray-50 border border-gray-200 px-2.5 py-1.5">
           <div className="flex items-center gap-1 mb-0.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
-            <span className="text-[7px] font-bold text-emerald-400 uppercase tracking-wider">
+            <span className="w-1.5 h-1.5 rounded-full bg-gray-500 flex-shrink-0" />
+            <span className="text-[7px] font-bold text-gray-600 uppercase tracking-wider">
               Market
             </span>
           </div>
-          <p className="text-sm font-black text-white tabular-nums">
+          <p className="text-sm font-black text-gray-900 tabular-nums">
             {kFmt(latestMkt)}
           </p>
-          <p className="text-[7px] text-stone-600">RWF</p>
+          <p className="text-[7px] text-gray-500">RWF</p>
         </div>
       </div>
 
@@ -324,7 +308,7 @@ function TrendSlide({
           <Sparkline points={series} w={280} h={96} />
         ) : (
           <div className="h-full flex items-center justify-center">
-            <p className="text-[9px] text-stone-600 text-center leading-relaxed">
+            <p className="text-[9px] text-gray-400 text-center leading-relaxed">
               Need 2+ records
               <br />
               for trend chart
@@ -338,20 +322,20 @@ function TrendSlide({
         <div className="flex items-center justify-between mt-1.5 flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <span className="flex items-center gap-1">
-              <span
-                className="inline-block w-3 h-px bg-amber-400"
-                style={{ boxShadow: "0 0 4px #f59e0b80" }}
-              />
-              <span className="text-[7px] text-stone-600">Ours</span>
+              <span className="inline-block w-3 h-0.5 bg-green-600 rounded-full" />
+              <span className="text-[7px] text-gray-500">Ours</span>
             </span>
             <span className="flex items-center gap-1">
-              <span className="inline-block w-3 h-px bg-emerald-400" />
-              <span className="text-[7px] text-stone-600">Market</span>
+              <span
+                className="inline-block w-3 h-px bg-gray-500 border-dashed"
+                style={{ borderTopStyle: "dashed" }}
+              />
+              <span className="text-[7px] text-gray-500">Market</span>
             </span>
           </div>
           {trend !== 0 && (
             <span
-              className={`text-[7px] font-bold ${trend > 0 ? "text-red-400" : "text-emerald-400"}`}
+              className={`text-[7px] font-bold ${trend > 0 ? "text-gray-700" : "text-green-600"}`}
             >
               {trend > 0 ? "↑" : "↓"} {kFmt(Math.abs(trend))} RWF
             </span>
@@ -366,7 +350,6 @@ function TrendSlide({
 
 export interface PriceTrendCarouselProps {
   groups: ProductGroup[];
-  /** ms per slide, default 1600 */
   interval?: number;
 }
 
@@ -414,14 +397,13 @@ export default function PriceTrendCarousel({
   if (slides.length === 0) {
     return (
       <div
-        className="rounded-2xl border border-stone-700/60 bg-[#181613] shadow-2xl
-                   flex items-center justify-center"
+        className="rounded-2xl border border-gray-200 bg-white shadow-sm flex items-center justify-center"
         style={{ height: 272 }}
       >
         <div className="text-center px-4">
-          <div className="text-2xl mb-2 opacity-20">📈</div>
-          <p className="text-xs font-bold text-stone-500">No trend data yet</p>
-          <p className="text-[10px] text-stone-600 mt-0.5">
+          <TrendingUp className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+          <p className="text-xs font-bold text-gray-500">No trend data yet</p>
+          <p className="text-[10px] text-gray-400 mt-0.5">
             Record prices to see live charts
           </p>
         </div>
@@ -434,25 +416,22 @@ export default function PriceTrendCarousel({
 
   return (
     <div
-      className="rounded-2xl border border-stone-700/60 bg-[#181613] shadow-2xl overflow-hidden"
+      className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
       {/* header */}
-      <div
-        className="flex items-center justify-between px-4 py-2.5 border-b border-stone-800/80
-                   bg-gradient-to-r from-stone-900 to-stone-800/60"
-      >
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100 bg-gray-50">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-60" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-60" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-600" />
           </span>
-          <span className="text-[9px] font-black text-stone-400 uppercase tracking-[0.15em]">
+          <span className="text-[9px] font-black text-gray-500 uppercase tracking-[0.15em]">
             Price Trends
           </span>
           {paused && (
-            <span className="text-[8px] bg-stone-800 text-stone-500 px-1.5 py-0.5 rounded-full border border-stone-700">
+            <span className="text-[8px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full border border-gray-200">
               paused
             </span>
           )}
@@ -460,31 +439,30 @@ export default function PriceTrendCarousel({
 
         <div className="flex items-center gap-2">
           {!paused && slides.length > 1 && (
-            <div className="w-12 h-0.5 bg-stone-800 rounded-full overflow-hidden">
+            <div className="w-12 h-0.5 bg-gray-100 rounded-full overflow-hidden">
               <motion.div
                 key={safeIdx}
-                className="h-full rounded-full bg-amber-500"
+                className="h-full rounded-full bg-green-600"
                 initial={{ width: "0%" }}
                 animate={{ width: "100%" }}
                 transition={{ duration: interval / 1000, ease: "linear" }}
               />
             </div>
           )}
-          {[
-            { label: "←", delta: -1 },
-            { label: "→", delta: 1 },
-          ].map(({ label, delta }) => (
-            <button
-              key={label}
-              onClick={() => go(safeIdx + delta)}
-              aria-label={label}
-              className="w-5 h-5 rounded-lg border border-stone-700 flex items-center justify-center
-                         text-stone-600 hover:text-stone-200 hover:border-stone-500 transition-all
-                         text-[9px] font-bold"
-            >
-              {label}
-            </button>
-          ))}
+          <button
+            onClick={() => go(safeIdx - 1)}
+            aria-label="Previous"
+            className="w-5 h-5 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-800 hover:border-gray-400 transition-all"
+          >
+            <ChevronLeft className="w-3 h-3" />
+          </button>
+          <button
+            onClick={() => go(safeIdx + 1)}
+            aria-label="Next"
+            className="w-5 h-5 rounded-lg border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-800 hover:border-gray-400 transition-all"
+          >
+            <ChevronRight className="w-3 h-3" />
+          </button>
         </div>
       </div>
 
@@ -519,8 +497,8 @@ export default function PriceTrendCarousel({
               aria-label={`Slide ${i + 1}`}
               className={`rounded-full transition-all duration-300 ${
                 i === safeIdx
-                  ? "w-4 h-1.5 bg-amber-500"
-                  : "w-1.5 h-1.5 bg-stone-700 hover:bg-stone-500"
+                  ? "w-4 h-1.5 bg-green-600"
+                  : "w-1.5 h-1.5 bg-gray-200 hover:bg-gray-400"
               }`}
             />
           ))}

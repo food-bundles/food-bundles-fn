@@ -3,15 +3,23 @@
 import { PriceRecord, ProductGroup, ToastItem } from "@/types/market-pricing";
 import { AnimatePresence, motion } from "motion/react";
 import { useState, useCallback, useEffect, useRef } from "react";
+import {
+  BarChart2,
+  CheckCircle2,
+  AlertTriangle,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+} from "lucide-react";
 
 export const Skel = ({ cls }: { cls: string }) => (
-  <div className={`bg-stone-200 animate-pulse rounded-lg ${cls}`} />
+  <div className={`bg-gray-200 animate-pulse rounded-lg ${cls}`} />
 );
 
 export const PricePill = ({ diff, pct }: { diff: number; pct: number }) => {
   if (Math.abs(pct) < 1)
     return (
-      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-stone-100 text-stone-500 border border-stone-200">
+      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-gray-100 text-gray-500 border border-gray-200">
         ≈ Equal
       </span>
     );
@@ -20,8 +28,8 @@ export const PricePill = ({ diff, pct }: { diff: number; pct: number }) => {
     <span
       className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
         cheaper
-          ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-          : "bg-amber-50 text-amber-800 border-amber-200"
+          ? "bg-green-50 text-green-800 border-green-200"
+          : "bg-gray-100 text-gray-800 border-gray-200"
       }`}
     >
       {cheaper ? "▼" : "▲"} {Math.abs(pct)}%
@@ -37,18 +45,25 @@ export const PnLBadge = ({
   const cfg = {
     PROFIT: {
       l: "Profit",
-      c: "bg-emerald-100 text-emerald-800 border-emerald-200",
+      c: "bg-green-100 text-green-800 border-green-200",
+      Icon: TrendingDown,
     },
-    LOSS: { l: "Loss", c: "bg-red-50 text-red-700 border-red-200" },
+    LOSS: {
+      l: "Loss",
+      c: "bg-gray-100 text-gray-700 border-gray-200",
+      Icon: TrendingUp,
+    },
     BREAK_EVEN: {
       l: "Break Even",
-      c: "bg-stone-100 text-stone-600 border-stone-200",
+      c: "bg-gray-100 text-gray-600 border-gray-200",
+      Icon: Minus,
     },
   }[status];
   return (
     <span
-      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${cfg.c}`}
+      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${cfg.c}`}
     >
+      <cfg.Icon className="w-2.5 h-2.5" />
       {cfg.l}
     </span>
   );
@@ -66,23 +81,11 @@ export const EmptyState = ({
     animate={{ opacity: 1 }}
     className="flex flex-col items-center justify-center py-14 text-center"
   >
-    <div className="w-12 h-12 rounded-2xl bg-stone-100 border border-stone-200 flex items-center justify-center mb-3">
-      <svg
-        className="w-6 h-6 text-stone-400"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={1.5}
-          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-        />
-      </svg>
+    <div className="w-12 h-12 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center mb-3">
+      <BarChart2 className="w-6 h-6 text-gray-400" />
     </div>
-    <p className="text-sm font-bold text-stone-600 mb-1">{title}</p>
-    <p className="text-xs text-stone-400 max-w-xs leading-relaxed">{message}</p>
+    <p className="text-sm font-bold text-gray-600 mb-1">{title}</p>
+    <p className="text-xs text-gray-400 max-w-xs leading-relaxed">{message}</p>
   </motion.div>
 );
 
@@ -92,23 +95,11 @@ export const EmptyTab = ({ tab }: { tab: "active" | "recent" }) => (
     animate={{ opacity: 1 }}
     className="flex flex-col items-center justify-center py-8 text-center"
   >
-    <div className="w-9 h-9 rounded-xl bg-stone-100 border border-stone-200 flex items-center justify-center mb-2">
-      <svg
-        className="w-4 h-4 text-stone-400"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={1.5}
-          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-        />
-      </svg>
+    <div className="w-9 h-9 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center mb-2">
+      <BarChart2 className="w-4 h-4 text-gray-400" />
     </div>
-    <p className="text-xs font-bold text-stone-500">No records</p>
-    <p className="text-[10px] text-stone-400 mt-0.5 max-w-[200px] leading-relaxed">
+    <p className="text-xs font-bold text-gray-500">No records</p>
+    <p className="text-[10px] text-gray-400 mt-0.5 max-w-[200px] leading-relaxed">
       {tab === "active"
         ? "No prices recorded in the last 30 days."
         : "No prices recorded in the last 7 days."}
@@ -126,12 +117,12 @@ export const ErrorBanner = ({
   <motion.div
     initial={{ opacity: 0, y: -8 }}
     animate={{ opacity: 1, y: 0 }}
-    className="flex items-center justify-between bg-red-50 border border-red-200 rounded-2xl px-5 py-3.5 mb-6"
+    className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-2xl px-5 py-3.5 mb-6"
   >
-    <p className="text-sm text-red-700 font-medium">{message}</p>
+    <p className="text-sm text-gray-700 font-medium">{message}</p>
     <button
       onClick={onRetry}
-      className="text-xs font-bold text-red-700 underline"
+      className="text-xs font-bold text-gray-900 underline"
     >
       Retry
     </button>
@@ -163,15 +154,15 @@ export function ToastStack({ toasts }: { toasts: ToastItem[] }) {
             exit={{ opacity: 0, x: 24, scale: 0.96 }}
             className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl border text-xs font-bold pointer-events-auto ${
               t.type === "success"
-                ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                : "bg-red-50 border-red-200 text-red-800"
+                ? "bg-white border-green-200 text-green-800"
+                : "bg-white border-gray-200 text-gray-800"
             }`}
           >
-            <span
-              className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                t.type === "success" ? "bg-emerald-500" : "bg-red-500"
-              }`}
-            />
+            {t.type === "success" ? (
+              <CheckCircle2 className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
+            ) : (
+              <AlertTriangle className="w-3.5 h-3.5 text-gray-600 flex-shrink-0" />
+            )}
             {t.message}
           </motion.div>
         ))}
@@ -192,7 +183,6 @@ export function ModalShell({
   children: React.ReactNode;
   width?: string;
 }) {
-  // Close on Escape
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -208,17 +198,15 @@ export function ModalShell({
           role="dialog"
           aria-modal="true"
         >
-          {/* Backdrop */}
           <motion.div
-            className="absolute inset-0 bg-stone-900/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
           />
-          {/* Card */}
           <motion.div
-            className={`relative w-full ${width} bg-white rounded-3xl shadow-2xl border border-stone-200 overflow-hidden`}
+            className={`relative w-full ${width} bg-white rounded-3xl shadow-2xl border border-gray-200 overflow-hidden`}
             initial={{ opacity: 0, scale: 0.94, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: 16 }}
@@ -232,7 +220,7 @@ export function ModalShell({
   );
 }
 
-/** Amber gradient modal header */
+/** Modal header */
 export function ModalHeader({
   icon,
   title,
@@ -247,34 +235,26 @@ export function ModalHeader({
   danger?: boolean;
 }) {
   return (
-    <div
-      className={`flex items-start justify-between px-6 py-5 border-b border-stone-100 ${
-        danger
-          ? "bg-gradient-to-r from-red-50 to-stone-50"
-          : "bg-gradient-to-r from-amber-50 via-orange-50 to-stone-50"
-      }`}
-    >
+    <div className="flex items-start justify-between px-6 py-5 border-b border-gray-100 bg-gray-50">
       <div className="flex items-center gap-3">
         <div
           className={`w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-sm flex-shrink-0 ${
-            danger
-              ? "bg-gradient-to-br from-red-400 to-red-600"
-              : "bg-gradient-to-br from-amber-400 to-orange-500"
+            danger ? "bg-gray-900" : "bg-black"
           }`}
         >
           {icon}
         </div>
         <div>
-          <h2 className="text-sm font-black text-stone-900">{title}</h2>
+          <h2 className="text-sm font-black text-gray-900">{title}</h2>
           {subtitle && (
-            <p className="text-[11px] text-stone-400 mt-0.5">{subtitle}</p>
+            <p className="text-[11px] text-gray-400 mt-0.5">{subtitle}</p>
           )}
         </div>
       </div>
       <button
         onClick={onClose}
         aria-label="Close modal"
-        className="w-7 h-7 rounded-xl border border-stone-200 flex items-center justify-center text-stone-400 hover:bg-stone-100 hover:text-stone-700 transition-all mt-0.5"
+        className="w-7 h-7 rounded-xl border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-all mt-0.5"
       >
         <svg
           className="w-3.5 h-3.5"
@@ -294,7 +274,6 @@ export function ModalHeader({
   );
 }
 
-/** Consistent labelled input */
 export function Field({
   label,
   required,
@@ -310,19 +289,19 @@ export function Field({
 }) {
   return (
     <div>
-      <label className="block text-[11px] font-bold text-stone-600 uppercase tracking-widest mb-1.5">
+      <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-widest mb-1.5">
         {label}
-        {required && <span className="text-amber-600 ml-0.5">*</span>}
+        {required && <span className="text-green-600 ml-0.5">*</span>}
       </label>
       {children}
       {hint && !error && (
-        <p className="text-[10px] text-stone-400 mt-1">{hint}</p>
+        <p className="text-[10px] text-gray-400 mt-1">{hint}</p>
       )}
       {error && (
         <motion.p
           initial={{ opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-[11px] text-red-600 mt-1 font-medium"
+          className="text-[11px] text-gray-700 mt-1 font-medium"
         >
           {error}
         </motion.p>
@@ -331,7 +310,6 @@ export function Field({
   );
 }
 
-/** Text / number input */
 export function Input({
   type = "text",
   value,
@@ -364,16 +342,15 @@ export function Input({
       placeholder={placeholder}
       min={min}
       step={step}
-      className={`w-full px-3.5 py-2.5 rounded-xl border text-sm bg-stone-50 text-stone-900 placeholder-stone-400 transition-all focus:outline-none focus:ring-2 focus:bg-white ${
+      className={`w-full px-3.5 py-2.5 rounded-xl border text-sm bg-gray-50 text-gray-900 placeholder-gray-400 transition-all focus:outline-none focus:ring-2 focus:bg-white ${
         hasError
-          ? "border-red-300 focus:ring-red-200"
-          : "border-stone-200 focus:ring-amber-300 focus:border-amber-400"
+          ? "border-gray-400 focus:ring-gray-300"
+          : "border-gray-200 focus:ring-green-300 focus:border-green-400"
       }`}
     />
   );
 }
 
-/** Select dropdown */
 export function Select({
   value,
   onChange,
@@ -392,10 +369,10 @@ export function Select({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
-      className={`w-full px-3.5 py-2.5 rounded-xl border text-sm bg-stone-50 text-stone-900 transition-all focus:outline-none focus:ring-2 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed ${
+      className={`w-full px-3.5 py-2.5 rounded-xl border text-sm bg-gray-50 text-gray-900 transition-all focus:outline-none focus:ring-2 focus:bg-white disabled:opacity-50 disabled:cursor-not-allowed ${
         hasError
-          ? "border-red-300 focus:ring-red-200"
-          : "border-stone-200 focus:ring-amber-300 focus:border-amber-400"
+          ? "border-gray-400 focus:ring-gray-300"
+          : "border-gray-200 focus:ring-green-300 focus:border-green-400"
       }`}
     >
       {children}
@@ -403,7 +380,6 @@ export function Select({
   );
 }
 
-/** Toggle switch */
 export function Toggle({
   label,
   checked,
@@ -416,11 +392,11 @@ export function Toggle({
   description?: string;
 }) {
   return (
-    <div className="flex items-center justify-between py-2.5 px-4 rounded-xl bg-stone-50 border border-stone-200">
+    <div className="flex items-center justify-between py-2.5 px-4 rounded-xl bg-gray-50 border border-gray-200">
       <div>
-        <p className="text-xs font-bold text-stone-700">{label}</p>
+        <p className="text-xs font-bold text-gray-700">{label}</p>
         {description && (
-          <p className="text-[10px] text-stone-400 mt-0.5">{description}</p>
+          <p className="text-[10px] text-gray-400 mt-0.5">{description}</p>
         )}
       </div>
       <button
@@ -428,8 +404,8 @@ export function Toggle({
         role="switch"
         aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-1 ${
-          checked ? "bg-amber-500" : "bg-stone-300"
+        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-1 ${
+          checked ? "bg-green-600" : "bg-gray-300"
         }`}
       >
         <motion.span
@@ -442,7 +418,6 @@ export function Toggle({
   );
 }
 
-/** Modal action row */
 export function ModalActions({
   onCancel,
   onConfirm,
@@ -464,7 +439,7 @@ export function ModalActions({
         type="button"
         onClick={onCancel}
         disabled={loading}
-        className="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm font-bold text-stone-600 hover:bg-stone-50 transition-colors disabled:opacity-50"
+        className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
       >
         Cancel
       </button>
@@ -474,8 +449,8 @@ export function ModalActions({
         disabled={loading || disabled}
         className={`flex-1 py-2.5 rounded-xl text-sm font-black text-white shadow-sm transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 ${
           danger
-            ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
-            : "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+            ? "bg-gray-900 hover:bg-black"
+            : "bg-green-600 hover:bg-green-700"
         }`}
       >
         {loading && (
@@ -505,7 +480,6 @@ export function ModalActions({
   );
 }
 
-/** Inline alert */
 export function AlertBox({
   type,
   message,
@@ -519,19 +493,22 @@ export function AlertBox({
       animate={{ opacity: 1, y: 0 }}
       className={`flex items-start gap-2.5 px-3.5 py-3 rounded-xl text-xs font-medium border ${
         type === "error"
-          ? "bg-red-50 border-red-200 text-red-700"
-          : "bg-emerald-50 border-emerald-200 text-emerald-700"
+          ? "bg-gray-50 border-gray-200 text-gray-700"
+          : "bg-green-50 border-green-200 text-green-700"
       }`}
     >
       <span className="mt-0.5 flex-shrink-0">
-        {type === "error" ? "⚠️" : "✓"}
+        {type === "error" ? (
+          <AlertTriangle className="w-3.5 h-3.5" />
+        ) : (
+          <CheckCircle2 className="w-3.5 h-3.5" />
+        )}
       </span>
       <span>{message}</span>
     </motion.div>
   );
 }
 
-/** Group flat price records into per-product groups */
 export const groupByProduct = (records: PriceRecord[]): ProductGroup[] => {
   const map = new Map<string, ProductGroup>();
   for (const r of records) {
