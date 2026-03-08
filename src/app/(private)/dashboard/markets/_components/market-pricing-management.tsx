@@ -229,25 +229,23 @@ export default function MarketPricingManagement() {
           aria-label="Breadcrumb"
           className="flex items-center gap-1.5 text-xs text-gray-400 mb-7"
         >
-          {[
-            { l: "Dashboard", h: "/dashboard" },
-            { l: "Products", h: "/dashboard/stock/products" },
-            { l: "Market Pricing" },
-          ].map((item, i) => (
-            <span key={i} className="flex items-center gap-1.5">
-              {i > 0 && <span className="text-gray-300">›</span>}
-              {item.h ? (
-                <a
-                  href={item.h}
-                  className="hover:text-gray-700 transition-colors font-medium"
-                >
-                  {item.l}
-                </a>
-              ) : (
-                <span className="text-gray-700 font-semibold">{item.l}</span>
-              )}
-            </span>
-          ))}
+          {[{ l: "Dashboard", h: "/dashboard" }, { l: "Market Pricing" }].map(
+            (item, i) => (
+              <span key={i} className="flex items-center gap-1.5">
+                {i > 0 && <span className="text-gray-300">›</span>}
+                {item.h ? (
+                  <a
+                    href={item.h}
+                    className="hover:text-gray-700 transition-colors font-medium"
+                  >
+                    {item.l}
+                  </a>
+                ) : (
+                  <span className="text-gray-700 font-semibold">{item.l}</span>
+                )}
+              </span>
+            ),
+          )}
         </nav>
 
         {/* page header */}

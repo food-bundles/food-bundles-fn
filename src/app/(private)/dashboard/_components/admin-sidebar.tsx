@@ -71,11 +71,6 @@ const menuItems = [
         href: "/dashboard/stock/units",
       },
       {
-        icon: DollarSign,
-        label: "Market Pricing",
-        href: "/dashboard/stock/markets",
-      },
-      {
         icon: BarChart3,
         label: "Tt Sales Reports",
         href: "/dashboard/stock/fb-reports",

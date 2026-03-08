@@ -30,7 +30,6 @@ import {
 import { toast } from "sonner";
 import { ColumnDef } from "@tanstack/react-table";
 import PriceComparisonChart from "@/app/(private)/dashboard/markets/_components/PriceComparisonChart";
-import CreateMarketModal from "@/app/(private)/dashboard//markets/_components/CreateMarketModal";
 import RecordPriceModal from "@/app/(private)/dashboard//markets/_components/RecordPriceModal";
 
 type ActiveTab = "markets" | "prices" | "analysis" | "comparison";
@@ -41,7 +40,6 @@ export default function MarketPricingTable() {
   const [priceHistory, setPriceHistory] = useState<PriceHistory[]>([]);
   const [pricesByProduct, setPricesByProduct] = useState<PriceByProduct[]>([]);
   const [loading, setLoading] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [showRecordPriceModal, setShowRecordPriceModal] = useState(false);
   const [editingPrice, setEditingPrice] = useState<PriceHistory | null>(null);
   const [editingMarket, setEditingMarket] = useState<Market | null>(null);
@@ -641,13 +639,6 @@ export default function MarketPricingTable() {
               {/* Export buttons — right side, next to Columns button */}
               <div className="flex items-center gap-2">
                 <Button
-                  onClick={() => setShowCreateModal(true)}
-                  className="bg-green-700 hover:bg-green-600 text-white"
-                  size="sm"
-                >
-                  <Plus className="w-3 h-3 mr-1" /> Add Market
-                </Button>
-                <Button
                   onClick={() => handleExport("markets", "csv")}
                   variant="outline"
                   size="sm"
@@ -957,11 +948,6 @@ export default function MarketPricingTable() {
       )}
 
       {/* Modals */}
-      <CreateMarketModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onSuccess={fetchMarkets}
-      />
       <RecordPriceModal
         isOpen={showRecordPriceModal}
         onClose={() => setShowRecordPriceModal(false)}
