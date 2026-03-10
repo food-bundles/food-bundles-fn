@@ -1,26 +1,36 @@
 "use client";
 
-import { useState, useMemo, useId, useEffect } from "react"
-import { Bell, User, ChevronDown, Settings, LogOut, Menu, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useState, useMemo, useId, useEffect } from "react";
+import {
+  Bell,
+  User,
+  ChevronDown,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
-import NotificationsDrawer from "./notification"
-import ProfileDrawer from "./ProfileDrawer"
-import { authService } from "@/app/services/authService"
-import { toast } from "sonner"
-import SettingsDrawer from "./farmerSettings"
-import { useAuth } from "@/app/contexts/auth-context"
-import Image from "next/image"
-import { cn } from "@/lib/utils"
-import { Skeleton } from "@/components/ui/skeleton"
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import NotificationsDrawer from "./notification";
+import ProfileDrawer from "./ProfileDrawer";
+import { authService } from "@/app/services/authService";
+import { toast } from "sonner";
+import SettingsDrawer from "./farmerSettings";
+import { useAuth } from "@/app/contexts/auth-context";
+import Image from "next/image";
+import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 import { OptimizedImage } from "@/components/OptimizedImage";
+import { MdSystemSecurityUpdate } from "react-icons/md";
+import { redirect } from "next/navigation";
 
 const testNotifications: {
   id: string;
@@ -39,32 +49,35 @@ const testNotifications: {
 export default function DashboardHeader() {
   const dropdownId = useId();
 
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
-  const [isProfileOpen, setIsProfileOpen] = useState(false)
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [isLoggingOut, setIsLoggingOut] = useState(false)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [, setIsProfileDropdownOpen] = useState(false)
-  
-  const unreadCount = testNotifications.filter((n) => !n.isRead).length
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [, setIsProfileDropdownOpen] = useState(false);
+
+  const unreadCount = testNotifications.filter((n) => !n.isRead).length;
 
   const { user, getUserProfileImage } = useAuth();
 
   // Nice fallbacks if name is missing
-  const displayName = useMemo(() => user?.name || user?.name ||user?.phone|| " Farmer", [user])
-  const email = user?.email || ""
-  const profileImage = getUserProfileImage()
+  const displayName = useMemo(
+    () => user?.name || user?.name || user?.phone || " Farmer",
+    [user],
+  );
+  const email = user?.email || "";
+  const profileImage = getUserProfileImage();
 
   const handleProfileClick = () => {
-    setIsProfileOpen(true)
-    setIsMobileMenuOpen(false)
-  }
-  
+    setIsProfileOpen(true);
+    setIsMobileMenuOpen(false);
+  };
+
   const handleSettingClick = () => {
-    setIsSettingsOpen(true)
-    setIsMobileMenuOpen(false)
-  }
-  
+    setIsSettingsOpen(true);
+    setIsMobileMenuOpen(false);
+  };
+
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
@@ -83,21 +96,21 @@ export default function DashboardHeader() {
   };
 
   const closeMobileMenu = () => {
-    setIsMobileMenuOpen(false)
-  }
+    setIsMobileMenuOpen(false);
+  };
 
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement
+      const target = event.target as HTMLElement;
       if (!target.closest(".profile-dropdown")) {
-        setIsProfileDropdownOpen(false)
+        setIsProfileDropdownOpen(false);
       }
-    }
+    };
 
-    document.addEventListener("click", handleClickOutside)
-    return () => document.removeEventListener("click", handleClickOutside)
-  }, [])
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
 
   return (
     <>
@@ -107,17 +120,19 @@ export default function DashboardHeader() {
             {/* Left: Brand */}
             <div className="flex items-center gap-2 bg-green-50 px-2 sm:px-3 py-1 rounded-full border-2 border-primary shrink-0">
               <OptimizedImage
-                                 src="/imgs/Food_bundle_logo.png"
-                                 alt="FoodBundle Logo"
-                                 width={32}
-                                 height={32}
-                                 className="rounded-full object-cover w-5 h-5"
-                                 transformation={[
-                                   { width: 64, height: 64, crop: "fill", quality: "85" },
-                                 ]}
-                               />
+                src="/imgs/Food_bundle_logo.png"
+                alt="FoodBundle Logo"
+                width={32}
+                height={32}
+                className="rounded-full object-cover w-5 h-5"
+                transformation={[
+                  { width: 64, height: 64, crop: "fill", quality: "85" },
+                ]}
+              />
               <div className="flex flex-col">
-                <span className="text-2sm font-bold text-black whitespace-nowrap">Food bundles</span>
+                <span className="text-2sm font-bold text-black whitespace-nowrap">
+                  Food bundles
+                </span>
               </div>
             </div>
 
@@ -149,7 +164,7 @@ export default function DashboardHeader() {
                       <>
                         <div className="p-0.5 bg-green-600 rounded-full flex items-center justify-center">
                           {user?.profileImage && displayName ? (
-                            <Image                      
+                            <Image
                               src={profileImage || "/placeholder.svg"}
                               alt={`${displayName}'s profile`}
                               width={40}
@@ -169,7 +184,9 @@ export default function DashboardHeader() {
                           )}
                         </div>
                         {displayName ? (
-                          <span className="font-medium text-white hidden sm:block text-sm md:text-base">{displayName}</span>
+                          <span className="font-medium text-white hidden sm:block text-sm md:text-base">
+                            {displayName}
+                          </span>
                         ) : (
                           <Skeleton className="h-5 w-20 md:h-6 md:w-24 hidden sm:inline bg-green-600/60" />
                         )}
@@ -204,6 +221,13 @@ export default function DashboardHeader() {
                   >
                     <Settings className="mr-3 h-4 w-4" />
                     <span>Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={() => redirect("/farmers/setting/authenticator")}
+                  >
+                    <MdSystemSecurityUpdate className="mr-3 h-4 w-4" />
+                    <span>Authenticator</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
@@ -259,7 +283,7 @@ export default function DashboardHeader() {
                 <div className="flex items-center gap-3 px-3 py-2 mb-2">
                   <div className="p-0.5 bg-green-600 rounded-full flex items-center justify-center">
                     {user?.profileImage && displayName ? (
-                      <Image                      
+                      <Image
                         src={profileImage || "/placeholder.svg"}
                         alt={`${displayName}'s profile`}
                         width={32}
@@ -279,7 +303,9 @@ export default function DashboardHeader() {
                     )}
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium text-white">{displayName}</span>
+                    <span className="text-sm font-medium text-white">
+                      {displayName}
+                    </span>
                     <span className="text-xs text-green-200">{email}</span>
                   </div>
                 </div>
@@ -316,7 +342,7 @@ export default function DashboardHeader() {
                   className={cn(
                     "w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] transition-colors",
                     "text-red-300 hover:text-red-200 hover:bg-green-600",
-                    isLoggingOut && "opacity-50 cursor-not-allowed"
+                    isLoggingOut && "opacity-50 cursor-not-allowed",
                   )}
                 >
                   <LogOut className="h-4 w-4" />
@@ -343,5 +369,5 @@ export default function DashboardHeader() {
         onClose={() => setIsSettingsOpen(false)}
       />
     </>
-  )
+  );
 }
