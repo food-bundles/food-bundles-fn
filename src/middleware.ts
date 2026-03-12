@@ -93,6 +93,12 @@ export async function middleware(req: NextRequest) {
         if (response.ok) {
           userData = await response.json();
           userRole = userData.user?.role || userData.data?.user?.role;
+          
+          // Redirect TRADER users to trader app
+          if (userRole === "TRADER") {
+            const traderUrl = process.env.NEXT_PUBLIC_TRADER_APP_URL as string;
+            return NextResponse.redirect(new URL(traderUrl, req.url));
+          }
         } else {
           // Fallback: Check if we have a role cookie for special cases like AFFILIATOR
           // where the /me endpoint might be failing on the backend
