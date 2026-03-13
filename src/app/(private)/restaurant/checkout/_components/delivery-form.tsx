@@ -43,6 +43,7 @@ import "leaflet/dist/leaflet.css";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import { OTPInput } from "@/components/ui/otp-input";
 import { Button } from "@/components/ui/button";
+import { VerificationModal } from "./verification-modal";
 
 const MapComponent = dynamic(() => import("./MapComponent"), {
   ssr: false,
@@ -120,11 +121,12 @@ export function Checkout() {
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showVoucherOTPModal, setShowVoucherOTPModal] = useState(false);
-  const [voucherOTP, setVoucherOTP] = useState("");
-  const [isVerifyingVoucherOTP, setIsVerifyingVoucherOTP] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
   const [checkoutSessionId, setCheckoutSessionId] = useState("");
-  const [voucherOTPError, setVoucherOTPError] = useState("");
+  const [verificationError, setVerificationError] = useState("");
+  const [verificationType, setVerificationType] = useState<"OTP" | "2FA">("OTP");
   const [otherServices, setOtherServices] = useState(false);
   const [method, setMethod] = useState<PaymentMethod>("momo");
 
@@ -530,6 +532,7 @@ export function Checkout() {
         deliveryDate: new Date().toISOString().split("T")[0],
         currency: "RWF",
         otherServices,
+        verificationType: method === "voucher" ? verificationType : undefined,
       };
 
 
@@ -547,10 +550,11 @@ export function Checkout() {
       if (response.success) {
         localStorage.setItem("selectedPaymentMethod", paymentMethodMap[method]);
 
-        // Handle voucher OTP requirement
-        if (method === "voucher" && response.requiresOTP) {
+        // Handle voucher verification requirement
+        if (method === "voucher" && response.requiresVerification) {
           setCheckoutSessionId(response.checkoutSessionId || "");
-          setShowVoucherOTPModal(true);
+          setVerificationType(response.verificationType || "OTP");
+          setShowVerificationModal(true);
           return;
         }
 
@@ -589,31 +593,33 @@ export function Checkout() {
     }
   };
 
-  const handleVerifyVoucherOTP = async () => {
-    if (!voucherOTP.trim()) {
-      setVoucherOTPError("Please enter the OTP code");
+  const handleVerification = async (code: string, type: "OTP" | "2FA") => {
+    if (!code.trim()) {
+      setVerificationError("Please enter the verification code");
       return;
     }
 
-    setIsVerifyingVoucherOTP(true);
-    setVoucherOTPError("");
+    setIsVerifying(true);
+    setVerificationError("");
 
     try {
       const response = await checkoutService.verifyVoucherOTP(
-        voucherOTP,
+        code,
         checkoutSessionId
       );
 
       if (response.success) {
-        setShowVoucherOTPModal(false);
+        setShowVerificationModal(false);
         window.location.href = "/restaurant";
       } else {
-        setVoucherOTPError(response.message || "OTP verification failed");
+        setVerificationError(response.message || "Verification failed");
+        throw new Error(response.message || "Verification failed");
       }
     } catch (error: any) {
-      setVoucherOTPError("OTP verification failed. Please try again.");
+      setVerificationError(error.message || "Verification failed. Please try again.");
+      throw error;
     } finally {
-      setIsVerifyingVoucherOTP(false);
+      setIsVerifying(false);
     }
   };
 
@@ -1001,6 +1007,41 @@ export function Checkout() {
 
               {method === "voucher" && (
                 <div className="space-y-3 mt-3">
+                  {/* Verification Method Selector */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      Verification Method
+                    </label>
+                    <Select
+                      value={verificationType}
+                      onValueChange={(value: "OTP" | "2FA") => setVerificationType(value)}
+                      disabled={isSubmitting}
+                    >
+                      <SelectTrigger className="w-full h-10 text-[14px]">
+                        <SelectValue placeholder="Select verification method" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="OTP">
+                          <span className="flex items-center gap-2">
+                            <Phone className="h-3 w-3" />
+                            SMS Verification (OTP)
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="2FA">
+                          <span className="flex items-center gap-2">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Authenticator App (2FA)
+                          </span>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-500">
+                      {verificationType === "OTP" 
+                        ? "A code will be sent to your phone number"
+                        : "Use your authenticator app to verify"}
+                    </p>
+                  </div>
+
                   {isLoadingVouchers ? (
                     <Loader2 className="h-6 w-6 animate-spin mx-auto text-green-600" />
                   ) : availableVouchers.length > 0 ? (
@@ -1177,61 +1218,15 @@ export function Checkout() {
         </div>
       )}
 
-      {/* Voucher OTP Verification Modal */}
-      {showVoucherOTPModal && (
-        <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-md w-full max-w-md flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h3 className="text-[16px] font-medium text-gray-900 flex items-center gap-2">
-                Verify Voucher Payment
-              </h3>
-            </div>
-
-            <div className="p-4 space-y-4">
-              <p className="text-sm text-gray-600">
-                We&apos;ve sent a verification code to your phone number.
-              </p>
-
-              {voucherOTPError && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
-                  {voucherOTPError}
-                </div>
-              )}
-
-              <div className="flex justify-center">
-                <OTPInput
-                  value={voucherOTP}
-                  onChange={(value) => {
-                    setVoucherOTP(value);
-                    if (voucherOTPError) setVoucherOTPError("");
-                  }}
-                  disabled={isVerifyingVoucherOTP}
-                />
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowVoucherOTPModal(false)}
-                  className="flex-1 h-10 border border-gray-300 hover:border-gray-400 text-gray-900 text-sm font-medium transition-colors cursor-pointer"
-                  disabled={isVerifyingVoucherOTP}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleVerifyVoucherOTP}
-                  className="flex-1 h-10 bg-green-600 hover:bg-green-700 text-white text-sm font-medium cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  disabled={isVerifyingVoucherOTP || !voucherOTP.trim()}
-                >
-                  {isVerifyingVoucherOTP && (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  )}
-                  {isVerifyingVoucherOTP ? "Verifying..." : "Verify & Pay"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Verification Modal */}
+      <VerificationModal
+        isOpen={showVerificationModal}
+        onClose={() => setShowVerificationModal(false)}
+        onVerify={handleVerification}
+        isVerifying={isVerifying}
+        error={verificationError}
+        userPhone={user?.phone}
+      />
     </div>
   );
 }

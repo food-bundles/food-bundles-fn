@@ -26,6 +26,7 @@ export interface CheckoutRequest {
   cardholderName?: string;
   phoneNumber?: string;
   otherServices?: boolean;
+  verificationType?: "OTP" | "2FA";
 }
 
 export interface Checkout {
@@ -49,8 +50,10 @@ export interface ApiResponse<T = any> {
   success: boolean;
   message: string;
   data?: T;
+  requiresVerification?: boolean;
   requiresOTP?: boolean;
   checkoutSessionId?: string;
+  verificationType?: "OTP" | "2FA";
 }
 
 // --------------------
@@ -69,8 +72,10 @@ class CheckoutService {
         success: true,
         message: response.data.message || "Checkout created successfully",
         data: response.data.data,
+        requiresVerification: response.data.requiresVerification,
         requiresOTP: response.data.requiresOTP,
         checkoutSessionId: response.data.checkoutSessionId,
+        verificationType: response.data.verificationType,
       };
     } catch (error: any) {
       return {
