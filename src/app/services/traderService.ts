@@ -358,12 +358,13 @@ export const traderService = {
     return response.data;
   },
 
-  setTraderCommission: async (traderId: string, sessionId: string, otp: string) => {
+  setTraderCommission: async (traderId: string, sessionId?: string, otp?: string) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.patch(`/traders/${traderId}/commission`, {
-      sessionId,
-      otp,
-    });
+    const payload: any = {};
+    if (sessionId) payload.sessionId = sessionId;
+    if (otp) payload.otp = otp;
+    
+    const response = await axiosClient.patch(`/traders/${traderId}/commission`, payload);
     return response.data;
   },
 
