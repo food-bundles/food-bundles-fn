@@ -40,7 +40,7 @@ export interface ICreateAdministratorsData {
   email: string;
   phone?: string;
   password: string;
-  role: "ADMIN" | "AGGREGATOR" |"FOOD_BUNDLE" | "LOGISTIC_OFFICER";
+  role: "ADMIN" | "AGGREGATOR" | "FOOD_BUNDLE" | "LOGISTIC_OFFICER";
 }
 
 export interface IUpdateFarmerData {
@@ -90,10 +90,9 @@ export enum UserRole {
   LOGISTICS = "LOGISTICS",
   AGGREGATOR = "AGGREGATOR",
   FOOD_BUNDLE = "FOOD_BUNDLE",
-  AFFILIATOR="AFFILIATOR"
+  AFFILIATOR = "AFFILIATOR",
+  SUPERUSER = "SUPERUSER",
 }
-
- 
 
 export interface IUser {
   id: string;
@@ -114,34 +113,33 @@ export interface AuthContextType {
   checkAuth: () => Promise<void>;
 }
 
- 
 export enum OrderStatus {
-  PENDING = "PENDING",  
-  CONFIRMED = "CONFIRMED",  
-  PREPARING = "PREPARING",  
-  READY = "READY",  
-  IN_TRANSIT = "IN_TRANSIT",  
-  DELIVERED = "DELIVERED",  
-  CANCELLED = "CANCELLED",  
-  REFUNDED = "REFUNDED",  
+  PENDING = "PENDING",
+  CONFIRMED = "CONFIRMED",
+  PREPARING = "PREPARING",
+  READY = "READY",
+  IN_TRANSIT = "IN_TRANSIT",
+  DELIVERED = "DELIVERED",
+  CANCELLED = "CANCELLED",
+  REFUNDED = "REFUNDED",
 }
 
 export type Order = {
-  id: string
-  orderNumber: string
-  customer: string
+  id: string;
+  orderNumber: string;
+  customer: string;
   items: Array<{
-    name: string
-    image: string
-    quantity: number
-  }>
-  total: number
-  status: OrderStatus
-  deliveryPerson?: string
-  createdAt: string
-  time: string
-  estimatedTime?: string
-}
+    name: string;
+    image: string;
+    quantity: number;
+  }>;
+  total: number;
+  status: OrderStatus;
+  deliveryPerson?: string;
+  createdAt: string;
+  time: string;
+  estimatedTime?: string;
+};
 
 // Voucher Types (matching Prisma schema)
 export enum VoucherStatus {
@@ -205,7 +203,6 @@ export interface IVoucher {
   expiryDate?: Date;
   issuedDate: Date;
   loanId?: string;
- 
 }
 
 export interface ILoanApplication {
@@ -352,4 +349,3 @@ export interface IWalletTransaction {
     };
   };
 }
-
