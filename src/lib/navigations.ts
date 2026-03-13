@@ -1,5 +1,7 @@
 import { UserRole } from "@/lib/types";
 
+const TraderAppUrl = process.env.NEXT_PUBLIC_TRADER_APP_URL as string;
+
 export function getRedirectPath(userRole: UserRole): string {
   switch (userRole) {
     case UserRole.FARMER:
@@ -15,7 +17,7 @@ export function getRedirectPath(userRole: UserRole): string {
     case UserRole.ADMIN:
       return "/dashboard";
     case UserRole.TRADER:
-      return "/traders";
+      return TraderAppUrl;
     case UserRole.LOGISTICS:
       return "/logistics";
     case UserRole.SUPERUSER:

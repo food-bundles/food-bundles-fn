@@ -202,10 +202,28 @@ function LoginForm() {
       // Handle both old and new response structures
       const user = response.data?.user || response.data?.data?.user;
       const userRole = user?.role;
+      let token = response.data?.token;
+      
+      // Fallback: get token from cookies if not in response
+      if (!token) {
+        const cookies = document.cookie.split(";");
+        for (const cookie of cookies) {
+          const [name, value] = cookie.trim().split("=");
+          if (name === "auth-token") {
+            token = decodeURIComponent(value);
+            break;
+          }
+        }
+      }
       
       if (userRole) {
-        const redirectPath = getRedirectPath(userRole as UserRole);
-        window.location.href = redirectPath;
+        if (userRole === "TRADER") {
+          const traderUrl = `${process.env.NEXT_PUBLIC_TRADER_APP_URL}?token=${encodeURIComponent(token)}`;
+          window.location.href = traderUrl;
+        } else {
+          const redirectPath = getRedirectPath(userRole as UserRole);
+          window.location.href = redirectPath;
+        }
       } else {
         setError("User role not found. Please contact support.");
         setIsLoading(false);
