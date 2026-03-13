@@ -20,6 +20,8 @@ export function getRedirectPath(userRole: UserRole): string {
       return TraderAppUrl;
     case UserRole.LOGISTICS:
       return "/logistics";
+    case UserRole.SUPERUSER:
+      return "/dashboard";
     default:
       console.warn(`Unknown user role: ${userRole}. Redirecting to default.`);
       return "/";

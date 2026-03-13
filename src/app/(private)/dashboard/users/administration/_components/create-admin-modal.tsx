@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -37,6 +37,7 @@ export function CreateAdminModal({
   onCreate,
 }: CreateAdminModalProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -46,10 +47,44 @@ export function CreateAdminModal({
     role: "",
   });
 
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      const token = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("auth-token="))
+        ?.split("=")[1];
+
+      if (!token) return;
+
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          setUserRole(userData.user?.role || userData.data?.user?.role);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user role:", error);
+      }
+    };
+
+    fetchUserRole();
+  }, [])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!formData.username || !formData.email || !formData.password || !formData.role) {
+
+    if (
+      !formData.username ||
+      !formData.email ||
+      !formData.password ||
+      !formData.role
+    ) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -113,7 +148,12 @@ export function CreateAdminModal({
                   <Input
                     id="username"
                     value={formData.username}
-                    onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        username: e.target.value,
+                      }))
+                    }
                     disabled={isLoading}
                     className="bg-white border-gray-300 text-gray-900"
                     placeholder="Enter username"
@@ -128,7 +168,12 @@ export function CreateAdminModal({
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        email: e.target.value,
+                      }))
+                    }
                     disabled={isLoading}
                     className="bg-white border-gray-300 text-gray-900"
                     placeholder="Enter email address"
@@ -136,11 +181,18 @@ export function CreateAdminModal({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-gray-900">Phone</Label>
+                  <Label htmlFor="phone" className="text-gray-900">
+                    Phone
+                  </Label>
                   <Input
                     id="phone"
                     value={formData.phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        phone: e.target.value,
+                      }))
+                    }
                     disabled={isLoading}
                     className="bg-white border-gray-300 text-gray-900"
                     placeholder="Enter phone number"
@@ -151,11 +203,18 @@ export function CreateAdminModal({
               {/* Right Column */}
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="location" className="text-gray-900">Location</Label>
+                  <Label htmlFor="location" className="text-gray-900">
+                    Location
+                  </Label>
                   <Input
                     id="location"
                     value={formData.location}
-                    onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        location: e.target.value,
+                      }))
+                    }
                     disabled={isLoading}
                     className="bg-white border-gray-300 text-gray-900"
                     placeholder="Enter location"
@@ -170,7 +229,12 @@ export function CreateAdminModal({
                     id="password"
                     type="password"
                     value={formData.password}
-                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        password: e.target.value,
+                      }))
+                    }
                     disabled={isLoading}
                     className="bg-white border-gray-300 text-gray-900"
                     placeholder="Enter password"
@@ -183,7 +247,9 @@ export function CreateAdminModal({
                   </Label>
                   <Select
                     value={formData.role}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, role: value }))}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({ ...prev, role: value }))
+                    }
                     disabled={isLoading}
                   >
                     <SelectTrigger className="bg-white border-gray-300 text-gray-900">
@@ -193,6 +259,9 @@ export function CreateAdminModal({
                       <SelectItem value="ADMIN">ADMIN</SelectItem>
                       <SelectItem value="AGGREGATOR">AGGREGATOR</SelectItem>
                       <SelectItem value="LOGISTICS">LOGISTICS</SelectItem>
+                      {userRole === "SUPERUSER" && (
+                        <SelectItem value="SUPERUSER">SUPERUSER</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>

@@ -9,23 +9,32 @@ export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
 
   // Role-based route protection
-  const roleRoutes = {
-    "/dashboard": "ADMIN",
+  const roleRoutes: Record<string, string | string[]> = {
+    "/dashboard": ["ADMIN", "SUPERUSER"],
     "/restaurant": "RESTAURANT",
     "/farmers": "FARMER",
     "/aggregator": "AGGREGATOR",
     "/logistics": "LOGISTICS",
-    "/traders": "TRADER"
+    "/traders": "TRADER",
   };
 
   const protectedRoutes = Object.keys(roleRoutes);
-  const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route));
+  const isProtectedRoute = protectedRoutes.some((route) =>
+    pathname.startsWith(route),
+  );
 
   const guestOnlyRoutes = ["/guest"];
-  const isGuestOnlyRoute = guestOnlyRoutes.some((route) => pathname.startsWith(route));
+  const isGuestOnlyRoute = guestOnlyRoutes.some((route) =>
+    pathname.startsWith(route),
+  );
 
   // Auth pages that logged-in users shouldn't access
-  const authPages = ["/login", "/signup", "/forgot-password", "/reset-password"];
+  const authPages = [
+    "/login",
+    "/signup",
+    "/forgot-password",
+    "/reset-password",
+  ];
   const isAuthPage = authPages.includes(pathname);
 
   // Handle auth pages - redirect logged-in users to home
@@ -83,12 +92,15 @@ export async function middleware(req: NextRequest) {
       let userData: any = null;
 
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/me`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/me`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
           },
-        });
+        );
 
         if (response.ok) {
           userData = await response.json();
@@ -117,13 +129,15 @@ export async function middleware(req: NextRequest) {
 
       // Find required role for current route
       const requiredRole = Object.entries(roleRoutes).find(([route]) =>
-        pathname.startsWith(route)
+        pathname.startsWith(route),
       )?.[1];
 
       // Role check logic
+      const allowedRoles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
       const isAuthorized =
-        userRole === requiredRole ||
-        (requiredRole === "RESTAURANT" && (userRole === "AFFILIATOR" || userRole === "HOTEL"));
+        allowedRoles.includes(userRole!) ||
+        (requiredRole === "RESTAURANT" &&
+          (userRole === "AFFILIATOR" || userRole === "HOTEL"));
 
       if (!userRole || !isAuthorized) {
         return NextResponse.redirect(new URL("/unauthorized", req.url));
@@ -133,7 +147,8 @@ export async function middleware(req: NextRequest) {
         if (pathname === "/traders/agreement") {
           return NextResponse.next();
         }
-        const agreementAccepted = req.cookies.get("traderAgreementAccepted")?.value === "true";
+        const agreementAccepted =
+          req.cookies.get("traderAgreementAccepted")?.value === "true";
         if (!agreementAccepted) {
           return NextResponse.redirect(new URL("/traders/agreement", req.url));
         }
