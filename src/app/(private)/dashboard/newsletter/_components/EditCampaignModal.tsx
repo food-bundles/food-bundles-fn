@@ -72,19 +72,19 @@ export default function EditCampaignModal({
             />
           </div>
           <div>
-            <Label htmlFor="content">Content (HTML)</Label>
+            <Label htmlFor="content">Content</Label>
             <Textarea
               id="content"
               value={formData.content}
               onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-              placeholder="<h2>This Week's Updates</h2><p>Check out our latest prices...</p>"
+              placeholder="This week's updates check out our latest prices.."
               rows={10}
               required
               className="font-mono text-sm"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            {/* <p className="text-xs text-gray-500 mt-1">
               You can use HTML tags to format your email content
-            </p>
+            </p> */}
           </div>
           <div className="flex gap-2 justify-end">
             <Button type="button" variant="outline" onClick={onClose}>

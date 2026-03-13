@@ -12,6 +12,7 @@ import dynamic from "next/dynamic";
 import { FarmerManagementModal } from "./_components/farmer-management-modal";
 import { CreateFarmerModal } from "./_components/create-farmer-modal";
 import { farmersService } from "@/app/services/farmersService";
+import UserDetailsSheet from "./_components/UserDetailsSheet";
 
 function FarmersPageContent() {
   const { farmers,  error, getAllFarmers, updateFarmer, deleteFarmer, clearError } = useFarmers();
@@ -22,6 +23,8 @@ function FarmersPageContent() {
   const [selectedFarmer, setSelectedFarmer] = useState<Farmer | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   // All hooks must be called before any conditional returns
   const filteredData = useMemo(() => {
@@ -60,11 +63,22 @@ function FarmersPageContent() {
   }, [searchTerm, statusFilter, dateRange]);
 
   const farmerColumns = useMemo(() => {
-    return getFarmerColumns((farmer: Farmer) => {
-      setSelectedFarmer(farmer);
-      setIsModalOpen(true);
-    });
+    return getFarmerColumns(
+      (farmer: Farmer) => {
+        setSelectedFarmer(farmer);
+        setIsModalOpen(true);
+      },
+      (farmerId: string) => {
+        setSelectedUserId(farmerId);
+        setIsDetailsSheetOpen(true);
+      }
+    );
   }, []);
+
+  const handleRowClick = (farmer: Farmer) => {
+    setSelectedUserId(farmer.id);
+    setIsDetailsSheetOpen(true);
+  };
 
   const handleExport = () => {
     console.log("Exporting farmers data...");
@@ -125,6 +139,7 @@ function FarmersPageContent() {
         showColumnVisibility={true}
         showPagination={true}
         showRowSelection={true}
+        onRowClick={handleRowClick}
       />
       
       <FarmerManagementModal
@@ -140,6 +155,12 @@ function FarmersPageContent() {
         open={isCreateOpen}
         onOpenChange={setIsCreateOpen}
         onCreate={handleCreateFarmer}
+      />
+      
+      <UserDetailsSheet
+        isOpen={isDetailsSheetOpen}
+        onClose={() => setIsDetailsSheetOpen(false)}
+        userId={selectedUserId}
       />
     </div>
   );

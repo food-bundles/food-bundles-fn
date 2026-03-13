@@ -130,6 +130,9 @@ interface DataTableProps<TData, TValue> {
   onPaginationChange?: (page: number, limit: number) => void;
   onPageSizeChange?: (pageSize: number) => void;
   isLoading?: boolean;
+  
+  // Row click handler
+  onRowClick?: (row: TData) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -151,6 +154,7 @@ export function DataTable<TData, TValue>({
   onPaginationChange,
   onPageSizeChange,
   isLoading = false,
+  onRowClick,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -363,7 +367,8 @@ export function DataTable<TData, TValue>({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className="hover:bg-green-50 text-[13px]"
+                    className="hover:bg-green-50 text-[13px] cursor-pointer"
+                    onClick={() => onRowClick && onRowClick(row.original)}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell

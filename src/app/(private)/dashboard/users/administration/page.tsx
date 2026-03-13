@@ -10,6 +10,7 @@ import { getAdminColumns } from "./_components/admintration-columns";
 import { AdminManagementModal } from "./_components/admin-management-modal";
 import { CreateAdminModal } from "./_components/create-admin-modal";
 import { UpdateCommissionModal } from "./_components/update-commission-modal";
+import UserDetailsSheet from "../farmers/_components/UserDetailsSheet";
 
 export default function AdministrationPage() {
   const [admins, setAdmins] = useState<Admin[]>([]);
@@ -25,6 +26,8 @@ export default function AdministrationPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isCommissionModalOpen, setIsCommissionModalOpen] = useState(false);
+  const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const { getAllAdmins, createAdmin, updateAdmin, deleteAdmin } = useAdmins();
 
   const fetchAdmins = async (page = 1, limit = 5, isPagination = false) => {
@@ -72,8 +75,17 @@ export default function AdministrationPage() {
       setSelectedAdmin(admin);
       setIsModalOpen(true);
     },
-    handleUpdateCommission
+    handleUpdateCommission,
+    (adminId: string) => {
+      setSelectedUserId(adminId);
+      setIsDetailsSheetOpen(true);
+    }
   );
+
+  const handleRowClick = (admin: Admin) => {
+    setSelectedUserId(admin.id);
+    setIsDetailsSheetOpen(true);
+  };
 
   useEffect(() => {
     fetchAdmins(1, 5);
@@ -104,6 +116,7 @@ export default function AdministrationPage() {
         pagination={pagination}
         onPaginationChange={handlePaginationChange}
         isLoading={paginationLoading}
+        onRowClick={handleRowClick}
       />
 
       <AdminManagementModal
@@ -127,6 +140,12 @@ export default function AdministrationPage() {
         open={isCommissionModalOpen}
         onOpenChange={setIsCommissionModalOpen}
         onUpdate={() => fetchAdmins(pagination.page, pagination.limit)}
+      />
+      
+      <UserDetailsSheet
+        isOpen={isDetailsSheetOpen}
+        onClose={() => setIsDetailsSheetOpen(false)}
+        userId={selectedUserId}
       />
     </div>
   );

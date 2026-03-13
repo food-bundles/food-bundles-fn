@@ -10,6 +10,7 @@ import { CreateRestaurantModal } from "./create-restaurant-modal";
 import type { Restaurant } from "@/app/contexts/RestaurantContext";
 import { toast } from "sonner";
 import { restaurantService } from "@/app/services/restaurantService";
+import UserDetailsSheet from "../../farmers/_components/UserDetailsSheet";
 
 interface RestaurantManagementProps {
   restaurants: Restaurant[];
@@ -48,6 +49,8 @@ export function RestaurantManagement({
     useState<Restaurant | null>(null);
   const [isManagementOpen, setIsManagementOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
   // Modal handlers
   const handleManageRestaurant = (restaurant: Restaurant) => {
@@ -94,8 +97,19 @@ export function RestaurantManagement({
 
   // Get columns with handlers
   const columns = useMemo(() => {
-    return getRestaurantColumns(handleManageRestaurant);
+    return getRestaurantColumns(
+      handleManageRestaurant,
+      (restaurantId: string) => {
+        setSelectedUserId(restaurantId);
+        setIsDetailsSheetOpen(true);
+      }
+    );
   }, []);
+
+  const handleRowClick = (restaurant: Restaurant) => {
+    setSelectedUserId(restaurant.id);
+    setIsDetailsSheetOpen(true);
+  };
 
   // Filter data (client-side filtering for date range only)
   const filteredData = useMemo(() => {
@@ -164,6 +178,7 @@ export function RestaurantManagement({
         pagination={pagination}
         onPaginationChange={onPaginationChange}
         isLoading={isLoading}
+        onRowClick={handleRowClick}
       />
 
       {/* Modals */}
@@ -180,6 +195,12 @@ export function RestaurantManagement({
         open={isCreateOpen}
         onOpenChange={setIsCreateOpen}
         onCreate={handleCreateRestaurant}
+      />
+      
+      <UserDetailsSheet
+        isOpen={isDetailsSheetOpen}
+        onClose={() => setIsDetailsSheetOpen(false)}
+        userId={selectedUserId}
       />
     </>
   );
