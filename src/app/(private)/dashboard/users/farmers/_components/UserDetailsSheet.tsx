@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { userLookupService, UserLookupResult } from "@/app/services/userLookupService";
 import { toast } from "sonner";
 
@@ -111,8 +112,39 @@ export default function UserDetailsSheet({
 
         <div className="p-6 space-y-6">
           {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <Loader2 className="w-8 h-8 animate-spin text-green-700" />
+            <div className="space-y-6">
+              {/* Name & subtitle */}
+              <div className="space-y-2">
+                <Skeleton className="h-7 w-48" />
+                <Skeleton className="h-4 w-36" />
+              </div>
+              {/* Tabs */}
+              <div className="flex gap-6 border-b pb-2">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+              {/* Stats cards */}
+              <div className="grid grid-cols-3 gap-4">
+                <Skeleton className="h-20 rounded-lg" />
+                <Skeleton className="h-20 rounded-lg" />
+                <Skeleton className="h-20 rounded-lg" />
+              </div>
+              {/* List items */}
+              <div className="space-y-3">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex justify-between items-center border-b pb-3">
+                    <div className="space-y-1">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+                    <div className="space-y-1 items-end flex flex-col">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : userData ? (
             <>

@@ -316,19 +316,13 @@ export function DataTable<TData, TValue>({
         {/* Loading bar */}
         {isLoading && (
           <div className="absolute top-0 left-0 right-0 h-1 bg-gray-200 overflow-hidden z-10">
-            <div className="h-full bg-green-600 animate-[loading_1s_ease-in-out_infinite]" 
+            <div className="h-full bg-green-600"
                  style={{
                    width: '30%',
                    animation: 'loading 1s ease-in-out infinite'
                  }} />
           </div>
         )}
-        <style jsx>{`
-          @keyframes loading {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(400%); }
-          }
-        `}</style>
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

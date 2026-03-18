@@ -205,7 +205,7 @@ export const paymentColumns: ColumnDef<Payment>[] = [
       const paidDate = row.getValue("paidDate") as string | null;
       return (
         <div className="text-sm">
-          {paidDate ? new Date(paidDate).toLocaleDateString() : "Not paid"}
+          {paidDate ? new Date(paidDate).toLocaleDateString("en-GB") : "Not paid"}
         </div>
       );
     },
