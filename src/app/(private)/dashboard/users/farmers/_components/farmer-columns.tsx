@@ -6,7 +6,8 @@ import { format } from "date-fns";
 import { Farmer } from "@/app/contexts/FarmersContext";
 
 export const getFarmerColumns = (
-  onManage: (farmer: Farmer) => void
+  onManage: (farmer: Farmer) => void,
+  onViewDetails: (farmerId: string) => void
 ): ColumnDef<Farmer>[] => [
   {
     id: "index",
@@ -122,10 +123,13 @@ export const getFarmerColumns = (
         <Button 
           variant="ghost" 
           size="sm"
-          onClick={() => onManage(farmer)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onManage(farmer);
+          }}
           className="flex items-center gap-2"
         >
-          view
+          Manage
         </Button>
       );
     },

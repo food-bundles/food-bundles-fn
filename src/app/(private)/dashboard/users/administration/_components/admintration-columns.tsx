@@ -15,7 +15,8 @@ import { MoreHorizontal } from "lucide-react";
 
 export const getAdminColumns = (
   onManage: (admin: Admin) => void,
-  onUpdateCommission: (admin: Admin) => void
+  onUpdateCommission: (admin: Admin) => void,
+  onViewDetails: (adminId: string) => void
 ): ColumnDef<Admin>[] => [
     {
       id: "index",
@@ -140,20 +141,26 @@ export const getAdminColumns = (
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
+              <Button variant="ghost" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
                 <span className="sr-only">Open menu</span>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => onManage(admin)}>
+              <DropdownMenuItem onClick={(e) => {
+                e.stopPropagation();
+                onManage(admin);
+              }}>
                 Manage User
               </DropdownMenuItem>
               {admin.role === "TRADER" && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => onUpdateCommission(admin)}>
+                  <DropdownMenuItem onClick={(e) => {
+                    e.stopPropagation();
+                    onUpdateCommission(admin);
+                  }}>
                     Set Commission
                   </DropdownMenuItem>
                 </>

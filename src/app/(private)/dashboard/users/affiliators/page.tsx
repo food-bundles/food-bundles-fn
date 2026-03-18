@@ -34,6 +34,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import UserDetailsSheet from "../farmers/_components/UserDetailsSheet";
 
 interface Affiliator {
     id: string;
@@ -61,6 +62,8 @@ export default function AdminAffiliatorsPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
+    const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
     const fetchAffiliators = async () => {
         try {
@@ -178,24 +181,31 @@ export default function AdminAffiliatorsPage() {
                 return (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
+                            <Button variant="ghost" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
                                 <span className="sr-only">Open menu</span>
                                 <MoreHorizontal className="h-4 w-4" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => {
+                            <DropdownMenuItem onClick={(e) => {
+                                e.stopPropagation();
                                 setCurrentAffiliator(affiliator);
                                 fetchAffiliatorOrders(affiliator.id);
                             }}>
                                 <ShoppingBag className="mr-2 h-4 w-4" /> View Orders
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openEditDialog(affiliator)}>
+                            <DropdownMenuItem onClick={(e) => {
+                                e.stopPropagation();
+                                openEditDialog(affiliator);
+                            }}>
                                 <Pencil className="mr-2 h-4 w-4" /> Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                                onClick={() => openDeleteDialog(affiliator)}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    openDeleteDialog(affiliator);
+                                }}
                                 className="text-red-600 focus:text-red-600"
                             >
                                 <Trash className="mr-2 h-4 w-4" /> Delete
@@ -224,6 +234,10 @@ export default function AdminAffiliatorsPage() {
                     showSearch
                     searchKey="name"
                     searchPlaceholder="Search by name..."
+                    onRowClick={(affiliator: Affiliator) => {
+                        setSelectedUserId(affiliator.id);
+                        setIsDetailsSheetOpen(true);
+                    }}
                 />
             </div>
 
@@ -345,6 +359,12 @@ export default function AdminAffiliatorsPage() {
                     </form>
                 </DialogContent>
             </Dialog>
+            
+            <UserDetailsSheet
+                isOpen={isDetailsSheetOpen}
+                onClose={() => setIsDetailsSheetOpen(false)}
+                userId={selectedUserId}
+            />
         </div>
     );
 }

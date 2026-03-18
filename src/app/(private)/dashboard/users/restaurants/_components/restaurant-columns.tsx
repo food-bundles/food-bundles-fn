@@ -20,7 +20,8 @@ export type Restaurant = {
 };
 
 export const getRestaurantColumns = (
-  onManage: (restaurant: Restaurant) => void
+  onManage: (restaurant: Restaurant) => void,
+  onViewDetails: (restaurantId: string) => void
 ): ColumnDef<Restaurant>[] => [
   {
     id: "index",
@@ -147,10 +148,13 @@ export const getRestaurantColumns = (
         <Button 
           variant="ghost" 
           size="sm"
-          onClick={() => onManage(restaurant)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onManage(restaurant);
+          }}
           className="flex items-center gap-2"
         >
-          view
+          Manage
         </Button>
       );
     },

@@ -130,6 +130,9 @@ interface DataTableProps<TData, TValue> {
   onPaginationChange?: (page: number, limit: number) => void;
   onPageSizeChange?: (pageSize: number) => void;
   isLoading?: boolean;
+  
+  // Row click handler
+  onRowClick?: (row: TData) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -151,6 +154,7 @@ export function DataTable<TData, TValue>({
   onPaginationChange,
   onPageSizeChange,
   isLoading = false,
+  onRowClick,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -312,19 +316,13 @@ export function DataTable<TData, TValue>({
         {/* Loading bar */}
         {isLoading && (
           <div className="absolute top-0 left-0 right-0 h-1 bg-gray-200 overflow-hidden z-10">
-            <div className="h-full bg-green-600 animate-[loading_1s_ease-in-out_infinite]" 
+            <div className="h-full bg-green-600"
                  style={{
                    width: '30%',
                    animation: 'loading 1s ease-in-out infinite'
                  }} />
           </div>
         )}
-        <style jsx>{`
-          @keyframes loading {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(400%); }
-          }
-        `}</style>
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -363,7 +361,8 @@ export function DataTable<TData, TValue>({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className="hover:bg-green-50 text-[13px]"
+                    className="hover:bg-green-50 text-[13px] cursor-pointer"
+                    onClick={() => onRowClick && onRowClick(row.original)}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell

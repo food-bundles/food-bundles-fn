@@ -113,6 +113,11 @@ const menuItems = [
     href: "/dashboard/users",
     subItems: [
       {
+        icon: User,
+        label: "User Lookup",
+        href: "/dashboard/users/lookup",
+      },
+      {
         icon: UserCheck,
         label: "Farmers",
         href: "/dashboard/users/farmers",

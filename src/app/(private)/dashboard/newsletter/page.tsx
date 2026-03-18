@@ -291,6 +291,39 @@ export default function NewsletterPage() {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="p-4 rounded-lg border bg-blue-50 transition-all duration-200 hover:shadow-md">
+          <div className="space-y-1">
+            <p className="text-xs text-gray-600 font-medium">Total Subscribers</p>
+            <p className="text-sm font-bold text-blue-600">{pagination.total}</p>
+          </div>
+        </div>
+        <div className="p-4 rounded-lg border bg-green-50 transition-all duration-200 hover:shadow-md">
+          <div className="space-y-1">
+            <p className="text-xs text-gray-600 font-medium">Active Subscribers</p>
+            <p className="text-sm font-bold text-green-600">
+              {subscribers.filter(s => s.isActive).length}
+            </p>
+          </div>
+        </div>
+        <div className="p-4 rounded-lg border bg-purple-50 transition-all duration-200 hover:shadow-md">
+          <div className="space-y-1">
+            <p className="text-xs text-gray-600 font-medium">Total Campaigns</p>
+            <p className="text-sm font-bold text-purple-600">
+              {campaigns.length}
+            </p>
+          </div>
+        </div>
+        <div className="p-4 rounded-lg border bg-yellow-50 transition-all duration-200 hover:shadow-md">
+          <div className="space-y-1">
+            <p className="text-xs text-gray-600 font-medium">Sent Campaigns</p>
+            <p className="text-sm font-bold text-yellow-600">
+              {campaigns.filter(c => c.status === 'SENT').length}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <Card className="border-none shadow-xl shadow-gray-100">
         <CardHeader className="pb-3 bg-white">
           <div className="flex gap-4 border-b">
@@ -302,7 +335,7 @@ export default function NewsletterPage() {
                   : "border-transparent text-gray-700 hover:text-gray-900"
               }`}
             >
-              Subscribers ({pagination.total})
+              Subscribers
             </button>
             <button
               onClick={() => setActiveTab("campaigns")}
