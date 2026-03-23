@@ -38,6 +38,7 @@ export function CreateAdminModal({
 }: CreateAdminModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -76,6 +77,22 @@ export function CreateAdminModal({
     fetchUserRole();
   }, [])
 
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))
+      newErrors.email = "Enter a valid email address";
+    if (formData.phone && !formData.phone.match(/^\+?[0-9]{9,15}$/))
+      newErrors.phone = "Enter a valid phone number (9-15 digits)";
+    if (formData.password.length < 8)
+      newErrors.password = "Password must be at least 8 characters";
+    else if (!/[A-Z]/.test(formData.password))
+      newErrors.password = "Password must contain at least one uppercase letter";
+    else if (!/[0-9]/.test(formData.password))
+      newErrors.password = "Password must contain at least one number";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -88,6 +105,7 @@ export function CreateAdminModal({
       toast.error("Please fill in all required fields");
       return;
     }
+    if (!validate()) return;
 
     setIsLoading(true);
     try {
@@ -112,14 +130,8 @@ export function CreateAdminModal({
   };
 
   const handleCancel = () => {
-    setFormData({
-      username: "",
-      email: "",
-      phone: "",
-      location: "",
-      password: "",
-      role: "",
-    });
+    setFormData({ username: "", email: "", phone: "", location: "", password: "", role: "" });
+    setErrors({});
     onOpenChange(false);
   };
 
@@ -168,16 +180,15 @@ export function CreateAdminModal({
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        email: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => {
+                      setFormData((prev) => ({ ...prev, email: e.target.value }));
+                      setErrors((prev) => ({ ...prev, email: "" }));
+                    }}
                     disabled={isLoading}
-                    className="bg-white border-gray-300 text-gray-900"
+                    className={`bg-white border-gray-300 text-gray-900 ${errors.email ? "border-red-500" : ""}`}
                     placeholder="Enter email address"
                   />
+                  {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -187,16 +198,15 @@ export function CreateAdminModal({
                   <Input
                     id="phone"
                     value={formData.phone}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        phone: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => {
+                      setFormData((prev) => ({ ...prev, phone: e.target.value }));
+                      setErrors((prev) => ({ ...prev, phone: "" }));
+                    }}
                     disabled={isLoading}
-                    className="bg-white border-gray-300 text-gray-900"
+                    className={`bg-white border-gray-300 text-gray-900 ${errors.phone ? "border-red-500" : ""}`}
                     placeholder="Enter phone number"
                   />
+                  {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
                 </div>
               </div>
 
@@ -229,16 +239,15 @@ export function CreateAdminModal({
                     id="password"
                     type="password"
                     value={formData.password}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        password: e.target.value,
-                      }))
-                    }
+                    onChange={(e) => {
+                      setFormData((prev) => ({ ...prev, password: e.target.value }));
+                      setErrors((prev) => ({ ...prev, password: "" }));
+                    }}
                     disabled={isLoading}
-                    className="bg-white border-gray-300 text-gray-900"
+                    className={`bg-white border-gray-300 text-gray-900 ${errors.password ? "border-red-500" : ""}`}
                     placeholder="Enter password"
                   />
+                  {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -259,6 +268,7 @@ export function CreateAdminModal({
                       <SelectItem value="ADMIN">ADMIN</SelectItem>
                       <SelectItem value="AGGREGATOR">AGGREGATOR</SelectItem>
                       <SelectItem value="LOGISTICS">LOGISTICS</SelectItem>
+                      <SelectItem value="TRADER">TRADER</SelectItem>
                       {userRole === "SUPERUSER" && (
                         <SelectItem value="SUPERUSER">SUPERUSER</SelectItem>
                       )}
