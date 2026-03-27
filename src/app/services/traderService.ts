@@ -428,6 +428,12 @@ export const traderService = {
     return response.data;
   },
 
+  completeWithdrawal: async (withdrawId: string, paymentProofImage: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(`/traders/withdraw/${withdrawId}/complete`, { paymentProofImage });
+    return response.data;
+  },
+
   // Delegation History
   getAllDelegationHistory: async (params?: { page?: number; limit?: number; traderId?: string }) => {
     const axiosClient = createAxiosClient();
