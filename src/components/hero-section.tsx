@@ -84,7 +84,7 @@ function CircularRestaurantAnimation({
     // window.location.href = `/stories?restaurant=${encodeURIComponent(
     //   restaurantName
     // )}`;
-    window.location.href ="#";
+    window.location.href = "#";
   };
 
   const displayRestaurants = restaurants.slice(0, 16);
@@ -127,7 +127,12 @@ function CircularRestaurantAnimation({
                       height={60}
                       className="w-full h-full object-cover absolute inset-0"
                       transformation={[
-                        { width: 120, height: 120, crop: "fill", quality: "80" }
+                        {
+                          width: 120,
+                          height: 120,
+                          crop: "fill",
+                          quality: "80",
+                        },
                       ]}
                     />
                   </div>
@@ -147,8 +152,12 @@ function CircularRestaurantAnimation({
 }
 
 // Hero Image Carousel Component
-function HeroImageCarousel({ onImageChange }: { onImageChange: (index: number) => void }) {
-  const images = ["imgs/hero.jpg", "imgs/hero2.jpg", "imgs/hero3.jpg"];
+function HeroImageCarousel({
+  onImageChange,
+}: {
+  onImageChange: (index: number) => void;
+}) {
+  const images = ["imgs/hero2.jpg", "imgs/hero3.jpg"];
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -169,8 +178,9 @@ function HeroImageCarousel({ onImageChange }: { onImageChange: (index: number) =
       {images.map((image, index) => (
         <div
           key={image}
-          className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${index === currentImageIndex ? "opacity-100" : "opacity-0"
-            }`}
+          className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+            index === currentImageIndex ? "opacity-100" : "opacity-0"
+          }`}
         >
           <OptimizedImage
             src={image}
@@ -178,9 +188,7 @@ function HeroImageCarousel({ onImageChange }: { onImageChange: (index: number) =
             fill
             className="object-cover"
             priority={index === 0}
-            transformation={[
-              { quality: "85", format: "webp" }
-            ]}
+            transformation={[{ quality: "85", format: "webp" }]}
           />
         </div>
       ))}
@@ -193,26 +201,27 @@ const textContent = [
     title: ["Connect", "Your", "Restaurant", "To", "Our", "Farm"],
     description: {
       line1: "Get fresh, quality, and reliable ingredients for your restaurant",
-      line2: "directly from farm to table with our premium delivery service."
+      line2: "directly from farm to table with our premium delivery service.",
     },
-    delivery: "Fast Delivery"
+    delivery: "Fast Delivery",
   },
   {
     title: ["Fresh", "Quality", "Ingredients", "From", "Our", "Farm"],
     description: {
       line1: "Experience the difference with locally sourced, organic produce",
-      line2: "delivered straight to your kitchen every day."
+      line2: "delivered straight to your kitchen every day.",
     },
-    delivery: "Same Day Delivery"
+    delivery: "Same Day Delivery",
   },
   {
     title: ["Farm", "To", "Table", "Excellence", "For", "Restaurants"],
     description: {
-      line1: "Partner with us for sustainable, traceable ingredients that elevate",
-      line2: "your culinary creations and delight your customers."
+      line1:
+        "Partner with us for sustainable, traceable ingredients that elevate",
+      line2: "your culinary creations and delight your customers.",
     },
-    delivery: "Premium Service"
-  }
+    delivery: "Premium Service",
+  },
 ];
 
 type Phase = "entering" | "visible" | "exiting";
@@ -225,7 +234,9 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
   // On mount: entering → visible
   useEffect(() => {
     phaseTimer.current = setTimeout(() => setPhase("visible"), 1000);
-    return () => { if (phaseTimer.current) clearTimeout(phaseTimer.current); };
+    return () => {
+      if (phaseTimer.current) clearTimeout(phaseTimer.current);
+    };
   }, []);
 
   const handleImageChange = (index: number) => {
@@ -245,15 +256,39 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
   const currentText = textContent[displayIndex];
 
   const textStyle: React.CSSProperties = {
-    entering: { opacity: 0, transform: "translateY(28px)", transition: "opacity 1s ease-out, transform 1s ease-out" },
-    visible:  { opacity: 1, transform: "translateY(0)",   transition: "opacity 1s ease-out, transform 1s ease-out" },
-    exiting:  { opacity: 0, transform: "translateY(-20px)", transition: "opacity 0.5s ease-in, transform 0.5s ease-in" },
+    entering: {
+      opacity: 0,
+      transform: "translateY(28px)",
+      transition: "opacity 1s ease-out, transform 1s ease-out",
+    },
+    visible: {
+      opacity: 1,
+      transform: "translateY(0)",
+      transition: "opacity 1s ease-out, transform 1s ease-out",
+    },
+    exiting: {
+      opacity: 0,
+      transform: "translateY(-20px)",
+      transition: "opacity 0.5s ease-in, transform 0.5s ease-in",
+    },
   }[phase];
 
   const deliveryStyle: React.CSSProperties = {
-    entering: { opacity: 0, transform: "translateY(28px)", transition: "opacity 1s ease-out 0.25s, transform 1s ease-out 0.25s" },
-    visible:  { opacity: 1, transform: "translateY(0)",   transition: "opacity 1s ease-out 0.25s, transform 1s ease-out 0.25s" },
-    exiting:  { opacity: 0, transform: "translateY(-20px)", transition: "opacity 0.5s ease-in, transform 0.5s ease-in" },
+    entering: {
+      opacity: 0,
+      transform: "translateY(28px)",
+      transition: "opacity 1s ease-out 0.25s, transform 1s ease-out 0.25s",
+    },
+    visible: {
+      opacity: 1,
+      transform: "translateY(0)",
+      transition: "opacity 1s ease-out 0.25s, transform 1s ease-out 0.25s",
+    },
+    exiting: {
+      opacity: 0,
+      transform: "translateY(-20px)",
+      transition: "opacity 0.5s ease-in, transform 0.5s ease-in",
+    },
   }[phase];
 
   return (
@@ -270,7 +305,8 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
     "
       >
         <HeroImageCarousel onImageChange={handleImageChange} />
-        <div className="absolute inset-0 bg-black/80"></div>
+        <div className="absolute inset-0 bg-black/60"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_120%_100%_at_0%_100%,rgba(20,83,45,0.75)_0%,rgba(22,101,52,0.4)_40%,rgba(21,128,61,0.1)_65%,transparent_100%)] pointer-events-none"></div>
         <div className="inset-0">
           <div className="container mx-auto px-4 h-full flex items-center">
             <div className="w-full relative h-full flex items-center justify-center sm:mt-3">
