@@ -151,6 +151,11 @@ export default function DepositsManagementPage() {
   const [withdrawalTransactions, setWithdrawalTransactions] = useState<any[]>([]);
   const [withdrawalTransactionPagination, setWithdrawalTransactionPagination] = useState({ page: 1, limit: 5, total: 0, totalPages: 0 });
   const [withdrawalTransactionsLoading, setWithdrawalTransactionsLoading] = useState(false);
+  const [completeWithdrawModal, setCompleteWithdrawModal] = useState<WithdrawalData | null>(null);
+  const [completeImageFile, setCompleteImageFile] = useState<File | null>(null);
+  const [completeImagePreview, setCompleteImagePreview] = useState<string | null>(null);
+  const [completeLoading, setCompleteLoading] = useState(false);
+  const [proofImageUrl, setProofImageUrl] = useState<string | null>(null);
   const [delegationHistory, setDelegationHistory] = useState<any[]>([]);
   const [delegationHistoryLoading, setDelegationHistoryLoading] = useState(false);
   const [delegationHistoryPagination, setDelegationHistoryPagination] = useState({
@@ -319,6 +324,14 @@ export default function DepositsManagementPage() {
         setSelectedWithdrawal(withdrawal);
         fetchWithdrawalTransactions(1, withdrawal.wallet?.trader?.username || "");
       },
+      onComplete: (withdrawal: WithdrawalData) => {
+        setCompleteWithdrawModal(withdrawal);
+        setCompleteImageFile(null);
+        setCompleteImagePreview(null);
+      },
+      onViewProof: (imageUrl: string) => {
+        setProofImageUrl(imageUrl);
+      },
       actionLoading,
     });
   }, [actionLoading, withdrawalPagination.page]);
@@ -369,6 +382,32 @@ export default function DepositsManagementPage() {
       toast.error(error.response?.data?.message || "Invalid OTP");
     } finally {
       setVerifying(false);
+    }
+  };
+
+  const handleCompleteWithdraw = async () => {
+    if (!completeWithdrawModal || !completeImageFile) return;
+    setCompleteLoading(true);
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        try {
+          const base64 = reader.result as string;
+          const response = await traderService.completeWithdrawal(completeWithdrawModal.id, base64);
+          toast.success(response.message || "Withdrawal completed successfully");
+          setCompleteWithdrawModal(null);
+          setCompleteImageFile(null);
+          setCompleteImagePreview(null);
+          fetchWithdrawalRequests(withdrawalPagination.page);
+        } catch (error: any) {
+          toast.error(error.response?.data?.message || "Failed to complete withdrawal");
+        } finally {
+          setCompleteLoading(false);
+        }
+      };
+      reader.readAsDataURL(completeImageFile);
+    } catch {
+      setCompleteLoading(false);
     }
   };
 
@@ -1141,7 +1180,8 @@ export default function DepositsManagementPage() {
             <div className="w-full lg:w-1/2 lg:border-r border-gray-200 flex flex-col">
               <div className="p-4 border-gray-200 flex-shrink-0">
                 <p className="text-sm text-gray-600">
-                  {activeWalletTab === "restaurants" ? "Restaurant" : "Trader"} Wallets
+                  {activeWalletTab === "restaurants" ? "Restaurant" : "Trader"}{" "}
+                  Wallets
                 </p>
               </div>
 
@@ -1256,11 +1296,19 @@ export default function DepositsManagementPage() {
                       pagination={withdrawalPagination}
                       isLoading={withdrawalLoading}
                       onPaginationChange={(page, limit) => {
-                        setWithdrawalPagination((prev) => ({ ...prev, page, limit }));
+                        setWithdrawalPagination((prev) => ({
+                          ...prev,
+                          page,
+                          limit,
+                        }));
                         fetchWithdrawalRequests(page, limit);
                       }}
                       onPageSizeChange={(newPageSize) => {
-                        setWithdrawalPagination((prev) => ({ ...prev, limit: newPageSize, page: 1 }));
+                        setWithdrawalPagination((prev) => ({
+                          ...prev,
+                          limit: newPageSize,
+                          page: 1,
+                        }));
                         fetchWithdrawalRequests(1, newPageSize);
                       }}
                     />
@@ -1273,13 +1321,13 @@ export default function DepositsManagementPage() {
             <div className="w-full lg:w-1/2 flex flex-col lg:border-t-0 border-t">
               <div className="p-4 border-gray-200 flex-shrink-0">
                 <p className="text-sm text-gray-600">
-                  {selectedTraderForHistory 
-                    ? "Delegation History" 
-                    : activeWalletTab === "withdrawals" 
-                    ? "Trader Transactions" 
-                    : activeWalletTab === "restaurants" 
-                    ? "Restaurant Transactions" 
-                    : "Trader Transactions"}
+                  {selectedTraderForHistory
+                    ? "Delegation History"
+                    : activeWalletTab === "withdrawals"
+                      ? "Trader Transactions"
+                      : activeWalletTab === "restaurants"
+                        ? "Restaurant Transactions"
+                        : "Trader Transactions"}
                 </p>
                 {selectedTraderForHistory && (
                   <Button
@@ -1308,8 +1356,16 @@ export default function DepositsManagementPage() {
                       pagination={delegationHistoryPagination}
                       isLoading={delegationHistoryLoading}
                       onPaginationChange={(page, limit) => {
-                        setDelegationHistoryPagination((prev) => ({ ...prev, page, limit }));
-                        fetchDelegationHistory(page, limit, selectedTraderForHistory || undefined);
+                        setDelegationHistoryPagination((prev) => ({
+                          ...prev,
+                          page,
+                          limit,
+                        }));
+                        fetchDelegationHistory(
+                          page,
+                          limit,
+                          selectedTraderForHistory || undefined,
+                        );
                       }}
                       onPageSizeChange={(newPageSize) => {
                         setDelegationHistoryPagination((prev) => ({
@@ -1317,7 +1373,11 @@ export default function DepositsManagementPage() {
                           limit: newPageSize,
                           page: 1,
                         }));
-                        fetchDelegationHistory(1, newPageSize, selectedTraderForHistory || undefined);
+                        fetchDelegationHistory(
+                          1,
+                          newPageSize,
+                          selectedTraderForHistory || undefined,
+                        );
                       }}
                     />
                   </div>
@@ -1342,7 +1402,11 @@ export default function DepositsManagementPage() {
                       pagination={restaurantTransactionPagination}
                       isLoading={restaurantTransactionsLoading}
                       onPaginationChange={(page, limit) => {
-                        setRestaurantTransactionPagination((prev) => ({ ...prev, page, limit }));
+                        setRestaurantTransactionPagination((prev) => ({
+                          ...prev,
+                          page,
+                          limit,
+                        }));
                         fetchRestaurantTransactions(
                           page,
                           restaurantTransactionSearchQuery,
@@ -1388,7 +1452,11 @@ export default function DepositsManagementPage() {
                       pagination={traderTransactionPagination}
                       isLoading={traderTransactionsLoading}
                       onPaginationChange={(page, limit) => {
-                        setTraderTransactionPagination((prev) => ({ ...prev, page, limit }));
+                        setTraderTransactionPagination((prev) => ({
+                          ...prev,
+                          page,
+                          limit,
+                        }));
                         fetchTraderTransactions(
                           page,
                           traderTransactionSearchQuery,
@@ -1431,12 +1499,28 @@ export default function DepositsManagementPage() {
                       pagination={withdrawalTransactionPagination}
                       isLoading={withdrawalTransactionsLoading}
                       onPaginationChange={(page, limit) => {
-                        setWithdrawalTransactionPagination((prev) => ({ ...prev, page, limit }));
-                        fetchWithdrawalTransactions(page, selectedWithdrawal?.wallet?.trader?.username || "", limit);
+                        setWithdrawalTransactionPagination((prev) => ({
+                          ...prev,
+                          page,
+                          limit,
+                        }));
+                        fetchWithdrawalTransactions(
+                          page,
+                          selectedWithdrawal?.wallet?.trader?.username || "",
+                          limit,
+                        );
                       }}
                       onPageSizeChange={(newPageSize) => {
-                        setWithdrawalTransactionPagination((prev) => ({ ...prev, limit: newPageSize, page: 1 }));
-                        fetchWithdrawalTransactions(1, selectedWithdrawal?.wallet?.trader?.username || "", newPageSize);
+                        setWithdrawalTransactionPagination((prev) => ({
+                          ...prev,
+                          limit: newPageSize,
+                          page: 1,
+                        }));
+                        fetchWithdrawalTransactions(
+                          1,
+                          selectedWithdrawal?.wallet?.trader?.username || "",
+                          newPageSize,
+                        );
                       }}
                     />
                   </div>
@@ -1448,23 +1532,26 @@ export default function DepositsManagementPage() {
       </Card>
 
       {/* Deposit Modal */}
-      <Dialog open={showDepositModal} onOpenChange={(open) => {
-        setShowDepositModal(open);
-        if (!open) {
-          setShowOTPSection(false);
-          setOtpCode("");
-          setSessionId("");
-          setSelectedRestaurantId("");
-          setDepositData({ amount: "", description: "" });
-        }
-      }}>
+      <Dialog
+        open={showDepositModal}
+        onOpenChange={(open) => {
+          setShowDepositModal(open);
+          if (!open) {
+            setShowOTPSection(false);
+            setOtpCode("");
+            setSessionId("");
+            setSelectedRestaurantId("");
+            setDepositData({ amount: "", description: "" });
+          }
+        }}
+      >
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-green-700">
               {showOTPSection ? "Verify OTP" : "Add New Deposit"}
             </DialogTitle>
             <DialogDescription>
-              {showOTPSection 
+              {showOTPSection
                 ? "Enter the 6-digit OTP sent to complete the deposit"
                 : "Add promotional credit or top up restaurant wallet manually"}
             </DialogDescription>
@@ -1570,7 +1657,9 @@ export default function DepositsManagementPage() {
                     maxLength={6}
                     className="h-14 text-center text-xl font-bold tracking-widest"
                     value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                    onChange={(e) =>
+                      setOtpCode(e.target.value.replace(/\D/g, ""))
+                    }
                   />
                 </div>
               </div>
@@ -1596,11 +1685,13 @@ export default function DepositsManagementPage() {
                 disabled={
                   showOTPSection
                     ? isOTPLoading || otpCode.length !== 6
-                    : isDepositLoading || !selectedRestaurantId || !depositData.amount
+                    : isDepositLoading ||
+                      !selectedRestaurantId ||
+                      !depositData.amount
                 }
                 className="bg-green-600 hover:bg-green-700"
               >
-                {(isDepositLoading || isOTPLoading) ? (
+                {isDepositLoading || isOTPLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : (
                   <Plus className="h-4 w-4 mr-2" />
@@ -1622,8 +1713,6 @@ export default function DepositsManagementPage() {
           await fetchTraderWallets(traderPagination.page);
         }}
       />
-
-
 
       {/* Transaction Details Modal */}
       <Dialog
@@ -1739,7 +1828,6 @@ export default function DepositsManagementPage() {
                     {new Date(transactionDetails.createdAt).toLocaleString()}
                   </p>
                 </div>
-
 
                 {/* Order Details Button */}
                 {transactionDetails.metadata?.orderId && (
@@ -1964,13 +2052,21 @@ export default function DepositsManagementPage() {
       />
 
       {/* OTP Verification Modal for Withdrawals */}
-      <Dialog open={!!otpModal} onOpenChange={() => { setOtpModal(null); setOtp(""); }}>
+      <Dialog
+        open={!!otpModal}
+        onOpenChange={() => {
+          setOtpModal(null);
+          setOtp("");
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Verify OTP</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-gray-600">Enter the OTP sent to the trader</p>
+            <p className="text-sm text-gray-600">
+              Enter the OTP sent to the trader
+            </p>
             <div>
               <Label htmlFor="otp">OTP Code</Label>
               <Input
@@ -1982,12 +2078,152 @@ export default function DepositsManagementPage() {
               />
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" onClick={() => { setOtpModal(null); setOtp(""); }} className="flex-1">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setOtpModal(null);
+                  setOtp("");
+                }}
+                className="flex-1"
+              >
                 Cancel
               </Button>
-              <Button onClick={handleVerifyOTP} disabled={verifying || otp.length !== 6} className="flex-1 bg-green-600 hover:bg-green-700">
+              <Button
+                onClick={handleVerifyOTP}
+                disabled={verifying || otp.length !== 6}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
                 {verifying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Verify
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Proof Image Modal */}
+      <Dialog open={!!proofImageUrl} onOpenChange={(open) => { if (!open) setProofImageUrl(null); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-green-700">Payment Proof</DialogTitle>
+            <DialogDescription>Transaction payment receipt or screenshot</DialogDescription>
+          </DialogHeader>
+          <div className="rounded-lg overflow-hidden border border-gray-200">
+            {proofImageUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={proofImageUrl}
+                alt="Payment proof"
+                className="w-full object-contain max-h-[60vh]"
+              />
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setProofImageUrl(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Complete Withdraw Modal */}
+      <Dialog
+        open={!!completeWithdrawModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCompleteWithdrawModal(null);
+            setCompleteImageFile(null);
+            setCompleteImagePreview(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-green-700">
+              Complete Withdrawal
+            </DialogTitle>
+            <DialogDescription>
+              Upload payment proof (MoMo screenshot, bank receipt, etc.) to
+              complete this withdrawal.
+              {completeWithdrawModal?.withdrawType === "BALANCE" && (
+                <span className="block mt-1 text-black text-start font-medium">
+                  Balance withdrawal
+                </span>
+              )}
+              {completeWithdrawModal?.withdrawType === "COMMISSION" && (
+                <span className="block mt-1 text-black text-start font-medium">
+                  Commission withdrawal
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {completeWithdrawModal && (
+              <div className="bg-gray-50 rounded-lg p-3 text-sm space-y-1">
+                <p>
+                  <span className="font-medium">Trader:</span>{" "}
+                  {completeWithdrawModal.wallet?.trader?.username}
+                </p>
+                <p>
+                  <span className="font-medium">Amount:</span>{" "}
+                  {Math.abs(completeWithdrawModal.amount).toLocaleString()} RWF
+                </p>
+                <p>
+                  <span className="font-medium">Account:</span>{" "}
+                  {completeWithdrawModal.accountNumber} (
+                  {completeWithdrawModal.accountName})
+                </p>
+                <p>
+                  <span className="font-medium">Method:</span>{" "}
+                  {completeWithdrawModal.paymentMethod}
+                </p>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="paymentProof">Payment Proof Image *</Label>
+              <Input
+                id="paymentProof"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setCompleteImageFile(file);
+                    const url = URL.createObjectURL(file);
+                    setCompleteImagePreview(url);
+                  }
+                }}
+              />
+              {completeImagePreview && (
+                <div className="mt-2 rounded-lg overflow-hidden border border-gray-200">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={completeImagePreview}
+                    alt="Payment proof preview"
+                    className="w-full max-h-48 object-contain"
+                  />
+                </div>
+              )}
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCompleteWithdrawModal(null);
+                  setCompleteImageFile(null);
+                  setCompleteImagePreview(null);
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCompleteWithdraw}
+                disabled={completeLoading || !completeImageFile}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                {completeLoading && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Complete Withdrawal
               </Button>
             </div>
           </div>
