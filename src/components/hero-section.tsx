@@ -188,75 +188,132 @@ function HeroImageCarousel({ onImageChange }: { onImageChange: (index: number) =
   );
 }
 
-export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  
-  const textContent = [
-    {
-      title: ["Connect", "Your", "Restaurant", "To", "Our", "Farm"],
-      description: {
-        line1: "Get fresh, quality, and reliable ingredients for your restaurant",
-        line2: "directly from farm to table with our premium delivery service."
-      },
-      delivery: "Fast Delivery"
+const textContent = [
+  {
+    title: ["Connect", "Your", "Restaurant", "To", "Our", "Farm"],
+    description: {
+      line1: "Get fresh, quality, and reliable ingredients for your restaurant",
+      line2: "directly from farm to table with our premium delivery service."
     },
-    {
-      title: ["Fresh", "Quality", "Ingredients", "From", "Our", "Farm"],
-      description: {
-        line1: "Experience the difference with locally sourced, organic produce",
-        line2: "delivered straight to your kitchen every day."
-      },
-      delivery: "Same Day Delivery"
+    delivery: "Fast Delivery"
+  },
+  {
+    title: ["Fresh", "Quality", "Ingredients", "From", "Our", "Farm"],
+    description: {
+      line1: "Experience the difference with locally sourced, organic produce",
+      line2: "delivered straight to your kitchen every day."
     },
-    {
-      title: ["Farm", "To", "Table", "Excellence", "For", "Restaurants"],
-      description: {
-        line1: "Partner with us for sustainable, traceable ingredients that elevate",
-        line2: "your culinary creations and delight your customers."
-      },
-      delivery: "Premium Service"
-    }
-  ];
+    delivery: "Same Day Delivery"
+  },
+  {
+    title: ["Farm", "To", "Table", "Excellence", "For", "Restaurants"],
+    description: {
+      line1: "Partner with us for sustainable, traceable ingredients that elevate",
+      line2: "your culinary creations and delight your customers."
+    },
+    delivery: "Premium Service"
+  }
+];
 
-  const currentText = textContent[currentImageIndex];
+type Phase = "entering" | "visible" | "exiting";
+
+export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
+  const [displayIndex, setDisplayIndex] = useState(0);
+  const [phase, setPhase] = useState<Phase>("entering");
+  const phaseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // On mount: entering → visible
+  useEffect(() => {
+    phaseTimer.current = setTimeout(() => setPhase("visible"), 1000);
+    return () => { if (phaseTimer.current) clearTimeout(phaseTimer.current); };
+  }, []);
+
+  const handleImageChange = (index: number) => {
+    if (index === displayIndex) return;
+    // Clear any pending timer
+    if (phaseTimer.current) clearTimeout(phaseTimer.current);
+    // 1. Exit current text
+    setPhase("exiting");
+    // 2. After exit completes, swap text and enter new
+    phaseTimer.current = setTimeout(() => {
+      setDisplayIndex(index);
+      setPhase("entering");
+      phaseTimer.current = setTimeout(() => setPhase("visible"), 1000);
+    }, 600);
+  };
+
+  const currentText = textContent[displayIndex];
+
+  const textStyle: React.CSSProperties = {
+    entering: { opacity: 0, transform: "translateY(28px)", transition: "opacity 1s ease-out, transform 1s ease-out" },
+    visible:  { opacity: 1, transform: "translateY(0)",   transition: "opacity 1s ease-out, transform 1s ease-out" },
+    exiting:  { opacity: 0, transform: "translateY(-20px)", transition: "opacity 0.5s ease-in, transform 0.5s ease-in" },
+  }[phase];
+
+  const deliveryStyle: React.CSSProperties = {
+    entering: { opacity: 0, transform: "translateY(28px)", transition: "opacity 1s ease-out 0.25s, transform 1s ease-out 0.25s" },
+    visible:  { opacity: 1, transform: "translateY(0)",   transition: "opacity 1s ease-out 0.25s, transform 1s ease-out 0.25s" },
+    exiting:  { opacity: 0, transform: "translateY(-20px)", transition: "opacity 0.5s ease-in, transform 0.5s ease-in" },
+  }[phase];
 
   return (
     <section className="relative">
       <div
         className="
       relative 
-      h-[40vh]       /* mobile height */
-      sm:h-[60vh]    /* small screens */
-      md:h-[80vh]    /* medium screens */
-      lg:h-[92vh]    /* large screens */
+      h-[40vh]
+      sm:h-[60vh]
+      md:h-[80vh]
+      lg:h-[92vh]
       max-h-[800px] 
       overflow-hidden
     "
       >
-        <HeroImageCarousel onImageChange={setCurrentImageIndex} />
-        <div className="absolute inset-0 bg-black/40"></div>
+        <HeroImageCarousel onImageChange={handleImageChange} />
+        <div className="absolute inset-0 bg-black/80"></div>
         <div className="inset-0">
-          <div className="container mx-auto px-4 h-full flex items-center border border-amber-400">
-            <div className=" w-full relative h-full flex items-center justify-center sm:mt-3">
-              <div className="">
-                <div className="animate-container-float sm:mt-10  ">
-                  <div className="relative">
-                    <h1 className="text-base sm:text-lg md:text-4xl lg:text-5xl font-bold leading-tight text-center mt-8 sm:mt-15 md:mt-15 ld:mt-20 animate-text-glow px-4 sm:px-6 max-w-full break-words">
-                      <span className="text-orange-400" style={{animationDelay: '1s'}}>{currentText.title[0]}</span>{" "}
-                      <span className="text-orange-400" style={{animationDelay: '2s'}}>{currentText.title[1]}</span>{" "}
-                      <span className="text-green-700" style={{animationDelay: '3s'}}>{currentText.title[2]}</span>{" "}
-                      <span className="text-orange-400" style={{animationDelay: '4s'}}>{currentText.title[3]}</span>{" "}
-                      <span className="text-orange-400" style={{animationDelay: '5s'}}>{currentText.title[4]}</span>{" "}
-                      <span className="text-green-700" style={{animationDelay: '6s'}}>{currentText.title[5]}</span>
+          <div className="container mx-auto px-4 h-full flex items-center">
+            <div className="w-full relative h-full flex items-center justify-center sm:mt-3">
+              <div>
+                <div className="sm:mt-10">
+                  <div style={textStyle}>
+                    <h1 className="text-base sm:text-lg md:text-4xl lg:text-5xl font-bold leading-tight text-center mt-8 sm:mt-15 md:mt-15 ld:mt-20 px-4 sm:px-6 max-w-full break-words">
+                      <span className="text-orange-400">
+                        {currentText.title[0]}
+                      </span>{" "}
+                      <span className="text-orange-400">
+                        {currentText.title[1]}
+                      </span>{" "}
+                      <span className="text-green-500">
+                        {currentText.title[2]}
+                      </span>{" "}
+                      <span className="text-orange-400">
+                        {currentText.title[3]}
+                      </span>{" "}
+                      <span className="text-orange-400">
+                        {currentText.title[4]}
+                      </span>{" "}
+                      <span className="text-green-500">
+                        {currentText.title[5]}
+                      </span>
                     </h1>
                     <div className="text-center text-sm sm:text-base lg:text-[20px] text-white leading-relaxed mt-6 lg:mt-10 max-w-xs sm:max-w-2xl mx-auto px-6 sm:px-4">
-                      <p className="animate-text-breathe break-words" style={{animationDelay: '8s'}}>{currentText.description.line1}</p>
-                      <p className="hidden lg:block animate-text-breathe break-words" style={{animationDelay: '12s'}}>{currentText.description.line2}</p>
+                      <p className="break-words">
+                        {currentText.description.line1}
+                      </p>
+                      <p className="hidden lg:block break-words">
+                        {currentText.description.line2}
+                      </p>
                     </div>
                   </div>
-                  <div className="flex items-center justify-center gap-3 text-orange-400 mt-6 animate-delivery-bounce">
-                    <Bike className="w-6 h-6 animate-bike-move" />
-                    <p className="text-[20px] font-bold animate-text-wave">{currentText.delivery}</p>
+                  <div
+                    className="flex items-center justify-center gap-3 text-orange-400 mt-6"
+                    style={deliveryStyle}
+                  >
+                    <Bike className="w-6 h-6" />
+                    <p className="text-[20px] font-bold">
+                      {currentText.delivery}
+                    </p>
                   </div>
                 </div>
                 <div
@@ -271,7 +328,6 @@ export function HeroWithRestaurants({ restaurants }: HeroWithRestaurantsProps) {
                   <CircularRestaurantAnimation restaurants={restaurants} />
                 </div>
               </div>
-
             </div>
           </div>
         </div>
