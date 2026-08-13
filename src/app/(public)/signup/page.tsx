@@ -17,10 +17,12 @@ import {
   X,
   UserRoundCheck,
   ChevronDown,
+  ArrowLeft,
 } from "lucide-react";
 import { OTPInput } from "@/components/ui/otp-input";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { LegalContent } from "@/components/legal-page";
 import {
   ICreateFarmerData,
   ICreateRestaurantData,
@@ -533,9 +535,473 @@ function LocationModal({
   );
 }
 
+// Legal documents that can be viewed inline on the signup page
+type LegalDoc = "about" | "terms" | "privacy" | "refund";
+
+const legalDocTitles: Record<LegalDoc, string> = {
+  about: "About Us",
+  terms: "Terms & Conditions",
+  privacy: "Privacy Policy",
+  refund: "Refund Policy",
+};
+
+const {
+  SectionHeading: LegalSection,
+  SubHeading: LegalSubSection,
+  Paragraph: LegalParagraph,
+  List: LegalList,
+} = LegalContent;
+
+function AboutUsContent() {
+  return (
+    <>
+      <LegalSection>Who We Are</LegalSection>
+      <LegalParagraph>
+        Food Bundles is a technology platform that connects restaurants and
+        hotels with local farms and trusted suppliers, enabling them to source
+        fresh, quality food ingredients efficiently. We are a Rwandan company
+        committed to strengthening the food supply chain by bridging the gap
+        between producers and the hospitality industry.
+      </LegalParagraph>
+      <LegalParagraph>
+        Through our platform, restaurants can browse products, place orders,
+        track deliveries in real time, manage their inventory and settle
+        payments securely using supported payment methods. Farmers gain access
+        to a wider market and a more predictable demand for their produce.
+      </LegalParagraph>
+
+      <LegalSection>Our Mission</LegalSection>
+      <LegalParagraph>
+        Our mission is to make it simple, fast and reliable for food businesses
+        to get the ingredients they need, while supporting local farmers and
+        promoting sustainability in the food supply chain. We aim to reduce
+        waste, improve efficiency and help every business we serve grow.
+      </LegalParagraph>
+
+      <LegalSection>What We Offer</LegalSection>
+      <LegalList
+        items={[
+          <>
+            <span className="font-medium text-gray-900">Fresh product sourcing:</span>{" "}
+            a marketplace of fresh produce and food products from vetted local
+            suppliers.
+          </>,
+          <>
+            <span className="font-medium text-gray-900">Real-time order tracking:</span>{" "}
+            full visibility into the status of your orders from placement to
+            delivery.
+          </>,
+          <>
+            <span className="font-medium text-gray-900">Simple inventory management:</span>{" "}
+            tools that help you keep your kitchen stocked and your business
+            running.
+          </>,
+          <>
+            <span className="font-medium text-gray-900">Flexible payments:</span>{" "}
+            secure payment options including Flutterwave (card and mobile
+            money), Paypack mobile money, voucher and pre-paid (deposit), and,
+            for qualifying businesses, approved credit by subscription.
+          </>,
+        ]}
+      />
+
+      <LegalSection>Who We Serve</LegalSection>
+      <LegalParagraph>
+        We serve restaurants and hotels of all sizes, from independent eateries
+        to large hospitality groups, as well as farmers and aggregators who
+        supply the fresh produce our customers depend on. By bringing all of
+        these partners onto one platform, we make the food supply chain more
+        transparent, efficient and trustworthy.
+      </LegalParagraph>
+
+      <LegalSection>Company Information</LegalSection>
+      <LegalList
+        items={[
+          <>
+            <span className="font-medium text-gray-900">Company:</span> Food
+            Bundles Limited (TIN 112265383), incorporated in Rwanda
+          </>,
+          <>
+            <span className="font-medium text-gray-900">Website:</span>{" "}
+            www.food.rw
+          </>,
+          <>
+            <span className="font-medium text-gray-900">Address:</span> KG 5
+            Ave, Kigali, Rwanda
+          </>,
+          <>
+            <span className="font-medium text-gray-900">Phone:</span> +250 788
+            963 267
+          </>,
+          <>
+            <span className="font-medium text-gray-900">Email:</span>{" "}
+            info@food.rw
+          </>,
+        ]}
+      />
+
+      <LegalSection>Contact Us</LegalSection>
+      <LegalParagraph>
+        If you have any questions about Food Bundles, our services or this
+        page, please contact us at info@food.rw or +250 788 963 267, or visit us
+        at KG 5 Ave, Kigali, Rwanda.
+      </LegalParagraph>
+    </>
+  );
+}
+
+function TermsConditionsContent() {
+  return (
+    <>
+      <LegalSection>Executive Introduction</LegalSection>
+      <LegalParagraph>
+        This User Agreement is designed to establish a clear, transparent, and
+        fair framework for all restaurants using the Food Bundles platform. Its
+        purpose is to outline the rights and responsibilities of both Food
+        Bundles Limited and our valued restaurant partners, ensuring that every
+        transaction is carried out smoothly, securely, and with mutual
+        understanding.
+      </LegalParagraph>
+      <LegalParagraph>
+        Please note that by registering for or signing up on the Food Bundles
+        platform whether online or through an authorized agent you acknowledge
+        that you have read, understood, and accepted the terms of this
+        Agreement. Your continued use of the platform confirms your acceptance
+        and agreement to abide by these terms.
+      </LegalParagraph>
+
+      <LegalSection>1. Purpose &amp; Scope</LegalSection>
+      <LegalParagraph>
+        This Agreement governs the Restaurant's use of the Food Bundles platform
+        for sourcing, ordering, and receiving delivery of fresh food and related
+        products, including options for postpayment, instant payment, and
+        subscription-based services.
+      </LegalParagraph>
+
+      <LegalSection>2. Platform Access, Registration &amp; Packages</LegalSection>
+      <LegalList
+        items={[
+          "Restaurants may register for a Food Bundles account online or through authorized agents.",
+          "By default, all Restaurants are enrolled in the Freemium Package, which allows immediate purchase and payment for orders.",
+          "Restaurants may upgrade to paid subscription packages, unlocking additional features such as order postpayment options, extended delivery benefits, and other exclusive services.",
+          "Subscription packages, fees, and features are set independently by Food Bundles and may be updated at its sole discretion. Subscription fees are non-negotiable.",
+        ]}
+      />
+
+      <LegalSection>
+        3. Order Placement, Payment, Receipt, Delivery, Return &amp; Acceptance
+      </LegalSection>
+      <LegalList
+        items={[
+          "Restaurants may place orders for fresh food and inventory using the Food Bundles platform.",
+          "Payment can be made via available payment methods (e.g., mobile money, card, bank transfer, or other methods supported by Food Bundles).",
+          "For Freemium Package users, payment must be made in full at the time of order placement.",
+          "For paid subscription users with postpayment eligibility, payment terms are as set out in Section 4.",
+          "Food Bundles delivers orders to the Restaurant or designated address. Delivery is free for orders above 100,000 RWF or for Restaurants under a paid subscription package; otherwise, standard delivery charges may apply.",
+        ]}
+      />
+      <LegalParagraph>
+        Upon delivery, the Restaurant (or its authorized representative) shall
+        inspect the goods and confirm receipt by signing a delivery note or
+        confirming electronically via the platform. Any defects, discrepancies,
+        or issues must be reported and resolved at the time of delivery. Once
+        the delivery note is signed or electronic confirmation is given, the
+        order is deemed accepted and no claims for defects or discrepancies will
+        be accepted thereafter. In cases where products do not match promised
+        quality or specification and are identified at delivery, affected
+        products will be replaced, returned, or the value deducted from the next
+        order, as determined by Food Bundles.
+      </LegalParagraph>
+
+      <LegalSection>4. Order Postpayment Option (Paid Subscription Only)</LegalSection>
+      <LegalList
+        items={[
+          "Only available to Restaurants with an active subscription package that includes postpayment.",
+          "Postpayment periods range from 7 to 30 days, as determined by Food Bundles for each approved order.",
+          "No interest is charged for postpayment; eligibility is based on subscription status.",
+          "Restaurants must request postpayment on each order; approval is at Food Bundles' sole discretion, based on order amount, frequency, and other criteria.",
+          "Having a subscription with postpayment eligibility does not guarantee approval of every postpayment request.",
+        ]}
+      />
+
+      <LegalSection>5. Payment &amp; Settlement</LegalSection>
+      <LegalList
+        items={[
+          "For postpayment orders, restaurants must settle the full invoiced amount within the period specified by Food Bundles (7 to 30 days from delivery/invoice date).",
+          "Failure to pay within the agreed period may result in suspension of postpayment privileges, additional failure to pay may be reported to the Credit Reference Bureau (CRB) or other relevant credit reporting agencies as required by law or at Food Bundles' discretion and may result in termination of platform access.",
+          "All payments must be made using approved payment methods.",
+        ]}
+      />
+
+      <LegalSection>6. Anti-Fraud &amp; Anti-Money Laundering</LegalSection>
+      <LegalList
+        items={[
+          "Restaurants agree not to use the Food Bundles platform for any unlawful, fraudulent, or money laundering activities.",
+          "Food Bundles reserves the right to monitor transactions, suspend accounts, and report suspicious activity to relevant authorities.",
+          "Restaurants must provide accurate information and cooperate with any verification or compliance checks as required by Food Bundles or applicable law.",
+        ]}
+      />
+
+      <LegalSection>7. Privacy &amp; Data Protection</LegalSection>
+      <LegalList
+        items={[
+          "Food Bundles collects and processes Restaurant data solely for account management, order fulfillment, compliance, and customer support, and implements reasonable security measures to protect such data.",
+          "Restaurant data is used for account management, order fulfillment, customer support, compliance, and platform improvement.",
+          "Food Bundles implements reasonable security measures to protect Restaurant data from unauthorized access or misuse.",
+          "Restaurants have the right to access, correct, or request deletion of their data, subject to legal and operational requirements.",
+        ]}
+      />
+
+      <LegalSection>8. Platform Use, Amendments &amp; Termination</LegalSection>
+      <LegalList
+        items={[
+          "This Agreement is effective upon Restaurant's registration or first order and continues until terminated by either Party with notice, subject to settlement of outstanding obligations.",
+          "Food Bundles may amend these terms, subscription packages, or platform features at any time, with notice to Users via the platform or registered contact details.",
+          "Food Bundles may suspend or terminate access for violation of these terms or for compliance reasons.",
+        ]}
+      />
+
+      <LegalSection>9. Miscellaneous</LegalSection>
+      <LegalList
+        items={[
+          "This Agreement constitutes the entire understanding between the Parties for platform use, order fulfillment, payment, and delivery.",
+          "Any amendments must be in writing and acknowledged by both Parties, except for platform-wide updates communicated by Food Bundles.",
+          "This Agreement is governed by the laws of the Republic of Rwanda.",
+        ]}
+      />
+    </>
+  );
+}
+
+function PrivacyPolicyContent() {
+  return (
+    <>
+      <LegalSection>1. Overview</LegalSection>
+      <LegalParagraph>
+        Food Bundles Limited ("Food Bundles", "we", "us" or "our") respects your
+        privacy and is committed to protecting the personal data you provide
+        when you register for, or use, our platform, whether online or through
+        an authorized agent. This Privacy Policy describes the types of
+        information we collect, how we use it, and the choices and rights you
+        have in relation to that information.
+      </LegalParagraph>
+
+      <LegalSection>2. Information We Collect</LegalSection>
+      <LegalSubSection>2.1 Information you provide</LegalSubSection>
+      <LegalList
+        items={[
+          "Account details, such as your name, business name, email address, phone number, TIN and business type.",
+          "Location information, including province, district, sector, cell and village.",
+          "Payment information needed to process transactions securely. Card details are collected by our payment provider (Flutterwave) on their secure pages and are not stored by us. Payments on the platform may be made via Flutterwave (including card and mobile money), Paypack mobile money, voucher, or pre-paid (deposit), where offered.",
+          "Communication with our support team, such as inquiries, feedback and correspondence.",
+        ]}
+      />
+      <LegalSubSection>2.2 Information we collect automatically</LegalSubSection>
+      <LegalList
+        items={[
+          "Transaction and order records made through the platform.",
+          "Technical information such as your IP address, browser type and device information, where needed for security and platform improvement.",
+        ]}
+      />
+
+      <LegalSection>3. How We Use Your Information</LegalSection>
+      <LegalParagraph>
+        We collect and process your data solely for legitimate business
+        purposes, including:
+      </LegalParagraph>
+      <LegalList
+        items={[
+          "Account management, verification and authentication.",
+          "Order placement, fulfilment, payment processing and delivery.",
+          "Customer support and responding to your inquiries.",
+          "Compliance with legal, regulatory and tax obligations, and the prevention of fraud and money laundering.",
+          "Platform improvement, analytics and security.",
+          "Sending service notifications and, where you have agreed, marketing communications.",
+        ]}
+      />
+
+      <LegalSection>4. Sharing of Information</LegalSection>
+      <LegalParagraph>
+        We do not sell your personal data. We only share information where
+        necessary to operate the platform, including:
+      </LegalParagraph>
+      <LegalList
+        items={[
+          "Payment processors and financial service providers, such as Flutterwave and Paypack, to process transactions you initiate, including voucher and pre-paid (deposit) balances.",
+          "Delivery and logistics partners, to the extent needed to fulfil your orders.",
+          "Authorized agents and service providers acting on our behalf, under appropriate confidentiality obligations.",
+          "Government or regulatory authorities, where required by law or for the prevention of fraud and money laundering.",
+        ]}
+      />
+
+      <LegalSection>5. Data Security</LegalSection>
+      <LegalParagraph>
+        We implement reasonable technical and organizational security measures to
+        protect your personal data from unauthorized access, use, alteration,
+        disclosure or loss. Sensitive payment credentials are handled by our
+        payment provider on secure, encrypted pages, and our staff access
+        personal data only where necessary to perform their duties.
+      </LegalParagraph>
+
+      <LegalSection>6. Data Retention</LegalSection>
+      <LegalParagraph>
+        We retain your personal data for as long as necessary to provide the
+        platform and services, comply with legal, accounting and tax
+        obligations, resolve disputes and enforce our agreements. Transaction
+        and financial records may be retained for the periods required by
+        applicable law.
+      </LegalParagraph>
+
+      <LegalSection>7. Your Rights</LegalSection>
+      <LegalParagraph>
+        Subject to applicable law, you have the right to access the personal
+        data we hold about you, correct or update inaccurate information,
+        request deletion subject to legal and operational requirements, object
+        to certain processing activities, and withdraw consent for marketing
+        communications at any time. To exercise any of these rights, contact us
+        at info@food.rw.
+      </LegalParagraph>
+
+
+      <LegalSection>8. Changes to This Policy</LegalSection>
+      <LegalParagraph>
+        We may update this Privacy Policy from time to time. When we do, we will
+        revise the "Last updated" date at the top of this page and, where
+        appropriate, notify you through the platform or your registered contact
+        details.
+      </LegalParagraph>
+
+      <LegalSection>9. Contact Us</LegalSection>
+      <LegalParagraph>
+        If you have any questions or concerns about this Privacy Policy or how
+        we handle your personal data, contact us at info@food.rw, +250 788 963
+        267, or KG 5 Ave, Kigali, Rwanda.
+      </LegalParagraph>
+    </>
+  );
+}
+
+function RefundPolicyContent() {
+  return (
+    <>
+      <LegalSection>1. Overview</LegalSection>
+      <LegalParagraph>
+        Food Bundles is committed to a fair and transparent refund process.
+        Refunds are issued by{" "}
+        <span className="font-medium text-gray-900">
+          topping up the refunded amount to your Food Bundles wallet balance
+        </span>
+        . Once approved, the wallet top-up is processed within{" "}
+        <span className="font-medium text-gray-900">7 days</span>. Refunds are
+        recorded in your transaction history so you can always see what has
+        been returned to you.
+      </LegalParagraph>
+
+      <LegalSection>2. When Can I Request a Refund?</LegalSection>
+      <LegalSubSection>2.1 Report at delivery</LegalSubSection>
+      <LegalParagraph>
+        You must report any refund issue{" "}
+        <span className="font-medium text-gray-900">
+          immediately upon delivery, while our logistics staff are still
+          present
+        </span>{" "}
+        at your location. If the issue is not reported at the time of delivery,
+        you will not be able to report a refund for that order.
+      </LegalParagraph>
+
+      <LegalSubSection>2.2 Quality issues on delivery</LegalSubSection>
+      <LegalList
+        items={[
+          "You must report quality issues immediately at the time of delivery, while our logistics staff are still present.",
+          "We will arrange pickup where applicable and provide a full refund or replacement.",
+          "If products do not match the promised quality or specification and are identified at delivery, affected products will be replaced, returned, or the value credited to your account, as determined by Food Bundles.",
+        ]}
+      />
+
+      <LegalSubSection>2.3 Damaged items</LegalSubSection>
+      <LegalParagraph>
+        Report damaged items immediately upon delivery, before our logistics
+        staff leave. We will provide an immediate replacement or a full refund
+        at no cost to you.
+      </LegalParagraph>
+
+      <LegalSection>3. How Refunds Are Issued</LegalSection>
+      <LegalList
+        items={[
+          <>
+            <span className="font-medium text-gray-900">
+              Credited to your wallet balance:
+            </span>{" "}
+            approved refunds are topped up to your Food Bundles wallet/account
+            balance and become available for future orders and top-ups.
+          </>,
+          <>
+            <span className="font-medium text-gray-900">
+              Processing time up to 7 days:
+            </span>{" "}
+            refunded amounts are topped up to your wallet within 7 days of
+            approval.
+          </>,
+          <>
+            <span className="font-medium text-gray-900">
+              Recorded as a REFUND transaction:
+            </span>{" "}
+            every refund is recorded in your transaction history as a REFUND,
+            keeping your account records accurate and transparent.
+          </>,
+        ]}
+      />
+
+      <LegalSection>4. What Refunds Do Not Cover</LegalSection>
+      <LegalList
+        items={[
+          "Issues not reported at the time of delivery while our logistics staff were still present.",
+          "Products that were accepted at delivery and are no longer unused or unopened.",
+          "Issues reported after our logistics staff have left the delivery location.",
+          "Losses caused by misuse, negligence or failure to follow storage or handling instructions.",
+          "Refund requests for the same order or item where a refund has already been issued, to prevent duplicate refunds.",
+        ]}
+      />
+
+      <LegalSection>5. How to Request a Refund</LegalSection>
+      <LegalParagraph>
+        To initiate a refund request, report the issue to our logistics staff
+        at the time of delivery, or contact our support team with your order
+        details at +250 796 897 823 (phone/WhatsApp) or sales@food.rw. Please
+        include your order number, the items concerned and the reason for the
+        request. We will review your request and confirm the outcome within a
+        reasonable timeframe.
+      </LegalParagraph>
+
+      <LegalSection>6. Contact for Further Questions</LegalSection>
+      <LegalParagraph>
+        If you have any questions about this Refund Policy or a refund request,
+        please contact us at sales@food.rw or call +250 796 897 823. Business
+        hours: Mon-Fri, 9am - 6pm.
+      </LegalParagraph>
+    </>
+  );
+}
+
+function renderLegalDoc(doc: LegalDoc) {
+  switch (doc) {
+    case "about":
+      return <AboutUsContent />;
+    case "terms":
+      return <TermsConditionsContent />;
+    case "privacy":
+      return <PrivacyPolicyContent />;
+    case "refund":
+      return <RefundPolicyContent />;
+    default:
+      return null;
+  }
+}
+
 // Main signup form component
 function SignupForm() {
   const [selectedRole, setSelectedRole] = useState(UserRole.RESTAURANT);
+  const [activeDoc, setActiveDoc] = useState<LegalDoc | null>(null);
   const [selectedBusinessType, setSelectedBusinessType] = useState<"RESTAURANT" | "HOTEL">("RESTAURANT");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -840,56 +1306,105 @@ function SignupForm() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row items-center w-full max-w-3xl">
+    <div
+      className={`flex flex-col md:flex-row items-center w-full max-w-3xl ${
+        activeDoc ? "md:max-w-5xl" : ""
+      }`}
+    >
       <Suspense fallback={null}>
         <SignupSearchParamsHandler setSelectedRole={setSelectedRole} />
       </Suspense>
 
-      {/* Left side: role selection */}
-      <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col justify-center bg-white">
-        <p className="text-gray-900 text-[14px] mb-6">
-          Thank you for choosing Food Bundles.
-        </p>
-        <p className="text-xs font-medium text-black mb-4">Choose Your Role</p>
+      {/* Left side: role selection / legal documents */}
+      <div
+        className={`w-full ${
+          activeDoc ? "md:w-full" : "md:w-1/2"
+        } p-6 md:p-8 flex flex-col justify-center bg-white`}
+      >
+        {activeDoc ? (
+          <div className="flex flex-col md:mx-auto w-full md:max-w-3xl">
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              <button
+                type="button"
+                onClick={() => setActiveDoc(null)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors cursor-pointer hover:border-green-500 hover:text-green-700"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Back
+              </button>
+              {(Object.keys(legalDocTitles) as LegalDoc[]).map((doc) => (
+                <button
+                  key={doc}
+                  type="button"
+                  onClick={() => setActiveDoc(doc)}
+                  className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+                    activeDoc === doc
+                      ? "bg-green-700 border-green-700 text-white"
+                      : "bg-white border-gray-200 text-gray-600 hover:border-green-500 hover:text-green-700"
+                  }`}
+                >
+                  {legalDocTitles[doc]}
+                </button>
+              ))}
+            </div>
 
-        <div className="flex flex-col space-y-4">
-          <button
-            onClick={() => setSelectedRole(UserRole.RESTAURANT)}
-            className={`w-full h-12 border transition-all relative rounded px-2 text-[14px] cursor-pointer ${
-              selectedRole === UserRole.RESTAURANT
-                ? "border-green-500 bg-white"
-                : "border-gray-200 hover:border-green-500"
-            }`}
-            disabled={!isBackendAvailable}
-          >
-            <h3 className="text-left text-gray-900">I'm a Restaurant/Hotel</h3>
-            {selectedRole === UserRole.RESTAURANT && (
-              <UserRoundCheck className="absolute top-3 right-3 h-5 w-5 text-green-600" />
-            )}
-          </button>
+            <div className="max-h-[440px] lg:max-h-[520px] overflow-y-auto pr-2 scrollbar-thin border-t border-gray-100 pt-4">
+              {renderLegalDoc(activeDoc)}
+            </div>
+          </div>
+        ) : (
+          <>
+            <p className="text-gray-900 text-[14px] mb-6">
+              Thank you for choosing Food Bundles.
+            </p>
+            <p className="text-xs font-medium text-black mb-4">
+              Choose Your Role
+            </p>
 
-          <button
-            onClick={() => setSelectedRole(UserRole.FARMER)}
-            className={`w-full h-12 border transition-all relative shadow-none rounded px-2 text-[14px] cursor-pointer ${
-              selectedRole === UserRole.FARMER
-                ? "border-green-500 bg-white"
-                : "border-gray-200 hover:border-green-200"
-            }`}
-            disabled={!isBackendAvailable}
-          >
-            <h3 className="text-left text-gray-900">I'm a Farmer</h3>
-            {selectedRole === UserRole.FARMER && (
-              <UserRoundCheck className="absolute top-3 right-3 h-5 w-5 text-green-600" />
-            )}
-          </button>
-        </div>
+            <div className="flex flex-col space-y-4">
+              <button
+                onClick={() => setSelectedRole(UserRole.RESTAURANT)}
+                className={`w-full h-12 border transition-all relative rounded px-2 text-[14px] cursor-pointer ${
+                  selectedRole === UserRole.RESTAURANT
+                    ? "border-green-500 bg-white"
+                    : "border-gray-200 hover:border-green-500"
+                }`}
+                disabled={!isBackendAvailable}
+              >
+                <h3 className="text-left text-gray-900">
+                  I'm a Restaurant/Hotel
+                </h3>
+                {selectedRole === UserRole.RESTAURANT && (
+                  <UserRoundCheck className="absolute top-3 right-3 h-5 w-5 text-green-600" />
+                )}
+              </button>
+
+              <button
+                onClick={() => setSelectedRole(UserRole.FARMER)}
+                className={`w-full h-12 border transition-all relative shadow-none rounded px-2 text-[14px] cursor-pointer ${
+                  selectedRole === UserRole.FARMER
+                    ? "border-green-500 bg-white"
+                    : "border-gray-200 hover:border-green-200"
+                }`}
+                disabled={!isBackendAvailable}
+              >
+                <h3 className="text-left text-gray-900">I'm a Farmer</h3>
+                {selectedRole === UserRole.FARMER && (
+                  <UserRoundCheck className="absolute top-3 right-3 h-5 w-5 text-green-600" />
+                )}
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Vertical divider */}
-      <div className="hidden md:block w-[.5px] bg-gray-300 h-100" />
+      {!activeDoc && (
+        <div className="hidden md:block w-[.5px] bg-gray-300 h-100" />
+      )}
 
       {/* Right side: form */}
-      <div className="w-full md:w-1/2 p-6 md:p-8">
+      <div className={`w-full ${activeDoc ? "hidden" : "md:w-1/2"} p-6 md:p-8`}>
         {!isBackendAvailable && (
           <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-md text-sm mb-4">
             {backendMessage}
@@ -1144,6 +1659,46 @@ function SignupForm() {
                 "Create Account"
               )}
             </button>
+
+            <div className="mt-4 text-center">
+              <p className="text-xs text-gray-500 leading-relaxed">
+                By creating an account, you agree to our{" "}
+                <button
+                  type="button"
+                  onClick={() => setActiveDoc("terms")}
+                  className="text-green-600 hover:text-green-700 underline underline-offset-2 cursor-pointer"
+                >
+                  Terms &amp; Conditions
+                </button>
+                ,{" "}
+                <button
+                  type="button"
+                  onClick={() => setActiveDoc("privacy")}
+                  className="text-green-600 hover:text-green-700 underline underline-offset-2 cursor-pointer"
+                >
+                  Privacy Policy
+                </button>{" "}
+                and{" "}
+                <button
+                  type="button"
+                  onClick={() => setActiveDoc("refund")}
+                  className="text-green-600 hover:text-green-700 underline underline-offset-2 cursor-pointer"
+                >
+                  Refund Policy
+                </button>
+                .
+              </p>
+              <p className="mt-1.5 text-xs text-gray-500">
+                Learn more:{" "}
+                <button
+                  type="button"
+                  onClick={() => setActiveDoc("about")}
+                  className="text-green-600 hover:text-green-700 underline underline-offset-2 cursor-pointer"
+                >
+                  About Us
+                </button>
+              </p>
+            </div>
           </form>
 
           <div className="mt-6 text-center">

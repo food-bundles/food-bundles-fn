@@ -110,7 +110,7 @@ export default function LogisticsPage() {
 
   const fetchOrderDetails = async (orderId: string) => {
     try {
-      const response = await fetch(`https://server.food.rw/deliveries/${orderId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/deliveries/${orderId}`, {
         headers: {
           'Authorization': `Bearer ${document.cookie.split('auth-token=')[1]?.split(';')[0]}`,
           'Content-Type': 'application/json'
@@ -181,7 +181,7 @@ export default function LogisticsPage() {
   ) => {
     try {
       setUpdatingStatus(orderId);
-      const response = await fetch(`https://server.food.rw/deliveries/${orderId}/status`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/deliveries/${orderId}/status`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${document.cookie.split('auth-token=')[1]?.split(';')[0]}`,
@@ -259,7 +259,7 @@ export default function LogisticsPage() {
 
   const fetchOrderDetailsForCard = async (orderId: string) => {
     try {
-      const response = await fetch(`https://server.food.rw/deliveries/${orderId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/deliveries/${orderId}`, {
         headers: {
           'Authorization': `Bearer ${document.cookie.split('auth-token=')[1]?.split(';')[0]}`,
           'Content-Type': 'application/json'
@@ -282,7 +282,7 @@ export default function LogisticsPage() {
 
   const fetchQuickModalDetails = async (orderId: string) => {
     try {
-      const response = await fetch(`https://server.food.rw/deliveries/${orderId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/deliveries/${orderId}`, {
         headers: {
           'Authorization': `Bearer ${document.cookie.split('auth-token=')[1]?.split(';')[0]}`,
           'Content-Type': 'application/json'

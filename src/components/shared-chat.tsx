@@ -39,7 +39,7 @@ const faqData = {
   "How do I cancel an order?": "Orders can be cancelled within 2 hours of placement without penalty. After this window, cancellation fees may apply. Contact support for assistance.",
   
   // Payment & Billing
-  "What payment methods do you accept?": "Food Bundles supports secure payments through MTN Mobile Money, Airtel Money, Visa/MasterCard (via Flutterwave), and Bank transfer (optional).",
+  "What payment methods do you accept?": "Food Bundles supports secure payments through Flutterwave (Visa/MasterCard and mobile money), Paypack mobile money, voucher, and pre-paid (deposit).",
   "Do you offer credit terms?": "Yes, we offer net-30 payment terms for qualifying businesses after credit approval. Contact sales@food.rw for application details.",
   "When will I be charged?": "Payment is processed upon order confirmation for credit card payments, or according to agreed terms for business accounts.",
   "Can I get an invoice?": "Yes, invoices are automatically generated and sent to your registered email. You can also download them from your dashboard.",
@@ -69,9 +69,9 @@ const faqData = {
   "Can I request specific products?": "Yes, use the 'Request Product' feature or contact your account manager to request specific items from suppliers.",
   
   // Refunds & Returns
-  "What is your refund policy?": "We offer refunds within 30 days of purchase for unused products. Contact support at +250 796 897 823 or sales@food.rw to initiate a refund request.",
-  "How do I return products?": "Contact support within 24 hours of delivery for quality issues. We'll arrange pickup and provide full refund or replacement.",
-  "What if my order is damaged?": "Report damaged items immediately upon delivery. We'll provide immediate replacement or full refund at no cost to you.",
+  "What is your refund policy?": "Refunds are issued by topping up the amount to your Food Bundles wallet balance within 7 days of approval. You must report any issue immediately at the time of delivery, while our logistics staff are still present. Contact support at +250 796 897 823 or sales@food.rw to initiate a refund request.",
+  "How do I return products?": "Report quality issues immediately at the time of delivery while our logistics staff are still present. We'll arrange pickup and provide full refund or replacement.",
+  "What if my order is damaged?": "Report damaged items immediately upon delivery, before our logistics staff leave. We'll provide immediate replacement or full refund at no cost to you.",
   
   // Platform Access & USSD
   "How do farmers access the system?": "Farmers use the USSD code *795# on any mobile phone. Through USSD, farmers can register, view demand, offer produce for sale, and track payments — no smartphone or internet required.",
@@ -80,8 +80,8 @@ const faqData = {
   "Do I need internet to use Food Bundles?": "Farmers: No — USSD (*795#) works on any mobile phone without internet. Restaurants & distributors: Yes — web platform access required.",
   
   // Payment Methods
-  "What payment methods are supported?": "Food Bundles supports secure payments through MTN Mobile Money, Airtel Money, Visa/MasterCard (via Flutterwave), and Bank transfer (optional).",
-  "Can I use mobile money?": "Yes, we support both MTN Mobile Money and Airtel Money for secure payments on the platform.",
+  "What payment methods are supported?": "Food Bundles supports secure payments through Flutterwave (Visa/MasterCard and mobile money), Paypack mobile money, voucher, and pre-paid (deposit).",
+  "Can I use mobile money?": "Yes, we support mobile money payments through Flutterwave and Paypack for secure payments on the platform.",
   "Do you accept credit cards?": "Yes, we accept Visa and MasterCard payments processed securely through Flutterwave payment gateway.",
   
   // Tracking & Monitoring

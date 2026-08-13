@@ -35,8 +35,11 @@ export function WithdrawRequests() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "COMPLETED": return "text-green-600 bg-green-50";
+      case "APPROVED": return "text-green-600 bg-green-50";
       case "PENDING": return "text-yellow-600 bg-yellow-50";
+      case "PROCESSING": return "text-blue-600 bg-blue-50";
       case "FAILED": return "text-red-600 bg-red-50";
+      case "CANCELLED": return "text-gray-600 bg-gray-50";
       default: return "text-gray-600 bg-gray-50";
     }
   };
