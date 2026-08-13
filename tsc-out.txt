@@ -1,0 +1,20 @@
+src/app/(private)/dashboard/_components/FinanceChart.tsx(63,22): error TS2339: Property 'timeBreakdown' does not exist on type '{ totalRevenue: number; totalExpenses: number; netProfit: number; profitMargin: number; timeSeriesData: { period: string; date: string; revenue: number; expenses: number; }[]; revenueBreakdown: { ...; }; expenseBreakdown: { ...; }; }'.
+src/app/(private)/dashboard/_components/FinanceChart.tsx(69,32): error TS2339: Property 'timeBreakdown' does not exist on type '{ totalRevenue: number; totalExpenses: number; netProfit: number; profitMargin: number; timeSeriesData: { period: string; date: string; revenue: number; expenses: number; }[]; revenueBreakdown: { ...; }; expenseBreakdown: { ...; }; }'.
+src/app/(private)/dashboard/_components/FinanceChart.tsx(79,32): error TS2339: Property 'timeBreakdown' does not exist on type '{ totalRevenue: number; totalExpenses: number; netProfit: number; profitMargin: number; timeSeriesData: { period: string; date: string; revenue: number; expenses: number; }[]; revenueBreakdown: { ...; }; expenseBreakdown: { ...; }; }'.
+src/app/(private)/dashboard/vouchers/_components/VoucherManagementModal.tsx(289,31): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type 'Date | undefined' is not assignable to parameter of type 'string | number | Date'.
+      Type 'undefined' is not assignable to type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type 'Date | undefined' is not assignable to parameter of type 'string | number'.
+      Type 'undefined' is not assignable to type 'string | number'.
+src/app/(private)/restaurant/_components/order-example.tsx(1,34): error TS2307: Cannot find module '../_components/order-details-card' or its corresponding type declarations.
+src/app/(private)/restaurant/wallet/_components/CreateWalletCard.tsx(17,26): error TS2554: Expected 0 arguments, but got 1.
+src/app/(private)/restaurant/wallet/_components/TransactionHistory.tsx(19,42): error TS2339: Property 'verifyTopUp' does not exist on type 'WalletContextType'.
+src/app/(private)/restaurant/wallet/_components/TransactionHistory.tsx(142,34): error TS2551: Property 'flwTxRef' does not exist on type 'WalletTransaction'. Did you mean 'flwRef'?
+src/app/(private)/restaurant/wallet/_components/TransactionHistory.tsx(145,45): error TS2551: Property 'flwTxRef' does not exist on type 'WalletTransaction'. Did you mean 'flwRef'?
+src/components/PriceComparisonPopup.tsx(85,34): error TS18047: 'user' is possibly 'null'.
+src/components/PriceComparisonPopup.tsx(86,34): error TS18047: 'user' is possibly 'null'.
+src/components/PriceComparisonPopup.tsx(86,47): error TS18047: 'user' is possibly 'null'.
+src/components/PriceComparisonPopup.tsx(87,34): error TS18047: 'user' is possibly 'null'.
+src/components/ui/moving-border.tsx(85,19): error TS2554: Expected 1 arguments, but got 0.

@@ -74,7 +74,7 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-poppins);
+  --font-sans: var(--font-nunito-sans);
   --font-mono: var(--font-geist-mono);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -121,6 +121,43 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-nunito-sans), "Nunito Sans", sans-serif;
+    font-size: 18px;
+    line-height: 21px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Base heading and paragraph sizing so no text falls back to defaults */
+  h1 {
+    font-size: 24px;
+    line-height: 29px;
+  }
+
+  h2 {
+    font-size: 20px;
+    line-height: 24px;
+  }
+
+  h3 {
+    font-size: 18px;
+    line-height: 22px;
+  }
+
+  h4 {
+    font-size: 16px;
+    line-height: 20px;
+  }
+
+  p {
+    font-size: 18px;
+    line-height: 21px;
+  }
+
+  input,
+  select,
+  textarea,
+  button {
+    font-family: inherit;
   }
 
   /* Special case: navigation links */

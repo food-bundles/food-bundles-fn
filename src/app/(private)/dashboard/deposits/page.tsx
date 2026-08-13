@@ -661,7 +661,7 @@ export default function DepositsManagementPage() {
         }
       }
 
-      const response = await fetch(`https://server.food.rw/orders/${orderId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/orders/${orderId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",

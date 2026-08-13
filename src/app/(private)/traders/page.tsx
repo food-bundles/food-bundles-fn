@@ -347,6 +347,37 @@ export default function TraderDashboardPage() {
         })}
       </div>
 
+      {/* Motivational Top-up Banner */}
+      {wallet && (
+        <div className="mb-4 rounded-lg border border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 p-4 flex items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="bg-green-100 p-2 rounded-full shrink-0">
+              <TrendingUp className="h-5 w-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-green-800">
+                💡 Grow your commission earnings!
+              </p>
+              <p className="text-xs text-green-700 mt-0.5">
+                You earn <span className="font-bold">{wallet.commission}%</span> commission on every voucher approved.
+                The more balance you deposit, the more vouchers you can approve — and the more commission you earn.
+                {wallet.availableBalance < 50000 && (
+                  <span className="font-semibold"> Your available balance is low — top up now to keep approving!</span>
+                )}
+              </p>
+            </div>
+          </div>
+          <Button
+            onClick={() => setShowTopUpModal(true)}
+            size="sm"
+            className="shrink-0 bg-green-600 hover:bg-green-700 text-xs"
+          >
+            <Plus className="h-3 w-3 mr-1" />
+            Top Up Now
+          </Button>
+        </div>
+      )}
+
       {/* Wallet Management Section */}
       {!wallet ? (
         <Card className="mb-4">

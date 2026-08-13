@@ -13,6 +13,7 @@ import { toast } from "sonner";
 export default function UserLookupPage() {
   const [searchType, setSearchType] = useState<"id" | "email" | "phone">("id");
   const [searchValue, setSearchValue] = useState("");
+  const [searchError, setSearchError] = useState("");
   const [loading, setLoading] = useState(false);
   const [userData, setUserData] = useState<UserLookupResult | null>(null);
   const [ordersPage, setOrdersPage] = useState(1);
@@ -21,11 +22,25 @@ export default function UserLookupPage() {
   const ordersPerPage = 5;
   const vouchersPerPage = 5;
 
-  const handleSearch = async () => {
+  const validate = () => {
     if (!searchValue.trim()) {
-      toast.error("Please enter a search value");
-      return;
+      setSearchError("This field is required");
+      return false;
     }
+    if (searchType === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(searchValue.trim())) {
+      setSearchError("Enter a valid email address");
+      return false;
+    }
+    if (searchType === "phone" && !/^\+?[0-9]{9,15}$/.test(searchValue.trim())) {
+      setSearchError("Enter a valid phone number (9-15 digits)");
+      return false;
+    }
+    setSearchError("");
+    return true;
+  };
+
+  const handleSearch = async () => {
+    if (!validate()) return;
 
     setLoading(true);
     try {
@@ -84,7 +99,7 @@ export default function UserLookupPage() {
           <nav className="-mb-px flex space-x-8 ">
             <button
               type="button"
-              onClick={() => setSearchType("id")}
+              onClick={() => { setSearchType("id"); setSearchValue(""); setSearchError(""); }}
               className={`py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap flex items-center gap-2 ${
                 searchType === "id"
                   ? "border-green-500 text-green-600"
@@ -96,7 +111,7 @@ export default function UserLookupPage() {
             </button>
             <button
               type="button"
-              onClick={() => setSearchType("email")}
+              onClick={() => { setSearchType("email"); setSearchValue(""); setSearchError(""); }}
               className={`py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap flex items-center gap-2 ${
                 searchType === "email"
                   ? "border-green-500 text-green-600"
@@ -108,7 +123,7 @@ export default function UserLookupPage() {
             </button>
             <button
               type="button"
-              onClick={() => setSearchType("phone")}
+              onClick={() => { setSearchType("phone"); setSearchValue(""); setSearchError(""); }}
               className={`py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap flex items-center gap-2 ${
                 searchType === "phone"
                   ? "border-green-500 text-green-600"
@@ -120,24 +135,27 @@ export default function UserLookupPage() {
             </button>
           </nav>
 
-          <div className="flex gap-2 ">
-            <Input
-              placeholder={
-                searchType === "id"
-                  ? "Enter user ID..."
-                  : searchType === "email"
-                  ? "Enter email address..."
-                  : "Enter phone number..."
-              }
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              className="text-sm max-w-md"
-            />
-            <Button onClick={handleSearch} disabled={loading} className="bg-green-700 hover:bg-green-600 text-sm">
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-              Search
-            </Button>
+          <div className="space-y-1">
+            <div className="flex gap-2">
+              <Input
+                placeholder={
+                  searchType === "id"
+                    ? "Enter user ID..."
+                    : searchType === "email"
+                    ? "Enter email address..."
+                    : "Enter phone number..."
+                }
+                value={searchValue}
+                onChange={(e) => { setSearchValue(e.target.value); setSearchError(""); }}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                className={`text-sm max-w-md ${searchError ? "border-red-500" : ""}`}
+              />
+              <Button onClick={handleSearch} disabled={loading} className="bg-green-700 hover:bg-green-600 text-sm">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                Search
+              </Button>
+            </div>
+            {searchError && <p className="text-xs text-red-500">{searchError}</p>}
           </div>
         </CardContent>
       </Card>
