@@ -6,6 +6,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { DataTable } from "@/components/data-table";
 import { TableFilters, createCommonFilters } from "@/components/filters";
+import { ExportButton } from "@/components/ExportButton";
 import {
   createSubscriptionPlansColumns,
   createRestaurantSubscriptionsColumns,
@@ -13,6 +14,7 @@ import {
   type RestaurantSubscription,
 } from "./_components/subscription-columns";
 import { subscriptionService } from "@/app/services/subscriptionService";
+import { exportService } from "@/app/services/exportService";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -263,14 +265,15 @@ export default function AdminSubscriptionsPage() {
 
   const handleExport = async () => {
     try {
-      // Implement export functionality based on active tab
-      if (activeTab === "plans") {
-        toast.success("Exporting subscription plans data...");
-      } else {
-        toast.success("Exporting subscriptions data...");
-      }
-    } catch (error) {
-      toast.error("Export failed");
+      toast.info("Generating Subscriptions Excel export...");
+      await exportService.downloadExport("subscriptions", "excel", {
+        search: searchValue || undefined,
+        status: selectedStatus !== "all" ? selectedStatus : undefined,
+      });
+      toast.success("Subscriptions export downloaded successfully!");
+    } catch (error: any) {
+      console.error("Export error:", error);
+      toast.error("Failed to download subscriptions export");
     }
   };
 
@@ -336,6 +339,7 @@ export default function AdminSubscriptionsPage() {
           </h1>
         </div>
         <div className="flex items-center gap-3">
+          <ExportButton module="subscriptions" label="Export Subscriptions" variant="outline" />
           {activeTab === "plans" && (
             <Dialog open={createPlanOpen} onOpenChange={setCreatePlanOpen}>
               <DialogTrigger asChild>
@@ -606,7 +610,7 @@ export default function AdminSubscriptionsPage() {
           title=" "
           description={``}
           showExport={true}
-          onExport={handleExport}
+          showExport={false}
           showAddButton={false}
           customFilters={<TableFilters filters={subscriptionFilters} />}
           showSearch={false}
@@ -624,7 +628,7 @@ export default function AdminSubscriptionsPage() {
           title=" "
           description={``}
           showExport={true}
-          onExport={handleExport}
+          showExport={false}
           showAddButton={false}
           customFilters={<TableFilters filters={planFilters} />}
           showSearch={false}
