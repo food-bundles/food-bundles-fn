@@ -16,6 +16,7 @@ import { PricingCalculator } from "./pricing-calculator";
 import type { Product } from "@/app/contexts/product-context";
 import { toast } from "sonner";
 import { productService } from "@/app/services/productService";
+import { exportService } from "@/app/services/exportService";
 import { useCategory } from "@/app/contexts/category-context";
 import { Button } from "@/components/ui/button";
 import { Calculator } from "lucide-react";
@@ -234,9 +235,19 @@ export function InventoryManagement({
     createCommonFilters.dateRange(dateRange, setDateRange, "Expiry Date"),
   ];
 
-  const handleExport = () => {
-    // Add export logic here
-    toast.info("Export functionality coming soon");
+  const handleExport = async () => {
+    try {
+      toast.info("Generating Products Excel export...");
+      await exportService.downloadExport("products", "excel", {
+        search: searchValue || undefined,
+        status: statusValue !== "all" ? statusValue : undefined,
+        category: categoryValue !== "all" ? categoryValue : undefined,
+      });
+      toast.success("Products export downloaded successfully!");
+    } catch (error: any) {
+      console.error("Export error:", error);
+      toast.error("Failed to download products export");
+    }
   };
 
   const clearDateRange = () => {
