@@ -48,6 +48,7 @@ const CreatePromoForm = forwardRef<{ openModal: () => void }, CreatePromoFormPro
         expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     });
 
+    const [dateErrors, setDateErrors] = useState({ startDate: "", expiryDate: "" });
     const [excludedRestaurant, setExcludedRestaurant] = useState({ restaurantId: "", reason: "" });
     const [includedRestaurant, setIncludedRestaurant] = useState({ restaurantId: "", reason: "" });
     const [productSearch, setProductSearch] = useState("");
@@ -160,8 +161,26 @@ const CreatePromoForm = forwardRef<{ openModal: () => void }, CreatePromoFormPro
         }));
     };
 
+    const validateDates = (): boolean => {
+        const errors = { startDate: "", expiryDate: "" };
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const start = new Date(formData.startDate);
+        const expiry = new Date(formData.expiryDate);
+
+        if (start < today) {
+            errors.startDate = "Start date cannot be in the past.";
+        }
+        if (expiry <= start) {
+            errors.expiryDate = "Expiry date must be after the start date.";
+        }
+        setDateErrors(errors);
+        return !errors.startDate && !errors.expiryDate;
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!validateDates()) return;
         setLoading(true);
         try {
             const submitData: any = {
@@ -374,8 +393,14 @@ const CreatePromoForm = forwardRef<{ openModal: () => void }, CreatePromoFormPro
                                 type="date"
                                 required
                                 value={formData.startDate}
-                                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                                min={new Date().toISOString().split('T')[0]}
+                                onChange={(e) => {
+                                    setFormData({ ...formData, startDate: e.target.value });
+                                    setDateErrors(prev => ({ ...prev, startDate: "" }));
+                                }}
+                                className={dateErrors.startDate ? "border-red-500 focus-visible:ring-red-500" : ""}
                             />
+                            {dateErrors.startDate && <p className="text-xs text-red-500">{dateErrors.startDate}</p>}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="expiryDate">Expiry Date</Label>
@@ -384,8 +409,14 @@ const CreatePromoForm = forwardRef<{ openModal: () => void }, CreatePromoFormPro
                                 type="date"
                                 required
                                 value={formData.expiryDate}
-                                onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
+                                min={formData.startDate || new Date().toISOString().split('T')[0]}
+                                onChange={(e) => {
+                                    setFormData({ ...formData, expiryDate: e.target.value });
+                                    setDateErrors(prev => ({ ...prev, expiryDate: "" }));
+                                }}
+                                className={dateErrors.expiryDate ? "border-red-500 focus-visible:ring-red-500" : ""}
                             />
+                            {dateErrors.expiryDate && <p className="text-xs text-red-500">{dateErrors.expiryDate}</p>}
                         </div>
                     </div>
 

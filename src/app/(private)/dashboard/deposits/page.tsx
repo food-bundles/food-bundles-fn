@@ -45,6 +45,7 @@ import {
   Calendar,
   Mail,
   Phone,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { walletService } from "@/app/services/walletService";
@@ -59,7 +60,34 @@ import { createDelegationHistoryColumns, DelegationHistoryData } from "./_compon
 import { createCommonFilters } from "./_components/filter-helpers";
 import { UpdateCommissionModal } from "../users/administration/_components/update-commission-modal";
 import { DelegationApprovalModal } from "./_components/DelegationApprovalModal";
+import { ExportButton } from "@/components/ExportButton";
 import Image from "next/image";
+import { GenericExportModal, type GenericExportConfig, type ExportColumnDef } from "@/components/generic-export-modal";
+import { exportService } from "@/app/services/exportService";
+
+const WALLET_COLUMNS: ExportColumnDef[] = [
+  { id: "restaurantName", label: "Restaurant Name", description: "Name of the restaurant" },
+  { id: "restaurantTIN", label: "Restaurant TIN", description: "Tax Identification Number" },
+  { id: "restaurantPhone", label: "Restaurant Phone", description: "Phone number" },
+  { id: "balance", label: "Balance", description: "Current wallet balance" },
+  { id: "currency", label: "Currency", description: "Currency of the wallet" },
+  { id: "isActive", label: "Is Active", description: "Wallet status" },
+  { id: "totalTransactions", label: "Total Transactions", description: "Number of transactions" },
+  { id: "createdAt", label: "Created At", description: "Wallet creation date" },
+];
+
+const TRANSACTION_COLUMNS: ExportColumnDef[] = [
+  { id: "transactionRef", label: "Transaction Ref", description: "Reference ID" },
+  { id: "restaurantName", label: "Restaurant Name", description: "Name of the restaurant" },
+  { id: "type", label: "Type", description: "Transaction type" },
+  { id: "amount", label: "Amount", description: "Transaction amount" },
+  { id: "previousBalance", label: "Previous Balance", description: "Balance before transaction" },
+  { id: "newBalance", label: "New Balance", description: "Balance after transaction" },
+  { id: "paymentMethod", label: "Payment Method", description: "Method of payment" },
+  { id: "status", label: "Status", description: "Transaction status" },
+  { id: "description", label: "Description", description: "Transaction description" },
+  { id: "createdAt", label: "Date", description: "Transaction date" },
+];
 
 export default function DepositsManagementPage() {
   const { getMyWallet } = useWallet();
@@ -160,6 +188,56 @@ export default function DepositsManagementPage() {
     totalPages: 0,
   });
   const [selectedTraderForHistory, setSelectedTraderForHistory] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState<Record<string, boolean>>({});
+
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportSelectedRows, setExportSelectedRows] = useState<any[]>([]);
+  const [exportModule, setExportModule] = useState<string>("wallets");
+  const [exportModuleName, setExportModuleName] = useState<string>("Wallets");
+  const [exportColumns, setExportColumns] = useState<ExportColumnDef[]>(WALLET_COLUMNS);
+  const [exportFilters, setExportFilters] = useState<any>({});
+
+  const handleOpenExportModal = (
+    module: "wallets" | "transactions" | "deposits", 
+    moduleName: string, 
+    columns: ExportColumnDef[], 
+    selectedRows: any[], 
+    filters: any
+  ) => {
+    setExportModule(module);
+    setExportModuleName(moduleName);
+    setExportColumns(columns);
+    setExportSelectedRows(selectedRows);
+    setExportFilters(filters);
+    setIsExportModalOpen(true);
+  };
+
+  const handleExportSubmit = async (config: GenericExportConfig) => {
+    try {
+      setIsExporting(prev => ({ ...prev, [config.module]: true }));
+      toast.info(`Generating ${config.module} ${config.format.toUpperCase()} export...`);
+      
+      const idsToExport =
+        config.scope === "selected" && exportSelectedRows.length > 0
+          ? exportSelectedRows.map((r) => r.id).join(",")
+          : undefined;
+
+      const finalFilters = {
+        ...exportFilters,
+        startDate: config.startDate,
+        endDate: config.endDate,
+        columns: config.columns.join(","),
+        ids: idsToExport,
+      };
+
+      await exportService.downloadExport(config.module, config.format, finalFilters);
+      toast.success(`${config.module} export downloaded successfully!`);
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || `Failed to download ${config.module} export`);
+    } finally {
+      setIsExporting(prev => ({ ...prev, [config.module]: false }));
+    }
+  };
 
   const restaurantFilters = useMemo(() => {
     return [
@@ -977,6 +1055,21 @@ export default function DepositsManagementPage() {
 
   return (
     <div className="p-6 space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center text-sm text-gray-500 font-medium space-x-1">
+            <span>Dashboard</span>
+            <ChevronRight className="w-4 h-4" />
+            <span className="text-gray-900">Deposits</span>
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900">
+            Deposits & Wallets Management
+          </h1>
+          <p className="text-sm text-gray-500">
+            Manage wallet balances, deposits, and transaction history
+          </p>
+        </div>
+      </div>
       {initialLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {[...Array(5)].map((_, i) => (
@@ -1156,9 +1249,14 @@ export default function DepositsManagementPage() {
                       }
                       showSearch={false}
                       showExport={true}
+                      onExport={(selectedRows) => handleOpenExportModal("wallets", "Restaurant Wallets", WALLET_COLUMNS, selectedRows, {
+                        search: restaurantSearchQuery || undefined,
+                        status: restaurantStatusFilter !== "all" ? restaurantStatusFilter : undefined,
+                      })}
+                      isExporting={isExporting["wallets"]}
                       showColumnVisibility={false}
                       showPagination={true}
-                      showRowSelection={false}
+                      showRowSelection={true}
                       showAddButton={true}
                       addButtonLabel="New Deposit"
                       onAddButton={() => setShowDepositModal(true)}
@@ -1204,9 +1302,14 @@ export default function DepositsManagementPage() {
                       customFilters={<TableFilters filters={traderFilters} />}
                       showSearch={false}
                       showExport={true}
+                      onExport={(selectedRows) => handleOpenExportModal("wallets", "Trader Wallets", WALLET_COLUMNS, selectedRows, {
+                        search: traderSearchQuery || undefined,
+                        status: traderStatusFilter !== "all" ? traderStatusFilter : undefined,
+                      })}
+                      isExporting={isExporting["wallets"]}
                       showColumnVisibility={false}
                       showPagination={true}
-                      showRowSelection={false}
+                      showRowSelection={true}
                       showAddButton={false}
                       pagination={traderPagination}
                       isLoading={traderWalletsLoading}
@@ -1248,7 +1351,7 @@ export default function DepositsManagementPage() {
                       columns={withdrawalColumns}
                       data={withdrawalRequests as WithdrawalData[]}
                       showSearch={false}
-                      showExport={true}
+                      showExport={false}
                       showColumnVisibility={false}
                       showPagination={true}
                       showRowSelection={false}
@@ -1335,9 +1438,14 @@ export default function DepositsManagementPage() {
                       }
                       showSearch={false}
                       showExport={true}
+                      onExport={(selectedRows) => handleOpenExportModal("transactions", "Restaurant Transactions", TRANSACTION_COLUMNS, selectedRows, {
+                        search: restaurantTransactionSearchQuery || undefined,
+                        type: restaurantTransactionTypeFilter !== "all" ? restaurantTransactionTypeFilter : undefined,
+                      })}
+                      isExporting={isExporting["transactions"]}
                       showColumnVisibility={false}
                       showPagination={true}
-                      showRowSelection={false}
+                      showRowSelection={true}
                       showAddButton={false}
                       pagination={restaurantTransactionPagination}
                       isLoading={restaurantTransactionsLoading}
@@ -1381,9 +1489,14 @@ export default function DepositsManagementPage() {
                       }
                       showSearch={false}
                       showExport={true}
+                      onExport={(selectedRows) => handleOpenExportModal("transactions", "Trader Transactions", TRANSACTION_COLUMNS, selectedRows, {
+                        search: traderTransactionSearchQuery || undefined,
+                        type: traderTransactionTypeFilter !== "all" ? traderTransactionTypeFilter : undefined,
+                      })}
+                      isExporting={isExporting["transactions"]}
                       showColumnVisibility={false}
                       showPagination={true}
-                      showRowSelection={false}
+                      showRowSelection={true}
                       showAddButton={false}
                       pagination={traderTransactionPagination}
                       isLoading={traderTransactionsLoading}
@@ -1424,9 +1537,11 @@ export default function DepositsManagementPage() {
                       data={withdrawalTransactions as TransactionData[]}
                       showSearch={false}
                       showExport={true}
+                      onExport={(selectedRows) => handleOpenExportModal("transactions", "Withdrawal Transactions", TRANSACTION_COLUMNS, selectedRows, {})}
+                      isExporting={isExporting["transactions"]}
                       showColumnVisibility={false}
                       showPagination={true}
-                      showRowSelection={false}
+                      showRowSelection={true}
                       showAddButton={false}
                       pagination={withdrawalTransactionPagination}
                       isLoading={withdrawalTransactionsLoading}
@@ -1993,6 +2108,17 @@ export default function DepositsManagementPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <GenericExportModal
+        open={isExportModalOpen}
+        onOpenChange={setIsExportModalOpen}
+        selectedRowsCount={exportSelectedRows.length}
+        exportModule={exportModule}
+        moduleName={exportModuleName}
+        columns={exportColumns}
+        onExport={handleExportSubmit}
+        isLoading={isExporting[exportModule]}
+      />
     </div>
   );
 }

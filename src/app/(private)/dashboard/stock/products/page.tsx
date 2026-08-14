@@ -7,6 +7,7 @@ import { useProducts } from "@/app/contexts/product-context";
 import { InventoryManagement } from "./_components/inventory-management";
 import type { Product } from "@/app/contexts/product-context";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
+import { ExportButton } from "@/components/ExportButton";
 
 export default function InventoryPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -113,6 +114,12 @@ export default function InventoryPage() {
     );
   return (
     <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Products Inventory</h1>
+        </div>
+        <ExportButton module="products" label="Export Products" />
+      </div>
       <InventoryManagement 
         products={products} 
         onRefresh={() => fetchProducts(pagination.page, pagination.limit, filters)}

@@ -6,12 +6,14 @@ import { useState, useMemo, useEffect } from "react";
 import { DataTable } from "@/components/data-table";
 import { getFarmerColumns } from "./_components/farmer-columns";
 import { createCommonFilters, TableFilters } from "@/components/filters";
+import { ExportButton } from "@/components/ExportButton";
 import { useFarmers, type Farmer } from "@/app/contexts/FarmersContext";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
 import { FarmerManagementModal } from "./_components/farmer-management-modal";
 import { CreateFarmerModal } from "./_components/create-farmer-modal";
 import { farmersService } from "@/app/services/farmersService";
+import { exportService } from "@/app/services/exportService";
 import UserDetailsSheet from "./_components/UserDetailsSheet";
 
 function FarmersPageContent() {
@@ -80,8 +82,18 @@ function FarmersPageContent() {
     setIsDetailsSheetOpen(true);
   };
 
-  const handleExport = () => {
-    console.log("Exporting farmers data...");
+  const handleExport = async () => {
+    try {
+      toast.info("Generating Farmers Excel export...");
+      await exportService.downloadExport("farmers", "excel", {
+        search: searchTerm || undefined,
+        startDate: dateRange ? dateRange.toISOString().split("T")[0] : undefined,
+      });
+      toast.success("Farmers export downloaded successfully!");
+    } catch (error: any) {
+      console.error("Export error:", error);
+      toast.error("Failed to download farmers export");
+    }
   };
 
   const handleModalClose = () => {
@@ -125,12 +137,16 @@ function FarmersPageContent() {
 
   return (
     <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Farmers Management</h1>
+        </div>
+        <ExportButton module="farmers" label="Export Farmers" />
+      </div>
       <DataTable
         columns={farmerColumns}
         data={filteredData}
-        title="Farmers Management"
-        showExport={true}
-        onExport={handleExport}
+        showExport={false}
         showAddButton={true}
         addButtonLabel="Add Farmer"
         onAddButton={() => setIsCreateOpen(true)}

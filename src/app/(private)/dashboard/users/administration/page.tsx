@@ -11,6 +11,7 @@ import { AdminManagementModal } from "./_components/admin-management-modal";
 import { CreateAdminModal } from "./_components/create-admin-modal";
 import { UpdateCommissionModal } from "./_components/update-commission-modal";
 import UserDetailsSheet from "../farmers/_components/UserDetailsSheet";
+import { ExportButton } from "@/components/ExportButton";
 
 export default function AdministrationPage() {
   const [admins, setAdmins] = useState<Admin[]>([]);
@@ -100,6 +101,15 @@ export default function AdministrationPage() {
 
   return (
     <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Administrators Management</h1>
+        </div>
+        <div className="flex gap-2">
+          <ExportButton module="logistics" label="Export Logistics" />
+          <ExportButton module="aggregators" label="Export Aggregators" variant="outline" />
+        </div>
+      </div>
       <DataTable 
         columns={adminColumns}
         data={admins}

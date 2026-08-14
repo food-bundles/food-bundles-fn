@@ -10,7 +10,26 @@ import { CreateRestaurantModal } from "./create-restaurant-modal";
 import type { Restaurant } from "@/app/contexts/RestaurantContext";
 import { toast } from "sonner";
 import { restaurantService } from "@/app/services/restaurantService";
+import { exportService } from "@/app/services/exportService";
 import UserDetailsSheet from "../../farmers/_components/UserDetailsSheet";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { GenericExportModal, type GenericExportConfig, type ExportColumnDef } from "@/components/generic-export-modal";
+
+export const RESTAURANT_COLUMNS: ExportColumnDef[] = [
+  { id: "name", label: "Restaurant Name", description: "Business name" },
+  { id: "email", label: "Email Address", description: "Primary email" },
+  { id: "phone", label: "Phone Number", description: "Contact number" },
+  { id: "tin", label: "TIN / Tax ID", description: "Tax Identification Number" },
+  { id: "location", label: "Location / Address", description: "Street location" },
+  { id: "province", label: "Province", description: "Regional province" },
+  { id: "district", label: "District", description: "Administrative district" },
+  { id: "verified", label: "Verification Status", description: "Verified or unverified" },
+  { id: "createdAt", label: "Joined Date", description: "Registration timestamp" },
+  { id: "totalOrders", label: "Total Orders", description: "Lifetime orders count" },
+  { id: "totalSubscriptions", label: "Total Subscriptions", description: "Active & past subscriptions" },
+];
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 interface RestaurantManagementProps {
   restaurants: Restaurant[];
@@ -23,6 +42,10 @@ interface RestaurantManagementProps {
   };
   onPaginationChange?: (page: number, limit: number) => void;
   isLoading?: boolean;
+  searchValue: string;
+  onSearchChange: (value: string) => void;
+  statusValue: string;
+  onStatusChange: (value: string) => void;
 }
 
 const statusOptions = [
@@ -38,11 +61,15 @@ export function RestaurantManagement({
   pagination,
   onPaginationChange,
   isLoading = false,
+  searchValue,
+  onSearchChange,
+  statusValue,
+  onStatusChange,
 }: RestaurantManagementProps) {
   // Filter states
-  const [searchValue, setSearchValue] = useState("");
-  const [statusValue, setStatusValue] = useState("all");
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportModule, setExportModule] = useState<"restaurants" | "users">("restaurants");
 
   // Modal states
   const [selectedRestaurant, setSelectedRestaurant] =
@@ -51,6 +78,8 @@ export function RestaurantManagement({
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportSelectedRows, setExportSelectedRows] = useState<Restaurant[]>([]);
 
   // Modal handlers
   const handleManageRestaurant = (restaurant: Restaurant) => {
@@ -139,31 +168,78 @@ export function RestaurantManagement({
   const filters = [
     createCommonFilters.search(
       searchValue,
-      setSearchValue,
+      onSearchChange,
       "Search restaurants..."
     ),
-    createCommonFilters.status(statusValue, setStatusValue, statusOptions),
     createCommonFilters.dateRange(dateRange, setDateRange, "Joined Date Range"),
   ];
 
-  const handleExport = () => {
-    toast.info("Export functionality coming soon");
+  const handleOpenExportModal = (selectedRows: Restaurant[], module: "restaurants" | "users") => {
+    setExportModule(module);
+    setExportSelectedRows(selectedRows);
+    setIsExportModalOpen(true);
+  };
+
+  const handleExportSubmit = async (config: GenericExportConfig) => {
+    try {
+      setIsExporting(true);
+      toast.info(`Generating Restaurants ${config.format.toUpperCase()} export...`);
+      
+      const idsToExport =
+        config.scope === "selected" && exportSelectedRows.length > 0
+          ? exportSelectedRows.map((r) => r.id).join(",")
+          : undefined;
+
+      await exportService.downloadExport(config.module, config.format, {
+        search: searchValue || undefined,
+        status: statusValue !== "all" ? statusValue : undefined,
+        startDate: config.startDate,
+        endDate: config.endDate,
+        columns: config.columns.join(","),
+        ids: idsToExport,
+      });
+      toast.success(`Restaurants export downloaded successfully!`);
+    } catch (error: any) {
+      console.error("Export error:", error);
+      toast.error(error?.response?.data?.message || "Failed to download restaurants export");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
-    <>
+    <div className="space-y-4">
+      {/* <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <Tabs value={statusValue} onValueChange={onStatusChange} className="w-full sm:w-auto">
+          <TabsList className="bg-gray-100/80 p-1 w-full sm:w-auto">
+            <TabsTrigger value="all" className="flex-1 sm:flex-none">All</TabsTrigger>
+            <TabsTrigger value="active" className="flex-1 sm:flex-none">Active</TabsTrigger>
+            <TabsTrigger value="inactive" className="flex-1 sm:flex-none">Inactive</TabsTrigger>
+            <TabsTrigger value="suspended" className="flex-1 sm:flex-none">Suspended</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div> */}
+
       <DataTable
         columns={columns}
         data={filteredData}
         title="Restaurants Management"
         description={
-          pagination ? `Total: ${pagination.total} restaurants` : undefined
+          <div className="flex items-center gap-4 mt-2">
+            <button
+              onClick={() => setIsCreateOpen(true)}
+              className="bg-green-700 hover:bg-green-600 text-xs px-2 sm:px-3 py-2 text-white rounded cursor-pointer flex items-center gap-1 sm:gap-2 whitespace-nowrap"
+            >
+              <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span>Add Restaurant</span>
+            </button>
+            
+          </div>
         }
         showExport={true}
-        onExport={handleExport}
-        showAddButton={true}
-        addButtonLabel="Add Restaurant"
-        onAddButton={() => setIsCreateOpen(true)}
+        onExport={(selectedRows) => handleOpenExportModal(selectedRows, "restaurants")}
+        isExporting={isExporting}
+        showAddButton={false}
         customFilters={
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full">
             <div className="flex flex-wrap items-center gap-2 flex-1">
@@ -202,6 +278,17 @@ export function RestaurantManagement({
         onClose={() => setIsDetailsSheetOpen(false)}
         userId={selectedUserId}
       />
-    </>
+
+      <GenericExportModal
+        open={isExportModalOpen}
+        onOpenChange={setIsExportModalOpen}
+        selectedRowsCount={exportSelectedRows.length}
+        exportModule="restaurants"
+        moduleName="Restaurants"
+        columns={RESTAURANT_COLUMNS}
+        onExport={handleExportSubmit}
+        isLoading={isExporting}
+      />
+    </div>
   );
 }

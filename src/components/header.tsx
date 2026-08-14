@@ -75,6 +75,7 @@ export function Header() {
   const [activeSection, setActiveSection] = useState("home");
   const [isShopDropdownOpen, setIsShopDropdownOpen] = useState(false);
   const [isPriceDropdownOpen, setIsPriceDropdownOpen] = useState(false);
+  const [isMobilePriceOpen, setIsMobilePriceOpen] = useState(false);
   const [isAuthTransitioning, setIsAuthTransitioning] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -119,11 +120,14 @@ export function Header() {
   }, []);
 
   // Navigation handler with role-based redirect
-  const handleNavigation = useCallback(async (path: string) => {
-    // Show loading state briefly
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    router.push(path);
-  }, [router]);
+  const handleNavigation = useCallback((path: string) => {
+    if (!isMounted || !path) return;
+    if (path.startsWith("http")) {
+      window.location.href = path;
+    } else {
+      router.push(path);
+    }
+  }, [router, isMounted]);
 
   const handleDashboardNavigation = useCallback(() => {
     if (user?.role) {
@@ -410,7 +414,7 @@ export function Header() {
                       <button
                         onClick={() => {
                           setIsShopDropdownOpen(false);
-                          router.push("/guest");
+                          router?.push("/guest");
                         }}
                         className="flex items-center w-full text-left px-4 py-2 text-[13px] text-gray-900  hover:text-green-500 transition-colors group"
                       >
@@ -472,7 +476,7 @@ export function Header() {
                       <button
                         onClick={() => {
                           setIsShopDropdownOpen(false);
-                          router.push("/guest");
+                          router?.push("/guest");
                         }}
                         className="flex items-center w-full text-left px-4 py-2 text-[13px] text-gray-900 hover:text-green-500 transition-colors group"
                       >
@@ -586,17 +590,19 @@ export function Header() {
                 <nav className="flex flex-col gap-3 pt-4">
                   {navigationItems.map((item) => (
                     item.isExternal ? (
-                      <Link
-                        key={item.id}
-                        href={item.href}
-                        onClick={() => setIsMenuOpen(false)}
-                        className={`hover:text-secondary transition-colors cursor-pointer px-2 py-1 rounded flex items-center justify-between ${activeSection === item.id
-                          ? "text-yellow-300 bg-green-800/50"
-                          : "text-primary-foreground"
-                        }`}
-                      >
-                        <span>{item.label}</span>
-                      </Link>
+                      <div key={item.id}>
+                        <button
+                          onClick={() => item.id === "price" ? setIsMobilePriceOpen(!isMobilePriceOpen) : setIsMenuOpen(false)}
+                          className={`w-full text-left hover:text-secondary transition-colors cursor-pointer px-2 py-1 rounded flex items-center justify-between ${
+                            activeSection === item.id ? "text-yellow-300 bg-green-800/50" : "text-primary-foreground"
+                          }`}
+                        >
+                          <span>{item.label}</span>
+                          {item.id === "price" && (
+                            <span className="text-xs text-primary-foreground">{isMobilePriceOpen ? "▲" : "▼"}</span>
+                          )}
+                        </button>
+                      </div>
                     ) : (
                       <a
                         key={item.id}
@@ -691,6 +697,13 @@ export function Header() {
                     </>
                   )}
                 </nav>
+              </div>
+            )}
+            {/* Mobile Price Comparison - Below mobile nav menu */}
+            {isMobilePriceOpen && (
+              <div className="md:hidden border-t border-green-600 bg-white p-4 overflow-x-auto">
+                <h3 className="text-sm font-bold text-gray-900 mb-3">Price Comparison</h3>
+                <PriceComparisonPopup />
               </div>
             )}
           </div>
