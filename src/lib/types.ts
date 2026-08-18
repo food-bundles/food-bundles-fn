@@ -92,6 +92,7 @@ export enum UserRole {
   FOOD_BUNDLE = "FOOD_BUNDLE",
   AFFILIATOR = "AFFILIATOR",
   SUPERUSER = "SUPERUSER",
+  MARKET_PRICES = "MARKET_PRICES",
 }
 
 export interface IUser {

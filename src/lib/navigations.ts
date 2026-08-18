@@ -22,6 +22,8 @@ export function getRedirectPath(userRole: UserRole): string {
       return "/logistics";
     case UserRole.SUPERUSER:
       return "/dashboard";
+    case UserRole.MARKET_PRICES:
+      return "/dashboard/markets";
     default:
       console.warn(`Unknown user role: ${userRole}. Redirecting to default.`);
       return "/";

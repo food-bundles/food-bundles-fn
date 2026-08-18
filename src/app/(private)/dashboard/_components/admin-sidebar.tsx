@@ -180,6 +180,11 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [userData, setUserData] = useState<any>(null);
 
+  // Filter menu items based on user role
+  const filteredMenuItems = userData?.role === "MARKET_PRICES"
+    ? menuItems.filter(item => item.href === "/dashboard" || item.href === "/dashboard/markets")
+    : menuItems;
+
   const toggleExpanded = (index: number) => {
     const newExpanded = new Set(expandedItems);
     if (newExpanded.has(index)) {
@@ -202,7 +207,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
     fetchUserData();
 
     // Auto-expand menu items with active sub-items
-    menuItems.forEach((item, index) => {
+    filteredMenuItems.forEach((item, index) => {
       if (item.subItems && hasActiveSubItem(item)) {
         setExpandedItems((prev) => new Set(prev).add(index));
       }
@@ -286,7 +291,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         {/* Navigation */}
         <nav className="flex-1 py-2 md:py-4 mb-10 overflow-auto scrollbar-hide relative z-10">
           <ul className="space-y-1 px-2 md:px-3 pb-4">
-            {menuItems.map((item, index) => {
+            {filteredMenuItems.map((item, index) => {
               const isActive = isItemActive(item);
               const hasActiveSub = hasActiveSubItem(item);
               const isExpanded = expandedItems.has(index);

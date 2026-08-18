@@ -10,7 +10,7 @@ export async function middleware(req: NextRequest) {
 
   // Role-based route protection
   const roleRoutes: Record<string, string | string[]> = {
-    "/dashboard": ["ADMIN", "SUPERUSER"],
+    "/dashboard": ["ADMIN", "SUPERUSER", "MARKET_PRICES"],
     "/restaurant": "RESTAURANT",
     "/farmers": "FARMER",
     "/aggregator": "AGGREGATOR",
@@ -141,6 +141,11 @@ export async function middleware(req: NextRequest) {
 
       if (!userRole || !isAuthorized) {
         return NextResponse.redirect(new URL("/unauthorized", req.url));
+      }
+
+      // Restrict MARKET_PRICES to only /dashboard/markets route
+      if (userRole === "MARKET_PRICES" && !pathname.startsWith("/dashboard/markets")) {
+        return NextResponse.redirect(new URL("/dashboard/markets", req.url));
       }
 
       if (userRole === "TRADER" && pathname.startsWith("/traders")) {

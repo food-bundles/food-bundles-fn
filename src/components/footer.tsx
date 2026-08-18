@@ -51,7 +51,7 @@ export function Footer() {
                 About Us
               </Link>
               <Link
-                href="/terms-agreement"
+                href="/terms"
                 className="block text-green-200 hover:text-white transition-colors text-[13px]"
               >
                 Terms &amp; Conditions
