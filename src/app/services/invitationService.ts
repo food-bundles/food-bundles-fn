@@ -4,7 +4,7 @@ import createAxiosClient from '@/app/hooks/axiosClient';
 export interface Invitation {
   id: string;
   email: string;
-  role: 'ADMIN' | 'AGGREGATOR' | 'LOGISTICS';
+  role: 'ADMIN' | 'AGGREGATOR' | 'LOGISTICS' | 'MARKET_PRICES';
   status: 'PENDING' | 'ACCEPTED' | 'EXPIRED';
   isUsed: boolean;
   createdAt: string;
@@ -14,7 +14,7 @@ export interface Invitation {
 
 export interface CreateInvitationData {
   email: string;
-  role: 'ADMIN' | 'AGGREGATOR' | 'LOGISTICS';
+  role: 'ADMIN' | 'AGGREGATOR' | 'LOGISTICS' | 'MARKET_PRICES';
 }
 
 export interface AcceptInvitationData {

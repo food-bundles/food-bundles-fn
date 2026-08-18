@@ -111,6 +111,8 @@ export function Header() {
       case UserRole.ADMIN:
       case UserRole.LOGISTICS:
         return "/dashboard";
+      case UserRole.MARKET_PRICES:
+        return "/dashboard/markets";
       default:
         console.warn(
           `Unknown user role: ${userRole}. Redirecting to default settings.`

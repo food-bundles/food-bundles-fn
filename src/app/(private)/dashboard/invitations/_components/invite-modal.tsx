@@ -17,7 +17,7 @@ interface InviteModalProps {
 
 export function InviteModal({ isOpen, onClose, onSubmit, isLoading }: InviteModalProps) {
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"ADMIN" | "AGGREGATOR" | "LOGISTICS" | "">("");
+  const [role, setRole] = useState<"ADMIN" | "AGGREGATOR" | "LOGISTICS" | "MARKET_PRICES" | "">("");
   const [errors, setErrors] = useState<{ email?: string; role?: string }>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,7 +41,7 @@ export function InviteModal({ isOpen, onClose, onSubmit, isLoading }: InviteModa
     }
     
     try {
-      await onSubmit({ email: email.trim(), role: role as "ADMIN" | "AGGREGATOR" | "LOGISTICS" });
+      await onSubmit({ email: email.trim(), role: role as "ADMIN" | "AGGREGATOR" | "LOGISTICS" | "MARKET_PRICES" });
       setEmail("");
       setRole("");
       setErrors({});
@@ -90,7 +90,7 @@ export function InviteModal({ isOpen, onClose, onSubmit, isLoading }: InviteModa
             <Select 
               value={role} 
               onValueChange={(value) => {
-                setRole(value as "ADMIN" | "AGGREGATOR" | "LOGISTICS");
+                setRole(value as "ADMIN" | "AGGREGATOR" | "LOGISTICS" | "MARKET_PRICES");
                 if (errors.role) setErrors(prev => ({ ...prev, role: undefined }));
               }}
               disabled={isLoading}
@@ -103,6 +103,7 @@ export function InviteModal({ isOpen, onClose, onSubmit, isLoading }: InviteModa
                 <SelectItem value="AGGREGATOR">Aggregator</SelectItem>
                 <SelectItem value="LOGISTICS">Logistics</SelectItem>
                 <SelectItem value="TRADER">Trader</SelectItem>
+                <SelectItem value="MARKET_PRICES">Market Prices</SelectItem>
               </SelectContent>
             </Select>
             {errors.role && <p className="text-red-600 text-xs mt-1">{errors.role}</p>}
