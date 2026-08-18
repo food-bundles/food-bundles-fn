@@ -125,4 +125,23 @@ export const authService = {
     });
     return response.data;
   },
+
+  googleLogin: async (credential: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/google-login", { credential });
+    return response.data;
+  },
+
+  googleSignup: async (data: {
+    email: string;
+    name: string;
+    role: string;
+    phone?: string;
+    tin?: string;
+    location?: string;
+  }) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/google-signup", data);
+    return response.data;
+  },
 };

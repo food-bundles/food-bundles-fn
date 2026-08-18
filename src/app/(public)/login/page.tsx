@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { GoogleLogin } from "@react-oauth/google";
 
 function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -143,6 +144,76 @@ function LoginForm() {
     }
     localStorage.setItem("pending_agreement_phone", phoneForTerms);
     window.location.href = "/terms-agreement";
+  };
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    try {
+      setError("");
+      setIsLoading(true);
+
+      const response = await authService.googleLogin(credentialResponse.credential);
+
+      // If user not found, redirect to Google signup page
+      if (response.userNotFound) {
+        const params = new URLSearchParams({
+          email: response.email,
+          name: response.name || "",
+        });
+        window.location.href = `/google-signup?${params.toString()}`;
+        return;
+      }
+
+      // User found, store token and redirect
+      const user = response.data?.user;
+      const token = response.token;
+      const userRole = user?.role;
+
+      if (token) {
+        document.cookie = `auth-token=${token}; path=/; max-age=86400; secure; samesite=strict`;
+      }
+
+      if (user) {
+        localStorage.setItem("user", JSON.stringify(user));
+        if (user.role) {
+          document.cookie = `user-role=${user.role}; path=/; max-age=86400; secure; samesite=strict`;
+        }
+        if (user.restaurantId) {
+          localStorage.setItem("restaurantId", user.restaurantId);
+        }
+      }
+
+      if (userRole) {
+        if (userRole === "TRADER") {
+          const traderUrl = `${process.env.NEXT_PUBLIC_TRADER_APP_URL}?token=${encodeURIComponent(token)}`;
+          window.location.href = traderUrl;
+        } else {
+          const redirectPath = getRedirectPath(userRole as UserRole);
+          window.location.href = redirectPath;
+        }
+      } else {
+        setError("User role not found. Please contact support.");
+      }
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.message || err.message || "Google login failed";
+      
+      // Check if error is about unverified account
+      if (errorMessage.toLowerCase().includes("not verified")) {
+        setError("Your account is not verified yet. Please verify your account first.");
+      } 
+      // Check if error is about terms agreement
+      else if (errorMessage.toLowerCase().includes("terms and conditions") || errorMessage.toLowerCase().includes("must agree")) {
+        setError("Please accept the Terms and Conditions first.");
+      } 
+      else {
+        setError(errorMessage);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setError("Google sign-in failed. Please try again.");
   };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -371,6 +442,28 @@ function LoginForm() {
               {isLoading ? "Signing in..." : "Sign in"}
             </button>
           </form>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+            </div>
+          </div>
+
+          <div className="flex justify-center">
+            <div className={isLoading || !isBackendAvailable ? "pointer-events-none opacity-50" : ""}>
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                theme="outline"
+                size="large"
+                text="signin_with"
+                shape="rectangular"
+              />
+            </div>
+          </div>
 
           <div className="mt-6 text-center">
             <p className="text-xs text-gray-900">

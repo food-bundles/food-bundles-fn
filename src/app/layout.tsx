@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ToastContainer } from "react-toastify";
 import { ImageKitProvider } from "@/components/ImageKitProvider";
 import Chatbot from "@/components/Chatbot";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 const nunitoSans = Nunito_Sans({
   weight: ["400", "500", "600", "700"],
@@ -24,14 +25,16 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${nunitoSans.variable}`}>
       <body suppressHydrationWarning>
-        <ImageKitProvider>
-          <CombinedProvider>
-            {children}
-            <Chatbot />
-          </CombinedProvider>
-        </ImageKitProvider>
-        <ToastContainer />
-        <Toaster />
+        <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}>
+          <ImageKitProvider>
+            <CombinedProvider>
+              {children}
+              <Chatbot />
+            </CombinedProvider>
+          </ImageKitProvider>
+          <ToastContainer />
+          <Toaster />
+        </GoogleOAuthProvider>
       </body>
     </html>
   );
