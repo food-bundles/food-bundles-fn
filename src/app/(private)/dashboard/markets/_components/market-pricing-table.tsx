@@ -435,124 +435,122 @@ export default function MarketPricingTable() {
     })),
   ];
 
-  // Transform price history data to show markets as columns
-  const transformPriceHistoryData = () => {
-    const productMap = new Map<string, any>();
-
-    priceHistory.forEach((item) => {
-      const productId = item.product.id;
-      const marketName = item.market.name;
-
-      if (!productMap.has(productId)) {
-        productMap.set(productId, {
-          product: item.product.productName,
-          foodbundles: item.ourPrice,
-          markets: {},
-          priceRecords: {},
-          id: productId,
-        });
-      }
-
-      const product = productMap.get(productId);
-      product.markets[marketName] = item.marketPrice;
-      product.priceRecords[marketName] = item;
-    });
-
-    return Array.from(productMap.values());
-  };
-
-  const marketNames = Array.from(
-    new Set(priceHistory.map((p) => p.market.name)),
-  );
-
-  const priceColumns: ColumnDef<any>[] = [
+  const priceColumns: ColumnDef<PriceHistory>[] = [
     {
       id: "nbr",
-      header: "Nbr",
+      header: "#",
       cell: ({ row }) => (
-        <span className="text-sm text-gray-600">{row.index + 1}</span>
-      ),
-    },
-    {
-      accessorKey: "product",
-      header: "Product",
-      cell: ({ row }) => (
-        <span className="font-medium text-gray-900">
-          {row.original.product}
+        <span className="text-sm text-gray-600">
+          {row.index + 1 + (pagination.page - 1) * pagination.limit}
         </span>
       ),
     },
     {
-      accessorKey: "foodbundles",
-      header: "FoodBundles",
+      accessorFn: (row) => row.market.name,
+      id: "market",
+      header: "Market",
+      cell: ({ row }) => (
+        <span className="font-medium text-gray-900">
+          {row.original.market.name}
+        </span>
+      ),
+    },
+    {
+      accessorFn: (row) => row.product.productName,
+      id: "product",
+      header: "Product",
+      cell: ({ row }) => (
+        <span className="text-gray-700">
+          {row.original.product.productName}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "ourPrice",
+      header: "Our Price",
+      cell: ({ row }) => (
+        <span className="text-gray-700">
+          {row.original.ourPrice.toLocaleString()} RWF
+        </span>
+      ),
+    },
+    {
+      accessorKey: "marketPrice",
+      header: "Market Price",
+      cell: ({ row }) => (
+        <span className="font-medium text-gray-900">
+          {row.original.marketPrice.toLocaleString()} RWF
+        </span>
+      ),
+    },
+    {
+      id: "difference",
+      header: "Difference",
       cell: ({ row }) => {
-        const allPrices = [
-          row.original.foodbundles,
-          ...Object.values(row.original.markets),
-        ];
-        const minPrice = Math.min(...allPrices);
+        const diff = row.original.marketPrice - row.original.ourPrice;
+        const isLower = diff > 0;
         return (
           <span
-            className={`${row.original.foodbundles === minPrice ? "text-green-700 font-bold" : "text-gray-700"}`}
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+              isLower
+                ? "bg-green-100 text-green-700"
+                : diff < 0
+                  ? "bg-red-100 text-red-700"
+                  : "bg-gray-100 text-gray-600"
+            }`}
           >
-            {row.original.foodbundles.toLocaleString()} RWF
+            {diff > 0 ? "+" : ""}
+            {diff.toLocaleString()} RWF
           </span>
         );
       },
     },
-    ...marketNames.map((marketName) => ({
-      accessorKey: `markets.${marketName}`,
-      header: marketName,
-      accessorFn: (row: any) => row.markets[marketName],
-      cell: ({ row }: any) => {
-        const price = row.original.markets[marketName];
-        const record = row.original.priceRecords[marketName];
-        if (!price) return <span className="text-gray-400">—</span>;
-        const allPrices = [
-          row.original.foodbundles,
-          ...Object.values(row.original.markets),
-        ];
-        const minPrice = Math.min(...allPrices);
-        return (
-          <div className="flex items-center gap-1">
-            <span
-              className={`${price === minPrice ? "text-orange-600 font-bold" : "text-gray-700"}`}
-            >
-              {price.toLocaleString()} RWF
-            </span>
-            {record && (
-              <div className="flex gap-0.5">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setEditingPrice(record)}
-                  className="h-5 w-5 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                >
-                  <Edit className="w-3 h-3" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={async () => {
-                    if (!confirm("Delete this price record?")) return;
-                    try {
-                      await marketService.deleteMarketPriceHistory(record.id);
-                      toast.success("Price record deleted");
-                      fetchPriceHistory();
-                    } catch {
-                      toast.error("Failed to delete");
-                    }
-                  }}
-                  className="h-5 w-5 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </Button>
-              </div>
-            )}
-          </div>
-        );
-      },
-    })),
+    {
+      accessorKey: "recordedDate",
+      header: "Date Recorded",
+      cell: ({ row }) => (
+        <span className="text-gray-600">
+          {new Date(row.original.recordedDate).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => (
+        <div className="flex gap-1">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setEditingPrice(row.original)}
+            className="h-7 w-7 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+          >
+            <Edit className="w-3.5 h-3.5" />
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={async () => {
+              if (!confirm("Delete this price record?")) return;
+              try {
+                await marketService.deleteMarketPriceHistory(row.original.id);
+                toast.success("Price record deleted");
+                fetchPriceHistory();
+              } catch {
+                toast.error("Failed to delete");
+              }
+            }}
+            className="h-7 px-2 text-xs text-red-500 hover:text-red-700 hover:bg-red-50"
+          >
+            Delete
+          </Button>
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -664,11 +662,21 @@ export default function MarketPricingTable() {
       {activeTab === "prices" && (
         <DataTable
           columns={priceColumns}
-          data={transformPriceHistoryData().filter((item) =>
-            item.product.toLowerCase().includes(priceSearch.toLowerCase()),
+          data={priceHistory.filter(
+            (item) =>
+              item.market.name
+                .toLowerCase()
+                .includes(priceSearch.toLowerCase()) ||
+              item.product.productName
+                .toLowerCase()
+                .includes(priceSearch.toLowerCase()),
           )}
-          showPagination={false}
+          showPagination={true}
           showSearch={false}
+          pagination={pagination}
+          onPaginationChange={(page, limit) =>
+            setPagination((prev) => ({ ...prev, page, limit }))
+          }
           isLoading={loading}
           customFilters={
             <div className="flex items-center justify-between w-full">
@@ -688,7 +696,7 @@ export default function MarketPricingTable() {
                 </svg>
                 <input
                   type="text"
-                  placeholder="Search products..."
+                  placeholder="Search by market or product..."
                   value={priceSearch}
                   onChange={(e) => setPriceSearch(e.target.value)}
                   className="pl-8 pr-3 h-8 w-80 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
