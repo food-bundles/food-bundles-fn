@@ -6,6 +6,8 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import axios from "axios";
+import { useAuth } from "@/app/contexts/auth-context";
+import { useSubscriptions } from "@/app/contexts/subscriptionContext";
 
 interface Product {
   name: string;
@@ -24,11 +26,11 @@ export function PriceComparison({ isOpen, onClose }: PriceComparisonProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [marketNames, setMarketNames] = useState<string[]>([]);
-  const [subscribeData, setSubscribeData] = useState({
-    email: "",
-    name: "",
-    phone: "",
-  });
+  
+  const { isAuthenticated } = useAuth();
+  const { mySubscriptions } = useSubscriptions();
+  
+  const hasActiveSubscription = isAuthenticated && mySubscriptions?.some(sub => sub.status === 'ACTIVE' && new Date(sub.endDate) > new Date());
 
   useEffect(() => {
     if (isOpen) {
@@ -78,18 +80,7 @@ export function PriceComparison({ isOpen, onClose }: PriceComparisonProps) {
         const allProducts = Array.from(priceMap.values())
           .filter(p => Object.keys(p.markets).length >= 1);
         
-        // Try to get products where FoodBundles is cheaper
-        const cheaperProducts = allProducts.filter(p => {
-          const marketPrices = Object.values(p.markets) as number[];
-          return marketPrices.every(price => price > p.foodbundles);
-        });
-        
-        // Use cheaper products if available, otherwise use all products
-        const productsArray = (cheaperProducts.length >= 5 ? cheaperProducts : allProducts)
-          .slice(0, 10);
-        
-        console.log('Sample product markets:', productsArray[0]?.markets);
-        setProducts(productsArray);
+        setProducts(allProducts);
       }
     } catch (error: any) {
       console.error("Failed to fetch data:", error);
@@ -102,39 +93,7 @@ export function PriceComparison({ isOpen, onClose }: PriceComparisonProps) {
       setLoading(false);
     }
   };
-
-  const handleSubscribe = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!subscribeData.email || !subscribeData.name || !subscribeData.phone) {
-      toast.error("Please fill all fields");
-      return;
-    }
-
-    setIsSubscribing(true);
-    try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/newsletter/subscribe`,
-        {
-          email: subscribeData.email,
-          name: subscribeData.name,
-          phone: subscribeData.phone,
-          restaurantId: null,
-        }
-      );
-
-      if (response.data.success) {
-        toast.success("Successfully subscribed! You'll receive market price updates.");
-        setSubscribeData({ email: "", name: "", phone: "" });
-        setShowSubscribeForm(false);
-      }
-    } catch (error: any) {
-      console.error("Subscription error:", error);
-      toast.error(error.response?.data?.message || "Failed to subscribe");
-    } finally {
-      setIsSubscribing(false);
-    }
-  };
+  const displayProducts = hasActiveSubscription ? products : products.slice(0, 5);
 
   return (
     <>
@@ -188,7 +147,7 @@ export function PriceComparison({ isOpen, onClose }: PriceComparisonProps) {
                     </tr>
                   </thead>
                   <tbody>
-                    {products.map((product, index) => {
+                    {displayProducts.map((product, index) => {
                       const marketPrices = marketNames.map(name => product.markets[name]).filter(p => p !== undefined);
                       const allPrices = [product.foodbundles, ...marketPrices];
                       const minPrice = Math.min(...allPrices);
@@ -219,85 +178,28 @@ export function PriceComparison({ isOpen, onClose }: PriceComparisonProps) {
                 </table>
               )}
             </div>
-
             {/* Footer */}
             <div className="p-6 border-t bg-gray-50">
               <div className="space-y-4">
-                {/* Newsletter Subscription */}
-                {showSubscribeForm ? (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <Mail className="h-5 w-5 text-green-600 mt-0.5" />
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 text-sm mb-1">
-                          Get More Market Prices
-                        </h3>
-                        <p className="text-xs text-gray-600 mb-3">
-                          Subscribe to receive daily market price updates from more locations
-                        </p>
-                        <form onSubmit={handleSubscribe} className="space-y-2">
-                          <div className="grid grid-cols-2 gap-2">
-                            <Input
-                              type="text"
-                              placeholder="Restaurant Name"
-                              value={subscribeData.name}
-                              onChange={(e) => setSubscribeData({ ...subscribeData, name: e.target.value })}
-                              className="h-8 text-xs"
-                              disabled={isSubscribing}
-                            />
-                            <Input
-                              type="tel"
-                              placeholder="Phone (+250...)"
-                              value={subscribeData.phone}
-                              onChange={(e) => setSubscribeData({ ...subscribeData, phone: e.target.value })}
-                              className="h-8 text-xs"
-                              disabled={isSubscribing}
-                            />
-                          </div>
-                          <div className="flex gap-2">
-                            <Input
-                              type="email"
-                              placeholder="Email address"
-                              value={subscribeData.email}
-                              onChange={(e) => setSubscribeData({ ...subscribeData, email: e.target.value })}
-                              className="h-8 text-xs flex-1"
-                              disabled={isSubscribing}
-                            />
-                            <button
-                              type="submit"
-                              disabled={isSubscribing}
-                              className="px-4 py-1 bg-green-600 text-white rounded text-xs font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {isSubscribing ? "Subscribing..." : "Subscribe"}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setShowSubscribeForm(false)}
-                              className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-xs font-medium hover:bg-gray-300 transition-colors"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </form>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-green-600" />
-                        <p className="text-sm text-gray-700">
-                          Want more market prices? <span className="font-semibold">Subscribe to our newsletter</span>
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => setShowSubscribeForm(true)}
-                        className="px-4 py-1.5 bg-green-600 text-white rounded text-sm font-medium hover:bg-green-700 transition-colors"
-                      >
-                        Subscribe
-                      </button>
-                    </div>
+                {!hasActiveSubscription && products.length > 5 && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                    <h3 className="font-semibold text-gray-900 text-sm mb-2">
+                      View All Market Prices
+                    </h3>
+                    <p className="text-xs text-gray-600 mb-4">
+                      {isAuthenticated 
+                        ? "You need an active subscription to view prices for all products across different markets." 
+                        : "Please log in and subscribe to view prices for all products across different markets."}
+                    </p>
+                    {isAuthenticated ? (
+                      <Link href="/restaurant/subscribe" className="inline-block px-4 py-2 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700 transition-colors">
+                        Subscribe Now
+                      </Link>
+                    ) : (
+                      <Link href="/login" className="inline-block px-4 py-2 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700 transition-colors">
+                        Log In
+                      </Link>
+                    )}
                   </div>
                 )}
 
