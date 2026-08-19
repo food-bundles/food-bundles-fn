@@ -25,6 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ExportButton } from "@/components/ExportButton";
 import { Trash2 } from "lucide-react";
 
 const statusOptions = [
@@ -549,6 +550,17 @@ export default function AdminOrdersPage() {
         <div>
           <h1 className="text-[16px] font-medium">Restaurant Orders</h1>
         </div>
+        <ExportButton
+          module="orders"
+          filters={{
+            search: searchValue,
+            status: selectedStatus !== "all" ? selectedStatus : undefined,
+            paymentStatus: selectedPaymentStatus !== "all" ? selectedPaymentStatus : undefined,
+            restaurantId: selectedRestaurantId || undefined,
+            startDate: dateFrom ? dateFrom.toISOString().split("T")[0] : undefined,
+            endDate: dateTo ? dateTo.toISOString().split("T")[0] : undefined,
+          }}
+        />
       </div>
 
       <TableFilters filters={filters} />

@@ -6,6 +6,7 @@ import { useState, useMemo } from "react";
 import { DataTable } from "@/components/data-table";
 import { paymentColumns, type Payment } from "./_components/payment-columns";
 import { createCommonFilters, TableFilters } from "@/components/filters";
+import { ExportButton } from "@/components/ExportButton";
 
 // Mock payment data
 const mockPayments: Payment[] = [
@@ -134,18 +135,18 @@ export default function PaymentsPage() {
     });
   }, [mockPayments, searchTerm, statusFilter, dateRange]);
 
-  const handleExport = () => {
-    console.log("Exporting payments data...");
-  };
-
   return (
     <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Payment Management</h1>
+        </div>
+        <ExportButton module="payments" label="Export Payments" />
+      </div>
       <DataTable
         columns={paymentColumns}
         data={filteredData}
-        title="Payment Management"
-        showExport={true}
-        onExport={handleExport}
+        showExport={false}
         showAddButton={false}
         customFilters={<TableFilters filters={filters} />}
         showSearch={false}

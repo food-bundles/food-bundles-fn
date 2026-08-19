@@ -1,12 +1,27 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useMemo } from "react";
 import { Input } from "@/components/ui/input";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff, Check, X } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { authService } from "@/app/services/authService";
+
+function validatePassword(password: string): string | null {
+  if (!password) return "Password is required";
+  if (password.length < 8)
+    return "Password must be at least 8 characters long";
+  if (!/(?=.*[a-z])/.test(password))
+    return "Password must contain at least one lowercase letter";
+  if (!/(?=.*[A-Z])/.test(password))
+    return "Password must contain at least one uppercase letter";
+  if (!/(?=.*\d)/.test(password))
+    return "Password must contain at least one number";
+  if (!/(?=.*[@$!%*?&])/.test(password))
+    return "Password must contain at least one special character (@$!%*?&)";
+  return null;
+}
 
 function ResetPasswordForm() {
   const [newPassword, setNewPassword] = useState("");
@@ -14,6 +29,7 @@ function ResetPasswordForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
   const [token, setToken] = useState("");
 
@@ -28,10 +44,32 @@ function ResetPasswordForm() {
     }
   }, [searchParams]);
 
+  const passwordChecks = useMemo(() => ({
+    length: newPassword.length >= 8,
+    lowercase: /(?=.*[a-z])/.test(newPassword),
+    uppercase: /(?=.*[A-Z])/.test(newPassword),
+    number: /(?=.*\d)/.test(newPassword),
+    special: /(?=.*[@$!%*?&])/.test(newPassword),
+  }), [newPassword]);
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setNewPassword(value);
+    if (passwordError) {
+      setPasswordError("");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) {
       setError("Invalid reset token");
+      return;
+    }
+
+    const validationError = validatePassword(newPassword);
+    if (validationError) {
+      setPasswordError(validationError);
       return;
     }
 
@@ -79,11 +117,14 @@ function ResetPasswordForm() {
               type={showPassword ? "text" : "password"}
               placeholder="Enter new password"
               value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="h-10 text-[13px] border-gray-300 focus:border-green-500 focus:ring-green-500 text-gray-900 pr-10"
+              onChange={handlePasswordChange}
+              className={`h-10 text-[13px] border-gray-300 focus:border-green-500 focus:ring-green-500 text-gray-900 pr-10 ${
+                passwordError
+                  ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                  : ""
+              }`}
               disabled={isLoading || !token}
               required
-              minLength={6}
             />
             <button
               type="button"
@@ -96,7 +137,70 @@ function ResetPasswordForm() {
                 <Eye className="h-4 w-4" />
               )}
             </button>
+            {passwordError && (
+              <p className="text-red-600 text-xs mt-1">{passwordError}</p>
+            )}
           </div>
+
+          {newPassword && (
+            <div className="bg-gray-50 p-3 rounded-md">
+              <p className="text-[12px] font-medium text-gray-700 mb-2">
+                Password Requirements:
+              </p>
+              <ul className="space-y-1">
+                <li className="flex items-center gap-2 text-[11px]">
+                  {passwordChecks.length ? (
+                    <Check className="h-3 w-3 text-green-600" />
+                  ) : (
+                    <X className="h-3 w-3 text-gray-400" />
+                  )}
+                  <span className={passwordChecks.length ? "text-green-600" : "text-gray-500"}>
+                    At least 8 characters
+                  </span>
+                </li>
+                <li className="flex items-center gap-2 text-[11px]">
+                  {passwordChecks.lowercase ? (
+                    <Check className="h-3 w-3 text-green-600" />
+                  ) : (
+                    <X className="h-3 w-3 text-gray-400" />
+                  )}
+                  <span className={passwordChecks.lowercase ? "text-green-600" : "text-gray-500"}>
+                    One lowercase letter
+                  </span>
+                </li>
+                <li className="flex items-center gap-2 text-[11px]">
+                  {passwordChecks.uppercase ? (
+                    <Check className="h-3 w-3 text-green-600" />
+                  ) : (
+                    <X className="h-3 w-3 text-gray-400" />
+                  )}
+                  <span className={passwordChecks.uppercase ? "text-green-600" : "text-gray-500"}>
+                    One uppercase letter
+                  </span>
+                </li>
+                <li className="flex items-center gap-2 text-[11px]">
+                  {passwordChecks.number ? (
+                    <Check className="h-3 w-3 text-green-600" />
+                  ) : (
+                    <X className="h-3 w-3 text-gray-400" />
+                  )}
+                  <span className={passwordChecks.number ? "text-green-600" : "text-gray-500"}>
+                    One number
+                  </span>
+                </li>
+                <li className="flex items-center gap-2 text-[11px]">
+                  {passwordChecks.special ? (
+                    <Check className="h-3 w-3 text-green-600" />
+                  ) : (
+                    <X className="h-3 w-3 text-gray-400" />
+                  )}
+                  <span className={passwordChecks.special ? "text-green-600" : "text-gray-500"}>
+                    One special character (@$!%*?&)
+                  </span>
+                </li>
+              </ul>
+            </div>
+          )}
 
           <button
             type="submit"
