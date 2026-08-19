@@ -46,7 +46,7 @@ export default function MarketPricingManagement() {
   const [error, setError] = useState<string | null>(null);
 
   // ── view ──────────────────────────────────────────────────────────────────
-  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+  const [viewMode, setViewMode] = useState<"cards" | "table">("table");
 
   // ── filters ───────────────────────────────────────────────────────────────
   const [search, setSearch] = useState("");
