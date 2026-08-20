@@ -22,6 +22,7 @@ function GoogleSignupForm() {
   const [restaurantName, setRestaurantName] = useState(name);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{
     phone?: string;
     tin?: string;
@@ -163,6 +164,13 @@ function GoogleSignupForm() {
     setError("");
     setValidationErrors({});
 
+    if (!agreed) {
+      setError(
+        "You must accept the Terms and Conditions to complete your registration."
+      );
+      return;
+    }
+
     try {
       const response = await authService.googleSignup({
         email,
@@ -171,6 +179,7 @@ function GoogleSignupForm() {
         phone,
         tin: selectedRole === "RESTAURANT" || selectedRole === "HOTEL" ? tin : undefined,
         location,
+        agreed,
       });
 
       const user = response.data?.user;
@@ -386,10 +395,39 @@ function GoogleSignupForm() {
           )}
         </div>
 
+        <label className="flex items-start gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            disabled={isLoading}
+            className="mt-0.5 h-4 w-4 text-green-700 border-gray-300 rounded focus:ring-green-700"
+          />
+          <span className="text-xs text-gray-600 leading-relaxed">
+            I have read and agree to the{" "}
+            <Link
+              href="/terms"
+              target="_blank"
+              className="text-green-600 hover:text-green-700 underline underline-offset-2"
+            >
+              Terms &amp; Conditions
+            </Link>{" "}
+            and{" "}
+            <Link
+              href="/privacy-policy"
+              target="_blank"
+              className="text-green-600 hover:text-green-700 underline underline-offset-2"
+            >
+              Privacy Policy
+            </Link>
+            .
+          </span>
+        </label>
+
         <button
           type="submit"
           className="w-full h-10 bg-green-700 hover:bg-green-800 text-white text-[14px] font-medium flex items-center justify-center gap-2"
-          disabled={isLoading || !email}
+          disabled={isLoading || !email || !agreed}
         >
           {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
           {isLoading ? "Creating Account..." : "Complete Registration"}

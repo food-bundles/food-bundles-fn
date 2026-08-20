@@ -163,6 +163,13 @@ function LoginForm() {
         return;
       }
 
+      // If user has not accepted the terms yet, take them to the agreement page
+      if (response.needsTermsAgreement) {
+        localStorage.setItem("pending_agreement_email", response.email || "");
+        window.location.href = "/terms-agreement";
+        return;
+      }
+
       // User found, store token and redirect
       const user = response.data?.user;
       const token = response.token;

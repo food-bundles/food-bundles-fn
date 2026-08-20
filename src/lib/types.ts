@@ -24,6 +24,7 @@ export interface ICreateFarmerData {
   email?: string;
   password?: string;
   tin: string;
+  agreed?: boolean;
 }
 
 export interface ICreateRestaurantData {
@@ -34,6 +35,7 @@ export interface ICreateRestaurantData {
   password: string;
   tin: string;
   role?: "RESTAURANT" | "HOTEL";
+  agreed?: boolean;
 }
 export interface ICreateAdministratorsData {
   username: string;

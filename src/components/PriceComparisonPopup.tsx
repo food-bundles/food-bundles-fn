@@ -24,12 +24,32 @@ export function PriceComparisonPopup() {
   const [subscribing, setSubscribing] = useState(false);
   const [marketNames, setMarketNames] = useState<string[]>([]);
   const [email, setEmail] = useState("");
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [checkingStatus, setCheckingStatus] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     fetchPriceComparison();
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated && user?.email) {
+      setCheckingStatus(true);
+      newsletterService
+        .checkNewsletterStatus(user.email)
+        .then((res) => {
+          setIsSubscribed(res?.data?.isSubscribed === true);
+        })
+        .catch(() => {
+          setIsSubscribed(false);
+        })
+        .finally(() => setCheckingStatus(false));
+    } else {
+      setIsSubscribed(false);
+      setCheckingStatus(false);
+    }
+  }, [isAuthenticated, user]);
 
   const fetchPriceComparison = async () => {
     setLoading(true);
@@ -82,16 +102,25 @@ export function PriceComparisonPopup() {
     setSubscribing(true);
     try {
       await newsletterService.subscribe({
-        email: isAuthenticated ? user.email : email,
-        name: isAuthenticated ? (user.name || user.username) : undefined,
-        phone: isAuthenticated ? user.phone : undefined,
+        email: isAuthenticated && user ? user.email : email,
+        name:
+          isAuthenticated && user
+            ? (user.name || user.username)
+            : undefined,
+        phone: isAuthenticated && user ? user.phone : undefined,
       });
+      setIsSubscribed(true);
       toast.success("Successfully subscribed to newsletter!");
       setEmail("");
     } catch (error: any) {
       console.error('Subscribe error:', error);
       const errorMsg = error.response?.data?.message || error.message || "Failed to subscribe";
-      toast.error(errorMsg);
+      if (errorMsg.toLowerCase().includes("already subscribed")) {
+        setIsSubscribed(true);
+        toast.success("You are already subscribed to the newsletter!");
+      } else {
+        toast.error(errorMsg);
+      }
     } finally {
       setSubscribing(false);
     }
@@ -168,27 +197,45 @@ export function PriceComparisonPopup() {
         </table>
       </div>
       <div className="mt-4 flex flex-col items-center gap-2">
-        <p className="text-xs text-gray-600 text-center">
-          You need to subscribe as restaurant to get full comparison table
-        </p>
-        <div className="flex gap-2 w-full max-w-md">
-          {!isAuthenticated && (
-            <Input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="flex-1"
-            />
-          )}
-          <Button
-            onClick={handleSubscribe}
-            disabled={subscribing}
-            className="bg-green-700 hover:bg-green-600 text-white"
-          >
-            {subscribing ? "Subscribing..." : "Subscribe"}
-          </Button>
-        </div>
+        {isAuthenticated && (isSubscribed || checkingStatus) ? (
+          <>
+            <p className="text-xs text-gray-600 text-center">
+              You are subscribed to the newsletter. View the full comparison
+              table with all products and markets.
+            </p>
+            <Button
+              onClick={() => router.push("/price-comparison")}
+              disabled={checkingStatus}
+              className="bg-green-700 hover:bg-green-600 text-white"
+            >
+              View Full Price Comparison
+            </Button>
+          </>
+        ) : (
+          <>
+            <p className="text-xs text-gray-600 text-center">
+              You need to subscribe as restaurant to get full comparison table
+            </p>
+            <div className="flex gap-2 w-full max-w-md">
+              {!isAuthenticated && (
+                <Input
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="flex-1"
+                />
+              )}
+              <Button
+                onClick={handleSubscribe}
+                disabled={subscribing}
+                className="bg-green-700 hover:bg-green-600 text-white"
+              >
+                {subscribing ? "Subscribing..." : "Subscribe"}
+              </Button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

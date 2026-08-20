@@ -47,6 +47,14 @@ export const newsletterService = {
     return response.data;
   },
 
+  checkNewsletterStatus: async (email: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get(
+      `/newsletter/status?email=${encodeURIComponent(email)}`
+    );
+    return response.data;
+  },
+
   // Campaigns
   getAllCampaigns: async (page = 1, limit = 10, status?: string) => {
     const axiosClient = createAxiosClient();
