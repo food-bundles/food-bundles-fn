@@ -28,6 +28,12 @@ function GoogleSignupForm() {
     location?: string;
     name?: string;
   }>({});
+  const [touched, setTouched] = useState<{
+    phone?: boolean;
+    tin?: boolean;
+    location?: boolean;
+    name?: boolean;
+  }>({});
 
   useEffect(() => {
     if (!email) {
@@ -66,6 +72,57 @@ function GoogleSignupForm() {
     return null;
   }
 
+  function fieldError(
+    field: "phone" | "tin" | "location" | "name",
+    value: string
+  ): string | undefined {
+    if (field === "name") {
+      if (selectedRole === "FARMER") return undefined;
+      return validateName(value) || undefined;
+    }
+    if (field === "tin") {
+      if (selectedRole === "FARMER") return undefined;
+      return validateTIN(value) || undefined;
+    }
+    if (field === "phone") return validatePhone(value) || undefined;
+    if (field === "location") return validateLocation(value) || undefined;
+    return undefined;
+  }
+
+  function handleFieldChange(
+    field: "phone" | "tin" | "location" | "name",
+    setter: (value: string) => void,
+    value: string
+  ) {
+    setter(value);
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    setValidationErrors((prev) => ({
+      ...prev,
+      [field]: fieldError(field, value),
+    }));
+  }
+
+  function handleFieldBlur(
+    field: "phone" | "tin" | "location" | "name",
+    value: string
+  ) {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    setValidationErrors((prev) => ({
+      ...prev,
+      [field]: fieldError(field, value),
+    }));
+  }
+
+  function handleRoleChange(role: "FARMER" | "RESTAURANT" | "HOTEL") {
+    setSelectedRole(role);
+    setTouched((prev) => ({ ...prev, name: false, tin: false }));
+    setValidationErrors((prev) => ({
+      ...prev,
+      name: undefined,
+      tin: undefined,
+    }));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email) {
@@ -89,6 +146,13 @@ function GoogleSignupForm() {
 
     const locationError = validateLocation(location);
     if (locationError) errors.location = locationError;
+
+    setTouched({
+      name: true,
+      tin: true,
+      phone: true,
+      location: true,
+    });
 
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
@@ -172,7 +236,7 @@ function GoogleSignupForm() {
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => setSelectedRole("FARMER")}
+              onClick={() => handleRoleChange("FARMER")}
               className={`flex-1 h-12 border flex items-center justify-center gap-1.5 transition-all rounded px-1 text-[13px] sm:text-[14px] cursor-pointer ${
                 selectedRole === "FARMER"
                   ? "border-green-500 bg-green-50 text-green-700 font-medium"
@@ -188,7 +252,7 @@ function GoogleSignupForm() {
 
             <button
               type="button"
-              onClick={() => setSelectedRole("RESTAURANT")}
+              onClick={() => handleRoleChange("RESTAURANT")}
               className={`flex-1 h-12 border flex items-center justify-center gap-1.5 transition-all rounded px-1 text-[13px] sm:text-[14px] cursor-pointer ${
                 selectedRole === "RESTAURANT"
                   ? "border-green-500 bg-green-50 text-green-700 font-medium"
@@ -204,7 +268,7 @@ function GoogleSignupForm() {
 
             <button
               type="button"
-              onClick={() => setSelectedRole("HOTEL")}
+              onClick={() => handleRoleChange("HOTEL")}
               className={`flex-1 h-12 border flex items-center justify-center gap-1.5 transition-all rounded px-1 text-[13px] sm:text-[14px] cursor-pointer ${
                 selectedRole === "HOTEL"
                   ? "border-green-500 bg-green-50 text-green-700 font-medium"
@@ -226,17 +290,21 @@ function GoogleSignupForm() {
             <Input
               type="text"
               value={restaurantName}
-              onChange={(e) => {
-                setRestaurantName(e.target.value);
-                if (validationErrors.name) setValidationErrors(prev => ({ ...prev, name: undefined }));
-              }}
+              onChange={(e) =>
+                handleFieldChange("name", setRestaurantName, e.target.value)
+              }
+              onBlur={() => handleFieldBlur("name", restaurantName)}
               placeholder={`${selectedRole === "RESTAURANT" ? "Restaurant" : "Hotel"} Name`}
               className={`h-10 text-[13px] border-gray-300 focus:border-green-500 focus:ring-green-500 text-gray-900 ${
-                validationErrors.name ? "border-red-500" : ""
+                touched.name && validationErrors.name
+                  ? "border-red-500"
+                  : touched.name && restaurantName.trim()
+                  ? "border-green-500"
+                  : ""
               }`}
               disabled={isLoading}
             />
-            {validationErrors.name && (
+            {touched.name && validationErrors.name && (
               <p className="text-red-600 text-xs mt-1">{validationErrors.name}</p>
             )}
           </div>
@@ -247,17 +315,21 @@ function GoogleSignupForm() {
           <Input
             type="tel"
             value={phone}
-            onChange={(e) => {
-              setPhone(e.target.value);
-              if (validationErrors.phone) setValidationErrors(prev => ({ ...prev, phone: undefined }));
-            }}
+            onChange={(e) =>
+              handleFieldChange("phone", setPhone, e.target.value)
+            }
+            onBlur={() => handleFieldBlur("phone", phone)}
             placeholder="Phone Number"
             className={`h-10 text-[13px] border-gray-300 focus:border-green-500 focus:ring-green-500 text-gray-900 ${
-              validationErrors.phone ? "border-red-500" : ""
+              touched.phone && validationErrors.phone
+                ? "border-red-500"
+                : touched.phone && phone.trim()
+                ? "border-green-500"
+                : ""
             }`}
             disabled={isLoading}
           />
-          {validationErrors.phone && (
+          {touched.phone && validationErrors.phone && (
             <p className="text-red-600 text-xs mt-1">{validationErrors.phone}</p>
           )}
         </div>
@@ -268,18 +340,22 @@ function GoogleSignupForm() {
             <Input
               type="text"
               value={tin}
-              onChange={(e) => {
-                setTin(e.target.value);
-                if (validationErrors.tin) setValidationErrors(prev => ({ ...prev, tin: undefined }));
-              }}
+              onChange={(e) =>
+                handleFieldChange("tin", setTin, e.target.value)
+              }
+              onBlur={() => handleFieldBlur("tin", tin)}
               placeholder="TIN Number (9 digits)"
               className={`h-10 text-[13px] border-gray-300 focus:border-green-500 focus:ring-green-500 text-gray-900 ${
-                validationErrors.tin ? "border-red-500" : ""
+                touched.tin && validationErrors.tin
+                  ? "border-red-500"
+                  : touched.tin && tin.trim()
+                  ? "border-green-500"
+                  : ""
               }`}
               disabled={isLoading}
               maxLength={9}
             />
-            {validationErrors.tin && (
+            {touched.tin && validationErrors.tin && (
               <p className="text-red-600 text-xs mt-1">{validationErrors.tin}</p>
             )}
           </div>
@@ -291,17 +367,21 @@ function GoogleSignupForm() {
           <Input
             type="text"
             value={location}
-            onChange={(e) => {
-              setLocation(e.target.value);
-              if (validationErrors.location) setValidationErrors(prev => ({ ...prev, location: undefined }));
-            }}
+            onChange={(e) =>
+              handleFieldChange("location", setLocation, e.target.value)
+            }
+            onBlur={() => handleFieldBlur("location", location)}
             placeholder="Location (Province, District, Sector...)"
             className={`pl-10 h-10 text-[13px] border-gray-300 focus:border-green-500 focus:ring-green-500 text-gray-900 ${
-              validationErrors.location ? "border-red-500" : ""
+              touched.location && validationErrors.location
+                ? "border-red-500"
+                : touched.location && location.trim()
+                ? "border-green-500"
+                : ""
             }`}
             disabled={isLoading}
           />
-          {validationErrors.location && (
+          {touched.location && validationErrors.location && (
             <p className="text-red-600 text-xs mt-1">{validationErrors.location}</p>
           )}
         </div>
