@@ -1015,6 +1015,8 @@ function SignupForm() {
   const [isBackendAvailable, setIsBackendAvailable] = useState(true);
   const [backendMessage, setBackendMessage] = useState("");
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [agreed, setAgreed] = useState(false);
+  const [termsError, setTermsError] = useState("");
   const [showOTPModal, setShowOTPModal] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [isVerifyingOTP, setIsVerifyingOTP] = useState(false);
@@ -1193,6 +1195,15 @@ function SignupForm() {
     setError("");
     setSuccess("");
 
+    if (!agreed) {
+      setTermsError(
+        "You must accept the Terms and Conditions to complete your registration."
+      );
+      setIsLoading(false);
+      return;
+    }
+    setTermsError("");
+
     const formData = new FormData(e.currentTarget);
     const errors = validateForm(formData);
 
@@ -1218,6 +1229,7 @@ function SignupForm() {
           tin: formData.get("tin") as string,
           location: locationToSave,
           phone,
+          agreed,
         };
         await authService.registerFarmer(farmerData);
         setSuccess("Account created successfully! Redirecting to login...");
@@ -1233,6 +1245,7 @@ function SignupForm() {
           location: locationToSave,
           phone,
           role: selectedBusinessType,
+          agreed,
         };
         const response = await authService.registerRestaurant(restaurantData);
 
@@ -1323,6 +1336,13 @@ function SignupForm() {
           name: response.name || "",
         });
         window.location.href = `/google-signup?${params.toString()}`;
+        return;
+      }
+
+      // If user has not accepted the terms yet, take them to the agreement page
+      if (response.needsTermsAgreement) {
+        localStorage.setItem("pending_agreement_email", response.email || "");
+        window.location.href = "/terms-agreement";
         return;
       }
 
@@ -1721,10 +1741,30 @@ function SignupForm() {
               )}
             </div>
 
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={(e) => {
+                  setAgreed(e.target.checked);
+                  if (termsError) setTermsError("");
+                }}
+                disabled={isLoading || !isBackendAvailable}
+                className="mt-0.5 h-4 w-4 text-green-700 border-gray-300 rounded focus:ring-green-700"
+              />
+              <span className="text-xs text-gray-600 leading-relaxed">
+                I have read and agree to the Terms &amp; Conditions, Privacy
+                Policy, and Refund Policy.
+              </span>
+            </label>
+            {termsError && (
+              <p className="text-red-600 text-xs mt-1">{termsError}</p>
+            )}
+
             <button
               type="submit"
               className="w-full h-10 bg-green-700 hover:bg-green-800 text-white text-[14px] font-medium cursor-pointer"
-              disabled={isLoading || !isBackendAvailable}
+              disabled={isLoading || !isBackendAvailable || !agreed}
             >
               {isLoading ? (
                 <span className="flex items-center justify-center">

@@ -139,6 +139,7 @@ export const authService = {
     phone?: string;
     tin?: string;
     location?: string;
+    agreed?: boolean;
   }) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.post("/google-signup", data);
