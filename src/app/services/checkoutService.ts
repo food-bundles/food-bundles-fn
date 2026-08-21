@@ -231,6 +231,40 @@ class CheckoutService {
       };
     }
   }
+
+  // Create order on behalf of a restaurant (Admin/Logistics only)
+  async createAdminOrder(
+    payload: {
+      restaurantId: string;
+      products: Array<{
+        productId: string;
+        quantity: number;
+      }>;
+      paymentMethod: string;
+      phoneNumber?: string;
+      notes?: string;
+      voucherCode?: string;
+      promoCode?: string;
+      deliveryDate?: string;
+    }
+  ): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.axiosClient.post(
+        "/checkouts/admin-order",
+        payload
+      );
+      return {
+        success: true,
+        message: response.data.message || "Order created successfully",
+        data: response.data.data,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Failed to create order",
+      };
+    }
+  }
 }
 
 export const checkoutService = new CheckoutService();

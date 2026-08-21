@@ -28,6 +28,7 @@ import {
   Settings,
   DollarSign,
   TrendingUp,
+  CreditCard,
   MailOpen,
 } from "lucide-react";
 import NotificationsDrawer from "@/app/(private)/restaurant/_components/notificationDrawer";
@@ -69,6 +70,11 @@ const menuItems = [
         icon: Boxes,
         label: "Units",
         href: "/dashboard/stock/units",
+      },
+      {
+        icon: CreditCard,
+        label: "Payment Methods",
+        href: "/dashboard/stock/payment-methods",
       },
       {
         icon: BarChart3,
