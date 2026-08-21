@@ -76,13 +76,15 @@ export function Footer() {
             <h3 className="text-[14px] font-semibold text-white">Support</h3>
             <div className="space-y-2">
               <Link
-                href="https://wa.me/250796897823"
+                href="https://wa.me/250796897823?app_absent=0"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="block text-green-200 hover:text-white transition-colors text-sm"
               >
                 Help Center
               </Link>
               <Link
-                href="https://mail.google.com/mail/?view=cm&to=sales@food.rw"
+                href="/support"
                 className="block text-green-200 hover:text-white transition-colors text-sm"
               >
                 Contact Us

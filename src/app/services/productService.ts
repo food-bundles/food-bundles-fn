@@ -17,7 +17,7 @@ export interface CreateProductData {
 }
 
 export const productService = {
-  createProduct: async (productData: ProductFormData & { tableTronicProductId?: number | null; unitId?: string }) => {
+  createProduct: async (productData: ProductFormData & { unitId?: string }) => {
     const axiosClient = createAxiosClient();
 
     // Create FormData for file upload
@@ -38,9 +38,6 @@ export const productService = {
     formData.append("sku", productData.sku);
     formData.append("quantity", productData.quantity.toString());
     formData.append("unit", productData.unit);
-    if (productData.tableTronicProductId) {
-      formData.append("tableTronicProductId", productData.tableTronicProductId.toString());
-    }
     if (productData.unitId) {
       formData.append("unitId", productData.unitId);
     }

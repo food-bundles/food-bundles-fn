@@ -93,7 +93,7 @@ export function Header() {
     { label: "Home", href: "#home", id: "home" },
     { label: "Connect", href: "#connect", id: "connect" },
     { label: "Price", href: "/dashboard/markets", id: "price", isExternal: true },
-    { label: "Ask help", href: "#ask-help", id: "ask-help" },
+    { label: "Ask help", href: "/support", id: "ask-help", isExternal: true },
   ];
 
   const getRedirectPathMemo = useCallback((userRole: string) => {
@@ -593,17 +593,27 @@ export function Header() {
                   {navigationItems.map((item) => (
                     item.isExternal ? (
                       <div key={item.id}>
-                        <button
-                          onClick={() => item.id === "price" ? setIsMobilePriceOpen(!isMobilePriceOpen) : setIsMenuOpen(false)}
-                          className={`w-full text-left hover:text-secondary transition-colors cursor-pointer px-2 py-1 rounded flex items-center justify-between ${
-                            activeSection === item.id ? "text-yellow-300 bg-green-800/50" : "text-primary-foreground"
-                          }`}
-                        >
-                          <span>{item.label}</span>
-                          {item.id === "price" && (
+                        {item.id === "price" ? (
+                          <button
+                            onClick={() => setIsMobilePriceOpen(!isMobilePriceOpen)}
+                            className={`w-full text-left hover:text-secondary transition-colors cursor-pointer px-2 py-1 rounded flex items-center justify-between ${
+                              activeSection === item.id ? "text-yellow-300 bg-green-800/50" : "text-primary-foreground"
+                            }`}
+                          >
+                            <span>{item.label}</span>
                             <span className="text-xs text-primary-foreground">{isMobilePriceOpen ? "▲" : "▼"}</span>
-                          )}
-                        </button>
+                          </button>
+                        ) : (
+                          <Link
+                            href={item.href}
+                            onClick={() => setIsMenuOpen(false)}
+                            className={`block hover:text-secondary transition-colors cursor-pointer px-2 py-1 rounded ${
+                              activeSection === item.id ? "text-yellow-300 bg-green-800/50" : "text-primary-foreground"
+                            }`}
+                          >
+                            {item.label}
+                          </Link>
+                        )}
                       </div>
                     ) : (
                       <a

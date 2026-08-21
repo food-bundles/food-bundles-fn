@@ -8,13 +8,24 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { UnitFormData } from "@/app/services/unitService";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-interface Unit {
+export interface PaymentMethodFormData {
+  name: string;
+  description: string;
+  isActive: boolean;
+}
+
+interface PaymentMethod {
   id: string;
   name: string;
   description: string;
@@ -22,41 +33,49 @@ interface Unit {
   createdAt: string;
 }
 
-interface UnitModalProps {
+interface PaymentMethodModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  unit?: Unit | null;
-  onSubmit: (data: UnitFormData) => Promise<void>;
+  method?: PaymentMethod | null;
+  onSubmit: (data: PaymentMethodFormData) => Promise<void>;
 }
 
-export function UnitModal({
+const ACCEPTED_METHODS = [
+  "MOBILE_MONEY",
+  "CARD",
+  "BANK_TRANSFER",
+  "CASH",
+  "VOUCHER",
+];
+
+export function PaymentMethodModal({
   open,
   onOpenChange,
-  unit,
+  method,
   onSubmit,
-}: UnitModalProps) {
-  const [formData, setFormData] = useState<UnitFormData>({
-    name: "",
+}: PaymentMethodModalProps) {
+  const [formData, setFormData] = useState<PaymentMethodFormData>({
+    name: "MOBILE_MONEY",
     description: "",
     isActive: true,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (unit) {
+    if (method) {
       setFormData({
-        name: unit.name,
-        description: unit.description || "",
-        isActive: unit.isActive ?? true,
+        name: method.name,
+        description: method.description || "",
+        isActive: method.isActive ?? true,
       });
     } else {
       setFormData({
-        name: "",
+        name: "MOBILE_MONEY",
         description: "",
         isActive: true,
       });
     }
-  }, [unit, open]);
+  }, [method, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,25 +94,35 @@ export function UnitModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{unit ? "Edit Unit" : "Create New Unit"}</DialogTitle>
+          <DialogTitle>
+            {method ? "Edit Payment Method" : "Create New Payment Method"}
+          </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Name *</Label>
-            <Input
-              id="name"
+            <Select
               value={formData.name}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, name: e.target.value }))
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, name: value }))
               }
-              placeholder="Enter unit name"
-              required
-            />
+            >
+              <SelectTrigger className="w-full h-10">
+                <SelectValue placeholder="Select payment method" />
+              </SelectTrigger>
+              <SelectContent>
+                {ACCEPTED_METHODS.map((name) => (
+                  <SelectItem key={name} value={name}>
+                    {name.replace(/_/g, " ")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description *</Label>
+            <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
               value={formData.description}
@@ -103,9 +132,8 @@ export function UnitModal({
                   description: e.target.value,
                 }))
               }
-              placeholder="Enter unit description"
+              placeholder="Enter payment method description"
               rows={3}
-              required
             />
           </div>
 
@@ -129,7 +157,7 @@ export function UnitModal({
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : unit ? "Update" : "Create"}
+              {isSubmitting ? "Saving..." : method ? "Update" : "Create"}
             </Button>
           </div>
         </form>

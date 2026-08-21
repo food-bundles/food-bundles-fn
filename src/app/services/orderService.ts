@@ -200,9 +200,11 @@ export const orderService = {
     return response.data;
   },
 
-  reorderOrder: async (orderId: string): Promise<OrderResponse> => {
+  reorderOrder: async (orderId: string, paymentMethodId?: string): Promise<OrderResponse> => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.post(`/orders/${orderId}/reorder`);
+    const response = await axiosClient.post(`/orders/${orderId}/reorder`, {
+      ...(paymentMethodId ? { paymentMethodId } : {}),
+    });
     return response.data;
   },
 
@@ -279,6 +281,41 @@ export const orderService = {
       return { success: true, data: response.data };
     } catch (error: any) {
       return { success: false, error: error.response?.data?.message || error.message };
+    }
+  },
+
+  editOrder: async (
+    orderId: string,
+    data: {
+      items?: Array<{
+        orderItemId?: string;
+        productId?: string;
+        productName?: string;
+        quantity: number;
+        unitPrice: number;
+      }>;
+      notes?: string;
+      requestedDelivery?: string;
+      billingName?: string;
+      billingPhone?: string;
+      billingEmail?: string;
+      billingAddress?: string;
+    }
+  ): Promise<OrderResponse> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(`/orders/${orderId}/edit`, data);
+    return response.data;
+  },
+
+  sendPaymentLink: async (
+    orderId: string
+  ): Promise<{ success: boolean; data?: any; message?: string }> => {
+    try {
+      const axiosClient = createAxiosClient();
+      const response = await axiosClient.post(`/orders/${orderId}/send-payment-link`);
+      return { success: true, data: response.data.data, message: response.data.message };
+    } catch (error: any) {
+      return { success: false, message: error.response?.data?.message || error.message };
     }
   },
 };

@@ -1,17 +1,16 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/data-table";
 import { Plus } from "lucide-react";
-import { createUnitColumns } from "./_components/unit-columns";
-import { UnitModal } from "./_components/UnitModal";
+import { createPaymentMethodColumns } from "./_components/payment-method-columns";
+import { PaymentMethodModal, PaymentMethodFormData } from "./_components/PaymentMethodModal";
 import { DeleteConfirmDialog } from "./_components/DeleteConfirmDialog";
 import { toast } from "sonner";
-import { unitService, UnitFormData } from "@/app/services/unitService";
+import { paymentMethodService } from "@/app/services/paymentMethodService";
 
-interface Unit {
+interface PaymentMethod {
   id: string;
   name: string;
   description: string;
@@ -19,16 +18,15 @@ interface Unit {
   createdAt: string;
 }
 
-export default function UnitsPage() {
-  const [units, setUnits] = useState<Unit[]>([]);
+export default function PaymentMethodsPage() {
+  const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [paginationLoading, setPaginationLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
+  const [editingMethod, setEditingMethod] = useState<PaymentMethod | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [unitToDelete, setUnitToDelete] = useState<string | null>(null);
+  const [methodToDelete, setMethodToDelete] = useState<string | null>(null);
 
-  // Pagination state
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -36,17 +34,17 @@ export default function UnitsPage() {
     totalPages: 0,
   });
 
-  const fetchUnits = async (page = 1, limit = 10, isPagination = false) => {
+  const fetchPaymentMethods = async (page = 1, limit = 10, isPagination = false) => {
     try {
       if (isPagination) {
         setPaginationLoading(true);
       } else {
         setIsLoading(true);
       }
-      
-      const response = await unitService.getAllUnits({ page, limit });
-      setUnits(response.data || []);
-      
+
+      const response = await paymentMethodService.getAllPaymentMethods({ page, limit });
+      setMethods(response.data || []);
+
       if (response.pagination) {
         setPagination({
           page: response.pagination.page,
@@ -56,83 +54,84 @@ export default function UnitsPage() {
         });
       }
     } catch (error) {
-      console.error("Error fetching units:", error);
-      toast.error("Failed to fetch units");
+      console.error("Error fetching payment methods:", error);
+      toast.error("Failed to fetch payment methods");
     } finally {
       setIsLoading(false);
       setPaginationLoading(false);
     }
   };
 
-  // Pagination handler
   const handlePaginationChange = (page: number, limit: number) => {
-    fetchUnits(page, limit, true);
+    fetchPaymentMethods(page, limit, true);
   };
 
   useEffect(() => {
-    fetchUnits(1, 10);
+    fetchPaymentMethods(1, 10);
   }, []);
 
-  const handleEdit = (unit: Unit) => {
-    setEditingUnit(unit);
+  const handleEdit = (method: PaymentMethod) => {
+    setEditingMethod(method);
     setIsModalOpen(true);
   };
 
-  const handleDeleteClick = (unitId: string) => {
-    setUnitToDelete(unitId);
+  const handleDeleteClick = (methodId: string) => {
+    setMethodToDelete(methodId);
     setDeleteDialogOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
-    if (unitToDelete) {
+    if (methodToDelete) {
       try {
-        await unitService.deleteUnit(unitToDelete);
-        toast.success("Unit deleted successfully");
-        await fetchUnits(pagination.page, pagination.limit);
+        await paymentMethodService.deletePaymentMethod(methodToDelete);
+        toast.success("Payment method deleted successfully");
+        await fetchPaymentMethods(pagination.page, pagination.limit);
       } catch (error) {
-        toast.error("Failed to delete unit");
+        toast.error("Failed to delete payment method");
       }
-      setUnitToDelete(null);
+      setMethodToDelete(null);
       setDeleteDialogOpen(false);
     }
   };
 
-  const handleSubmit = async (data: UnitFormData) => {
+  const handleSubmit = async (data: PaymentMethodFormData) => {
     try {
-      if (editingUnit) {
-        await unitService.updateUnit(editingUnit.id, data);
-        toast.success("Unit updated successfully");
+      if (editingMethod) {
+        await paymentMethodService.updatePaymentMethod(editingMethod.id, data);
+        toast.success("Payment method updated successfully");
       } else {
-        await unitService.createUnit(data);
-        toast.success("Unit created successfully");
+        await paymentMethodService.createPaymentMethod(data);
+        toast.success("Payment method created successfully");
       }
-      await fetchUnits(pagination.page, pagination.limit);
-      setEditingUnit(null);
+      await fetchPaymentMethods(pagination.page, pagination.limit);
+      setEditingMethod(null);
     } catch (error) {
-      toast.error(editingUnit ? "Failed to update unit" : "Failed to create unit");
+      toast.error(
+        editingMethod ? "Failed to update payment method" : "Failed to create payment method"
+      );
     }
   };
 
   const handleModalClose = () => {
     setIsModalOpen(false);
-    setEditingUnit(null);
+    setEditingMethod(null);
   };
 
-  const columns = createUnitColumns(handleEdit, handleDeleteClick);
+  const columns = createPaymentMethodColumns(handleEdit, handleDeleteClick);
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-[15px] font-medium">Product Units</h1>
+        <h1 className="text-[15px] font-medium">Payment Methods</h1>
         <Button onClick={() => setIsModalOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
-          Add Unit
+          Add Payment Method
         </Button>
       </div>
 
       <DataTable
         columns={columns}
-        data={units}
+        data={methods}
         title=""
         description={``}
         showPagination={true}
@@ -143,10 +142,10 @@ export default function UnitsPage() {
         onPaginationChange={handlePaginationChange}
       />
 
-      <UnitModal
+      <PaymentMethodModal
         open={isModalOpen}
         onOpenChange={handleModalClose}
-        unit={editingUnit}
+        method={editingMethod}
         onSubmit={handleSubmit}
       />
 

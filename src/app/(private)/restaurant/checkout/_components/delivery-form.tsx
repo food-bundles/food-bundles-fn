@@ -121,6 +121,7 @@ export function Checkout() {
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [paymentFailed, setPaymentFailed] = useState(false);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
@@ -508,13 +509,22 @@ export function Checkout() {
         }
       }
 
-      // Use the selected payment method ID (already updated by useEffect)
-      const paymentMethodId = selectedPaymentMethodId;
+      // Use the selected payment method ID (already updated by useEffect),
+        // falling back to a direct lookup so the API always receives an ID
+        const paymentMethodId =
+          selectedPaymentMethodId ||
+          paymentMethods.find(
+            (pm: PaymentMethodType) => pm.name === paymentMethodMap[method]
+          )?.id ||
+          paymentMethods[0]?.id;
 
-      if (!paymentMethodId) {
-        setErrors({ submit: "Please select a valid payment method." });
-        return;
-      }
+        if (!paymentMethodId) {
+          setErrors({
+            submit:
+              "No active payment method found. Please contact the administrator.",
+          });
+          return;
+        }
 
       const checkoutPayload: CheckoutRequest = {
         cartId: cart!.id,
@@ -578,6 +588,7 @@ export function Checkout() {
         setErrors({
           submit: response.message || "Checkout failed. Please try again.",
         });
+        setPaymentFailed(true);
       }
     } catch (error) {
       console.error("Checkout error:", error);
@@ -764,7 +775,18 @@ export function Checkout() {
         <div className="w-full lg:w-2/3 p-6 lg:p-8">
           {errors.submit && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm mb-4">
-              {errors.submit}
+              <p className="font-medium">{errors.submit}</p>
+              {paymentFailed && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.location.href = "/restaurant/orders";
+                  }}
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
+                >
+                  View Order & Retry Payment
+                </button>
+              )}
             </div>
           )}
 
