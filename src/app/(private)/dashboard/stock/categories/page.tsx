@@ -59,15 +59,24 @@ export default function StockCategoriesPage() {
   const handleSubmit = async (data: CategoryFormData) => {
     try {
       if (editingCategory) {
-        await updateCategory(editingCategory.id, data);
-        toast.success("Category updated successfully");
-        await refreshCategories();
+        const success = await updateCategory(editingCategory.id, data);
+        if (success) {
+          toast.success("Category updated successfully");
+          await refreshCategories();
+          setEditingCategory(null);
+        } else {
+          toast.error("Failed to update category. Please try again.");
+        }
       } else {
-        await createCategory(data);
-        toast.success("Category created successfully");
-        await refreshCategories();
+        const success = await createCategory(data);
+        if (success) {
+          toast.success("Category created successfully");
+          await refreshCategories();
+          setEditingCategory(null);
+        } else {
+          toast.error("Failed to create category. Please try again.");
+        }
       }
-      setEditingCategory(null);
     } catch (error) {
       toast.error(editingCategory ? "Failed to update category" : "Failed to create category");
     }
