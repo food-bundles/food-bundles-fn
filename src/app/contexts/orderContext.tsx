@@ -36,7 +36,7 @@ interface OrderContextType {
     data: UpdateOrderData
   ) => Promise<OrderResponse>;
   cancelOrder: (orderId: string) => Promise<OrderResponse>;
-  reorderOrder: (orderId: string) => Promise<OrderResponse>;
+  reorderOrder: (orderId: string, paymentMethodId?: string) => Promise<OrderResponse>;
   deleteOrder: (
     orderId: string
   ) => Promise<{ success: boolean; message?: string }>;
@@ -195,10 +195,10 @@ export function OrderProvider({ children }: OrderProviderProps) {
     }
   }, []);
 
-  const reorderOrder = useCallback(async (orderId: string) => {
+  const reorderOrder = useCallback(async (orderId: string, paymentMethodId?: string) => {
     try {
       setLoading(true);
-      const response = await orderService.reorderOrder(orderId);
+      const response = await orderService.reorderOrder(orderId, paymentMethodId);
       if (response.success) {
         await refreshOrders();
       }
