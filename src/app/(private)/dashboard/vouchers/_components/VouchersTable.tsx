@@ -455,7 +455,7 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
                 <ChevronDown className="ml-2 h-4 w-4 shrink-0" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-[180px]">
+            <DropdownMenuContent align="start" className="w-[200px]">
               <DropdownMenuItem onClick={() => setStatusFilter("")}>
                 All Statuses
               </DropdownMenuItem>
@@ -463,14 +463,32 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
               <DropdownMenuItem onClick={() => setStatusFilter("ACTIVE")}>
                 Active
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("APPROVED_LOCKED")}>
+                Approved (Locked)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("UNLOCK_FEE_PENDING")}>
+                Unlock Fee Pending
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("PARTIALLY_USED")}>
+                Partially Used
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("FULLY_USED")}>
+                Fully Used
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setStatusFilter("USED")}>
                 Used
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("OVERDUE")}>
+                Overdue
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setStatusFilter("EXPIRED")}>
                 Expired
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setStatusFilter("SUSPENDED")}>
                 Suspended
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("CLOSED")}>
+                Closed
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setStatusFilter("SETTLED")}>
                 Settled
