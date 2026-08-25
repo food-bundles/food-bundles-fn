@@ -27,7 +27,7 @@ export interface AcceptInvitationData {
 const axiosClient = createAxiosClient();
 
 export const invitationService = {
-  async createInvitation(data: CreateInvitationData): Promise<{ message: string; data: Invitation }> {
+  async createInvitation(data: CreateInvitationData): Promise<{ message: string; emailNotSent?: boolean; data: Invitation }> {
     const response = await axiosClient.post('/invites', data);
     return response.data;
   },
@@ -47,7 +47,7 @@ export const invitationService = {
     return response.data;
   },
 
-  async resendInvitation(id: string): Promise<{ message: string }> {
+  async resendInvitation(id: string): Promise<{ message: string; emailNotSent?: boolean }> {
     const response = await axiosClient.post(`/invites/${id}/resend`);
     return response.data;
   },
