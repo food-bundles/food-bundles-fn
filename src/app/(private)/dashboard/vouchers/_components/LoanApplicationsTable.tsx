@@ -147,23 +147,34 @@ const handleAccept = async (data: {
     }
   };
 
-  const getStatusBadge = (status: LoanStatus) => {
-    switch (status) {
-      case LoanStatus.PENDING:
-        return <div className="text-yellow-500">Pending</div>;
-      case LoanStatus.APPROVED:
-        return <div className="text-green-500">Approved</div>;
-      case LoanStatus.ACCEPTED:
-        return <div className="text-teal-500">Accepted</div>;
-      case LoanStatus.DISBURSED:
-        return <div className="text-blue-500">Disbursed</div>;
-      case LoanStatus.REJECTED:
-        return <div className="text-red-500">Rejected</div>;
-      case LoanStatus.SETTLED:
-        return <div className="text-gray-500">Settled</div>;
-      default:
-        return <div>{status}</div>;
-    }
+  const getStatusBadge = (status: string) => {
+    const map: Record<string, string> = {
+      PENDING: "text-yellow-500",
+      REQUESTED: "text-yellow-500",
+      APPROVED: "text-green-500",
+      APPROVED_LOCKED: "text-blue-500",
+      UNLOCK_FEE_PENDING: "text-orange-500",
+      ACTIVE: "text-green-600",
+      ACCEPTED: "text-teal-500",
+      DISBURSED: "text-blue-500",
+      PARTIALLY_USED: "text-teal-600",
+      FULLY_USED: "text-indigo-500",
+      CLOSED: "text-gray-400",
+      REJECTED: "text-red-500",
+      SETTLED: "text-gray-500",
+      OVERDUE: "text-red-700",
+    };
+    const labels: Record<string, string> = {
+      APPROVED_LOCKED: "Approved (Locked)",
+      UNLOCK_FEE_PENDING: "Unlock Fee Due",
+      PARTIALLY_USED: "Partially Used",
+      FULLY_USED: "Fully Used",
+    };
+    return (
+      <div className={`text-xs font-medium ${map[status] ?? "text-gray-500"}`}>
+        {labels[status] ?? status.charAt(0) + status.slice(1).toLowerCase().replace(/_/g, " ")}
+      </div>
+    );
   };
 
   const columns: ColumnDef<ILoanApplication>[] = [
@@ -195,12 +206,29 @@ const handleAccept = async (data: {
       accessorKey: "approvedAmount",
       header: "Approved",
       cell: ({ row }) => (
-        <div className="text-green-600 font-medium">
+        <div className="text-green-600 font-medium text-xs">
           {row.original.approvedAmount
             ? `${row.original.approvedAmount.toLocaleString()} RWF`
             : "N/A"}
         </div>
       ),
+    },
+    {
+      id: "unlockFee",
+      header: "Unlock Fee",
+      cell: ({ row }) => {
+        const app = row.original as any;
+        const approved = app.approvedAmount ?? 0;
+        const pct = app.unlockFeePercentage ?? 4.5;
+        if (!approved) return <div className="text-xs text-gray-400">—</div>;
+        const fee = approved * (pct / 100);
+        return (
+          <div className="text-xs">
+            <p className="text-orange-600 font-medium">{fee.toLocaleString()} RWF</p>
+            <p className="text-gray-400">{pct}%</p>
+          </div>
+        );
+      },
     },
     {
       accessorKey: "voucherDays",

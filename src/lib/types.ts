@@ -171,10 +171,107 @@ export enum LoanStatus {
   SETTLED = "SETTLED",
 }
 
+// New loan session lifecycle statuses per spec
+export enum LoanSessionStatus {
+  REQUESTED = "REQUESTED",
+  APPROVED_LOCKED = "APPROVED_LOCKED",
+  UNLOCK_FEE_PENDING = "UNLOCK_FEE_PENDING",
+  ACTIVE = "ACTIVE",
+  PARTIALLY_USED = "PARTIALLY_USED",
+  FULLY_USED = "FULLY_USED",
+  CLOSED = "CLOSED",
+  SETTLED = "SETTLED",
+  REJECTED = "REJECTED",
+  OVERDUE = "OVERDUE",
+}
+
+export enum CardStatus {
+  ACTIVE = "ACTIVE",
+  SUSPENDED = "SUSPENDED",
+  BLOCKED = "BLOCKED",
+  DEACTIVATED = "DEACTIVATED",
+}
+
 export enum PenaltyStatus {
   PENDING = "PENDING",
   PAID = "PAID",
   WAIVED = "WAIVED",
+}
+
+// Permanent voucher card (PAN) per restaurant
+export interface IVoucherCard {
+  id: string;
+  pan: string; // 16-digit permanent card number
+  restaurantId: string;
+  restaurantName: string;
+  status: CardStatus;
+  issuedDate: Date;
+  loanLimit: number;
+  riskScore?: number;
+  totalLoansReceived: number;
+  totalOutstandingLoans: number;
+  qualifyingOrders: number;
+  isEligible: boolean;
+  eligibilityReason?: string;
+  activeLoanSession?: ILoanSession;
+}
+
+// Loan session (RRN) — one per loan request
+export interface ILoanSession {
+  id: string;
+  rrn: string; // Retrieval Reference Number
+  pan: string;
+  restaurantId: string;
+  restaurantName?: string;
+  requestedAmount: number;
+  approvedAmount?: number;
+  approvalPercentage?: number;
+  unlockFee?: number;
+  unlockFeePercentage?: number;
+  unlockStatus: "LOCKED" | "PENDING_PAYMENT" | "UNLOCKED";
+  unlockPaidAt?: Date;
+  amountUsed: number;
+  amountRemaining?: number;
+  amountRepaid: number;
+  outstandingAmount: number;
+  status: LoanSessionStatus;
+  purpose?: string;
+  notes?: string;
+  requestedAt: Date;
+  approvedAt?: Date;
+  unlockedAt?: Date;
+  dueDate?: Date;
+  closedAt?: Date;
+  repaymentDays?: number;
+  approvedBy?: string;
+  fundingTraderId?: string;
+  authorizations?: IAuthorization[];
+  repayments?: IRepaymentRecord[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Individual purchase authorization (STAN)
+export interface IAuthorization {
+  id: string;
+  stan: string; // System Trace Audit Number
+  rrn: string;
+  transactionAmount: number;
+  posTerminal?: string;
+  responseStatus: string;
+  createdAt: Date;
+}
+
+export interface IRepaymentRecord {
+  id: string;
+  sessionId: string;
+  amount: number;
+  paymentMethod: string;
+  paymentReference?: string;
+  paidAt: Date;
+  dueAt?: Date;
+  isOnTime: boolean;
+  outstandingAfter: number;
 }
 
 export interface IVoucher {
