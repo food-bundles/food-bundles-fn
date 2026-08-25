@@ -32,7 +32,6 @@ export const useWalletWebSocket = (userId: string, restaurantId?: string) => {
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log("Wallet WebSocket connected");
         setIsConnected(true);
 
         // Authenticate
@@ -62,46 +61,36 @@ export const useWalletWebSocket = (userId: string, restaurantId?: string) => {
           switch (message.type) {
             case "WALLET_UPDATE":
               setWalletUpdates((prev) => [...prev, message.data]);
-              console.log("Wallet update received:", message.data);
               break;
 
             case "CONNECTION_ESTABLISHED":
-              console.log("Wallet WebSocket connection established:", message);
               break;
 
             case "AUTHENTICATED":
-              console.log("Wallet WebSocket authenticated:", message);
               break;
 
             case "SUBSCRIPTION_CONFIRMED":
-              console.log("Wallet subscription confirmed:", message.subscription);
               break;
 
             case "PONG":
               // Handle pong response if needed
               break;
           }
-        } catch (error) {
-          console.error("Error parsing wallet WebSocket message:", error);
+        } catch {
+          // Ignore malformed messages
         }
       };
 
-      ws.onerror = (error) => {
-        console.error("Wallet WebSocket error:", error);
-      };
-
       ws.onclose = () => {
-        console.log("Wallet WebSocket disconnected");
         setIsConnected(false);
 
         // Attempt reconnection after 5 seconds
         setTimeout(() => {
-          console.log("Attempting to reconnect wallet WebSocket...");
           connectWebSocket();
         }, 5000);
       };
-    } catch (error) {
-      console.error("Wallet WebSocket connection failed:", error);
+    } catch {
+      // Ignore connection failures; reconnection is handled in onclose
     }
   }, [userId, restaurantId]);
 

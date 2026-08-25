@@ -175,9 +175,14 @@ export default function VoucherStats() {
             {loading ? (
               <Skeleton className="h-7 w-12 mx-auto" />
             ) : (
-              <p className="text-xl font-bold text-orange-900">
-                {stats.pendingLoans}
-              </p>
+              <>
+                <p className="text-xl font-bold text-orange-900">
+                  {stats.pendingLoans}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Awaiting approval
+                </p>
+              </>
             )}
           </div>
         </CardContent>

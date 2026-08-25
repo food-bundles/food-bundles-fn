@@ -273,4 +273,108 @@ export const voucherService = {
     const response = await axiosClient.get("/vouchers/credit-summary");
     return response.data;
   },
+
+  // New voucher card system (PAN-based)
+  getMyVoucherCard: async () => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/vouchers/card/my-card");
+    return response.data;
+  },
+
+  requestVoucherCard: async () => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/vouchers/card/request");
+    return response.data;
+  },
+
+  getMyCardEnrollmentRequest: async () => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/vouchers/card/my-request");
+    return response.data;
+  },
+
+  issueVoucherCard: async (data: { restaurantId: string; loanLimit?: number }) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/vouchers/card/issue", data);
+    return response.data;
+  },
+
+  getMyLoanSessions: async () => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/vouchers/sessions/my-sessions");
+    return response.data;
+  },
+
+  requestLoanSession: async (data: {
+    requestedAmount: number;
+    purpose?: string;
+    repaymentDays?: number;
+  }) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/vouchers/sessions/request", data);
+    return response.data;
+  },
+
+  payUnlockFee: async (sessionId: string, paymentData: {
+    paymentMethod: string;
+    paymentReference?: string;
+    phoneNumber?: string;
+  }) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(`/vouchers/sessions/${sessionId}/pay-unlock-fee`, paymentData);
+    return response.data;
+  },
+
+  getAllLoanSessions: async (params?: {
+    status?: string;
+    restaurantId?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/vouchers/sessions", { params });
+    return response.data;
+  },
+
+  approveLoanSession: async (sessionId: string, data: {
+    approvedAmount: number;
+    approvalPercentage?: number;
+    repaymentDays: number;
+    notes?: string;
+    fundingTraderId?: string;
+  }) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(`/vouchers/sessions/${sessionId}/approve`, data);
+    return response.data;
+  },
+
+  rejectLoanSession: async (sessionId: string, reason: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(`/vouchers/sessions/${sessionId}/reject`, { reason });
+    return response.data;
+  },
+
+  getVoucherCardByPan: async (pan: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get(`/vouchers/card/pan/${pan}`);
+    return response.data;
+  },
+
+  getAllVoucherCards: async (params?: {
+    status?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/vouchers/cards", { params });
+    return response.data;
+  },
+
+  getCardEnrollmentRequests: async () => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/vouchers/card/enrollment-requests");
+    return response.data;
+  },
 };
