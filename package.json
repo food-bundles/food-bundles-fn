@@ -86,7 +86,11 @@
     "@types/node": "^20.19.24",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.1.7",
+<<<<<<< HEAD
     "baseline-browser-mapping": "^2.11.23",
+=======
+    "baseline-browser-mapping": "^2.11.19",
+>>>>>>> 1a6ea34 (desc: changes on chart of market, reset by using phone, filters by market and date)
     "eslint": "^9",
     "eslint-config-next": "15.4.5",
     "tailwindcss": "^4.1.9",
