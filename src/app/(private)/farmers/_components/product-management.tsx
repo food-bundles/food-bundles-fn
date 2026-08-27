@@ -1,63 +1,49 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Plus,
-  Calendar,
-  Eye,
-  Trash2,
-  Package,
-  Tag,
-  X,
-  Hash,
-  MapPin,
-  RefreshCw,
-  AlertCircle,
-} from "lucide-react";
+import { Plus, LayoutGrid, Table2, List as ListIcon, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import ProductSubmissionModal, {
-  ProductSubmissionData,
-} from "./product-submission-modal";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ProductSubmissionModal from "./product-submission-modal";
 import { productColumns } from "./product-columns";
 import { DataTable } from "@/components/data-table";
 import { Product } from "./product-context";
-import StatusCards from "./status-cards";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
+import { SubmissionCardGrid } from "./submission-card-grid";
+import { SubmissionList } from "./submission-list";
+import { SubmissionDetailsModal } from "./submission-details-modal";
+import { ViewModeToggle } from "@/components/view-mode-toggle";
+import { DashboardStatGrid } from "./dashboard/dashboard-stat-grid";
+import { SubmissionsTrendChart } from "./dashboard/submissions-trend-chart";
+import { TopProductsChart } from "./dashboard/top-products-chart";
+import { StatusBreakdownChart } from "./dashboard/status-breakdown-chart";
+import { RecentActivityFeed } from "./dashboard/recent-activity-feed";
 import {
   productSubmissionService,
   Submission,
 } from "@/app/services/productSubmissionService";
+import { farmerDashboardService } from "@/app/services/farmerDashboardService";
+import { useAuth } from "@/app/contexts/auth-context";
+import type {
+  EarningsSummary,
+  EarningsTimeSeriesPoint,
+  TopProduct,
+  RecentActivityItem,
+} from "@/app/types/farmer-dashboard";
 import {
   TableFilters,
   FilterConfig,
   createCommonFilters,
 } from "@/components/filters";
+import { showToast } from "@/lib/toast";
 
-interface productSubmitData {
-  productName: string;
-  category: string;
-  quantity: number;
-  unit: string;
-  submittedDate: string;
-  price: string;
-  status: string;
-  statusColor: string;
-  image: string;
-  location: string;
-  priceValue: number;
-}
+type ViewMode = "cards" | "table" | "list";
 
 // Status color mapping function
 const getStatusColor = (status: string): string => {
   switch (status) {
     case "APPROVED":
+    case "PAID":
     case "Approved":
       return "bg-green-100 text-green-800";
     case "PENDING":
@@ -74,6 +60,14 @@ const getStatusColor = (status: string): string => {
   }
 };
 
+/** The submission's real DB status never becomes "REJECTED" — a farmer's rejection of a
+ * verified offer lives on farmerFeedbackStatus while status itself stays VERIFIED. This
+ * derives the label the farmer should actually see, without touching the real status. */
+export const deriveDisplayStatus = (
+  status: string,
+  farmerFeedbackStatus: string | null,
+): string => (farmerFeedbackStatus === "REJECTED" ? "REJECTED" : status);
+
 // Transform database submission to Product format
 const transformSubmissionToProduct = (submission: Submission): Product => {
   const locationParts = [
@@ -85,6 +79,8 @@ const transformSubmissionToProduct = (submission: Submission): Product => {
   const location =
     locationParts.length > 0 ? locationParts.join(", ") : "Rwanda";
 
+  const displayStatus = deriveDisplayStatus(submission.status, submission.farmerFeedbackStatus);
+
   return {
     id: submission.id,
     name: submission.productName,
@@ -94,14 +90,26 @@ const transformSubmissionToProduct = (submission: Submission): Product => {
     submittedDate: new Date(submission.submittedAt).toLocaleDateString(),
     price: `RWF ${submission.wishedPrice.toLocaleString()}`,
     status: submission.status,
-    statusColor: getStatusColor(submission.status),
+    statusColor: getStatusColor(displayStatus),
+    displayStatus,
     image: "/placeholder.svg?height=48&width=48&text=Product",
     location,
     priceValue: submission.wishedPrice,
+    acceptedQty: submission.acceptedQty,
+    acceptedPrice: submission.acceptedPrice,
+    farmerFeedbackStatus: submission.farmerFeedbackStatus,
+    feedbackDeadline: submission.feedbackDeadline,
   };
 };
 
+const VIEW_MODE_OPTIONS = [
+  { value: "table" as const, label: "Table", icon: Table2 },
+  { value: "cards" as const, label: "Cards", icon: LayoutGrid },
+  { value: "list" as const, label: "List", icon: ListIcon },
+];
+
 export default function ProductManagement() {
+  const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -110,6 +118,14 @@ export default function ProductManagement() {
   const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState("");
   const [viewProduct, setViewProduct] = useState<Product | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
+
+  // Dashboard analytics state
+  const [earnings, setEarnings] = useState<EarningsSummary | null>(null);
+  const [trends, setTrends] = useState<EarningsTimeSeriesPoint[]>([]);
+  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+  const [activity, setActivity] = useState<RecentActivityItem[]>([]);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
 
   const statusOptions = [
     { label: "All", value: "All" },
@@ -117,6 +133,7 @@ export default function ProductManagement() {
     { label: "VERIFIED", value: "VERIFIED" },
     { label: "APPROVED", value: "APPROVED" },
     { label: "REJECTED", value: "REJECTED" },
+    { label: "PAID", value: "PAID" },
   ];
 
   const fetchSubmissions = async () => {
@@ -134,8 +151,26 @@ export default function ProductManagement() {
     }
   };
 
+  const fetchAnalytics = async () => {
+    setAnalyticsLoading(true);
+    const results = await Promise.allSettled([
+      farmerDashboardService.getEarningsSummary(),
+      farmerDashboardService.getEarningsTimeSeries(6),
+      farmerDashboardService.getPerformance(),
+      farmerDashboardService.getRecentActivity(),
+    ]);
+
+    if (results[0].status === "fulfilled") setEarnings(results[0].value);
+    if (results[1].status === "fulfilled") setTrends(results[1].value);
+    if (results[2].status === "fulfilled") setTopProducts(results[2].value.topProducts);
+    if (results[3].status === "fulfilled") setActivity(results[3].value);
+
+    setAnalyticsLoading(false);
+  };
+
   useEffect(() => {
     fetchSubmissions();
+    fetchAnalytics();
   }, []);
 
   const filteredProducts = products.filter((product) => {
@@ -146,32 +181,29 @@ export default function ProductManagement() {
       product.submittedDate.includes(dateFilter.toLocaleDateString());
     const matchesSearch =
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (typeof product.category === 'string' ? product.category : product.category.name).toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (typeof product.category === "string" ? product.category : product.category.name)
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
       product.location.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesStatus && matchesDate && matchesSearch;
   });
 
-  const handleProductSubmit = async (data: ProductSubmissionData) => {
+  const handleProductSubmit = async () => {
+    // ProductSubmissionModal already performs the actual submitProduct() call
+    // and shows its own success toast before invoking onSubmit — this handler
+    // only needs to refresh the list and close the modal, not resubmit.
     try {
-      setLoading(true);
-      await productSubmissionService.submitProduct(data);
       await fetchSubmissions();
+      fetchAnalytics();
       setShowSubmissionModal(false);
-      alert("Product submitted successfully!");
     } catch (error) {
-      console.error("Error submitting product:", error);
-      alert("Failed to submit product. Please try again.");
-    } finally {
-      setLoading(false);
+      console.error("Error refreshing submissions:", error);
+      showToast("error", "Submitted, but failed to refresh the list. Please reload.");
     }
   };
 
-  const handleViewDetails = (product: Product | null, lock = false) => {
+  const handleViewDetails = (product: Product | null) => {
     setViewProduct(product);
-  };
-
-  const handleRefresh = () => {
-    fetchSubmissions();
   };
 
   const handleClearFilters = () => {
@@ -187,113 +219,116 @@ export default function ProductManagement() {
       setSearchTerm,
       "Search products, categories, or locations..."
     ),
-    createCommonFilters.status(
-      selectedStatus,
-      setSelectedStatus,
-      statusOptions
-    ),
+    createCommonFilters.status(selectedStatus, setSelectedStatus, statusOptions),
     createCommonFilters.date(dateFilter, setDateFilter, "Date Filter"),
   ];
 
+  const firstName = user?.name?.split(" ")[0];
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <main className="container mx-auto px-6 py-8">
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          {/* Status Cards */}
-          <StatusCards
-            products={products}
-            onStatusClick={setSelectedStatus}
-            selectedStatus={selectedStatus}
-          />
-
-          {/* Header */}
-          <div className="flex  flex-col sm:flex-row sm:items-center  justify-between mb-6">
-            <div>
-              <h1 className="text-[16px] font-bold text-gray-900">
-                Product Management
-              </h1>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={() => setShowSubmissionModal(true)}
-                className="bg-green-600 hover:bg-green-700 text-white w-40 sm:w-auto"
-                size="sm"
-                disabled={loading}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Submit Product
-              </Button>
-            </div>
+      <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+        {/* Page header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+              {firstName ? `Welcome back, ${firstName}` : "Your dashboard"}
+            </h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Track your submissions, offers, and earnings in one place.
+            </p>
           </div>
-
-          {/* Status Summary Buttons */}
-          {/* <div className="flex flex-wrap gap-2 mb-4">
-            {statusOptions.map((status) => (
-              <Button
-                key={status.value}
-                variant="outline"
-                size="sm"
-                onClick={() => setSelectedStatus(status.value)}
-                className={
-                  selectedStatus === status.value
-                    ? "bg-green-600 text-white border-green-600 hover:bg-green-700"
-                    : "bg-transparent text-gray-600 border-gray-300 hover:bg-gray-50"
-                }
-              >
-                {status.label} (
-                {status.value === "All"
-                  ? products.length
-                  : products.filter((p) => p.status === status.value).length}
-                )
-              </Button>
-            ))}
-          </div> */}
-
-          {/* Filter Component */}
-          <div className="mb-6">
-            <TableFilters
-              filters={filters}
-              className="flex-col sm:flex-row items-stretch sm:items-center "
-            />
-            {(searchTerm || selectedStatus !== "All" || dateFilter) && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleClearFilters}
-                className="mt-4 text-red-600 hover:text-red-700 w-full sm:w-auto"
-              >
-                Clear Filters
-              </Button>
-            )}
-          </div>
-
-          {/* Data Table */}
-          <DataTable
-            columns={productColumns(handleViewDetails)}
-            data={filteredProducts}
-            title=""
-            // descrption=""
-            showExport={false}
-            showSearch={false}
-            showColumnVisibility={true}
-            showPagination={true}
-            showRowSelection={false}
-          />
-
-          {/* Empty State */}
-          {filteredProducts.length === 0 && !loading && (
-            <div className="text-center py-2">
-              <p className="text-gray-600">No products found.</p>
-              <Button
-                onClick={handleClearFilters}
-                variant="outline"
-                className="mt-4"
-              >
-                Clear Filters
-              </Button>
-            </div>
-          )}
+          <Button
+            onClick={() => setShowSubmissionModal(true)}
+            className="bg-green-600 hover:bg-green-700 text-white"
+            disabled={loading}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Submit Product
+          </Button>
         </div>
+
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        <Tabs defaultValue="overview" className="gap-6">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="products">Products</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-6">
+            <DashboardStatGrid products={products} earnings={earnings} loading={loading} />
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <SubmissionsTrendChart data={trends} metric="submissions" loading={analyticsLoading} />
+              <SubmissionsTrendChart data={trends} metric="earnings" loading={analyticsLoading} />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <TopProductsChart data={topProducts} loading={analyticsLoading} />
+              <StatusBreakdownChart products={products} loading={loading} />
+            </div>
+            <RecentActivityFeed items={activity} loading={analyticsLoading} />
+          </TabsContent>
+
+          <TabsContent value="products" className="space-y-4">
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <h2 className="text-base font-semibold text-gray-900">Your submissions</h2>
+                <ViewModeToggle value={viewMode} onChange={setViewMode} options={VIEW_MODE_OPTIONS} />
+              </div>
+
+              <div>
+                <TableFilters
+                  filters={filters}
+                  className="flex-col sm:flex-row items-stretch sm:items-center"
+                />
+                {(searchTerm || selectedStatus !== "All" || dateFilter) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleClearFilters}
+                    className="mt-4 text-red-600 hover:text-red-700 w-full sm:w-auto"
+                  >
+                    Clear Filters
+                  </Button>
+                )}
+              </div>
+
+              {viewMode === "table" && (
+                <DataTable
+                  columns={productColumns(handleViewDetails)}
+                  data={filteredProducts}
+                  title=""
+                  showExport={false}
+                  showSearch={false}
+                  showColumnVisibility={true}
+                  showPagination={true}
+                  showRowSelection={false}
+                />
+              )}
+              {viewMode === "cards" && (
+                <SubmissionCardGrid products={filteredProducts} onViewDetails={handleViewDetails} />
+              )}
+              {viewMode === "list" && (
+                <SubmissionList products={filteredProducts} onViewDetails={handleViewDetails} />
+              )}
+
+              {filteredProducts.length === 0 && !loading && (
+                <div className="text-center py-8">
+                  <p className="text-gray-600">No products found.</p>
+                  <Button onClick={handleClearFilters} variant="outline" className="mt-4">
+                    Clear Filters
+                  </Button>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* Product Submission Modal */}
@@ -303,111 +338,13 @@ export default function ProductManagement() {
         onSubmit={handleProductSubmit}
       />
 
-      {/* Product Details Hover Card */}
-      {!!viewProduct && (
-        <div
-          className="fixed z-50 top-40 right-4 bg-white rounded-2xl shadow-2xl w-auto max-w-xs p-4 border border-gray-200"
-          onMouseLeave={() => setViewProduct(null)}
-        >
-          <button
-            onClick={() => setViewProduct(null)}
-            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
-          >
-            <X className="w-4 h-4 text-gray-600" />
-          </button>
-
-          <h2 className="text-[18px] font-semibold text-gray-900 mb-3 pr-6">
-            Product Details
-          </h2>
-
-          <div className="flex flex-col gap-3 text-sm text-gray-700">
-            {/* Name */}
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                  <Package className="w-3 h-3 text-blue-600" />
-                </div>
-                <span className="font-medium ">Name:</span>
-              </div>
-              <span className="text-right">{viewProduct.name}</span>
-            </div>
-
-            {/* Category */}
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
-                  <Tag className="w-3 h-3 text-purple-600" />
-                </div>
-                <span className="font-medium">Category:</span>
-              </div>
-              <span className="text-right">{viewProduct.category.name}</span>
-            </div>
-
-            {/* Quantity */}
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
-                  <Hash className="w-3 h-3 text-green-600" />
-                </div>
-                <span className="font-medium">Quantity:</span>
-              </div>
-              <span className="text-right">{viewProduct.quantity}</span>
-            </div>
-
-            {/* Location */}
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
-                  <MapPin className="w-3 h-3 text-red-600" />
-                </div>
-                <span className="font-medium">Location:</span>
-              </div>
-              <span className="text-right">{viewProduct.location}</span>
-            </div>
-
-            {/* Price */}
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 rounded-lg bg-yellow-100 flex items-center justify-center shrink-0">
-                  <div className="w-2 h-2 rounded-full bg-yellow-600"></div>
-                </div>
-                <span className="font-medium">Price:</span>
-              </div>
-              <span className="text-right font-semibold">
-                {viewProduct.price}
-              </span>
-            </div>
-
-            {/* Status */}
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
-                  <div className="w-2 h-2 rounded-full bg-gray-600"></div>
-                </div>
-                <span className="font-medium">Status:</span>
-              </div>
-              <span
-                className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(
-                  viewProduct.status
-                )}`}
-              >
-                {viewProduct.status}
-              </span>
-            </div>
-
-            {/* Submitted */}
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 rounded-lg bg-indigo-100 flex items-center justify-center shrink-0">
-                  <Calendar className="w-3 h-3 text-indigo-600" />
-                </div>
-                <span className="font-medium">Submitted:</span>
-              </div>
-              <span className="text-right">{viewProduct.submittedDate}</span>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Product Details Modal */}
+      <SubmissionDetailsModal
+        product={viewProduct}
+        onClose={() => setViewProduct(null)}
+        getStatusColor={getStatusColor}
+        onFeedbackSubmitted={fetchSubmissions}
+      />
     </div>
   );
 }

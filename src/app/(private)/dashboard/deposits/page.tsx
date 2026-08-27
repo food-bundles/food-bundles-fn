@@ -63,7 +63,7 @@ import { DelegationApprovalModal } from "./_components/DelegationApprovalModal";
 import { ExportButton } from "@/components/ExportButton";
 import Image from "next/image";
 import { GenericExportModal, type GenericExportConfig, type ExportColumnDef } from "@/components/generic-export-modal";
-import { exportService } from "@/app/services/exportService";
+import { exportService, type ExportModuleType } from "@/app/services/exportService";
 
 const WALLET_COLUMNS: ExportColumnDef[] = [
   { id: "restaurantName", label: "Restaurant Name", description: "Name of the restaurant" },
@@ -203,10 +203,10 @@ export default function DepositsManagementPage() {
   const [exportFilters, setExportFilters] = useState<any>({});
 
   const handleOpenExportModal = (
-    module: "wallets" | "transactions" | "deposits", 
-    moduleName: string, 
-    columns: ExportColumnDef[], 
-    selectedRows: any[], 
+    module: "wallets" | "transactions" | "deposits",
+    moduleName: string,
+    columns: ExportColumnDef[],
+    selectedRows: any[],
     filters: any
   ) => {
     setExportModule(module);
@@ -221,7 +221,7 @@ export default function DepositsManagementPage() {
     try {
       setIsExporting(prev => ({ ...prev, [config.module]: true }));
       toast.info(`Generating ${config.module} ${config.format.toUpperCase()} export...`);
-      
+
       const idsToExport =
         config.scope === "selected" && exportSelectedRows.length > 0
           ? exportSelectedRows.map((r) => r.id).join(",")
@@ -235,7 +235,7 @@ export default function DepositsManagementPage() {
         ids: idsToExport,
       };
 
-      await exportService.downloadExport(config.module, config.format, finalFilters);
+      await exportService.downloadExport(config.module as ExportModuleType, config.format, finalFilters);
       toast.success(`${config.module} export downloaded successfully!`);
     } catch (error: any) {
       toast.error(error?.response?.data?.message || `Failed to download ${config.module} export`);
@@ -2210,6 +2210,135 @@ export default function DepositsManagementPage() {
               >
                 {verifying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Verify
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Proof Image Modal */}
+      <Dialog open={!!proofImageUrl} onOpenChange={(open) => { if (!open) setProofImageUrl(null); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-green-700">Payment Proof</DialogTitle>
+            <DialogDescription>Transaction payment receipt or screenshot</DialogDescription>
+          </DialogHeader>
+          <div className="rounded-lg overflow-hidden border border-gray-200">
+            {proofImageUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={proofImageUrl}
+                alt="Payment proof"
+                className="w-full object-contain max-h-[60vh]"
+              />
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setProofImageUrl(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Complete Withdraw Modal */}
+      <Dialog
+        open={!!completeWithdrawModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCompleteWithdrawModal(null);
+            setCompleteImageFile(null);
+            setCompleteImagePreview(null);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-green-700">
+              Complete Withdrawal
+            </DialogTitle>
+            <DialogDescription>
+              Upload payment proof (MoMo screenshot, bank receipt, etc.) to
+              complete this withdrawal.
+              {completeWithdrawModal?.withdrawType === "BALANCE" && (
+                <span className="block mt-1 text-black text-start font-medium">
+                  Balance withdrawal
+                </span>
+              )}
+              {completeWithdrawModal?.withdrawType === "COMMISSION" && (
+                <span className="block mt-1 text-black text-start font-medium">
+                  Commission withdrawal
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {completeWithdrawModal && (
+              <div className="bg-gray-50 rounded-lg p-3 text-sm space-y-1">
+                <p>
+                  <span className="font-medium">Trader:</span>{" "}
+                  {completeWithdrawModal.wallet?.trader?.username}
+                </p>
+                <p>
+                  <span className="font-medium">Amount:</span>{" "}
+                  {Math.abs(completeWithdrawModal.amount).toLocaleString()} RWF
+                </p>
+                <p>
+                  <span className="font-medium">Account:</span>{" "}
+                  {completeWithdrawModal.accountNumber} (
+                  {completeWithdrawModal.accountName})
+                </p>
+                <p>
+                  <span className="font-medium">Method:</span>{" "}
+                  {completeWithdrawModal.paymentMethod}
+                </p>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="paymentProof">Payment Proof Image *</Label>
+              <Input
+                id="paymentProof"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setCompleteImageFile(file);
+                    const url = URL.createObjectURL(file);
+                    setCompleteImagePreview(url);
+                  }
+                }}
+              />
+              {completeImagePreview && (
+                <div className="mt-2 rounded-lg overflow-hidden border border-gray-200">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={completeImagePreview}
+                    alt="Payment proof preview"
+                    className="w-full max-h-48 object-contain"
+                  />
+                </div>
+              )}
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCompleteWithdrawModal(null);
+                  setCompleteImageFile(null);
+                  setCompleteImagePreview(null);
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCompleteWithdraw}
+                disabled={completeLoading || !completeImageFile}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                {completeLoading && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Complete Withdrawal
               </Button>
             </div>
           </div>

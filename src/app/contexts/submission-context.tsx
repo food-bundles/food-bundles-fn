@@ -2,7 +2,10 @@
 "use client";
 
 import React, { createContext, useContext, useCallback } from "react";
-import { submissionService } from "../services/submissionServices";
+import {
+  submissionService,
+  FarmerFeedbackPayload,
+} from "../services/submissionServices";
 
 // Types based on your backend response
 export interface FarmerInfo {
@@ -20,14 +23,8 @@ export interface FarmerSubmission {
   acceptedQty: number | null;
   totalAmount: number | null;
   categoryId: string;
-  status:
-    | "PENDING"
-    | "ACCEPTED"
-    | "REJECTED"
-    | "VERIFIED"
-    | "APPROVED"
-    | "PAID";
-  farmerFeedbackStatus: "PENDING" | "ACCEPTED" | "REJECTED";
+  status: "PENDING" | "VERIFIED" | "APPROVED" | "PAID";
+  farmerFeedbackStatus: "PENDING" | "ACCEPTED" | "REJECTED" | "EXTENDED" | null;
   farmerFeedbackAt: string | null;
   farmerFeedbackNotes: string | null;
   farmerCounterOffer: number | null;
@@ -108,6 +105,18 @@ interface SubmissionContextType {
     payload: PurchaseSubmissionPayload
   ) => Promise<any>;
   clearSubmission: (submissionId: string) => Promise<any>;
+
+  // Farmer feedback
+  getPendingFeedback: () => Promise<SubmissionResponse>;
+  getFeedbackHistory: () => Promise<SubmissionResponse>;
+  submitFarmerFeedback: (
+    submissionId: string,
+    payload: FarmerFeedbackPayload
+  ) => Promise<any>;
+  updateFarmerFeedback: (
+    submissionId: string,
+    payload: Partial<FarmerFeedbackPayload>
+  ) => Promise<any>;
 }
 
 const SubmissionContext = createContext<SubmissionContextType | undefined>(
@@ -194,6 +203,36 @@ export function SubmissionProvider({
     return await submissionService.clearSubmission(submissionId);
   }, []);
 
+  const getPendingFeedback =
+    useCallback(async (): Promise<SubmissionResponse> => {
+      return await submissionService.getPendingFeedback();
+    }, []);
+
+  const getFeedbackHistory =
+    useCallback(async (): Promise<SubmissionResponse> => {
+      return await submissionService.getFeedbackHistory();
+    }, []);
+
+  const submitFarmerFeedback = useCallback(
+    async (submissionId: string, payload: FarmerFeedbackPayload) => {
+      return await submissionService.submitFarmerFeedback(
+        submissionId,
+        payload
+      );
+    },
+    []
+  );
+
+  const updateFarmerFeedback = useCallback(
+    async (submissionId: string, payload: Partial<FarmerFeedbackPayload>) => {
+      return await submissionService.updateFarmerFeedback(
+        submissionId,
+        payload
+      );
+    },
+    []
+  );
+
   const contextValue: SubmissionContextType = {
     getAllSubmissions,
     getSubmissionById,
@@ -207,6 +246,10 @@ export function SubmissionProvider({
     updateProductQuantity,
     purchaseSubmission,
     clearSubmission,
+    getPendingFeedback,
+    getFeedbackHistory,
+    submitFarmerFeedback,
+    updateFarmerFeedback,
   };
 
   return (

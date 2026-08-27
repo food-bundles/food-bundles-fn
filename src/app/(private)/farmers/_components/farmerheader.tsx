@@ -31,22 +31,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { MdSystemSecurityUpdate } from "react-icons/md";
 import { redirect } from "next/navigation";
+import { useNotifications } from "@/app/contexts/NotificationContext";
 
-const testNotifications: {
-  id: string;
-  title: string;
-  message: string;
-  orderId: string;
-  timestamp: string;
-  isRead: boolean;
-  type:
-    | "order_initiated"
-    | "order_completed"
-    | "order_cancelled"
-    | "payment_received";
-}[] = [];
+interface DashboardHeaderProps {
+  /** Toggles the sidebar (visible only below the md breakpoint). */
+  onMenuClick?: () => void;
+  /** Current sidebar open state, used to render the correct icon. */
+  sidebarOpen?: boolean;
+}
 
-export default function DashboardHeader() {
+export default function DashboardHeader({
+  onMenuClick,
+  sidebarOpen,
+}: DashboardHeaderProps = {}) {
   const dropdownId = useId();
 
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -56,7 +53,7 @@ export default function DashboardHeader() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [, setIsProfileDropdownOpen] = useState(false);
 
-  const unreadCount = testNotifications.filter((n) => !n.isRead).length;
+  const { unreadCount } = useNotifications();
 
   const { user, getUserProfileImage } = useAuth();
 
@@ -116,7 +113,25 @@ export default function DashboardHeader() {
     <>
       <header className="bg-green-700 border-b border-green-600 sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between h-13">
+          <div className="flex items-center justify-between h-13 gap-2">
+            {/* Sidebar toggle: only relevant below the md breakpoint */}
+            {onMenuClick && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden hover:bg-green-600 transition-colors duration-200 h-9 w-9 shrink-0"
+                onClick={onMenuClick}
+                aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+                aria-expanded={sidebarOpen}
+              >
+                {sidebarOpen ? (
+                  <X className="h-5 w-5 text-white" />
+                ) : (
+                  <Menu className="h-5 w-5 text-white" />
+                )}
+              </Button>
+            )}
+
             {/* Left: Brand */}
             <div className="flex items-center gap-2 bg-green-50 px-2 sm:px-3 py-1 rounded-full border-2 border-primary shrink-0">
               <OptimizedImage
@@ -357,7 +372,6 @@ export default function DashboardHeader() {
       <NotificationsDrawer
         isOpen={isNotificationsOpen}
         onClose={() => setIsNotificationsOpen(false)}
-        notifications={testNotifications}
       />
 
       <ProfileDrawer

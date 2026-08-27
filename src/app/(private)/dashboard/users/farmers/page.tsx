@@ -13,7 +13,6 @@ import dynamic from "next/dynamic";
 import { FarmerManagementModal } from "./_components/farmer-management-modal";
 import { CreateFarmerModal } from "./_components/create-farmer-modal";
 import { farmersService } from "@/app/services/farmersService";
-import { exportService } from "@/app/services/exportService";
 import UserDetailsSheet from "./_components/UserDetailsSheet";
 
 function FarmersPageContent() {
@@ -80,20 +79,6 @@ function FarmersPageContent() {
   const handleRowClick = (farmer: Farmer) => {
     setSelectedUserId(farmer.id);
     setIsDetailsSheetOpen(true);
-  };
-
-  const handleExport = async () => {
-    try {
-      toast.info("Generating Farmers Excel export...");
-      await exportService.downloadExport("farmers", "excel", {
-        search: searchTerm || undefined,
-        startDate: dateRange ? dateRange.toISOString().split("T")[0] : undefined,
-      });
-      toast.success("Farmers export downloaded successfully!");
-    } catch (error: any) {
-      console.error("Export error:", error);
-      toast.error("Failed to download farmers export");
-    }
   };
 
   const handleModalClose = () => {

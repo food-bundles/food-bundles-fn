@@ -53,7 +53,7 @@ export default function InvitationsPage() {
   const handleResendInvitation = async (id: string) => {
     try {
       const response = await invitationService.resendInvitation(id);
-      if ((response as any).emailNotSent) {
+      if (response.emailNotSent) {
         toast.warning("Invitation resent but email not sent. You can try again later.");
       } else {
         toast.success("Invitation resent successfully");
