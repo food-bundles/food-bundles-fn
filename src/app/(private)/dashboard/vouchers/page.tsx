@@ -7,7 +7,6 @@ import VoucherStats from "./_components/VoucherStats";
 import LoanApplicationsTable from "./_components/LoanApplicationsTable";
 import VouchersTable from "./_components/VouchersTable";
 import CreateVoucherForm from "./_components/CreateVoucherForm";
-
 import { ExportButton } from "@/components/ExportButton";
 
 type ActiveTab = "loans" | "vouchers";
@@ -32,7 +31,7 @@ export default function VoucherManagementPage() {
           <div className="mb-8 flex justify-between items-center">
             <div>
               <h1 className="text-sm font-medium text-gray-900 mb-2">
-                Voucher Management 
+                Voucher Management
               </h1>
               <p className="hidden lg:block text-gray-800 text-xs">
                 Manage loan applications, vouchers, and credit systems

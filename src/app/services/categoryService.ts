@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import createAxiosClient from "../hooks/axiosClient";
+import { tableTronicService } from "./tableTronicService";
 
 export interface CreateCategoryData {
   name: string;
@@ -14,9 +15,30 @@ export interface UpdateCategoryData {
 
 export const categoryService = {
   createCategory: async (categoryData: CreateCategoryData) => {
-    const axiosClient = createAxiosClient();
-    const response = await axiosClient.post("/category", categoryData);
-    return response.data;
+    try {
+      const tableTronicCategory = await tableTronicService.createCategory({
+        name: categoryData.name,
+        description: categoryData.description,
+      });
+
+      const axiosClient = createAxiosClient();
+      const foodBundlesData = {
+        ...categoryData,
+        tableTronicId: tableTronicCategory.id,
+      };
+
+      const response = await axiosClient.post("/category", foodBundlesData);
+      return response.data;
+    } catch (error: any) {
+      console.error('Category creation error:', error);
+      if (error.message?.includes('Table Tronic')) {
+        console.warn('Table Tronic creation failed, creating in Food Bundles only');
+        const axiosClient = createAxiosClient();
+        const response = await axiosClient.post("/category", categoryData);
+        return response.data;
+      }
+      throw error;
+    }
   },
 
   getAllCategories: async (params?: {

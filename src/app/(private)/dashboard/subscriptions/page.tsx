@@ -609,7 +609,6 @@ export default function AdminSubscriptionsPage() {
           data={filteredRestaurantSubscriptions}
           title=" "
           description={``}
-          showExport={true}
           showExport={false}
           showAddButton={false}
           customFilters={<TableFilters filters={subscriptionFilters} />}
@@ -627,7 +626,6 @@ export default function AdminSubscriptionsPage() {
           data={filteredSubscriptionPlans}
           title=" "
           description={``}
-          showExport={true}
           showExport={false}
           showAddButton={false}
           customFilters={<TableFilters filters={planFilters} />}

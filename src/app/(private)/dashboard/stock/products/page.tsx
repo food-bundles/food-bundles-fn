@@ -120,7 +120,7 @@ export default function InventoryPage() {
         </div>
         <ExportButton module="products" label="Export Products" />
       </div>
-      <InventoryManagement 
+      <InventoryManagement
         products={products} 
         onRefresh={() => fetchProducts(pagination.page, pagination.limit, filters)}
         pagination={pagination}
