@@ -42,5 +42,9 @@ next-env.d.ts
 
 /src/generated/prisma
 trush
+<<<<<<< HEAD
 seed.ts
 tmp
+=======
+seed.ts
+>>>>>>> 0f7d25e (desc: changes on chart of market, reset by using phone, filters by market and date)
