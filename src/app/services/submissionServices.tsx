@@ -1,6 +1,12 @@
 import { PurchaseSubmissionPayload } from "../contexts/submission-context";
 import createAxiosClient from "../hooks/axiosClient";
 
+export interface FarmerFeedbackPayload {
+  feedbackStatus: "ACCEPTED" | "REJECTED" | "EXTENDED";
+  notes?: string;
+  counterOffer?: number;
+  counterQty?: number;
+}
 
 export const submissionService = {
   // --- GET Routes ---
@@ -99,6 +105,43 @@ export const submissionService = {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.put(
       `/submissions/${submissionId}/clear`
+    );
+    return response.data;
+  },
+
+  // --- Farmer feedback (accept / reject / counter-offer a verified submission) ---
+  getPendingFeedback: async () => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/farmers/pending-feedback");
+    return response.data;
+  },
+
+  getFeedbackHistory: async () => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/farmers/feedback-history");
+    return response.data;
+  },
+
+  submitFarmerFeedback: async (
+    submissionId: string,
+    payload: FarmerFeedbackPayload
+  ) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(
+      `/farmers/${submissionId}/feedback`,
+      payload
+    );
+    return response.data;
+  },
+
+  updateFarmerFeedback: async (
+    submissionId: string,
+    payload: Partial<FarmerFeedbackPayload>
+  ) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(
+      `/farmers/${submissionId}/feedback`,
+      payload
     );
     return response.data;
   },

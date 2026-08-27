@@ -5,15 +5,37 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
-import { X, DollarSign, Package, Tag, MapPin } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import dynamic from "next/dynamic"
+import { DollarSign, Package, Tag, MapPin, Map as MapIcon, Loader2 } from "lucide-react"
+import "leaflet/dist/leaflet.css"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Spinner } from "@/components/ui/shadcn-io/spinner"
 import { toast } from "sonner"
 import { Category, productSubmissionService } from "@/app/services/productSubmissionService"
 import { locationService } from "@/app/services/locationService"
+
+const MapComponent = dynamic(
+  () => import("@/app/(private)/restaurant/checkout/_components/MapComponent"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-64 rounded border border-gray-300 bg-gray-100 flex items-center justify-center">
+        <Spinner variant="ring" className="w-8 h-8" />
+      </div>
+    ),
+  },
+)
 
 export interface ProductSubmissionData {
   productName: string
@@ -26,6 +48,11 @@ export interface ProductSubmissionData {
   sector: string
   cell: string
   village: string
+  /** Optional free-text precision aid (house/plot number, landmark). */
+  streetNumber?: string
+  /** Optional GPS pin, captured via the map picker for delivery precision. */
+  latitude?: number
+  longitude?: number
 }
 
 interface ProductSubmissionModalProps {
@@ -48,6 +75,7 @@ export default function ProductSubmissionModal({ isOpen, onClose, onSubmit }: Pr
     sector: "",
     cell: "",
     village: "",
+    streetNumber: "",
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -66,14 +94,86 @@ export default function ProductSubmissionModal({ isOpen, onClose, onSubmit }: Pr
   const [loadingCategories, setLoadingCategories] = useState(false)
   const [loadingProducts, setLoadingProducts] = useState(false)
   const [loadingLocation, setLoadingLocation] = useState(false)
+  const [loadingFarmerLocation, setLoadingFarmerLocation] = useState(false)
+  const [usedRegisteredLocation, setUsedRegisteredLocation] = useState(false)
 
-  // Load data on mount
+  // Map-based location picking (additive to the province/district/.../village cascade)
+  const [useMapPicker, setUseMapPicker] = useState(false)
+  const [mapLocation, setMapLocation] = useState<{ lat: number; lng: number } | null>(null)
+
+  // Suppresses the cascade reset-effects below while the farmer-profile prefill is running
+  const isPrefillingRef = useRef(false)
+
+  // Load data on mount, then try to prefill location from the farmer's own registered profile
   useEffect(() => {
     if (isOpen) {
       loadCategories()
       loadProvinces()
+      prefillFromFarmerProfile()
     }
   }, [isOpen])
+
+  /**
+   * Pre-populates the location cascade with the farmer's own registered
+   * address so most submissions need zero location input. The farmer can
+   * still change any field afterward (via the cascade or the map picker).
+   */
+  const prefillFromFarmerProfile = async () => {
+    setLoadingFarmerLocation(true)
+    isPrefillingRef.current = true
+    try {
+      const profile = await productSubmissionService.getCurrentFarmerProfile()
+      if (!profile?.province) {
+        return
+      }
+
+      let districtOptions: string[] = []
+      let sectorOptions: string[] = []
+      let cellOptions: string[] = []
+      let villageOptions: string[] = []
+
+      if (profile.district) {
+        districtOptions = await locationService.getDistrictsByProvince(profile.province)
+        setDistricts(districtOptions)
+      }
+      if (profile.district && profile.sector) {
+        sectorOptions = await locationService.getSectorsByDistrict(profile.province, profile.district)
+        setSectors(sectorOptions)
+      }
+      if (profile.sector && profile.cell) {
+        cellOptions = await locationService.getCellsBySector(profile.province, profile.district!, profile.sector)
+        setCells(cellOptions)
+      }
+      if (profile.cell && profile.village) {
+        villageOptions = await locationService.getVillagesByCell(
+          profile.province,
+          profile.district!,
+          profile.sector!,
+          profile.cell,
+        )
+        setVillages(villageOptions)
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        province: profile.province || "",
+        district: districtOptions.includes(profile.district || "") ? profile.district! : "",
+        sector: sectorOptions.includes(profile.sector || "") ? profile.sector! : "",
+        cell: cellOptions.includes(profile.cell || "") ? profile.cell! : "",
+        village: villageOptions.includes(profile.village || "") ? profile.village! : "",
+      }))
+      setUsedRegisteredLocation(true)
+    } catch (error) {
+      console.error("Failed to prefill farmer location:", error)
+    } finally {
+      setLoadingFarmerLocation(false)
+      // Defer clearing the flag so the cascade effects triggered by the
+      // setFormData above (province/district/... changing) see it as true.
+      setTimeout(() => {
+        isPrefillingRef.current = false
+      }, 0)
+    }
+  }
 
   // Load products when category changes
   useEffect(() => {
@@ -88,32 +188,40 @@ export default function ProductSubmissionModal({ isOpen, onClose, onSubmit }: Pr
   useEffect(() => {
     if (formData.province) {
       loadDistricts(formData.province)
-      // Reset dependent fields
-      setFormData((prev) => ({ ...prev, district: "", sector: "", cell: "", village: "" }))
+      if (!isPrefillingRef.current) {
+        // Reset dependent fields
+        setFormData((prev) => ({ ...prev, district: "", sector: "", cell: "", village: "" }))
+      }
     }
   }, [formData.province])
 
   useEffect(() => {
     if (formData.district) {
       loadSectors(formData.province, formData.district)
-      // Reset dependent fields
-      setFormData((prev) => ({ ...prev, sector: "", cell: "", village: "" }))
+      if (!isPrefillingRef.current) {
+        // Reset dependent fields
+        setFormData((prev) => ({ ...prev, sector: "", cell: "", village: "" }))
+      }
     }
   }, [formData.district])
 
   useEffect(() => {
     if (formData.sector && formData.district && formData.province) {
       loadCells(formData.province, formData.district, formData.sector)
-      // Reset dependent field
-      setFormData((prev) => ({ ...prev, cell: "", village: "" }))
+      if (!isPrefillingRef.current) {
+        // Reset dependent field
+        setFormData((prev) => ({ ...prev, cell: "", village: "" }))
+      }
     }
   }, [formData.sector, formData.district, formData.province])
 
   useEffect(() => {
     if (formData.cell && formData.sector && formData.district && formData.province) {
       loadVillages(formData.province, formData.district, formData.sector, formData.cell)
-      // Reset dependent field
-      setFormData((prev) => ({ ...prev, village: "" }))
+      if (!isPrefillingRef.current) {
+        // Reset dependent field
+        setFormData((prev) => ({ ...prev, village: "" }))
+      }
     }
   }, [formData.cell])
 
@@ -312,8 +420,12 @@ const loadVillages = async (province: string, district: string, sector: string, 
           sector: "",
           cell: "",
           village: "",
+          streetNumber: "",
         })
         setErrors({})
+        setUseMapPicker(false)
+        setMapLocation(null)
+        setUsedRegisteredLocation(false)
         onClose()
       } else {
         toast.error("Failed to submit product")
@@ -354,30 +466,24 @@ const loadVillages = async (province: string, district: string, sector: string, 
       .trim()
   }
 
-  if (!isOpen) return null
-
   return (
-    <div className="fixed inset-0 bg-gray-900/80 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl bg-white">
-        <CardHeader className="pb-4 border-b border-gray-200 bg-white">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                <Package className="w-5 h-5 text-green-600" />
-              </div>
-              <CardTitle className="text-2xl font-bold text-gray-900">Submit New Product</CardTitle>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] bg-white flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-2">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+              <Package className="w-5 h-5 text-green-600" />
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-700 hover:bg-gray-100">
-              <X className="w-5 h-5" />
-            </Button>
+            <DialogTitle className="text-2xl font-bold text-gray-900">Submit New Product</DialogTitle>
           </div>
-          <p className="text-gray-600 mt-2">
+          <DialogDescription className="text-gray-600 mt-2">
             Select a category first, then choose your product and enter location details
-          </p>
-        </CardHeader>
+          </DialogDescription>
+        </DialogHeader>
 
-        <CardContent className="p-6 bg-white">
-          <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="contents">
+          <div className="overflow-y-auto scrollbar-thin px-6 flex-1">
+            <div className="space-y-8 py-4">
             {/* Step 1: Category Selection */}
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-lg font-semibold text-gray-800">
@@ -554,13 +660,38 @@ const loadVillages = async (province: string, district: string, sector: string, 
             {/* Step 4: Location Details */}
             {formData.category && formData.productName && (
               <div className="space-y-6">
-                <div className="flex items-center gap-2 text-lg font-semibold text-gray-800">
-                  <span className="w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-sm">
-                    4
-                  </span>
-                  <MapPin className="w-5 h-5" />
-                  Location Details
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2 text-lg font-semibold text-gray-800">
+                    <span className="w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-sm">
+                      4
+                    </span>
+                    <MapPin className="w-5 h-5" />
+                    Location Details
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setUseMapPicker((prev) => !prev)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border transition-colors ${
+                      useMapPicker
+                        ? "bg-green-600 text-white border-green-600"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    <MapIcon className="w-4 h-4" />
+                    {useMapPicker ? "Hide map" : "Pin exact location on map"}
+                  </button>
                 </div>
+
+                {loadingFarmerLocation && (
+                  <p className="text-sm text-gray-500">Loading your registered location...</p>
+                )}
+
+                {!loadingFarmerLocation && usedRegisteredLocation && (
+                  <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-3 py-2">
+                    Using your registered location — change the fields below if this submission is from elsewhere.
+                  </p>
+                )}
 
                 <div className="grid md:grid-cols-2 gap-6">
                   {/* Province */}
@@ -682,40 +813,84 @@ const loadVillages = async (province: string, district: string, sector: string, 
                     </select>
                     {errors.village && <p className="text-red-500 text-sm">{errors.village}</p>}
                   </div>
+
+                  {/* Street number / landmark (optional precision aid) */}
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="streetNumber" className="text-base font-semibold text-gray-900">
+                      Street Number / Landmark (optional)
+                    </Label>
+                    <Input
+                      id="streetNumber"
+                      value={formData.streetNumber || ""}
+                      onChange={(e) => handleInputChange("streetNumber", e.target.value)}
+                      placeholder="e.g. Plot 12, near the market"
+                      className="h-12 bg-white text-gray-900"
+                    />
+                  </div>
                 </div>
+
+                {/* Optional map picker for GPS precision, additive to the fields above */}
+                {useMapPicker && (
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-600">
+                      Pin your exact location for delivery accuracy — this doesn&apos;t replace the province,
+                      district, sector, cell, and village selected above.
+                    </p>
+                    <div className="h-64">
+                      <MapComponent
+                        tempLocation={mapLocation}
+                        onLocationSelect={(location) => {
+                          setMapLocation(location)
+                          setFormData((prev) => ({
+                            ...prev,
+                            latitude: location.lat,
+                            longitude: location.lng,
+                          }))
+                        }}
+                      />
+                    </div>
+                    {mapLocation && (
+                      <p className="text-xs text-gray-500">
+                        Pinned: {mapLocation.lat.toFixed(6)}, {mapLocation.lng.toFixed(6)}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Action Buttons */}
-            <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                disabled={isSubmitting}
-                className="px-8 bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting || !formData.category || !formData.productName}
-                className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 font-semibold disabled:opacity-50"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Submitting...
-                  </>
-                ) : (
-                  "Submit Product"
-                )}
-              </Button>
             </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+          </div>
+
+          {/* Action Buttons */}
+          <DialogFooter className="px-6 pb-6 pt-4 border-t border-gray-200">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="px-8 bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting || !formData.category || !formData.productName}
+              className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 font-semibold disabled:opacity-50"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                "Submit Product"
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
 

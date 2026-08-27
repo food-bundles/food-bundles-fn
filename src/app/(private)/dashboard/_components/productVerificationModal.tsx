@@ -185,7 +185,7 @@ export function ProductVerificationModal({
                 Verify
               </Button>
             )}
-            {mode === "view" && submission.status === "ACCEPTED" && (
+            {mode === "view" && submission.farmerFeedbackStatus === "ACCEPTED" && (
               <Button
                 variant="outline"
                 size="sm"

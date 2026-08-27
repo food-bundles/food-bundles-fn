@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Mail } from "lucide-react";
+import { X } from "lucide-react";
 import Link from "next/link";
-import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import axios from "axios";
 import { useAuth } from "@/app/contexts/auth-context";
@@ -21,15 +20,13 @@ interface PriceComparisonProps {
 }
 
 export function PriceComparison({ isOpen, onClose }: PriceComparisonProps) {
-  const [isSubscribing, setIsSubscribing] = useState(false);
-  const [showSubscribeForm, setShowSubscribeForm] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [marketNames, setMarketNames] = useState<string[]>([]);
-  
+
   const { isAuthenticated } = useAuth();
   const { mySubscriptions } = useSubscriptions();
-  
+
   const hasActiveSubscription = isAuthenticated && mySubscriptions?.some(sub => sub.status === 'ACTIVE' && new Date(sub.endDate) > new Date());
 
   useEffect(() => {
@@ -80,7 +77,14 @@ export function PriceComparison({ isOpen, onClose }: PriceComparisonProps) {
         const allProducts = Array.from(priceMap.values())
           .filter(p => Object.keys(p.markets).length >= 1);
         
-        setProducts(allProducts);
+        // Prefer products where FoodBundles is cheaper than every market, so the
+        // free preview is more compelling; fall back to all products otherwise.
+        const cheaperProducts = allProducts.filter(p => {
+          const marketPrices = Object.values(p.markets) as number[];
+          return marketPrices.every(price => price > p.foodbundles);
+        });
+        setProducts(cheaperProducts.length >= 5 ? cheaperProducts : allProducts);
+
       }
     } catch (error: any) {
       console.error("Failed to fetch data:", error);
@@ -93,6 +97,7 @@ export function PriceComparison({ isOpen, onClose }: PriceComparisonProps) {
       setLoading(false);
     }
   };
+
   const displayProducts = hasActiveSubscription ? products : products.slice(0, 5);
 
   return (
@@ -178,6 +183,7 @@ export function PriceComparison({ isOpen, onClose }: PriceComparisonProps) {
                 </table>
               )}
             </div>
+
             {/* Footer */}
             <div className="p-6 border-t bg-gray-50">
               <div className="space-y-4">
@@ -187,8 +193,8 @@ export function PriceComparison({ isOpen, onClose }: PriceComparisonProps) {
                       View All Market Prices
                     </h3>
                     <p className="text-xs text-gray-600 mb-4">
-                      {isAuthenticated 
-                        ? "You need an active subscription to view prices for all products across different markets." 
+                      {isAuthenticated
+                        ? "You need an active subscription to view prices for all products across different markets."
                         : "Please log in and subscribe to view prices for all products across different markets."}
                     </p>
                     {isAuthenticated ? (

@@ -14,6 +14,9 @@ export interface CreatProductSubmissionData {
   sector?: string
   cell?: string
   village?: string
+  streetNumber?: string
+  latitude?: number
+  longitude?: number
 }
 
 export interface SubmissionStats {
@@ -30,7 +33,7 @@ export interface Submission {
   submittedQty: number
   unit: string
   wishedPrice: number
-  status: "PENDING" | "VERIFIED" | "APPROVED" | "REJECTED"
+  status: "PENDING" | "VERIFIED" | "APPROVED" | "PAID"
   createdAt: string
   updatedAt: string
   farmerId: string
@@ -46,6 +49,13 @@ export interface Submission {
     submittedAt: string
   }
   submittedAt: string
+  acceptedQty: number | null
+  acceptedPrice: number | null
+  farmerFeedbackStatus: "PENDING" | "ACCEPTED" | "REJECTED" | "EXTENDED" | null
+  farmerFeedbackNotes: string | null
+  farmerCounterOffer: number | null
+  farmerCounterQty: number | null
+  feedbackDeadline: string | null
 }
 
 
@@ -299,6 +309,9 @@ export const productSubmissionService = {
       sector: data.sector,
       cell: data.cell,
       village: data.village,
+      ...(data.streetNumber ? { streetNumber: data.streetNumber } : {}),
+      ...(data.latitude !== undefined ? { latitude: data.latitude } : {}),
+      ...(data.longitude !== undefined ? { longitude: data.longitude } : {}),
     }
     
     console.log("[submitProduct] Submitting to URL:", `/farmers/submit-product/${existingProduct.id}`)

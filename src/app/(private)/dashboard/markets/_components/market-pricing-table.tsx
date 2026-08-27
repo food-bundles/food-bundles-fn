@@ -45,6 +45,7 @@ export default function MarketPricingTable() {
   const [editingMarket, setEditingMarket] = useState<Market | null>(null);
   const [marketSearch, setMarketSearch] = useState("");
   const [priceSearch, setPriceSearch] = useState("");
+  const [priceView, setPriceView] = useState<"pivot" | "flat">("pivot");
   const [comparisonSearch, setComparisonSearch] = useState("");
   const [pagination, setPagination] = useState({
     page: 1,
@@ -435,7 +436,127 @@ export default function MarketPricingTable() {
     })),
   ];
 
-  const priceColumns: ColumnDef<PriceHistory>[] = [
+  // Transform price history data to show markets as columns (pivot view)
+  const transformPriceHistoryData = () => {
+    const productMap = new Map<string, any>();
+
+    priceHistory.forEach((item) => {
+      const productId = item.product.id;
+      const marketName = item.market.name;
+
+      if (!productMap.has(productId)) {
+        productMap.set(productId, {
+          product: item.product.productName,
+          foodbundles: item.ourPrice,
+          markets: {},
+          priceRecords: {},
+          id: productId,
+        });
+      }
+
+      const product = productMap.get(productId);
+      product.markets[marketName] = item.marketPrice;
+      product.priceRecords[marketName] = item;
+    });
+
+    return Array.from(productMap.values());
+  };
+
+  const marketNames = Array.from(
+    new Set(priceHistory.map((p) => p.market.name)),
+  );
+
+  const pivotPriceColumns: ColumnDef<any>[] = [
+    {
+      id: "nbr",
+      header: "Nbr",
+      cell: ({ row }) => (
+        <span className="text-sm text-gray-600">{row.index + 1}</span>
+      ),
+    },
+    {
+      accessorKey: "product",
+      header: "Product",
+      cell: ({ row }) => (
+        <span className="font-medium text-gray-900">
+          {row.original.product}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "foodbundles",
+      header: "FoodBundles",
+      cell: ({ row }) => {
+        const allPrices = [
+          row.original.foodbundles,
+          ...Object.values(row.original.markets),
+        ];
+        const minPrice = Math.min(...allPrices);
+        return (
+          <span
+            className={`${row.original.foodbundles === minPrice ? "text-green-700 font-bold" : "text-gray-700"}`}
+          >
+            {row.original.foodbundles.toLocaleString()} RWF
+          </span>
+        );
+      },
+    },
+    ...marketNames.map((marketName) => ({
+      accessorKey: `markets.${marketName}`,
+      header: marketName,
+      accessorFn: (row: any) => row.markets[marketName],
+      cell: ({ row }: any) => {
+        const price = row.original.markets[marketName];
+        const record = row.original.priceRecords[marketName];
+        if (!price) return <span className="text-gray-400">—</span>;
+        const allPrices = [
+          row.original.foodbundles,
+          ...Object.values(row.original.markets),
+        ];
+        const minPrice = Math.min(...allPrices);
+        return (
+          <div className="flex items-center gap-1">
+            <span
+              className={`${price === minPrice ? "text-orange-600 font-bold" : "text-gray-700"}`}
+            >
+              {price.toLocaleString()} RWF
+            </span>
+            {record && (
+              <div className="flex gap-0.5">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setEditingPrice(record)}
+                  className="h-5 w-5 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                >
+                  <Edit className="w-3 h-3" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={async () => {
+                    if (!confirm("Delete this price record?")) return;
+                    try {
+                      await marketService.deleteMarketPriceHistory(record.id);
+                      toast.success("Price record deleted");
+                      fetchPriceHistory();
+                    } catch {
+                      toast.error("Failed to delete");
+                    }
+                  }}
+                  className="h-5 w-5 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </div>
+            )}
+          </div>
+        );
+      },
+    })),
+  ];
+
+  const flatPriceColumns: ColumnDef<PriceHistory>[] = [
     {
       id: "nbr",
       header: "#",
@@ -661,17 +782,23 @@ export default function MarketPricingTable() {
       {/* Prices Tab */}
       {activeTab === "prices" && (
         <DataTable
-          columns={priceColumns}
-          data={priceHistory.filter(
-            (item) =>
-              item.market.name
-                .toLowerCase()
-                .includes(priceSearch.toLowerCase()) ||
-              item.product.productName
-                .toLowerCase()
-                .includes(priceSearch.toLowerCase()),
-          )}
-          showPagination={true}
+          columns={priceView === "pivot" ? pivotPriceColumns : flatPriceColumns}
+          data={
+            priceView === "pivot"
+              ? transformPriceHistoryData().filter((item) =>
+                  item.product.toLowerCase().includes(priceSearch.toLowerCase()),
+                )
+              : priceHistory.filter(
+                  (item) =>
+                    item.market.name
+                      .toLowerCase()
+                      .includes(priceSearch.toLowerCase()) ||
+                    item.product.productName
+                      .toLowerCase()
+                      .includes(priceSearch.toLowerCase()),
+                )
+          }
+          showPagination={priceView === "flat"}
           showSearch={false}
           pagination={pagination}
           onPaginationChange={(page, limit) =>
@@ -680,27 +807,51 @@ export default function MarketPricingTable() {
           isLoading={loading}
           customFilters={
             <div className="flex items-center justify-between w-full">
-              <div className="relative">
-                <svg
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <svg
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Search by market or product..."
+                    value={priceSearch}
+                    onChange={(e) => setPriceSearch(e.target.value)}
+                    className="pl-8 pr-3 h-8 w-80 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
                   />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Search by market or product..."
-                  value={priceSearch}
-                  onChange={(e) => setPriceSearch(e.target.value)}
-                  className="pl-8 pr-3 h-8 w-80 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
-                />
+                </div>
+                <div className="flex items-center rounded-md border border-gray-300 overflow-hidden">
+                  <button
+                    onClick={() => setPriceView("pivot")}
+                    className={`px-3 h-8 text-xs font-medium ${
+                      priceView === "pivot"
+                        ? "bg-green-600 text-white"
+                        : "bg-white text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    Compare markets
+                  </button>
+                  <button
+                    onClick={() => setPriceView("flat")}
+                    className={`px-3 h-8 text-xs font-medium ${
+                      priceView === "flat"
+                        ? "bg-green-600 text-white"
+                        : "bg-white text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    All records
+                  </button>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <Button
