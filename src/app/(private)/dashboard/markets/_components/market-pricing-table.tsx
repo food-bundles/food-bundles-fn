@@ -51,7 +51,9 @@ export default function MarketPricingTable() {
   const [editingMarket, setEditingMarket] = useState<Market | null>(null);
   const [marketSearch, setMarketSearch] = useState("");
   const [priceSearch, setPriceSearch] = useState("");
-  const [priceView, setPriceView] = useState<"pivot" | "flat">("pivot");
+  const [priceMarketFilter, setPriceMarketFilter] = useState("all");
+  const [priceDateFrom, setPriceDateFrom] = useState("");
+  const [priceDateTo, setPriceDateTo] = useState("");
   const [comparisonSearch, setComparisonSearch] = useState("");
   const [selectedMarkets, setSelectedMarkets] = useState<Market[]>([]);
   const [selectedPrices, setSelectedPrices] = useState<PriceHistory[]>([]);
@@ -690,6 +692,28 @@ export default function MarketPricingTable() {
       enableHiding: false,
     },
     {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
       id: "nbr",
       header: "#",
       cell: ({ row }) => (
@@ -948,23 +972,26 @@ export default function MarketPricingTable() {
       {/* Prices Tab */}
       {activeTab === "prices" && (
         <DataTable
-          columns={priceView === "pivot" ? pivotPriceColumns : flatPriceColumns}
-          data={
-            priceView === "pivot"
-              ? transformPriceHistoryData().filter((item) =>
-                  item.product.toLowerCase().includes(priceSearch.toLowerCase()),
-                )
-              : priceHistory.filter(
-                  (item) =>
-                    item.market.name
-                      .toLowerCase()
-                      .includes(priceSearch.toLowerCase()) ||
-                    item.product.productName
-                      .toLowerCase()
-                      .includes(priceSearch.toLowerCase()),
-                )
-          }
-          showPagination={priceView === "flat"}
+          columns={priceColumns}
+          data={priceHistory.filter((item) => {
+            const matchesSearch =
+              item.market.name
+                .toLowerCase()
+                .includes(priceSearch.toLowerCase()) ||
+              item.product.productName
+                .toLowerCase()
+                .includes(priceSearch.toLowerCase());
+            const matchesMarket =
+              priceMarketFilter === "all" ||
+              item.market.id === priceMarketFilter;
+            const itemDate = new Date(item.recordedDate);
+            const matchesDateFrom =
+              !priceDateFrom || itemDate >= new Date(priceDateFrom);
+            const matchesDateTo =
+              !priceDateTo || itemDate <= new Date(priceDateTo + "T23:59:59");
+            return matchesSearch && matchesMarket && matchesDateFrom && matchesDateTo;
+          })}
+          showPagination={true}
           showSearch={false}
           pagination={pagination}
           onPaginationChange={(page, limit) =>
@@ -973,53 +1000,77 @@ export default function MarketPricingTable() {
           isLoading={loading}
           onSelectionChange={(rows) => setSelectedPrices(rows as PriceHistory[])}
           customFilters={
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <svg
-                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            <div className="flex flex-col gap-2 w-full">
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <svg
+                      className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                    <input
+                      type="text"
+                      placeholder="Search by market or product..."
+                      value={priceSearch}
+                      onChange={(e) => setPriceSearch(e.target.value)}
+                      className="pl-8 pr-3 h-8 w-64 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
                     />
-                  </svg>
+                  </div>
+                  <Select
+                    value={priceMarketFilter}
+                    onValueChange={setPriceMarketFilter}
+                  >
+                    <SelectTrigger className="h-8 w-44 text-xs">
+                      <SelectValue placeholder="All Markets" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all" className="text-xs">All Markets</SelectItem>
+                      {markets.map((m) => (
+                        <SelectItem key={m.id} value={m.id} className="text-xs">
+                          {m.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <input
-                    type="text"
-                    placeholder="Search by market or product..."
-                    value={priceSearch}
-                    onChange={(e) => setPriceSearch(e.target.value)}
-                    className="pl-8 pr-3 h-8 w-80 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                    type="date"
+                    value={priceDateFrom}
+                    onChange={(e) => setPriceDateFrom(e.target.value)}
+                    placeholder="From date"
+                    className="h-8 px-2 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
                   />
+                  <span className="text-gray-400 text-xs">to</span>
+                  <input
+                    type="date"
+                    value={priceDateTo}
+                    onChange={(e) => setPriceDateTo(e.target.value)}
+                    placeholder="To date"
+                    className="h-8 px-2 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                  />
+                  {(priceMarketFilter !== "all" || priceDateFrom || priceDateTo) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2 text-xs text-gray-500 hover:text-gray-700"
+                      onClick={() => {
+                        setPriceMarketFilter("all");
+                        setPriceDateFrom("");
+                        setPriceDateTo("");
+                      }}
+                    >
+                      Clear filters
+                    </Button>
+                  )}
                 </div>
-                <div className="flex items-center rounded-md border border-gray-300 overflow-hidden">
-                  <button
-                    onClick={() => setPriceView("pivot")}
-                    className={`px-3 h-8 text-xs font-medium ${
-                      priceView === "pivot"
-                        ? "bg-green-600 text-white"
-                        : "bg-white text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    Compare markets
-                  </button>
-                  <button
-                    onClick={() => setPriceView("flat")}
-                    className={`px-3 h-8 text-xs font-medium ${
-                      priceView === "flat"
-                        ? "bg-green-600 text-white"
-                        : "bg-white text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    All records
-                  </button>
-                </div>
-              </div>
               <div className="flex items-center gap-2">
                 {selectedPrices.length > 0 && (
                   <div className="flex items-center gap-1.5 mr-2">
