@@ -4,6 +4,7 @@
 import { useState, useEffect } from "react";
 import { DataTable } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -31,6 +32,11 @@ import { toast } from "sonner";
 import { ColumnDef } from "@tanstack/react-table";
 import PriceComparisonChart from "@/app/(private)/dashboard/markets/_components/PriceComparisonChart";
 import RecordPriceModal from "@/app/(private)/dashboard//markets/_components/RecordPriceModal";
+import {
+  ModalShell,
+  ModalHeader,
+  ModalActions,
+} from "./shared-atoms";
 
 type ActiveTab = "markets" | "prices" | "analysis" | "comparison";
 
@@ -45,7 +51,16 @@ export default function MarketPricingTable() {
   const [editingMarket, setEditingMarket] = useState<Market | null>(null);
   const [marketSearch, setMarketSearch] = useState("");
   const [priceSearch, setPriceSearch] = useState("");
+  const [priceMarketFilter, setPriceMarketFilter] = useState("all");
+  const [priceDateFrom, setPriceDateFrom] = useState("");
+  const [priceDateTo, setPriceDateTo] = useState("");
   const [comparisonSearch, setComparisonSearch] = useState("");
+  const [selectedMarkets, setSelectedMarkets] = useState<Market[]>([]);
+  const [selectedPrices, setSelectedPrices] = useState<PriceHistory[]>([]);
+  const [selectedComparison, setSelectedComparison] = useState<any[]>([]);
+  const [showBulkDeleteMarkets, setShowBulkDeleteMarkets] = useState(false);
+  const [showBulkDeletePrices, setShowBulkDeletePrices] = useState(false);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -230,7 +245,83 @@ export default function MarketPricingTable() {
     }
   };
 
+  const handleBulkToggleActive = async (isActive: boolean) => {
+    if (selectedMarkets.length === 0) return;
+    try {
+      await marketService.bulkUpdateMarketStatus(
+        selectedMarkets.map((m) => m.id),
+        isActive,
+      );
+      toast.success(
+        `${selectedMarkets.length} market(s) ${isActive ? "activated" : "deactivated"}`,
+      );
+      setSelectedMarkets([]);
+      fetchMarkets();
+    } catch {
+      toast.error("Failed to update markets");
+    }
+  };
+
+  const handleBulkDeleteMarkets = async () => {
+    if (selectedMarkets.length === 0) return;
+    setBulkActionLoading(true);
+    try {
+      await marketService.bulkDeleteMarkets(
+        selectedMarkets.map((m) => m.id),
+      );
+      toast.success(`${selectedMarkets.length} market(s) deleted`);
+      setSelectedMarkets([]);
+      setShowBulkDeleteMarkets(false);
+      fetchMarkets();
+    } catch {
+      toast.error("Failed to delete markets");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkDeletePrices = async () => {
+    if (selectedPrices.length === 0) return;
+    setBulkActionLoading(true);
+    try {
+      await marketService.bulkDeletePriceHistory(
+        selectedPrices.map((p) => p.id),
+      );
+      toast.success(`${selectedPrices.length} price record(s) deleted`);
+      setSelectedPrices([]);
+      setShowBulkDeletePrices(false);
+      fetchPriceHistory();
+      fetchPricesByProduct();
+    } catch {
+      toast.error("Failed to delete price records");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
   const marketColumns: ColumnDef<Market>[] = [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
     {
       id: "nbr",
       header: "Nbr",
@@ -337,6 +428,28 @@ export default function MarketPricingTable() {
 
   const comparisonColumns: ColumnDef<any>[] = [
     {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
       id: "nbr",
       header: "Nbr",
       cell: ({ row }) => (
@@ -436,6 +549,28 @@ export default function MarketPricingTable() {
   ];
 
   const priceColumns: ColumnDef<PriceHistory>[] = [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
     {
       id: "nbr",
       header: "#",
@@ -609,30 +744,64 @@ export default function MarketPricingTable() {
             setPagination((prev) => ({ ...prev, page, limit }))
           }
           isLoading={loading}
+          onSelectionChange={(rows) => setSelectedMarkets(rows as Market[])}
           customFilters={
             <div className="flex items-center justify-between w-full">
               {/* Search — left side */}
-              <div className="relative">
-                <svg
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <svg
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Search markets..."
+                    value={marketSearch}
+                    onChange={(e) => setMarketSearch(e.target.value)}
+                    className="pl-8 pr-3 h-8 w-80 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
                   />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Search markets..."
-                  value={marketSearch}
-                  onChange={(e) => setMarketSearch(e.target.value)}
-                  className="pl-8 pr-3 h-8 w-80 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
-                />
+                </div>
+                {selectedMarkets.length > 0 && (
+                  <div className="flex items-center gap-1.5 ml-2">
+                    <span className="text-xs text-gray-500 font-medium">
+                      {selectedMarkets.length} selected
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs border-gray-300"
+                      onClick={() => handleBulkToggleActive(true)}
+                    >
+                      Activate
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs border-gray-300"
+                      onClick={() => handleBulkToggleActive(false)}
+                    >
+                      Deactivate
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs border-red-300 text-red-600 hover:bg-red-50"
+                      onClick={() => setShowBulkDeleteMarkets(true)}
+                    >
+                      <Trash2 className="w-3 h-3 mr-1" /> Delete
+                    </Button>
+                  </div>
+                )}
               </div>
               {/* Export buttons — right side, next to Columns button */}
               <div className="flex items-center gap-2">
@@ -662,15 +831,24 @@ export default function MarketPricingTable() {
       {activeTab === "prices" && (
         <DataTable
           columns={priceColumns}
-          data={priceHistory.filter(
-            (item) =>
+          data={priceHistory.filter((item) => {
+            const matchesSearch =
               item.market.name
                 .toLowerCase()
                 .includes(priceSearch.toLowerCase()) ||
               item.product.productName
                 .toLowerCase()
-                .includes(priceSearch.toLowerCase()),
-          )}
+                .includes(priceSearch.toLowerCase());
+            const matchesMarket =
+              priceMarketFilter === "all" ||
+              item.market.id === priceMarketFilter;
+            const itemDate = new Date(item.recordedDate);
+            const matchesDateFrom =
+              !priceDateFrom || itemDate >= new Date(priceDateFrom);
+            const matchesDateTo =
+              !priceDateTo || itemDate <= new Date(priceDateTo + "T23:59:59");
+            return matchesSearch && matchesMarket && matchesDateFrom && matchesDateTo;
+          })}
           showPagination={true}
           showSearch={false}
           pagination={pagination}
@@ -678,31 +856,95 @@ export default function MarketPricingTable() {
             setPagination((prev) => ({ ...prev, page, limit }))
           }
           isLoading={loading}
+          onSelectionChange={(rows) => setSelectedPrices(rows as PriceHistory[])}
           customFilters={
-            <div className="flex items-center justify-between w-full">
-              <div className="relative">
-                <svg
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            <div className="flex flex-col gap-2 w-full">
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2">
+                  <div className="relative">
+                    <svg
+                      className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 w-3.5 h-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                    <input
+                      type="text"
+                      placeholder="Search by market or product..."
+                      value={priceSearch}
+                      onChange={(e) => setPriceSearch(e.target.value)}
+                      className="pl-8 pr-3 h-8 w-64 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                    />
+                  </div>
+                  <Select
+                    value={priceMarketFilter}
+                    onValueChange={setPriceMarketFilter}
+                  >
+                    <SelectTrigger className="h-8 w-44 text-xs">
+                      <SelectValue placeholder="All Markets" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all" className="text-xs">All Markets</SelectItem>
+                      {markets.map((m) => (
+                        <SelectItem key={m.id} value={m.id} className="text-xs">
+                          {m.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <input
+                    type="date"
+                    value={priceDateFrom}
+                    onChange={(e) => setPriceDateFrom(e.target.value)}
+                    placeholder="From date"
+                    className="h-8 px-2 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
                   />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Search by market or product..."
-                  value={priceSearch}
-                  onChange={(e) => setPriceSearch(e.target.value)}
-                  className="pl-8 pr-3 h-8 w-80 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
-                />
-              </div>
+                  <span className="text-gray-400 text-xs">to</span>
+                  <input
+                    type="date"
+                    value={priceDateTo}
+                    onChange={(e) => setPriceDateTo(e.target.value)}
+                    placeholder="To date"
+                    className="h-8 px-2 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                  />
+                  {(priceMarketFilter !== "all" || priceDateFrom || priceDateTo) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2 text-xs text-gray-500 hover:text-gray-700"
+                      onClick={() => {
+                        setPriceMarketFilter("all");
+                        setPriceDateFrom("");
+                        setPriceDateTo("");
+                      }}
+                    >
+                      Clear filters
+                    </Button>
+                  )}
+                </div>
               <div className="flex items-center gap-2">
+                {selectedPrices.length > 0 && (
+                  <div className="flex items-center gap-1.5 mr-2">
+                    <span className="text-xs text-gray-500 font-medium">
+                      {selectedPrices.length} selected
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs border-red-300 text-red-600 hover:bg-red-50"
+                      onClick={() => setShowBulkDeletePrices(true)}
+                    >
+                      <Trash2 className="w-3 h-3 mr-1" /> Delete
+                    </Button>
+                  </div>
+                )}
                 <Button
                   onClick={() => setShowRecordPriceModal(true)}
                   className="bg-green-700 hover:bg-green-600 text-white"
@@ -710,22 +952,23 @@ export default function MarketPricingTable() {
                 >
                   <Plus className="w-3 h-3 mr-1" /> Record Price
                 </Button>
-                <Button
-                  onClick={() => handleExport("prices", "csv")}
-                  variant="outline"
-                  size="sm"
-                  className="text-xs h-8 border-green-600 text-green-700 hover:bg-green-50"
-                >
-                  <Download className="w-3 h-3 mr-1" /> CSV
-                </Button>
-                <Button
-                  onClick={() => handleExport("prices", "excel")}
-                  variant="outline"
-                  size="sm"
-                  className="text-xs h-8 border-green-600 text-green-700 hover:bg-green-50"
-                >
-                  <Download className="w-3 h-3 mr-1" /> Excel
-                </Button>
+                  <Button
+                    onClick={() => handleExport("prices", "csv")}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-8 border-green-600 text-green-700 hover:bg-green-50"
+                  >
+                    <Download className="w-3 h-3 mr-1" /> CSV
+                  </Button>
+                  <Button
+                    onClick={() => handleExport("prices", "excel")}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-8 border-green-600 text-green-700 hover:bg-green-50"
+                  >
+                    <Download className="w-3 h-3 mr-1" /> Excel
+                  </Button>
+                </div>
               </div>
             </div>
           }
@@ -908,6 +1151,7 @@ export default function MarketPricingTable() {
           showPagination={false}
           showSearch={false}
           isLoading={loading}
+          onSelectionChange={(rows) => setSelectedComparison(rows)}
           customFilters={
             <div className="flex items-center justify-between w-full">
               <div className="relative">
@@ -932,6 +1176,11 @@ export default function MarketPricingTable() {
                   className="pl-8 pr-3 h-8 w-80 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
                 />
               </div>
+              {selectedComparison.length > 0 && (
+                <span className="text-xs text-gray-500 font-medium ml-2">
+                  {selectedComparison.length} selected
+                </span>
+              )}
               <div className="flex items-center gap-2">
                 <Button
                   onClick={() => handleExport("comparison", "csv")}
@@ -1120,6 +1369,64 @@ export default function MarketPricingTable() {
           </div>
         </div>
       )}
+
+      {/* Bulk Delete Markets Confirmation Modal */}
+      <ModalShell open={showBulkDeleteMarkets} onClose={() => setShowBulkDeleteMarkets(false)}>
+        <ModalHeader
+          icon={
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          }
+          title="Delete Markets"
+          subtitle={`This will permanently delete ${selectedMarkets.length} market(s) and all their price history.`}
+          onClose={() => setShowBulkDeleteMarkets(false)}
+          danger
+        />
+        <div className="px-6 py-4">
+          <p className="text-sm text-gray-600">
+            Are you sure you want to delete {selectedMarkets.length} market(s)? This action cannot be undone.
+          </p>
+        </div>
+        <div className="px-6 pb-5">
+          <ModalActions
+            onCancel={() => setShowBulkDeleteMarkets(false)}
+            onConfirm={handleBulkDeleteMarkets}
+            confirmLabel={`Delete ${selectedMarkets.length} market(s)`}
+            loading={bulkActionLoading}
+            danger
+          />
+        </div>
+      </ModalShell>
+
+      {/* Bulk Delete Prices Confirmation Modal */}
+      <ModalShell open={showBulkDeletePrices} onClose={() => setShowBulkDeletePrices(false)}>
+        <ModalHeader
+          icon={
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          }
+          title="Delete Price Records"
+          subtitle={`This will permanently delete ${selectedPrices.length} price record(s).`}
+          onClose={() => setShowBulkDeletePrices(false)}
+          danger
+        />
+        <div className="px-6 py-4">
+          <p className="text-sm text-gray-600">
+            Are you sure you want to delete {selectedPrices.length} price record(s)? This action cannot be undone.
+          </p>
+        </div>
+        <div className="px-6 pb-5">
+          <ModalActions
+            onCancel={() => setShowBulkDeletePrices(false)}
+            onConfirm={handleBulkDeletePrices}
+            confirmLabel={`Delete ${selectedPrices.length} record(s)`}
+            loading={bulkActionLoading}
+            danger
+          />
+        </div>
+      </ModalShell>
     </div>
   );
 }

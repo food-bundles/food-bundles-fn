@@ -239,7 +239,7 @@ function TrendSlide({
       {/* header row */}
       <div className="flex items-start justify-between mb-2.5 flex-shrink-0">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-7 h-7 rounded-xl bg-black flex items-center justify-center text-white text-[10px] font-black flex-shrink-0">
+          <div className="w-7 h-7 rounded-xl bg-green-600 flex items-center justify-center text-white text-[10px] font-black flex-shrink-0">
             {group.productName.slice(0, 2).toUpperCase()}
           </div>
           <div className="min-w-0">

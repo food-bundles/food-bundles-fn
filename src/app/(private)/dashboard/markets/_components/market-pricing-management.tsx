@@ -252,7 +252,7 @@ export default function MarketPricingManagement() {
         <div className="flex flex-col sm:flex-row justify-between gap-4 mb-8">
           <div>
             <div className="flex items-center gap-2.5 mb-1">
-              <div className="w-8 h-8 rounded-xl bg-black flex items-center justify-center text-white shadow-sm">
+              <div className="w-8 h-8 rounded-xl bg-green-600 flex items-center justify-center text-white shadow-sm">
                 <BarChart2 className="w-4 h-4" />
               </div>
               <h1 className="text-2xl font-black text-gray-900">
@@ -356,7 +356,7 @@ export default function MarketPricingManagement() {
               transition={{ delay: i * 0.06 }}
               className="bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-4 flex items-center gap-3"
             >
-              <div className="w-10 h-10 rounded-xl bg-black flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-green-600 flex items-center justify-center flex-shrink-0">
                 <s.Icon className="w-5 h-5 text-white" />
               </div>
               {loading ? (

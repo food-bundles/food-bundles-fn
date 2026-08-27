@@ -3,18 +3,22 @@
 
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail, Phone } from "lucide-react";
 import Link from "next/link";
 import { authService } from "@/app/services/authService";
+import { useRouter } from "next/navigation";
 
 export default function ForgotPasswordPage() {
+  const router = useRouter();
+  const [method, setMethod] = useState<"email" | "phone">("email");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
@@ -26,6 +30,22 @@ export default function ForgotPasswordPage() {
       setIsSuccess(true);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to send reset email");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePhoneSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+    setMessage("");
+
+    try {
+      await authService.forgotPasswordPhone(phone);
+      router.push(`/reset-password-phone?phone=${encodeURIComponent(phone)}`);
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to send OTP");
     } finally {
       setIsLoading(false);
     }
@@ -56,17 +76,76 @@ export default function ForgotPasswordPage() {
           </h2>
           
           <p className="text-[14px] text-gray-600 mb-6">
-            Enter your email address and we&#39;ll send you a link to reset your password.
+            Choose how you&apos;d like to reset your password.
           </p>
 
-          {!isSuccess ? (
-            <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Method tabs */}
+          <div className="flex border border-gray-200 rounded-lg mb-6 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => { setMethod("email"); setError(""); setMessage(""); setIsSuccess(false); }}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-[13px] font-medium transition-colors ${
+                method === "email"
+                  ? "bg-green-700 text-white"
+                  : "bg-white text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              <Mail className="w-4 h-4" />
+              Email
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMethod("phone"); setError(""); setMessage(""); setIsSuccess(false); }}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-[13px] font-medium transition-colors ${
+                method === "phone"
+                  ? "bg-green-700 text-white"
+                  : "bg-white text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              <Phone className="w-4 h-4" />
+              Phone
+            </button>
+          </div>
+
+          {method === "email" ? (
+            !isSuccess ? (
+              <form onSubmit={handleEmailSubmit} className="space-y-4">
+                <div>
+                  <Input
+                    type="email"
+                    placeholder="Enter your email address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="h-10 text-[13px] border-gray-300 focus:border-green-500 focus:ring-green-500 text-gray-900"
+                    disabled={isLoading}
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full h-10 bg-green-700 hover:bg-green-800 text-white text-[14px] font-medium flex items-center justify-center gap-2"
+                  disabled={isLoading}
+                >
+                  {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {isLoading ? "Sending..." : "Send Reset Link"}
+                </button>
+              </form>
+            ) : (
+              <div className="text-center">
+                <p className="text-[14px] text-gray-600 mb-4">
+                  Check your email for the password reset link.
+                </p>
+              </div>
+            )
+          ) : (
+            <form onSubmit={handlePhoneSubmit} className="space-y-4">
               <div>
                 <Input
-                  type="email"
-                  placeholder="Enter your email address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type="tel"
+                  placeholder="Enter your phone number"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   className="h-10 text-[13px] border-gray-300 focus:border-green-500 focus:ring-green-500 text-gray-900"
                   disabled={isLoading}
                   required
@@ -79,15 +158,9 @@ export default function ForgotPasswordPage() {
                 disabled={isLoading}
               >
                 {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {isLoading ? "Sending..." : "Send Reset Link"}
+                {isLoading ? "Sending OTP..." : "Send OTP"}
               </button>
             </form>
-          ) : (
-            <div className="text-center">
-              <p className="text-[14px] text-gray-600 mb-4">
-                Check your email for the password reset link.
-              </p>
-            </div>
           )}
 
           <div className="mt-6 text-center">
