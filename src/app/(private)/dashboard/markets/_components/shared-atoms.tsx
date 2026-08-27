@@ -239,7 +239,7 @@ export function ModalHeader({
       <div className="flex items-center gap-3">
         <div
           className={`w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-sm flex-shrink-0 ${
-            danger ? "bg-gray-900" : "bg-black"
+            danger ? "bg-gray-900" : "bg-green-600"
           }`}
         >
           {icon}

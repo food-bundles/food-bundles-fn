@@ -34,6 +34,7 @@ export async function middleware(req: NextRequest) {
     "/signup",
     "/forgot-password",
     "/reset-password",
+    "/reset-password-phone",
   ];
   const isAuthPage = authPages.includes(pathname);
 
@@ -185,5 +186,6 @@ export const config = {
     "/signup",
     "/forgot-password",
     "/reset-password",
+    "/reset-password-phone",
   ],
 };

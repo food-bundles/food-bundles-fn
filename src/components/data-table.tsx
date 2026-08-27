@@ -135,6 +135,9 @@ interface DataTableProps<TData, TValue> {
   
   // Row click handler
   onRowClick?: (row: TData) => void;
+
+  // Selection change callback
+  onSelectionChange?: (selectedRows: TData[]) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -158,6 +161,7 @@ export function DataTable<TData, TValue>({
   onPageSizeChange,
   isLoading = false,
   onRowClick,
+  onSelectionChange,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -186,7 +190,19 @@ export function DataTable<TData, TValue>({
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
+    onRowSelectionChange: (updater) => {
+      setRowSelection(updater);
+      if (onSelectionChange) {
+        const newSelection = typeof updater === "function" ? updater(rowSelection) : updater;
+        setTimeout(() => {
+          const selectedRows = data.filter((row) => {
+            const id = (row as any).id || (row as any)._id;
+            return newSelection[id];
+          });
+          onSelectionChange(selectedRows);
+        }, 0);
+      }
+    },
     state: {
       sorting,
       columnFilters,
