@@ -34,8 +34,12 @@ export default function InvitationsPage() {
   const handleCreateInvitation = async (data: CreateInvitationData) => {
     try {
       setIsSubmitting(true);
-      await invitationService.createInvitation(data);
-      toast.success("Invitation sent successfully");
+      const response = await invitationService.createInvitation(data);
+      if (response.emailNotSent) {
+        toast.warning("Invitation created but email not sent. You can resend it later.");
+      } else {
+        toast.success("Invitation sent successfully");
+      }
       fetchInvitations();
     } catch (error: any) {
       const message = error.response?.data?.message || "Failed to send invitation";
@@ -48,8 +52,12 @@ export default function InvitationsPage() {
 
   const handleResendInvitation = async (id: string) => {
     try {
-      await invitationService.resendInvitation(id);
-      toast.success("Invitation resent successfully");
+      const response = await invitationService.resendInvitation(id);
+      if ((response as any).emailNotSent) {
+        toast.warning("Invitation resent but email not sent. You can try again later.");
+      } else {
+        toast.success("Invitation resent successfully");
+      }
       fetchInvitations();
     } catch (error: any) {
       const message = error.response?.data?.message || "Failed to resend invitation";

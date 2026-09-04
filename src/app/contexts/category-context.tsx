@@ -123,7 +123,7 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
         setError(null);
         const response = await categoryService.createCategory(categoryData);
 
-        if (response.success) {
+        if (response.data) {
           return true;
         } else {
           setError(response.message || "Failed to create category");
@@ -150,7 +150,7 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
           categoryData
         );
 
-        if (response.success) {
+        if (response.data) {
           return true;
         } else {
           setError(response.message || "Failed to update category");
@@ -171,7 +171,7 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
         setError(null);
         const response = await categoryService.deleteCategory(categoryId);
 
-        if (response.success) {
+        if (response.message) {
           return true;
         } else {
           setError(response.message || "Failed to delete category");
@@ -192,7 +192,7 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
         setError(null);
         const response = await categoryService.getCategoryById(categoryId);
 
-        if (response.success && response.data) {
+        if (response.data) {
           return response.data;
         } else {
           setError(response.message || "Category not found");
@@ -216,7 +216,7 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
           isActive,
         });
 
-        if (response.success) {
+        if (response.message) {
           await refreshCategories(false);
           await refreshActiveCategories();
           return true;
