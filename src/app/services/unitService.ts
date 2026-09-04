@@ -1,7 +1,6 @@
 import createAxiosClient from "../hooks/axiosClient";
 
 export interface UnitFormData {
-  tableTronicId: number;
   name: string;
   description: string;
   isActive: boolean;

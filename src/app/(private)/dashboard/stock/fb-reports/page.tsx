@@ -4,7 +4,6 @@
 
 import { useState, useEffect } from "react";
 import { DataTable } from "@/components/data-table";
-import { tableTronicService } from "@/app/services/tableTronicService";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -36,33 +35,9 @@ export default function FBReportsPage() {
 
     setLoading(true);
     try {
-      const response = await tableTronicService.getFBSalesReport({
-        from: dateRange.from.toISOString().split('T')[0],
-        to: dateRange.to.toISOString().split('T')[0],
-        businessCode: businessCode.trim()
-      });
-      
-      console.log('Raw response:', response);
-      
-      let items = [];
-      if (typeof response === 'string') {
-        const parsed = JSON.parse(response);
-        items = parsed.items || [];
-      } else if (response?.data) {
-        if (typeof response.data === 'string') {
-          const parsed = JSON.parse(response.data);
-          items = parsed.items || [];
-        } else {
-          items = response.data.items || response.data || [];
-        }
-      } else if (response?.items) {
-        items = response.items;
-      }
-      
-      console.log('Parsed items:', items);
-      setReportData(items);
+      toast.info("FB sales reports are not available. The TableTronic integration has been removed.");
+      setReportData([]);
       setHasSearched(true);
-      toast.success("Report generated successfully");
     } catch (error: any) {
       console.error("Report generation error:", error);
       toast.error(error.message || "Failed to generate report");
@@ -155,7 +130,8 @@ const columns = [
           FB Sales Reports
         </h1>
         <p className="text-gray-700 text-sm">
-          Generate and view Food Bundle sales reports
+          FB sales reports are not available - the TableTronic integration has
+          been removed.
         </p>
       </div>
 

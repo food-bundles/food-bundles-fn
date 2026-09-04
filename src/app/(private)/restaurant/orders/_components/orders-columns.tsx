@@ -7,7 +7,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, Copy, Check, RefreshCw, Download, MoreHorizontal, RotateCcw } from "lucide-react";
+import { Eye, Copy, Check, RefreshCw, Download, MoreHorizontal, RotateCcw, Pencil } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -374,7 +374,9 @@ const formatTime = (date: string | Date) =>
 export const ordersColumns = (
   onView: (order: Order) => void,
   onDownload: (order: Order) => void,
-  onReorder: (order: Order) => void
+  onReorder: (order: Order) => void,
+  onRetryPayment?: (order: Order) => void,
+  onEdit?: (order: Order) => void
 ): ColumnDef<Order>[] => [
   {
     id: "select",
@@ -521,10 +523,22 @@ export const ordersColumns = (
     header: "Payment Status",
     cell: ({ row }) => {
       const paymentStatus = row.original.paymentStatus;
+      const paymentMethod = row.original.originalData?.paymentMethod;
       return (
-        <Badge className={getPaymentStatusColor(paymentStatus)}>
-          {getPaymentStatusLabel(paymentStatus)}
-        </Badge>
+        <div className="flex flex-col gap-1">
+          <Badge className={getPaymentStatusColor(paymentStatus)}>
+            {getPaymentStatusLabel(paymentStatus)}
+          </Badge>
+          {onRetryPayment && paymentStatus === "FAILED" && paymentMethod !== "VOUCHER" && (
+            <button
+              onClick={() => onRetryPayment(row.original)}
+              className="text-xs text-green-700 hover:text-green-800 hover:underline flex items-center gap-1 cursor-pointer font-medium"
+            >
+              <RefreshCw className="h-3 w-3" />
+              Retry Payment
+            </button>
+          )}
+        </div>
       );
     },
   },
@@ -558,10 +572,23 @@ export const ordersColumns = (
               View Order
             </DropdownMenuItem>
             
+            {onEdit && ["PENDING", "CONFIRMED"].includes(order.status) && (
+              <DropdownMenuItem onClick={() => onEdit(order)}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit Order
+              </DropdownMenuItem>
+            )}
+            
               <DropdownMenuItem onClick={() => onReorder(order)}>
                 <RotateCcw className="h-4 w-4 mr-2" />
                 Reorder
               </DropdownMenuItem>
+            {onRetryPayment && order.paymentStatus === "FAILED" && order.originalData?.paymentMethod !== "VOUCHER" && (
+              <DropdownMenuItem onClick={() => onRetryPayment(order)}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry Payment
+              </DropdownMenuItem>
+            )}
             {ebmReference && (
               <DropdownMenuItem onClick={handleDownload}>
                 <Download className="h-4 w-4 mr-2" />

@@ -2,7 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { Eye, MoreHorizontal, Trash2, FileText } from "lucide-react";
+import { Eye, MoreHorizontal, Trash2, FileText, Edit3, Send } from "lucide-react";
 
 // Helper function to get payment method colors
 const getPaymentMethodColor = (method: string) => {
@@ -327,6 +327,8 @@ export const createOrdersColumns = (actions: {
   onDelete: (order: Order) => void;
   onStatusUpdate: (orderId: string, status: string) => void;
   onPaymentStatusUpdate: (orderId: string, paymentStatus: string) => void;
+  onEdit?: (order: Order) => void;
+  onSendPaymentLink?: (order: Order) => void;
 }): ColumnDef<Order>[] => [
   {
     accessorKey: "#",
@@ -465,6 +467,18 @@ export const createOrdersColumns = (actions: {
                 <FileText className="mr-2 h-4 w-4" />
                 Print Order
               </DropdownMenuItem>
+              {actions.onEdit && ["PENDING", "CONFIRMED"].includes(order.status) && (
+                <DropdownMenuItem onClick={() => actions.onEdit!(order)}>
+                  <Edit3 className="mr-2 h-4 w-4" />
+                  Edit Order
+                </DropdownMenuItem>
+              )}
+              {actions.onSendPaymentLink && order.paymentStatus === "FAILED" && (
+                <DropdownMenuItem onClick={() => actions.onSendPaymentLink!(order)}>
+                  <Send className="mr-2 h-4 w-4" />
+                  Send Payment Link
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-red-600"

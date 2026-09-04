@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-interface Unit {
+interface PaymentMethod {
   id: string;
   name: string;
   description: string;
@@ -13,13 +13,14 @@ interface Unit {
   createdAt: string;
 }
 
-export const createUnitColumns = (
-  onEdit: (unit: Unit) => void,
-  onDelete: (unitId: string) => void
-): ColumnDef<Unit>[] => [
+export const createPaymentMethodColumns = (
+  onEdit: (method: PaymentMethod) => void,
+  onDelete: (methodId: string) => void
+): ColumnDef<PaymentMethod>[] => [
   {
     accessorKey: "name",
     header: "Name",
+    cell: ({ row }) => row.original.name.replace(/_/g, " "),
   },
   {
     accessorKey: "description",
