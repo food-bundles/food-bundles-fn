@@ -131,7 +131,7 @@ export function SubscriptionDetailsModal({
         editData
       );
 
-      if (response?.success) {
+      if (response?.data) {
         toast.success("Subscription updated successfully");
         setIsEditing(false);
         onUpdate();

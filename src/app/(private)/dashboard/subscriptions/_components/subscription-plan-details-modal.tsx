@@ -133,7 +133,7 @@ export function SubscriptionPlanDetailsModal({
         updatePayload
       );
 
-      if (response?.success) {
+      if (response?.data) {
         toast.success("Subscription plan updated successfully");
         setIsEditing(false);
         onUpdate();
@@ -155,13 +155,11 @@ export function SubscriptionPlanDetailsModal({
         plan.id
       );
 
-      if (response?.success) {
-        toast.success("Subscription plan deleted successfully");
-        setIsDeleting(false);
-        setDeleteConfirmText("");
-        onOpenChange(false);
-        onUpdate();
-      }
+      toast.success(response?.message || "Subscription plan deleted successfully");
+      setIsDeleting(false);
+      setDeleteConfirmText("");
+      onOpenChange(false);
+      onUpdate();
     } catch (error: any) {
       console.error("Failed to delete plan:", error);
       toast.error(
