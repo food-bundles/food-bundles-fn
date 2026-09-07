@@ -36,7 +36,9 @@ import {
   Building2,
   LayoutGrid,
   Table2,
+  Brain,
 } from "lucide-react";
+import MarketPriceIntelligence from "./market-price-intelligence";
 
 export default function MarketPricingManagement() {
   // ── data ──────────────────────────────────────────────────────────────────
@@ -46,7 +48,7 @@ export default function MarketPricingManagement() {
   const [error, setError] = useState<string | null>(null);
 
   // ── view ──────────────────────────────────────────────────────────────────
-  const [viewMode, setViewMode] = useState<"cards" | "table">("table");
+  const [viewMode, setViewMode] = useState<"cards" | "table" | "intelligence">("table");
 
   // ── filters ───────────────────────────────────────────────────────────────
   const [search, setSearch] = useState("");
@@ -300,6 +302,19 @@ export default function MarketPricingManagement() {
                 <Table2 className="w-3 h-3" />
                 Table
               </button>
+              <button
+                onClick={() => setViewMode("intelligence")}
+                aria-pressed={viewMode === "intelligence"}
+                title="Intelligence view"
+                className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 ${
+                  viewMode === "intelligence"
+                    ? "bg-white shadow-sm text-gray-900"
+                    : "text-gray-500"
+                }`}
+              >
+                <Brain className="w-3 h-3" />
+                Intelligence
+              </button>
             </div>
 
             <button
@@ -378,6 +393,18 @@ export default function MarketPricingManagement() {
         {viewMode === "table" && (
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <MarketPricingTable />
+          </div>
+        )}
+
+        {/* Intelligence view */}
+        {viewMode === "intelligence" && (
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Brain className="w-4 h-4 text-green-600" />
+              <h2 className="text-[14px] font-bold text-gray-800">Market Price Intelligence</h2>
+              <span className="text-[11px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium ml-1">Mock Data</span>
+            </div>
+            <MarketPriceIntelligence />
           </div>
         )}
 

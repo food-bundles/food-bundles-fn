@@ -28,6 +28,7 @@ function GoogleSignupForm() {
     tin?: string;
     location?: string;
     name?: string;
+    agreed?: string;
   }>({});
   const [touched, setTouched] = useState<{
     phone?: boolean;
@@ -148,6 +149,8 @@ function GoogleSignupForm() {
     const locationError = validateLocation(location);
     if (locationError) errors.location = locationError;
 
+    if (!agreed) errors.agreed = "You must accept the Terms and Conditions";
+
     setTouched({
       name: true,
       tin: true,
@@ -163,13 +166,6 @@ function GoogleSignupForm() {
     setIsLoading(true);
     setError("");
     setValidationErrors({});
-
-    if (!agreed) {
-      setError(
-        "You must accept the Terms and Conditions to complete your registration."
-      );
-      return;
-    }
 
     try {
       const response = await authService.googleSignup({
@@ -399,7 +395,7 @@ function GoogleSignupForm() {
           <input
             type="checkbox"
             checked={agreed}
-            onChange={(e) => setAgreed(e.target.checked)}
+            onChange={(e) => { setAgreed(e.target.checked); setValidationErrors(p => ({ ...p, agreed: undefined })); }}
             disabled={isLoading}
             className="mt-0.5 h-4 w-4 text-green-700 border-gray-300 rounded focus:ring-green-700"
           />
@@ -423,6 +419,9 @@ function GoogleSignupForm() {
             .
           </span>
         </label>
+        {validationErrors.agreed && (
+          <p className="text-red-600 text-xs -mt-2">{validationErrors.agreed}</p>
+        )}
 
         <button
           type="submit"

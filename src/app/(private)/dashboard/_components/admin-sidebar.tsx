@@ -30,6 +30,7 @@ import {
   TrendingUp,
   CreditCard,
   MailOpen,
+  ShieldCheck,
 } from "lucide-react";
 import NotificationsDrawer from "@/app/(private)/restaurant/_components/notificationDrawer";
 import { usePathname } from "next/navigation";
@@ -92,6 +93,11 @@ const menuItems = [
     icon: TrendingUp,
     label: "Market Prices",
     href: "/dashboard/markets",
+  },
+  {
+    icon: ShieldCheck,
+    label: "Restaurant KYC",
+    href: "/dashboard/restaurant-kyc",
   },
   {
     icon: Ticket,
