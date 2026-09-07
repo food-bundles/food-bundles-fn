@@ -7,7 +7,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, Copy, Check, RefreshCw, Download, MoreHorizontal, RotateCcw } from "lucide-react";
+import { Eye, Copy, Check, RefreshCw, Download, MoreHorizontal, RotateCcw, Share2, Link2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -374,7 +374,9 @@ const formatTime = (date: string | Date) =>
 export const ordersColumns = (
   onView: (order: Order) => void,
   onDownload: (order: Order) => void,
-  onReorder: (order: Order) => void
+  onReorder: (order: Order) => void,
+  onShare?: (order: Order) => void,
+  onSharePaymentLink?: (order: Order) => void
 ): ColumnDef<Order>[] => [
   {
     id: "select",
@@ -533,13 +535,6 @@ export const ordersColumns = (
     header: "Actions",
     cell: ({ row }) => {
       const order = row.original;
-      const ebmReference = order.originalData?.ebmReference;
-
-      const handleDownload = () => {
-        if (ebmReference) {
-          window.open(ebmReference, '_blank');
-        }
-      };
 
       return (
         <DropdownMenu>
@@ -557,15 +552,24 @@ export const ordersColumns = (
               <Eye className="h-4 w-4 mr-2" />
               View Order
             </DropdownMenuItem>
-            
-              <DropdownMenuItem onClick={() => onReorder(order)}>
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Reorder
+            <DropdownMenuItem onClick={() => onReorder(order)}>
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Reorder
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onDownload(order)}>
+              <Download className="h-4 w-4 mr-2" />
+              Download Receipt
+            </DropdownMenuItem>
+            {onShare && (
+              <DropdownMenuItem onClick={() => onShare(order)}>
+                <Share2 className="h-4 w-4 mr-2" />
+                Share Receipt
               </DropdownMenuItem>
-            {ebmReference && (
-              <DropdownMenuItem onClick={handleDownload}>
-                <Download className="h-4 w-4 mr-2" />
-                Download Invoice
+            )}
+            {onSharePaymentLink && (
+              <DropdownMenuItem onClick={() => onSharePaymentLink(order)}>
+                <Link2 className="h-4 w-4 mr-2" />
+                Share Payment Link
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>

@@ -19,6 +19,8 @@ import { orderService } from "@/app/services/orderService";
 import { tableTronicService } from "@/app/services/tableTronicService";
 import { ViewOrderModal } from "./_components/view-order-modal";
 import { ReorderDrawer } from "./_components/ReorderDrawer";
+import CreateOrderModal from "./_components/CreateOrderModal";
+import PaymentLinkModal from "./_components/PaymentLinkModal";
 
 export default function RestaurantOrdersPage() {
   const [searchValue, setSearchValue] = useState("");
@@ -41,6 +43,9 @@ export default function RestaurantOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [reorderDrawerOpen, setReorderDrawerOpen] = useState(false);
   const [selectedReorderOrder, setSelectedReorderOrder] = useState<any>(null);
+  const [createOrderOpen, setCreateOrderOpen] = useState(false);
+  const [paymentLinkOpen, setPaymentLinkOpen] = useState(false);
+  const [paymentLinkOrder, setPaymentLinkOrder] = useState<any>(null);
   const router = useRouter();
 
   // WebSocket integration
@@ -312,6 +317,31 @@ export default function RestaurantOrdersPage() {
     }
   };
 
+  const handleShare = async (order: any) => {
+    const summary = `Order ${order.originalData?.orderNumber || order.orderId} — ${(
+      order.originalData?.totalAmount || order.totalAmount
+    ).toLocaleString()} Rwf. Items: ${order.items}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Order ${order.originalData?.orderNumber || order.orderId}`,
+          text: summary,
+        });
+      } catch {
+        // user cancelled the share sheet — no action needed
+      }
+    } else {
+      navigator.clipboard.writeText(summary);
+      toast.success("Order summary copied to clipboard");
+    }
+  };
+
+  const handleSharePaymentLink = (order: any) => {
+    setPaymentLinkOrder(order);
+    setPaymentLinkOpen(true);
+  };
+
   const handleReorder = (order: any) => {
     setSelectedReorderOrder(order);
     setReorderDrawerOpen(true);
@@ -388,6 +418,12 @@ export default function RestaurantOrdersPage() {
             </div>
             <div className="flex items-center gap-2">
               <button
+                onClick={() => setCreateOrderOpen(true)}
+                className="px-4 text-[13px] bg-green-600 text-white hover:bg-green-700 cursor-pointer rounded"
+              >
+                Create Order
+              </button>
+              <button
                 onClick={handleExport}
                 className="border-2 px-4 text-[13px] bg-green-700 border-green-500 text-white hover:bg-green-800 cursor-pointer rounded"
               >
@@ -397,7 +433,13 @@ export default function RestaurantOrdersPage() {
           </div>
 
           <DataTable
-            columns={ordersColumns(handleViewOrder, handleDownload, handleReorder)}
+            columns={ordersColumns(
+              handleViewOrder,
+              handleDownload,
+              handleReorder,
+              handleShare,
+              handleSharePaymentLink
+            )}
             data={filteredData}
             title=""
             description={`Total: ${pagination.total} orders`}
@@ -427,6 +469,21 @@ export default function RestaurantOrdersPage() {
         isOpen={reorderDrawerOpen}
         onClose={() => setReorderDrawerOpen(false)}
         order={selectedReorderOrder}
+      />
+
+      {/* Create Order Modal */}
+      <CreateOrderModal
+        open={createOrderOpen}
+        onOpenChange={setCreateOrderOpen}
+        onSuccess={() => fetchOrders()}
+      />
+
+      {/* Share Payment Link Modal */}
+      <PaymentLinkModal
+        open={paymentLinkOpen}
+        onOpenChange={setPaymentLinkOpen}
+        orderId={paymentLinkOrder?.id || null}
+        orderNumber={paymentLinkOrder?.originalData?.orderNumber || paymentLinkOrder?.orderId}
       />
     </div>
   );

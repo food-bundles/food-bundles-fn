@@ -13,6 +13,7 @@ import { DataTable } from "@/components/data-table";
 import { toast } from "sonner";
 import { orderService } from "@/app/services/orderService";
 import { ViewOrderModal, CancelOrderModal } from "./_components/order-modals";
+import CreateOrderModal from "./_components/CreateOrderModal";
 import { useWebSocket } from "@/hooks/useOrderWebSocket";
 import { useAuth } from "@/app/contexts/auth-context";
 import {
@@ -26,6 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ExportButton } from "@/components/ExportButton";
+import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 
 const statusOptions = [
@@ -70,6 +72,7 @@ export default function AdminOrdersPage() {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [createOrderOpen, setCreateOrderOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   // Filter states
@@ -550,17 +553,22 @@ export default function AdminOrdersPage() {
         <div>
           <h1 className="text-[16px] font-medium">Restaurant Orders</h1>
         </div>
-        <ExportButton
-          module="orders"
-          filters={{
-            search: searchValue,
-            status: selectedStatus !== "all" ? selectedStatus : undefined,
-            paymentStatus: selectedPaymentStatus !== "all" ? selectedPaymentStatus : undefined,
-            restaurantId: selectedRestaurantId || undefined,
-            startDate: dateFrom ? dateFrom.toISOString().split("T")[0] : undefined,
-            endDate: dateTo ? dateTo.toISOString().split("T")[0] : undefined,
-          }}
-        />
+        <div className="flex items-center gap-2">
+          <Button variant="green" onClick={() => setCreateOrderOpen(true)}>
+            Create Order
+          </Button>
+          <ExportButton
+            module="orders"
+            filters={{
+              search: searchValue,
+              status: selectedStatus !== "all" ? selectedStatus : undefined,
+              paymentStatus: selectedPaymentStatus !== "all" ? selectedPaymentStatus : undefined,
+              restaurantId: selectedRestaurantId || undefined,
+              startDate: dateFrom ? dateFrom.toISOString().split("T")[0] : undefined,
+              endDate: dateTo ? dateTo.toISOString().split("T")[0] : undefined,
+            }}
+          />
+        </div>
       </div>
 
       <TableFilters filters={filters} />
@@ -579,6 +587,12 @@ export default function AdminOrdersPage() {
       
 
       {/* Modals */}
+      <CreateOrderModal
+        open={createOrderOpen}
+        onOpenChange={setCreateOrderOpen}
+        onSuccess={() => fetchOrders(pagination.page, pagination.limit)}
+      />
+
       <ViewOrderModal
         open={viewModalOpen}
         onClose={handleModalClose}
