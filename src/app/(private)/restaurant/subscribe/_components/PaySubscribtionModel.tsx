@@ -70,7 +70,7 @@ export default function PaymentModal({
 
       const response = await createRestaurantSubscription(subscriptionData);
       
-      if (response.success || response.data) {
+      if (response.data) {
         // Check if redirect is required (for Flutterwave)
         if ((response as any).data?.requiresRedirect && (response as any).data?.redirectUrl) {
           setRedirectUrl((response as any).data.redirectUrl);

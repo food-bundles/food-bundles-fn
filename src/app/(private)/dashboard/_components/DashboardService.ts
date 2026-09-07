@@ -145,8 +145,8 @@ export class DashboardService {
   static async getSubscriptionsChartData(): Promise<ChartData[]> {
     try {
       const response = await subscriptionService.getAllSubscriptions({ limit: 1000 });
-      
-      if (!response.success) return [];
+
+      if (!response.data) return [];
 
       const subscriptions = response.data;
       const statusCounts: { [key: string]: number } = {};
