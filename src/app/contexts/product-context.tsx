@@ -23,7 +23,6 @@ export interface Category {
 export interface CustomerTypePrice {
   id: string;
   price: number;
-  purchasePrice: number;
   customerType: {
     id: string;
     name: string;
