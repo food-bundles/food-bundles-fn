@@ -10,15 +10,24 @@ import { useProductSection } from "@/hooks/useProductSection";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import { useAuth } from "@/app/contexts/auth-context";
 
-// Helper function to get role-based price
+// Helper function to get role-based price from customerTypePrices
 const getRoleBasedPrice = (product: any, userRole: string) => {
-  if (userRole === "HOTEL" && product.hotelPrice) {
-    return product.hotelPrice;
+  const customerTypePrices = product.customerTypePrices || [];
+  if (customerTypePrices.length > 0) {
+    const roleToCustomerType: Record<string, string> = {
+      HOTEL: "Hotel",
+      RESTAURANT: "Restaurant",
+      AFFILIATOR: "Restaurant",
+    };
+    const targetName = roleToCustomerType[userRole];
+    if (targetName) {
+      const match = customerTypePrices.find(
+        (ctp: any) => ctp.customerType?.name?.toLowerCase() === targetName.toLowerCase()
+      );
+      if (match) return match.price;
+    }
   }
-  if ((userRole === "RESTAURANT" || userRole === "AFFILIATOR") && product.restaurantPrice) {
-    return product.restaurantPrice;
-  }
-  return product.unitPrice;
+  return product.unitPrice || 0;
 };
 
 function SearchLoading() {

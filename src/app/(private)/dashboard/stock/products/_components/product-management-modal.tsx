@@ -14,7 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { PencilIcon, Trash2Icon } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { PencilIcon, Trash2Icon, ChevronDown, Check } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -23,8 +24,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import type { Product } from "@/app/contexts/product-context";
 import { unitService } from "@/app/services/unitService";
+import { useCustomerTypes } from "@/app/contexts/customer-type-context";
 import Image from "next/image";
 
 interface ProductManagementModalProps {
@@ -64,13 +71,14 @@ export function ProductManagementModal({
   const [imagesToKeep, setImagesToKeep] = useState<string[]>([]);
   const [units, setUnits] = useState<any[]>([]);
   const [isUnitsLoading, setIsUnitsLoading] = useState(false);
+  const [selectedCustomerTypeIds, setSelectedCustomerTypeIds] = useState<string[]>([]);
+  const [isCustomerTypesOpen, setIsCustomerTypesOpen] = useState(false);
+  const { customerTypes } = useCustomerTypes();
 
   // Edit form state
   const [editData, setEditData] = useState({
     productName: "",
     unitPrice: 0,
-    restaurantPrice: 0,
-    hotelPrice: 0,
     purchasePrice: 0,
     categoryId: "",
     bonus: 0,
@@ -78,15 +86,22 @@ export function ProductManagementModal({
     quantity: 0,
     unit: "",
     expiryDate: "",
+    customerTypePrices: [] as { customerTypeId: string; price: number }[],
   });
 
   useEffect(() => {
     if (product) {
+      const existingPrices = (product.customerTypePrices || []).map((ctp) => ({
+        customerTypeId: ctp.customerType.id,
+        price: ctp.price,
+      }));
+      const allPrices = customerTypes.map((ct) => {
+        const existing = existingPrices.find((p) => p.customerTypeId === ct.id);
+        return existing || { customerTypeId: ct.id, price: 0 };
+      });
       setEditData({
         productName: product.productName,
         unitPrice: product.unitPrice,
-        restaurantPrice: product.restaurantPrice || 0,
-        hotelPrice: product.hotelPrice || 0,
         purchasePrice: product.purchasePrice || 0,
         categoryId: product.category?.id || "",
         bonus: product.bonus || 0,
@@ -96,10 +111,12 @@ export function ProductManagementModal({
         expiryDate: product.expiryDate
           ? new Date(product.expiryDate).toISOString().split("T")[0]
           : "",
+        customerTypePrices: allPrices,
       });
+      setSelectedCustomerTypeIds(existingPrices.map((p) => p.customerTypeId));
       setImagesToKeep(product.images || []);
     }
-  }, [product]);
+  }, [product, customerTypes]);
 
   useEffect(() => {
     if (open) {
@@ -134,6 +151,14 @@ export function ProductManagementModal({
     setIsEditing(false);
     setImageFiles([]);
     if (product) {
+      const existingPrices = (product.customerTypePrices || []).map((ctp) => ({
+        customerTypeId: ctp.customerType.id,
+        price: ctp.price,
+      }));
+      const allPrices = customerTypes.map((ct) => {
+        const existing = existingPrices.find((p) => p.customerTypeId === ct.id);
+        return existing || { customerTypeId: ct.id, price: 0 };
+      });
       setEditData({
         productName: product.productName,
         unitPrice: product.unitPrice,
@@ -143,14 +168,30 @@ export function ProductManagementModal({
         sku: product.sku,
         quantity: product.quantity,
         unit: product.unit,
-        restaurantPrice: product.restaurantPrice || 0,
-        hotelPrice: product.hotelPrice || 0,
         expiryDate: product.expiryDate
           ? new Date(product.expiryDate).toISOString().split("T")[0]
           : "",
+        customerTypePrices: allPrices,
       });
+      setSelectedCustomerTypeIds(existingPrices.map((p) => p.customerTypeId));
       setImagesToKeep(product.images || []);
     }
+  };
+
+  const toggleCustomerType = (customerTypeId: string) => {
+    setSelectedCustomerTypeIds((prev) =>
+      prev.includes(customerTypeId)
+        ? prev.filter((id) => id !== customerTypeId)
+        : [...prev, customerTypeId]
+    );
+  };
+
+  const selectAllCustomerTypes = () => {
+    setSelectedCustomerTypeIds(customerTypes.map((ct) => ct.id));
+  };
+
+  const clearAllCustomerTypes = () => {
+    setSelectedCustomerTypeIds([]);
   };
 
   const handleSaveEdit = async () => {
@@ -162,7 +203,12 @@ export function ProductManagementModal({
 
       // Add text fields
       Object.entries(editData).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== "") {
+        if (key === "customerTypePrices") {
+          const selectedPrices = (value as any[]).filter((ctp) =>
+            selectedCustomerTypeIds.includes(ctp.customerTypeId)
+          );
+          formData.append(key, JSON.stringify(selectedPrices));
+        } else if (value !== undefined && value !== null && value !== "") {
           formData.append(key, value.toString());
         }
       });
@@ -376,45 +422,99 @@ export function ProductManagementModal({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="restaurantPrice" className="text-gray-900">
-                    Restaurant Price (RWF)
-                  </Label>
-                  <Input
-                    id="restaurantPrice"
-                    type="number"
-                    value={editData.restaurantPrice}
-                    onChange={(e) =>
-                      setEditData((prev) => ({
-                        ...prev,
-                        restaurantPrice: Number(e.target.value),
-                      }))
-                    }
-                    disabled={isLoading}
-                    className="bg-white border-gray-300 text-gray-900"
-                    placeholder="Optional"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="hotelPrice" className="text-gray-900">
-                    Hotel Price (RWF)
-                  </Label>
-                  <Input
-                    id="hotelPrice"
-                    type="number"
-                    value={editData.hotelPrice}
-                    onChange={(e) =>
-                      setEditData((prev) => ({
-                        ...prev,
-                        hotelPrice: Number(e.target.value),
-                      }))
-                    }
-                    disabled={isLoading}
-                    className="bg-white border-gray-300 text-gray-900"
-                    placeholder="Optional"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label className="text-gray-900 font-medium">
+                  Customer Types
+                </Label>
+                <Popover open={isCustomerTypesOpen} onOpenChange={setIsCustomerTypesOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full justify-between text-left font-normal bg-white border-gray-300 text-gray-900"
+                    >
+                      <span className="text-sm">
+                        {selectedCustomerTypeIds.length === 0
+                          ? "Select customer types to price"
+                          : `${selectedCustomerTypeIds.length} customer type(s) selected`}
+                      </span>
+                      <ChevronDown className="h-4 w-4 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-2" align="start">
+                    <div className="flex items-center justify-between border-b pb-2 mb-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs h-7"
+                        onClick={selectAllCustomerTypes}
+                      >
+                        Select All
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs h-7"
+                        onClick={clearAllCustomerTypes}
+                      >
+                        Clear All
+                      </Button>
+                    </div>
+                    <div className="space-y-1 max-h-48 overflow-y-auto">
+                      {customerTypes.map((ct) => (
+                        <label
+                          key={ct.id}
+                          className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-xs hover:bg-gray-100 cursor-pointer"
+                        >
+                          <Checkbox
+                            checked={selectedCustomerTypeIds.includes(ct.id)}
+                            onCheckedChange={() => toggleCustomerType(ct.id)}
+                          />
+                          <span>{ct.name}</span>
+                          {selectedCustomerTypeIds.includes(ct.id) && (
+                            <Check className="ml-auto h-3 w-3 text-green-600" />
+                          )}
+                        </label>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-gray-900 font-medium">
+                  Customer Type Prices
+                </Label>
+                {editData.customerTypePrices
+                  .filter((ctp) => selectedCustomerTypeIds.includes(ctp.customerTypeId))
+                  .map((ctp) => {
+                    const ct = customerTypes.find((c) => c.id === ctp.customerTypeId);
+                    if (!ct) return null;
+                    return (
+                      <div key={ctp.customerTypeId} className="flex items-center gap-2">
+                        <span className="text-sm text-gray-700 w-32 shrink-0">{ct.name}</span>
+                        <Input
+                          type="number"
+                          value={ctp.price || ""}
+                          onChange={(e) =>
+                            setEditData((prev) => ({
+                              ...prev,
+                              customerTypePrices: prev.customerTypePrices.map((p) =>
+                                p.customerTypeId === ctp.customerTypeId
+                                  ? { ...p, price: Number(e.target.value) }
+                                  : p
+                              ),
+                            }))
+                          }
+                          disabled={isLoading}
+                          placeholder="Enter price"
+                          className="bg-white border-gray-300 text-gray-900"
+                        />
+                      </div>
+                    );
+                  })}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -641,23 +741,20 @@ export function ProductManagementModal({
                     {(product.purchasePrice || 0).toLocaleString()} RWF
                   </div>
                 </div>
-                {product.restaurantPrice && (
+                {product.customerTypePrices && product.customerTypePrices.length > 0 && (
                   <div className="grid grid-cols-3 gap-2">
                     <div className="text-sm font-medium text-gray-600">
-                      Restaurant Price:
+                      Customer Prices:
                     </div>
-                    <div className="text-sm col-span-2 text-orange-600 font-medium">
-                      {product.restaurantPrice.toLocaleString()} RWF
-                    </div>
-                  </div>
-                )}
-                {product.hotelPrice && (
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="text-sm font-medium text-gray-600">
-                      Hotel Price:
-                    </div>
-                    <div className="text-sm col-span-2 text-purple-600 font-medium">
-                      {product.hotelPrice.toLocaleString()} RWF
+                    <div className="text-sm col-span-2 space-y-1">
+                      {product.customerTypePrices.map((ctp) => (
+                        <div key={ctp.id} className="flex justify-between">
+                          <span className="text-gray-600">{ctp.customerType.name}:</span>
+                          <span className="font-medium text-orange-600">
+                            {ctp.price.toLocaleString()} RWF
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}

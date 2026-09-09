@@ -77,6 +77,11 @@ const menuItems = [
         href: "/dashboard/stock/payment-methods",
       },
       {
+        icon: Users,
+        label: "Customer Types",
+        href: "/dashboard/stock/customer-types",
+      },
+      {
         icon: BarChart3,
         label: "Tt Sales Reports",
         href: "/dashboard/stock/fb-reports",
