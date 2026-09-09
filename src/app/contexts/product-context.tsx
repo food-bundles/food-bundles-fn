@@ -20,13 +20,20 @@ export interface Category {
   isActive?: boolean;
 }
 
+export interface CustomerTypePrice {
+  id: string;
+  price: number;
+  customerType: {
+    id: string;
+    name: string;
+  };
+}
+
 export interface Product {
   id: string;
   productName: string;
   purchasePrice: number;
   unitPrice: number;
-  restaurantPrice?: number;
-  hotelPrice?: number;
   unit: string;
   bonus: number;
   admin: {
@@ -43,6 +50,7 @@ export interface Product {
     name: string;
     description?: string;
   };
+  customerTypePrices?: CustomerTypePrice[];
   rating?: number;
   soldCount?: number;
   status: string;

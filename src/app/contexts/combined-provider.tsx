@@ -12,6 +12,7 @@ import { FarmersProvider } from "./FarmersContext";
 import { AdminsProvider } from "./AdminsContext";
 import { NotificationProvider } from "./NotificationContext";
 import { SubscriptionProvider } from "./subscriptionContext";
+import { CustomerTypeProvider } from "./customer-type-context";
 
 interface CombinedProviderProps {
   children: React.ReactNode;
@@ -30,7 +31,9 @@ export function CombinedProvider({ children }: CombinedProviderProps) {
                   <FarmersProvider>
                     <AdminsProvider>
                       <NotificationProvider>
-                        <SubscriptionProvider>{children}</SubscriptionProvider>
+                        <SubscriptionProvider>
+                          <CustomerTypeProvider>{children}</CustomerTypeProvider>
+                        </SubscriptionProvider>
                       </NotificationProvider>
                     </AdminsProvider>
                   </FarmersProvider>
