@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -25,15 +26,14 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, X, Package } from "lucide-react";
+import { CalendarIcon, X, Package, ChevronDown, Check } from "lucide-react";
 import { useCategory } from "@/app/contexts/category-context";
+import { useCustomerTypes } from "@/app/contexts/customer-type-context";
 
 export interface ProductFormData {
   productName: string;
   description: string;
   unitPrice: number;
-  restaurantPrice?: number;
-  hotelPrice?: number;
   purchasePrice: number;
   categoryId: string;
   bonus: number;
@@ -42,6 +42,7 @@ export interface ProductFormData {
   images: File[];
   expiryDate: Date | undefined;
   unit: string;
+  customerTypePrices?: { customerTypeId: string; price: number }[];
 }
 
 interface CreateProductDrawerProps {
@@ -59,8 +60,6 @@ export function CreateProductDrawer({
     productName: "",
     description: "",
     unitPrice: 0,
-    restaurantPrice: undefined,
-    hotelPrice: undefined,
     purchasePrice: 0,
     categoryId: "",
     bonus: 0,
@@ -69,12 +68,15 @@ export function CreateProductDrawer({
     images: [],
     expiryDate: undefined,
     unit: "",
+    customerTypePrices: [],
   });
 
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [units, setUnits] = useState<any[]>([]);
   const [isUnitsLoading, setIsUnitsLoading] = useState(false);
+  const [selectedCustomerTypeIds, setSelectedCustomerTypeIds] = useState<string[]>([]);
+  const [isCustomerTypesOpen, setIsCustomerTypesOpen] = useState(false);
 
   const {
     activeCategories,
@@ -82,12 +84,27 @@ export function CreateProductDrawer({
     refreshActiveCategories,
   } = useCategory();
 
+  const { customerTypes, isLoading: isCustomerTypesLoading } = useCustomerTypes();
+
   useEffect(() => {
     if (isOpen) {
       refreshActiveCategories();
       fetchUnits();
     }
   }, [isOpen, refreshActiveCategories]);
+
+  useEffect(() => {
+    if (isOpen && customerTypes.length > 0) {
+      setFormData((prev) => ({
+        ...prev,
+        customerTypePrices: customerTypes.map((ct) => ({
+          customerTypeId: ct.id,
+          price: 0,
+        })),
+      }));
+      setSelectedCustomerTypeIds([]);
+    }
+  }, [isOpen, customerTypes]);
 
   const fetchUnits = async () => {
     try {
@@ -120,6 +137,31 @@ export function CreateProductDrawer({
 
   const handleInputChange = (field: keyof ProductFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleCustomerTypePriceChange = (customerTypeId: string, price: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      customerTypePrices: (prev.customerTypePrices || []).map((ctp) =>
+        ctp.customerTypeId === customerTypeId ? { ...ctp, price } : ctp
+      ),
+    }));
+  };
+
+  const toggleCustomerType = (customerTypeId: string) => {
+    setSelectedCustomerTypeIds((prev) =>
+      prev.includes(customerTypeId)
+        ? prev.filter((id) => id !== customerTypeId)
+        : [...prev, customerTypeId]
+    );
+  };
+
+  const selectAllCustomerTypes = () => {
+    setSelectedCustomerTypeIds(customerTypes.map((ct) => ct.id));
+  };
+
+  const clearAllCustomerTypes = () => {
+    setSelectedCustomerTypeIds([]);
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -180,10 +222,14 @@ export function CreateProductDrawer({
         return;
       }
 
-      // Create product in Food Bundles
+      // Create product in Food Bundles - only send selected customer type prices
+      const selectedCustomerTypePrices = (formData.customerTypePrices || []).filter(
+        (ctp) => selectedCustomerTypeIds.includes(ctp.customerTypeId)
+      );
       const foodBundlesData = {
         ...formData,
-        unitId: selectedUnit.id
+        unitId: selectedUnit.id,
+        customerTypePrices: selectedCustomerTypePrices,
       };
 
       const response = await productService.createProduct(foodBundlesData);
@@ -209,8 +255,6 @@ export function CreateProductDrawer({
       productName: "",
       description: "",
       unitPrice: 0,
-      restaurantPrice: undefined,
-      hotelPrice: undefined,
       purchasePrice: 0,
       categoryId: "",
       bonus: 0,
@@ -219,7 +263,12 @@ export function CreateProductDrawer({
       images: [],
       expiryDate: undefined,
       unit: "",
+      customerTypePrices: customerTypes.map((ct) => ({
+        customerTypeId: ct.id,
+        price: 0,
+      })),
     });
+    setSelectedCustomerTypeIds([]);
     setImagePreviews([]);
   };
 
@@ -416,46 +465,98 @@ export function CreateProductDrawer({
                       required
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="restaurantPrice" className="text-xs font-medium">
-                      Restaurant Price
-                    </Label>
-                    <Input
-                      id="restaurantPrice"
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={formData.restaurantPrice || ""}
-                      onChange={(e) =>
-                        handleInputChange(
-                          "restaurantPrice",
-                          e.target.value ? Number.parseFloat(e.target.value) : undefined,
-                        )
-                      }
-                      placeholder="Optional - defaults to unit price"
-                      className="focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="hotelPrice" className="text-xs font-medium">
-                      Hotel Price
-                    </Label>
-                    <Input
-                      id="hotelPrice"
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={formData.hotelPrice || ""}
-                      onChange={(e) =>
-                        handleInputChange(
-                          "hotelPrice",
-                          e.target.value ? Number.parseFloat(e.target.value) : undefined,
-                        )
-                      }
-                      placeholder="Optional - defaults to unit price"
-                      className="focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    />
-                  </div>
+                  {isCustomerTypesLoading ? (
+                    <div className="text-xs text-gray-500">Loading customer types...</div>
+                  ) : (
+                    <>
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium">Customer Types</Label>
+                        <Popover open={isCustomerTypesOpen} onOpenChange={setIsCustomerTypesOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="w-full justify-between text-left font-normal focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            >
+                              <span className="text-xs">
+                                {selectedCustomerTypeIds.length === 0
+                                  ? "Select customer types to price"
+                                  : `${selectedCustomerTypeIds.length} customer type(s) selected`}
+                              </span>
+                              <ChevronDown className="h-4 w-4 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-2" align="start">
+                            <div className="flex items-center justify-between border-b pb-2 mb-2">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs h-7"
+                                onClick={selectAllCustomerTypes}
+                              >
+                                Select All
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs h-7"
+                                onClick={clearAllCustomerTypes}
+                              >
+                                Clear All
+                              </Button>
+                            </div>
+                            <div className="space-y-1 max-h-48 overflow-y-auto">
+                              {customerTypes.map((ct) => (
+                                <label
+                                  key={ct.id}
+                                  className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-xs hover:bg-gray-100 cursor-pointer"
+                                >
+                                  <Checkbox
+                                    checked={selectedCustomerTypeIds.includes(ct.id)}
+                                    onCheckedChange={() => toggleCustomerType(ct.id)}
+                                  />
+                                  <span>{ct.name}</span>
+                                  {selectedCustomerTypeIds.includes(ct.id) && (
+                                    <Check className="ml-auto h-3 w-3 text-green-600" />
+                                  )}
+                                </label>
+                              ))}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      {(formData.customerTypePrices || [])
+                        .filter((ctp) => selectedCustomerTypeIds.includes(ctp.customerTypeId))
+                        .map((ctp) => {
+                          const ct = customerTypes.find((c) => c.id === ctp.customerTypeId);
+                          if (!ct) return null;
+                          return (
+                            <div key={ctp.customerTypeId} className="space-y-2">
+                              <Label htmlFor={`ct-${ctp.customerTypeId}`} className="text-xs font-medium">
+                                {ct.name} Price
+                              </Label>
+                              <Input
+                                id={`ct-${ctp.customerTypeId}`}
+                                type="number"
+                                min="0"
+                                step="1"
+                                value={ctp.price || ""}
+                                onChange={(e) =>
+                                  handleCustomerTypePriceChange(
+                                    ctp.customerTypeId,
+                                    e.target.value ? Number.parseFloat(e.target.value) : 0,
+                                  )
+                                }
+                                placeholder="Enter price"
+                                className="focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                              />
+                            </div>
+                          );
+                        })}
+                    </>
+                  )}
                   <div className="space-y-2">
                     <Label className="text-xs font-medium">Unit *</Label>
                     {isUnitsLoading ? (

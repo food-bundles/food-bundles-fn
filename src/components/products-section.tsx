@@ -48,13 +48,22 @@ import RestaurantAvailablePromos from "@/app/(private)/restaurant/_components/Re
 // import { ChristmasAnimation } from "@/components/ChristmasAnimation";
 import Link from "next/link";
 
-// Helper function to get role-based price
+// Helper function to get role-based price from customerTypePrices
 const getRoleBasedPrice = (product: any, userRole: string) => {
-  if (userRole === "HOTEL" && product.hotelPrice !== null && product.hotelPrice !== undefined) {
-    return product.hotelPrice;
-  }
-  if ((userRole === "RESTAURANT" || userRole === "AFFILIATOR") && product.restaurantPrice !== null && product.restaurantPrice !== undefined) {
-    return product.restaurantPrice;
+  const customerTypePrices = product.customerTypePrices || [];
+  if (customerTypePrices.length > 0) {
+    const roleToCustomerType: Record<string, string> = {
+      HOTEL: "Hotel",
+      RESTAURANT: "Restaurant",
+      AFFILIATOR: "Restaurant",
+    };
+    const targetName = roleToCustomerType[userRole];
+    if (targetName) {
+      const match = customerTypePrices.find(
+        (ctp: any) => ctp.customerType?.name?.toLowerCase() === targetName.toLowerCase()
+      );
+      if (match) return match.price;
+    }
   }
   return product.unitPrice || 0;
 };

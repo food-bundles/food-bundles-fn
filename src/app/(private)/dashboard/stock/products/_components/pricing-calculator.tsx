@@ -25,10 +25,9 @@ interface ProductData {
   id: string;
   productName: string;
   unitPrice: number;
-  restaurantPrice: number;
-  hotelPrice: number;
   purchasePrice: number;
   unit: string;
+  customerTypePrices?: { id: string; price: number; customerType: { id: string; name: string } }[];
   latestMarketPrices?: MarketPrice[];
 }
 
@@ -50,10 +49,12 @@ export function PricingCalculator({
   const [searchResults, setSearchResults] = useState<ProductData[]>([]);
   const [marketPrices, setMarketPrices] = useState<MarketPrice[]>([]);
   const [purchasePrice, setPurchasePrice] = useState<number>(0);
-  const [restaurantPrice, setRestaurantPrice] = useState<number>(0);
-  const [hotelPrice, setHotelPrice] = useState<number>(0);
+  const [primaryPrice, setPrimaryPrice] = useState<number>(0);
+  const [secondaryPrice, setSecondaryPrice] = useState<number>(0);
   const [targetMargin, setTargetMargin] = useState<number>(0);
   const [loading, setLoading] = useState(false);
+  const [primaryLabel, setPrimaryLabel] = useState<string>("Selling");
+  const [secondaryLabel, setSecondaryLabel] = useState<string>("");
 
   useEffect(() => {
     const searchProducts = async () => {
@@ -89,8 +90,18 @@ export function PricingCalculator({
   const selectProduct = async (product: ProductData) => {
     setSelectedProduct(product);
     setPurchasePrice(product.purchasePrice || 0);
-    setRestaurantPrice(product.restaurantPrice || 0);
-    setHotelPrice(product.hotelPrice || 0);
+    const prices = product.customerTypePrices || [];
+    if (prices.length > 0) {
+      setPrimaryPrice(prices[0].price || 0);
+      setPrimaryLabel(prices[0].customerType.name);
+      setSecondaryPrice(prices.length > 1 ? prices[1].price || 0 : 0);
+      setSecondaryLabel(prices.length > 1 ? prices[1].customerType.name : "");
+    } else {
+      setPrimaryPrice(product.unitPrice || 0);
+      setPrimaryLabel("Unit Price");
+      setSecondaryPrice(0);
+      setSecondaryLabel("");
+    }
     setSearchResults([]);
     setSearchQuery("");
 
@@ -106,22 +117,19 @@ export function PricingCalculator({
       toast.error("Please enter a valid purchase price");
       return;
     }
-    // Margin = (Selling - Purchase) / Selling * 100
-    // Selling = Purchase / (1 - Margin/100)
-    setRestaurantPrice(Math.round(purchasePrice / (1 - 0.20)));
-    setHotelPrice(Math.round(purchasePrice / (1 - 0.22)));
+    setPrimaryPrice(Math.round(purchasePrice / (1 - 0.20)));
+    setSecondaryPrice(Math.round(purchasePrice / (1 - 0.22)));
     setTargetMargin(20);
   };
 
   const calculateFromSelling = () => {
-    if (restaurantPrice <= 0) {
-      toast.error("Please enter a valid restaurant price");
+    if (primaryPrice <= 0) {
+      toast.error("Please enter a valid selling price");
       return;
     }
-    // Purchase = Selling * (1 - Margin/100)
-    const estimatedPurchase = Math.round(restaurantPrice * (1 - 0.20));
+    const estimatedPurchase = Math.round(primaryPrice * (1 - 0.20));
     setPurchasePrice(estimatedPurchase);
-    setHotelPrice(Math.round(estimatedPurchase / (1 - 0.22)));
+    setSecondaryPrice(Math.round(estimatedPurchase / (1 - 0.22)));
     setTargetMargin(20);
   };
 
@@ -130,19 +138,18 @@ export function PricingCalculator({
       toast.error("Please enter valid purchase price and margin");
       return;
     }
-    // Selling = Purchase / (1 - Margin/100)
-    setRestaurantPrice(Math.round(purchasePrice / (1 - targetMargin / 100)));
-    setHotelPrice(Math.round(purchasePrice / (1 - (targetMargin + 2) / 100)));
+    setPrimaryPrice(Math.round(purchasePrice / (1 - targetMargin / 100)));
+    setSecondaryPrice(Math.round(purchasePrice / (1 - (targetMargin + 2) / 100)));
   };
 
-  const getRestaurantMargin = () => {
-    if (purchasePrice <= 0 || restaurantPrice <= 0) return 0;
-    return (((restaurantPrice - purchasePrice) / restaurantPrice) * 100).toFixed(1);
+  const getPrimaryMargin = () => {
+    if (purchasePrice <= 0 || primaryPrice <= 0) return 0;
+    return (((primaryPrice - purchasePrice) / primaryPrice) * 100).toFixed(1);
   };
 
-  const getHotelMargin = () => {
-    if (purchasePrice <= 0 || hotelPrice <= 0) return 0;
-    return (((hotelPrice - purchasePrice) / hotelPrice) * 100).toFixed(1);
+  const getSecondaryMargin = () => {
+    if (purchasePrice <= 0 || secondaryPrice <= 0) return 0;
+    return (((secondaryPrice - purchasePrice) / secondaryPrice) * 100).toFixed(1);
   };
 
   return (
@@ -198,18 +205,14 @@ export function PricingCalculator({
                       {selectedProduct.purchasePrice?.toLocaleString()} RWF
                     </span>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Restaurant:</span>
-                    <span className="font-semibold text-gray-900">
-                      {selectedProduct.restaurantPrice?.toLocaleString()} RWF
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Hotel:</span>
-                    <span className="font-semibold text-gray-900">
-                      {selectedProduct.hotelPrice?.toLocaleString()} RWF
-                    </span>
-                  </div>
+                  {(selectedProduct.customerTypePrices || []).map((ctp) => (
+                    <div key={ctp.id} className="flex justify-between items-center">
+                      <span className="text-gray-600">{ctp.customerType.name}:</span>
+                      <span className="font-semibold text-gray-900">
+                        {ctp.price?.toLocaleString()} RWF
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -250,27 +253,29 @@ export function PricingCalculator({
                   <p className="text-xs text-green-400">RWF</p>
                 </div>
                 <div className="bg-green-500/20 rounded-md p-2">
-                  <p className="text-xs text-green-300">Restaurant</p>
+                  <p className="text-xs text-green-300">{primaryLabel || "Selling"}</p>
                   <p className="text-lg font-bold text-white">
-                    {restaurantPrice.toLocaleString()}
+                    {primaryPrice.toLocaleString()}
                   </p>
                   <p className="text-xs text-green-400">
-                    +{getRestaurantMargin()}%
+                    +{getPrimaryMargin()}%
                   </p>
                 </div>
-                <div className="bg-orange-500/20 rounded-md p-2">
-                  <p className="text-xs text-orange-300">Hotel</p>
-                  <p className="text-lg font-bold text-white">
-                    {hotelPrice.toLocaleString()}
-                  </p>
-                  <p className="text-xs text-orange-400">
-                    +{getHotelMargin()}%
-                  </p>
-                </div>
+                {secondaryPrice > 0 && (
+                  <div className="bg-orange-500/20 rounded-md p-2">
+                    <p className="text-xs text-orange-300">{secondaryLabel}</p>
+                    <p className="text-lg font-bold text-white">
+                      {secondaryPrice.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-orange-400">
+                      +{getSecondaryMargin()}%
+                    </p>
+                  </div>
+                )}
                 <div className="bg-orange-500/20 rounded-md p-2">
                   <p className="text-xs text-orange-300">Profit</p>
                   <p className="text-lg font-bold text-white">
-                    {(restaurantPrice - purchasePrice).toLocaleString()}
+                    {(primaryPrice - purchasePrice).toLocaleString()}
                   </p>
                   <p className="text-xs text-orange-400">RWF</p>
                 </div>
@@ -325,12 +330,12 @@ export function PricingCalculator({
               {mode === "selling" && (
                 <div>
                   <Label className="text-xs font-medium mb-1 block">
-                    Restaurant Price (RWF)
+                    {primaryLabel || "Selling"} Price (RWF)
                   </Label>
                   <Input
                     type="number"
-                    value={restaurantPrice || ""}
-                    onChange={(e) => setRestaurantPrice(Number(e.target.value))}
+                    value={primaryPrice || ""}
+                    onChange={(e) => setPrimaryPrice(Number(e.target.value))}
                     placeholder="0"
                     className="text-base font-semibold h-9 px-2"
                   />

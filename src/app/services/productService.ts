@@ -14,6 +14,7 @@ export interface CreateProductData {
   quantity: number;
   unit: string;
   expiryDate?: string;
+  customerTypePrices?: { customerTypeId: string; price: number }[];
 }
 
 export const productService = {
@@ -26,12 +27,6 @@ export const productService = {
     // Add product data
     formData.append("productName", productData.productName);
     formData.append("unitPrice", productData.unitPrice.toString());
-    if (productData.restaurantPrice) {
-      formData.append("restaurantPrice", productData.restaurantPrice.toString());
-    }
-    if (productData.hotelPrice) {
-      formData.append("hotelPrice", productData.hotelPrice.toString());
-    }
     formData.append("purchasePrice", productData.purchasePrice.toString());
     formData.append("categoryId", productData.categoryId);
     formData.append("bonus", productData.bonus.toString());
@@ -40,6 +35,11 @@ export const productService = {
     formData.append("unit", productData.unit);
     if (productData.unitId) {
       formData.append("unitId", productData.unitId);
+    }
+
+    // Add customer type prices
+    if (productData.customerTypePrices && productData.customerTypePrices.length > 0) {
+      formData.append("customerTypePrices", JSON.stringify(productData.customerTypePrices));
     }
 
     if (productData.expiryDate) {
