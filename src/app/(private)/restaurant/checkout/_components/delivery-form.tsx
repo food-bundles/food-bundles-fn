@@ -32,6 +32,7 @@ import { useCart } from "@/app/contexts/cart-context";
 import { useAuth } from "@/app/contexts/auth-context";
 import { useVouchers } from "@/app/contexts/VoucherContext";
 import { useWallet } from "@/app/contexts/WalletContext";
+import { voucherService } from "@/app/services/voucherService";
 import {
   checkoutService,
   CheckoutRequest,
@@ -93,6 +94,7 @@ export function Checkout() {
   const [flutterwaveRedirectUrl, setFlutterwaveRedirectUrl] =
     useState<string>("");
   const [availableVouchers, setAvailableVouchers] = useState<any[]>([]);
+  const [loanSessions, setLoanSessions] = useState<any[]>([]);
   const [isLoadingVouchers, setIsLoadingVouchers] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodType[]>([]);
   const [isLoadingPaymentMethods, setIsLoadingPaymentMethods] = useState(true);
@@ -113,6 +115,7 @@ export function Checkout() {
     cardExpiryMonth: "",
     cardExpiryYear: "",
     voucherCode: "",
+    loanSessionRrn: "",
   });
 
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
@@ -318,23 +321,61 @@ export function Checkout() {
         }
       };
       fetchVouchers();
+
+      // Fetch active loan sessions (PAN-based voucher card) from the new system
+      const fetchLoanSessions = async () => {
+        try {
+          const res: any = await voucherService.getMyLoanSessions();
+          const sessions = Array.isArray(res?.data) ? res.data : [];
+          const usable = sessions.filter((s: any) =>
+            (s.status === "ACTIVE" || s.status === "PARTIALLY_USED") &&
+            s.unlockStatus === "UNLOCKED" &&
+            ((s.approvedAmount ?? 0) - (s.amountUsed ?? 0)) > 0
+          );
+          setLoanSessions(usable);
+        } catch (error) {
+          console.error("Error fetching loan sessions:", error);
+          setLoanSessions([]);
+        }
+      };
+      fetchLoanSessions();
     } else if (method !== "voucher") {
       setAvailableVouchers([]);
+      setLoanSessions([]);
       setIsLoadingVouchers(false);
     }
   }, [method, isAuthenticated, getMyVouchers]);
 
   useEffect(() => {
-    if (method === "voucher" && myVouchers && myVouchers.length > 0) {
-      const validVouchers = myVouchers.filter((voucher: any) =>
+    if (method === "voucher" && (myVouchers || loanSessions.length > 0)) {
+      const validVouchers = (myVouchers || []).filter((voucher: any) =>
         voucher.status === "ACTIVE" &&
         voucher.remainingCredit > 0 &&
         (!voucher.expiryDate || new Date(voucher.expiryDate) > new Date())
       );
-      console.log('Valid vouchers found:', validVouchers);
-      setAvailableVouchers(validVouchers);
+
+      const loanOptions = loanSessions.map((s: any) => ({
+        ...s,
+        id: `loan-${s.id}`,
+        source: "LOAN",
+        voucherCode: s.rrn,
+        remainingCredit: (s.approvedAmount ?? 0) - (s.amountUsed ?? 0),
+        loanLabel: `Loan ${s.rrn}`,
+      }));
+
+      const voucherOptions = validVouchers.map((v: any) => ({
+        ...v,
+        source: "VOUCHER",
+        loanLabel: `Voucher ${v.voucherCode}`,
+      }));
+
+      console.log("Valid vouchers found:", validVouchers);
+      console.log("Usable loan sessions found:", loanSessions);
+      setAvailableVouchers([...loanOptions, ...voucherOptions]);
+    } else if (method === "voucher") {
+      setAvailableVouchers([]);
     }
-  }, [myVouchers, method]);
+  }, [myVouchers, loanSessions, method]);
 
   // Check subscription benefits
   const cartWithRestaurant = cart as any;
@@ -468,10 +509,10 @@ export function Checkout() {
     }
 
 
-    // Voucher validation
+    // Voucher validation — accepts legacy voucher code OR loan session RRN
     if (method === "voucher") {
-      if (!formData.voucherCode.trim()) {
-        newErrors.voucherCode = "Voucher code is required";
+      if (!formData.voucherCode.trim() && !formData.loanSessionRrn.trim()) {
+        newErrors.voucherCode = "Voucher or loan session is required";
       }
     }
 
@@ -538,7 +579,11 @@ export function Checkout() {
 
 
       if (method === "voucher") {
-        checkoutPayload.voucherCode = formData.voucherCode;
+        if (formData.loanSessionRrn.trim()) {
+          checkoutPayload.loanSessionRrn = formData.loanSessionRrn;
+        } else {
+          checkoutPayload.voucherCode = formData.voucherCode;
+        }
       }
 
       if (appliedPromo) {
@@ -893,14 +938,12 @@ export function Checkout() {
                           Add other services: +15,000F
                         </label>
                       </div>
-                      {otherServices && (
-                        <div className="ml-6 text-xs text-gray-600">
-                          <div>- Packaging per item</div>
-                          <div>- Labeling stickers</div>
-                          <div>- Cutting (meat preparation)</div>
-                          <div>- Extra cleaning</div>
-                        </div>
-                      )}
+                      <div className="ml-6 text-xs text-gray-600">
+                        <div>- Packaging per item</div>
+                        <div>- Labeling stickers</div>
+                        <div>- Cutting (meat preparation)</div>
+                        <div>- Extra cleaning</div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1047,13 +1090,24 @@ export function Checkout() {
                   ) : availableVouchers.length > 0 ? (
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-gray-700">
-                        Select Voucher
+                        Select Voucher / Loan
                       </label>
                       <Select
-                        value={formData.voucherCode}
-                        onValueChange={(value) =>
-                          handleInputChange("voucherCode", value)
+                        value={
+                          formData.loanSessionRrn || formData.voucherCode
                         }
+                        onValueChange={(value) => {
+                          const selected = availableVouchers.find(
+                            (v) => v.voucherCode === value
+                          );
+                          if (selected?.source === "LOAN") {
+                            handleInputChange("voucherCode", "");
+                            handleInputChange("loanSessionRrn", value);
+                          } else {
+                            handleInputChange("loanSessionRrn", "");
+                            handleInputChange("voucherCode", value);
+                          }
+                        }}
                         disabled={isSubmitting}
                       >
                         <SelectTrigger
@@ -1062,7 +1116,7 @@ export function Checkout() {
                             : "border-gray-300"
                             }`}
                         >
-                          <SelectValue placeholder="Select a voucher" />
+                          <SelectValue placeholder="Select a voucher or loan" />
                         </SelectTrigger>
                         <SelectContent>
                           {availableVouchers.map((voucher) => (
@@ -1071,10 +1125,16 @@ export function Checkout() {
                               value={voucher.voucherCode}
                             >
                               <span className="block sm:hidden">
-                                {voucher.voucherCode} - {voucher.remainingCredit.toLocaleString()} RWF
+                                {voucher.source === "LOAN"
+                                  ? `Loan ${voucher.voucherCode}`
+                                  : voucher.voucherCode}{" "}
+                                - {voucher.remainingCredit.toLocaleString()} RWF
                               </span>
                               <span className="hidden sm:block">
-                                {voucher.voucherCode} - {voucher.remainingCredit.toLocaleString()} RWF available
+                                {voucher.source === "LOAN"
+                                  ? `Loan ${voucher.voucherCode}`
+                                  : voucher.voucherCode}{" "}
+                                - {voucher.remainingCredit.toLocaleString()} RWF available
                               </span>
                             </SelectItem>
                           ))}
@@ -1085,11 +1145,29 @@ export function Checkout() {
                           {errors.voucherCode}
                         </p>
                       )}
+                      {(() => {
+                        const selectedLoan = formData.loanSessionRrn
+                          ? availableVouchers.find(
+                              (v) => v.voucherCode === formData.loanSessionRrn
+                            )
+                          : null;
+                        if (selectedLoan && selectedLoan.remainingCredit < finalTotal) {
+                          const shortfall = finalTotal - selectedLoan.remainingCredit;
+                          return (
+                            <p className="text-amber-600 text-xs flex items-start gap-1">
+                              <Info className="h-3 w-3 mt-0.5 shrink-0" />
+                              This loan covers {selectedLoan.remainingCredit.toLocaleString()} RWF. You&rsquo;ll pay the extra{" "}
+                              {shortfall.toLocaleString()} RWF at checkout/delivery.
+                            </p>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                   ) : (
                     <div className="text-center py-4 border border-gray-200 rounded-lg bg-gray-50">
                       <p className="text-xs text-gray-600 mb-3">
-                        You don&rsquo;t have any active vouchers
+                        You don&rsquo;t have any active vouchers or approved loans
                       </p>
                       <Link
                         href="/restaurant/vouchers"

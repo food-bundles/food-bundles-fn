@@ -3,6 +3,24 @@ import createAxiosClient from "../hooks/axiosClient";
 
 // ==================== TYPES ====================
 
+export interface LoanProvider {
+  id: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  unlockFeeEnabled: boolean;
+  unlockFeePercentage?: number | null;
+  createdAt: string;
+  updatedAt: string;
+  plans?: {
+    id: string;
+    name: string;
+    price: number;
+    duration: number;
+    isActive: boolean;
+  }[];
+}
+
 export interface SubscriptionPlan {
   id: string;
   name: string;
@@ -16,6 +34,9 @@ export interface SubscriptionPlan {
   receiveEBM: boolean;
   advertisingAccess: boolean;
   otherServices: boolean;
+  loanAccess?: boolean;
+  loanProviderId?: string;
+  loanProvider?: LoanProvider | null;
   features?: any;
   isActive: boolean;
   createdAt: string;
@@ -71,6 +92,8 @@ export interface RestaurantSubscription {
   createdAt: string;
   updatedAt: string;
   daysRemaining?: number;
+  loanAccessApprovedAt?: string | null;
+  loanAccessNotes?: string | null;
 
   // Relations
   plan: SubscriptionPlan;
@@ -79,6 +102,7 @@ export interface RestaurantSubscription {
     name: string;
     email: string;
     phone?: string;
+    role?: string;
   };
   payments?: SubscriptionPayment[];
   history?: SubscriptionHistory[];
@@ -109,7 +133,12 @@ export type SubscriptionAction =
   | "CANCELLED"
   | "SUSPENDED"
   | "REACTIVATED"
-  | "EXPIRED";
+  | "EXPIRED"
+  | "LOAN_ACCESS_REQUESTED"
+  | "LOAN_ACCESS_APPROVED"
+  | "LOAN_ACCESS_REJECTED"
+  | "LOAN_ACCESS_DISABLED"
+  | "LOAN_ACCESS_ENABLED";
 
 // ==================== REQUEST TYPES ====================
 
@@ -119,6 +148,15 @@ export interface CreateSubscriptionPlanData {
   price: number;
   duration: number;
   features?: any;
+  voucherAccess?: boolean;
+  voucherPaymentDays?: number;
+  freeDelivery?: boolean;
+  stablePricing?: boolean;
+  receiveEBM?: boolean;
+  advertisingAccess?: boolean;
+  otherServices?: boolean;
+  loanAccess?: boolean;
+  loanProviderId?: string;
 }
 
 export interface UpdateSubscriptionPlanData {
@@ -128,6 +166,15 @@ export interface UpdateSubscriptionPlanData {
   duration?: number;
   features?: any;
   isActive?: boolean;
+  voucherAccess?: boolean;
+  voucherPaymentDays?: number;
+  freeDelivery?: boolean;
+  stablePricing?: boolean;
+  receiveEBM?: boolean;
+  advertisingAccess?: boolean;
+  otherServices?: boolean;
+  loanAccess?: boolean;
+  loanProviderId?: string;
 }
 
 export interface CreateRestaurantSubscriptionData {
@@ -161,6 +208,24 @@ export interface UpgradeSubscriptionData {
 
 export interface DowngradeSubscriptionData {
   newPlanId: string;
+}
+
+export interface RequestLoanAccessData {
+  planId: string;
+  notes?: string;
+}
+
+export interface CreateLoanProviderData {
+  name: string;
+  description?: string;
+  unlockFeeEnabled?: boolean;
+  unlockFeePercentage?: number | null;
+}
+
+export interface LoanAccessFilters {
+  status?: SubscriptionStatus;
+  userType?: string;
+  loanProviderId?: string;
 }
 
 // ==================== RESPONSE TYPES ====================
@@ -211,6 +276,24 @@ export interface CheckExpiredResponse {
   success: boolean;
   message: string;
   count: number;
+}
+
+export interface LoanProvidersResponse {
+  success: boolean;
+  message?: string;
+  data: LoanProvider[];
+}
+
+export interface LoanProviderResponse {
+  success: boolean;
+  message?: string;
+  data: LoanProvider;
+}
+
+export interface LoanAccessSubscriptionsResponse {
+  success: boolean;
+  message?: string;
+  data: RestaurantSubscription[];
 }
 
 // ==================== SERVICE ====================
@@ -419,6 +502,142 @@ export const subscriptionService = {
   checkExpiredSubscriptions: async (): Promise<CheckExpiredResponse> => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.post("/subscriptions/check-expired");
+    return response.data;
+  },
+
+  // ==================== LOAN ACCESS SERVICES ====================
+
+  /**
+   * Create a loan provider (Admin only)
+   * POST /subscriptions/loan/providers
+   */
+  createLoanProvider: async (
+    data: CreateLoanProviderData
+  ): Promise<LoanProviderResponse> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/subscriptions/loan/providers", data);
+    return response.data;
+  },
+
+  /**
+   * Get all loan providers
+   * GET /subscriptions/loan/providers
+   */
+  getAllLoanProviders: async (): Promise<LoanProvidersResponse> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/subscriptions/loan/providers");
+    return response.data;
+  },
+
+  /**
+   * Update loan provider (Admin only) — status and/or unlock fee config
+   * PATCH /subscriptions/loan/providers/:providerId
+   */
+  updateLoanProviderStatus: async (
+    providerId: string,
+    data: {
+      isActive?: boolean;
+      unlockFeeEnabled?: boolean;
+      unlockFeePercentage?: number | null;
+    }
+  ): Promise<LoanProviderResponse> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(
+      `/subscriptions/loan/providers/${providerId}`,
+      data
+    );
+    return response.data;
+  },
+
+  /**
+   * Request loan access via a loan-enabled plan (Restaurant/Hotel/Affiliator)
+   * POST /subscriptions/loan/request
+   */
+  requestLoanAccess: async (
+    data: RequestLoanAccessData
+  ): Promise<SubscriptionResponse> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/subscriptions/loan/request", data);
+    return response.data;
+  },
+
+  /**
+   * Get my loan access subscriptions (Restaurant)
+   * GET /subscriptions/loan/my-subscriptions
+   */
+  getMyLoanAccess: async (): Promise<LoanAccessSubscriptionsResponse> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/subscriptions/loan/my-subscriptions");
+    return response.data;
+  },
+
+  /**
+   * Get all loan access subscriptions with filters (Admin only)
+   * GET /subscriptions/loan
+   */
+  getAllLoanAccess: async (
+    filters?: LoanAccessFilters
+  ): Promise<LoanAccessSubscriptionsResponse> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/subscriptions/loan", { params: filters });
+    return response.data;
+  },
+
+  /**
+   * Approve a pending loan access request (Admin only)
+   * PATCH /subscriptions/loan/:subscriptionId/approve
+   */
+  approveLoanAccess: async (
+    subscriptionId: string
+  ): Promise<SubscriptionResponse> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(
+      `/subscriptions/loan/${subscriptionId}/approve`
+    );
+    return response.data;
+  },
+
+  /**
+   * Reject a pending loan access request (Admin only)
+   * PATCH /subscriptions/loan/:subscriptionId/reject
+   */
+  rejectLoanAccess: async (
+    subscriptionId: string,
+    reason?: string
+  ): Promise<SubscriptionResponse> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(
+      `/subscriptions/loan/${subscriptionId}/reject`,
+      { reason }
+    );
+    return response.data;
+  },
+
+  /**
+   * Disable loan access (Admin only)
+   * PATCH /subscriptions/loan/:subscriptionId/disable
+   */
+  disableLoanAccess: async (
+    subscriptionId: string
+  ): Promise<SubscriptionResponse> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(
+      `/subscriptions/loan/${subscriptionId}/disable`
+    );
+    return response.data;
+  },
+
+  /**
+   * Enable loan access (Admin only)
+   * PATCH /subscriptions/loan/:subscriptionId/enable
+   */
+  enableLoanAccess: async (
+    subscriptionId: string
+  ): Promise<SubscriptionResponse> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(
+      `/subscriptions/loan/${subscriptionId}/enable`
+    );
     return response.data;
   },
 

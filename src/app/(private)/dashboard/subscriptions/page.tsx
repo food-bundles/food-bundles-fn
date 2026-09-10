@@ -95,7 +95,10 @@ export default function AdminSubscriptionsPage() {
     receiveEBM: false,
     advertisingAccess: false,
     otherServices: false,
+    loanAccess: false,
+    loanProviderId: "",
   });
+  const [loanProviders, setLoanProviders] = useState<any[]>([]);
   const [currentFeature, setCurrentFeature] = useState("");
 
   // Load data with pagination
@@ -177,6 +180,9 @@ export default function AdminSubscriptionsPage() {
       await Promise.all([
         loadSubscriptionPlans(1, 10),
         loadRestaurantSubscriptions(1, 10),
+        subscriptionService.getAllLoanProviders()
+          .then((res) => setLoanProviders(res?.data ?? []))
+          .catch(() => setLoanProviders([])),
       ]);
     } finally {
       setLoading(false);
@@ -228,6 +234,8 @@ export default function AdminSubscriptionsPage() {
         receiveEBM: newPlan.receiveEBM,
         advertisingAccess: newPlan.advertisingAccess,
         otherServices: newPlan.otherServices,
+        loanAccess: newPlan.loanAccess,
+        loanProviderId: newPlan.loanAccess ? newPlan.loanProviderId || undefined : undefined,
       };
 
       const response = await subscriptionService.createSubscriptionPlan(
@@ -249,6 +257,8 @@ export default function AdminSubscriptionsPage() {
           receiveEBM: false,
           advertisingAccess: false,
           otherServices: false,
+          loanAccess: false,
+          loanProviderId: "",
         });
         setCurrentFeature("");
         await loadSubscriptionPlans(1, 10);
@@ -553,6 +563,60 @@ export default function AdminSubscriptionsPage() {
                         <Label htmlFor="otherServices" className="text-sm">
                           Other Services
                         </Label>
+                      </div>
+                      <div className="border-t pt-3">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="loanAccess"
+                            checked={newPlan.loanAccess}
+                            onChange={(e) =>
+                              setNewPlan((prev) => ({
+                                ...prev,
+                                loanAccess: e.target.checked,
+                                loanProviderId: e.target.checked
+                                  ? prev.loanProviderId
+                                  : "",
+                              }))
+                            }
+                            className="rounded border-gray-300"
+                          />
+                          <Label htmlFor="loanAccess" className="text-sm">
+                            Includes Loan Access (financing on voucher card)
+                          </Label>
+                        </div>
+                        {newPlan.loanAccess && (
+                          <div className="ml-6 mt-2">
+                            <Label htmlFor="loanProviderId" className="text-xs text-gray-600">
+                              Loan Provider *
+                            </Label>
+                            <select
+                              id="loanProviderId"
+                              value={newPlan.loanProviderId}
+                              onChange={(e) =>
+                                setNewPlan((prev) => ({
+                                  ...prev,
+                                  loanProviderId: e.target.value,
+                                }))
+                              }
+                              className="w-full h-8 px-2 border border-gray-300 rounded text-xs focus:border-green-500 focus:ring-1 focus:ring-green-500"
+                            >
+                              <option value="">Select provider</option>
+                              {loanProviders
+                                .filter((p: any) => p.isActive)
+                                .map((p: any) => (
+                                  <option key={p.id} value={p.id}>
+                                    {p.name}
+                                  </option>
+                                ))}
+                              {loanProviders.length === 0 && (
+                                <option value="" disabled>
+                                  No active providers — create one in Voucher Management
+                                </option>
+                              )}
+                            </select>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

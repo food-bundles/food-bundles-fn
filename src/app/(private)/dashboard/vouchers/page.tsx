@@ -6,12 +6,15 @@ import { RestaurantProvider } from "@/app/contexts/RestaurantContext";
 import VoucherStats from "./_components/VoucherStats";
 import LoanApplicationsTable from "./_components/LoanApplicationsTable";
 import LoanSessionsAdminTable from "./_components/LoanSessionsAdminTable";
+import LoanAccessAdminTable from "./_components/LoanAccessAdminTable";
+import LoanProvidersManagement from "./_components/LoanProvidersManagement";
 import VouchersTable from "./_components/VouchersTable";
 import VoucherCardsTable from "./_components/VoucherCardsTable";
+import RecentActivitiesFeed from "./_components/RecentActivitiesFeed";
 import CreateVoucherForm from "./_components/CreateVoucherForm";
 import { ExportButton } from "@/components/ExportButton";
 
-type ActiveTab = "cards" | "loan-sessions" | "loans" | "vouchers";
+type ActiveTab = "cards" | "loan-sessions" | "loans" | "vouchers" | "loan-access";
 
 export default function VoucherManagementPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("cards");
@@ -21,6 +24,7 @@ export default function VoucherManagementPage() {
   const tabs: { key: ActiveTab; label: string }[] = [
     { key: "cards", label: "Voucher Cards" },
     { key: "loan-sessions", label: "Loan Requests" },
+    { key: "loan-access", label: "Loan Access" },
     { key: "loans", label: "Old Loan Applications" },
     { key: "vouchers", label: "All Vouchers" },
   ];
@@ -61,9 +65,24 @@ export default function VoucherManagementPage() {
             </nav>
           </div>
 
+          {/* Persistent recent-activity feed — stays between tabs and the data tables; never hides on tab change */}
+          <RecentActivitiesFeed
+            onNavigate={(tab) => {
+              setActiveTab(tab);
+              setRefreshTrigger((p) => p + 1);
+            }}
+            onAction={() => setRefreshTrigger((p) => p + 1)}
+          />
+
           <div className="space-y-6 mt-6">
             {activeTab === "cards" && <VoucherCardsTable key={refreshTrigger} />}
             {activeTab === "loan-sessions" && <LoanSessionsAdminTable key={refreshTrigger} />}
+            {activeTab === "loan-access" && (
+              <div className="space-y-6">
+                <LoanAccessAdminTable key={refreshTrigger} />
+                <LoanProvidersManagement />
+              </div>
+            )}
             {activeTab === "loans" && <LoanApplicationsTable />}
             {activeTab === "vouchers" && (
               <VouchersTable

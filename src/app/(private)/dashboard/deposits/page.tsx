@@ -60,6 +60,7 @@ import { createDelegationHistoryColumns, DelegationHistoryData } from "./_compon
 import { createCommonFilters } from "./_components/filter-helpers";
 import { UpdateCommissionModal } from "../users/administration/_components/update-commission-modal";
 import { DelegationApprovalModal } from "./_components/DelegationApprovalModal";
+import WalletTransfersAdmin from "./_components/WalletTransfersAdmin";
 import { ExportButton } from "@/components/ExportButton";
 import Image from "next/image";
 import { GenericExportModal, type GenericExportConfig, type ExportColumnDef } from "@/components/generic-export-modal";
@@ -1645,6 +1646,8 @@ export default function DepositsManagementPage() {
           </div>
         </CardContent>
       </Card>
+
+      <WalletTransfersAdmin />
 
       {/* Deposit Modal */}
       <Dialog

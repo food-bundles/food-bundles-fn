@@ -173,13 +173,16 @@ export default function LoanSessionCard() {
             <Badge className="bg-green-100 text-green-800 rounded text-xs mb-1">
               RRN: {session.rrn}
             </Badge>
+            <p className="text-xs text-gray-400">
+              Requested: {session.requestedAmount.toLocaleString()} RWF
+            </p>
             <p className="text-xl font-bold text-gray-900">
               {(session.approvedAmount ?? session.requestedAmount).toLocaleString()}{" "}
               <span className="text-sm font-normal text-gray-500">RWF</span>
             </p>
-            {session.approvalPercentage && session.approvalPercentage < 100 && (
-              <p className="text-xs text-gray-400">
-                {session.approvalPercentage}% of {session.requestedAmount.toLocaleString()} RWF requested
+            {session.approvalPercentage && (
+              <p className="text-xs text-green-600">
+                Approved at {session.approvalPercentage}% of the requested amount
               </p>
             )}
           </div>

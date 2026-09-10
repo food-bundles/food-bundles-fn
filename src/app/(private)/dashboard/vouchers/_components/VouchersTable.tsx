@@ -19,6 +19,7 @@ import { Eye, Trash2, MoreHorizontal, Plus, Search, ChevronDown } from "lucide-r
 import { DataTable } from "@/components/data-table";
 import { useVouchers } from "@/app/contexts/VoucherContext";
 import { IVoucher, VoucherStatus, VoucherType } from "@/lib/types";
+import { voucherService } from "@/app/services/voucherService";
 import { VoucherManagementModal } from "./VoucherManagementModal";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -35,12 +36,16 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
   const [paginationLoading, setPaginationLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [voucherCards, setVoucherCards] = useState<any[]>([]);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
     total: 0,
     totalPages: 0,
   });
+
+  const formatPan = (pan: string) =>
+    pan ? pan.replace(/(\d{4})(?=\d)/g, "$1 ") : "";
 
   const fetchVouchers = async (page = 1, limit = 10, isPagination = false) => {
     try {
@@ -49,19 +54,36 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
       } else {
         setLoading(true);
       }
-      const response = await getAllVouchers({ 
-        page, 
-        limit,
-        search: searchQuery || undefined,
-        status: statusFilter || undefined
-      });
-      
-      if (response?.pagination) {
+      const cardStatuses = ["ACTIVE", "SUSPENDED", "BLOCKED", "DEACTIVATED"];
+      const [vouchersResponse, cardsResponse] = await Promise.all([
+        getAllVouchers({
+          page,
+          limit,
+          search: searchQuery || undefined,
+          status: statusFilter || undefined,
+        }),
+        voucherService.getAllVoucherCards({
+          page,
+          limit,
+          search: searchQuery || undefined,
+          status: cardStatuses.includes(statusFilter) ? statusFilter : undefined,
+        }),
+      ]);
+
+      const vouchersPagination = vouchersResponse?.pagination;
+      const cardsPagination = cardsResponse?.pagination;
+
+      setVoucherCards(cardsResponse?.data || []);
+
+      if (vouchersPagination || cardsPagination) {
         setPagination({
-          page: response.pagination.page,
-          limit: response.pagination.limit,
-          total: response.pagination.total,
-          totalPages: response.pagination.totalPages,
+          page,
+          limit,
+          total: (vouchersPagination?.total || 0) + (cardsPagination?.total || 0),
+          totalPages: Math.max(
+            vouchersPagination?.totalPages || 0,
+            cardsPagination?.totalPages || 0,
+          ),
         });
       }
     } catch (error) {
@@ -120,7 +142,20 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
     return "N/A";
   };
 
-  const filteredVouchers = allVouchers;
+  const filteredVouchers = useMemo(() => {
+    const vouchers = (allVouchers || []).map((v: any) => ({ ...v, kind: "VOUCHER" }));
+    const cards = voucherCards.map((card: any) => ({
+      ...card,
+      kind: "CARD",
+      voucherCode: card.pan,
+      restaurant: card.restaurant || { name: card.restaurantName },
+      approver: card.issuer,
+      creditLimit: card.loanLimit || 0,
+      usedCredit: card.totalOutstandingLoans || 0,
+      voucherType: undefined,
+    }));
+    return [...vouchers, ...cards];
+  }, [allVouchers, voucherCards]);
 
   const handleDeactivate = async (id: string) => {
     try {
@@ -161,6 +196,10 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
         );
       case VoucherStatus.SETTLED:
         return <p className="text-orange-400 text-xs font-normal">Settled</p>;
+      case "BLOCKED" as any:
+        return <p className="text-red-600 text-xs font-normal">Blocked</p>;
+      case "DEACTIVATED" as any:
+        return <p className="text-gray-500 text-xs font-normal">Deactivated</p>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -226,10 +265,12 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
       cell: ({ row }) => (
         <div>
           <p className="text-xs">
-            {row.original.creditLimit.toLocaleString()} RWF
+            {(row.original as any).creditLimit?.toLocaleString() || 0} RWF
           </p>
           <p className="text-xs text-gray-500">
-            {getVoucherTypeLabel(row.original.voucherType)}
+            {(row.original as any).kind === "CARD"
+              ? "PAN Card"
+              : getVoucherTypeLabel(row.original.voucherType)}
           </p>
         </div>
       ),
@@ -259,6 +300,16 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
 
         let remainingInfo = "N/A";
         let remainingColor = "text-gray-500";
+
+        // Voucher cards don't carry per-use repayment windows
+        if (voucher.kind === "CARD") {
+          return (
+            <div className="text-xs">
+              <div className=" text-gray-700">Permanent</div>
+              <div className={`text-xs ${remainingColor}`}>N/A</div>
+            </div>
+          );
+        }
 
         // Handle different voucher statuses
         if (status === "USED" || status === "MATURED") {
@@ -390,8 +441,12 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
       header: "Actions",
       cell: ({ row }) => {
         const voucher = row.original;
+        const isCard = (voucher as any).kind === "CARD";
         return (
           <div className="flex justify-end">
+            {isCard ? (
+              <span className="text-xs text-gray-400">—</span>
+            ) : (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-8 w-8 p-0">
@@ -424,6 +479,7 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
+            )}
           </div>
         );
       },
@@ -486,6 +542,12 @@ export default function VouchersTable({ onCreateVoucher }: VouchersTableProps) {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setStatusFilter("SUSPENDED")}>
                 Suspended
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("BLOCKED")}>
+                Blocked
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setStatusFilter("DEACTIVATED")}>
+                Deactivated
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setStatusFilter("CLOSED")}>
                 Closed

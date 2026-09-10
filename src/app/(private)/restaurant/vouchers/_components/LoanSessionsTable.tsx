@@ -6,6 +6,9 @@ import { DataTable } from "@/components/data-table";
 import { voucherService } from "@/app/services/voucherService";
 import { ILoanSession, LoanSessionStatus } from "@/lib/types";
 import { Lock, Unlock, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import UnlockFeeModal from "./UnlockFeeModal";
+import { toast } from "sonner";
 
 const STATUS_COLORS: Record<string, string> = {
   REQUESTED: "text-yellow-600",
@@ -39,13 +42,19 @@ const fmt = (d: string | Date) =>
 export default function LoanSessionsTable() {
   const [sessions, setSessions] = useState<ILoanSession[]>([]);
   const [loading, setLoading] = useState(true);
+  const [unlockSession, setUnlockSession] = useState<ILoanSession | null>(null);
+  const [unlockModalOpen, setUnlockModalOpen] = useState(false);
 
-  useEffect(() => {
+  const loadSessions = () => {
     voucherService
       .getMyLoanSessions()
       .then((res) => setSessions(res?.data ?? []))
       .catch(() => setSessions([]))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadSessions();
   }, []);
 
   const columns: ColumnDef<ILoanSession>[] = [
@@ -70,11 +79,20 @@ export default function LoanSessionsTable() {
         const s = row.original;
         return (
           <div className="text-xs">
-            <p className="font-semibold text-gray-800">
-              {(s.approvedAmount ?? s.requestedAmount).toLocaleString()} RWF
+            <p className="text-gray-400">
+              Requested:{" "}
+              <span className="text-gray-700">{s.requestedAmount.toLocaleString()} RWF</span>
             </p>
-            {s.approvalPercentage && s.approvalPercentage < 100 && (
-              <p className="text-gray-400">{s.approvalPercentage}% approved</p>
+            <p className="font-semibold text-green-600">
+              Approved: {s.approvedAmount?.toLocaleString() ?? s.requestedAmount.toLocaleString()} RWF
+            </p>
+            {s.approvalPercentage && (
+              <p className="text-gray-400">({s.approvalPercentage}% credit)</p>
+            )}
+            {s.approvedAmount != null && s.approvedAmount < s.requestedAmount && (
+              <p className="text-red-500 font-medium">
+                Extra to pay: {(s.requestedAmount - s.approvedAmount).toLocaleString()} RWF
+              </p>
             )}
           </div>
         );
@@ -89,7 +107,7 @@ export default function LoanSessionsTable() {
         return (
           <div className="text-xs">
             <p className="font-medium text-orange-600">{s.unlockFee.toLocaleString()} RWF</p>
-            <p className="text-gray-400">{s.unlockFeePercentage ?? 4.5}%</p>
+            <p className="text-gray-400">{s.unlockFeePercentage ?? 0}%</p>
           </div>
         );
       },
@@ -152,18 +170,65 @@ export default function LoanSessionsTable() {
         );
       },
     },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        const s = row.original;
+        const unlockable =
+          s.status === LoanSessionStatus.APPROVED_LOCKED ||
+          s.status === LoanSessionStatus.UNLOCK_FEE_PENDING;
+
+        if (!unlockable || s.unlockFee == null) {
+          return (
+            <span className="text-xs text-gray-300">
+              {s.unlockStatus === "UNLOCKED" ? "Unlocked" : "—"}
+            </span>
+          );
+        }
+
+        return (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 border-orange-400 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
+            onClick={() => {
+              setUnlockSession(s);
+              setUnlockModalOpen(true);
+            }}
+          >
+            <Unlock className="w-3.5 h-3.5 mr-1.5" />
+            Unlock
+          </Button>
+        );
+      },
+    },
   ];
 
   return (
-    <DataTable
-      columns={columns}
-      data={sessions}
-      title="Loan Session History"
-      description="All your loan sessions — each session is a separate RRN"
-      showPagination
-      showColumnVisibility={false}
-      showRowSelection={false}
-      isLoading={loading}
-    />
+    <>
+      <DataTable
+        columns={columns}
+        data={sessions}
+        title="Loan Session History"
+        description="All your loan sessions — each session is a separate RRN"
+        showPagination
+        showColumnVisibility={false}
+        showRowSelection={false}
+        isLoading={loading}
+      />
+      {unlockSession && (
+        <UnlockFeeModal
+          open={unlockModalOpen}
+          onClose={() => setUnlockModalOpen(false)}
+          session={unlockSession}
+          onSuccess={() => {
+            setUnlockModalOpen(false);
+            toast.success("Unlock fee paid — your loan is now active!");
+            loadSessions();
+          }}
+        />
+      )}
+    </>
   );
 }
