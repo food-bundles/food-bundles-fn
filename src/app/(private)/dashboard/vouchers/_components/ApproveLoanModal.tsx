@@ -12,8 +12,6 @@ import { voucherService } from "@/app/services/voucherService";
 import { traderService } from "@/app/services/traderService";
 import toast from "react-hot-toast";
 
-const DEFAULT_UNLOCK_FEE_PCT = 4.5;
-
 interface ApproveLoanModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -36,9 +34,11 @@ export default function ApproveLoanModal({
   const [hasAcceptedTraders, setHasAcceptedTraders] = useState(false);
   const [checkingTraders, setCheckingTraders] = useState(false);
 
-  // Derived: unlock fee preview
+  // Derived: approved amount
   const parsedApproved = parseFloat(approvedAmount) || 0;
-  const unlockFee = parsedApproved * (DEFAULT_UNLOCK_FEE_PCT / 100);
+
+  // Effective unlock fee pct from admin-set card/provider config (attached to app object when available)
+  const unlockedFeePct = (selectedApp as any)?.effectiveUnlockFeePercentage ?? 0;
 
   useEffect(() => {
     if (isOpen) {
@@ -101,7 +101,7 @@ export default function ApproveLoanModal({
         repaymentDays: parseInt(repaymentDays),
         notes,
       });
-      toast.success("Loan approved — status set to Approved (Locked)");
+      toast.success("Loan approved");
       onClose();
       await onApprove();
     } catch (error: any) {
@@ -195,23 +195,38 @@ export default function ApproveLoanModal({
               />
             </div>
 
-            {/* Unlock fee preview */}
+            {/* Unlock fee preview — reflects admin-set config; no default fee */}
             {parsedApproved > 0 && (
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                <div className="flex items-start gap-2">
-                  <Info className="w-4 h-4 text-orange-500 mt-0.5 shrink-0" />
-                  <div className="text-sm">
-                    <p className="font-medium text-orange-800">Unlock Fee Preview</p>
-                    <p className="text-orange-700 mt-0.5">
-                      {parsedApproved.toLocaleString()} × {DEFAULT_UNLOCK_FEE_PCT}% ={" "}
-                      <strong>{unlockFee.toLocaleString()} RWF</strong>
-                    </p>
-                    <p className="text-orange-600 text-xs mt-1">
-                      Restaurant must pay this fee before the loan becomes active.
-                    </p>
+              unlockedFeePct > 0 ? (
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <Info className="w-4 h-4 text-orange-500 mt-0.5 shrink-0" />
+                    <div className="text-sm">
+                      <p className="font-medium text-orange-800">Unlock Fee Preview</p>
+                      <p className="text-orange-700 mt-0.5">
+                        {parsedApproved.toLocaleString()} × {unlockedFeePct}% ={" "}
+                        <strong>{(parsedApproved * (unlockedFeePct / 100)).toLocaleString()} RWF</strong>
+                      </p>
+                      <p className="text-orange-600 text-xs mt-1">
+                        Restaurant must pay this fee before the loan becomes active.
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <Info className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
+                    <div className="text-sm">
+                      <p className="font-medium text-green-800">No Unlock Fee Applies</p>
+                      <p className="text-green-700 text-xs mt-1">
+                        This restaurant/provider has no unlock fee configured — the loan activates
+                        immediately upon approval.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )
             )}
 
             {/* Repayment days */}

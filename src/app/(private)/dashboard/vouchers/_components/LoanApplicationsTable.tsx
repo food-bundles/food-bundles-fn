@@ -219,8 +219,9 @@ const handleAccept = async (data: {
       cell: ({ row }) => {
         const app = row.original as any;
         const approved = app.approvedAmount ?? 0;
-        const pct = app.unlockFeePercentage ?? 4.5;
+        const pct = app.appliedUnlockFeePercentage ?? app.unlockFeePercentage;
         if (!approved) return <div className="text-xs text-gray-400">—</div>;
+        if (!pct) return <div className="text-xs text-gray-400">No fee</div>;
         const fee = approved * (pct / 100);
         return (
           <div className="text-xs">

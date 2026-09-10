@@ -16,6 +16,7 @@ export interface CheckoutRequest {
   narration?: string;
   currency?: string;
   voucherCode?: string;
+  loanSessionRrn?: string;
   promoCode?: string;
   cardDetails?: {
     cardNumber: string;

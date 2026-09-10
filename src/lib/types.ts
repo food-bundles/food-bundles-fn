@@ -207,6 +207,8 @@ export interface IVoucherCard {
   status: CardStatus;
   issuedDate: Date;
   loanLimit: number;
+  unlockFeeEnabled: boolean;
+  unlockFeePercentage?: number | null;
   riskScore?: number;
   totalLoansReceived: number;
   totalOutstandingLoans: number;
