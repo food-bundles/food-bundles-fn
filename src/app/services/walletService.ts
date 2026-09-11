@@ -44,6 +44,40 @@ export interface AdminDepositData {
   description: string;
 }
 
+export interface WalletTransferData {
+  restaurantId: string;
+  amount: number;
+  voucherId?: string;
+  loanSessionId?: string;
+  source?: string;
+  notes?: string;
+}
+
+export interface WalletTransferFilters {
+  restaurantId?: string;
+  status?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface IWalletTransfer {
+  id: string;
+  restaurantId: string;
+  voucherId?: string | null;
+  loanSessionId?: string | null;
+  amount: number;
+  source: string;
+  status: string;
+  transferredAt: string;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  restaurant?: {
+    id: string;
+    name: string;
+  };
+}
+
 export const walletService = {
   // Create wallet
   createWallet: async (data: CreateWalletData) => {
@@ -160,6 +194,29 @@ export const walletService = {
   adminDepositVerifyOTP: async (data: { otp: string; sessionId: string }) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.post("/wallets/admin-deposit/verify-otp", data);
+    return response.data;
+  },
+
+  // ==================== WALLET TRANSFERS (voucher amounts / Kayko) ====================
+
+  // Admin transfers a voucher amount to a restaurant wallet (Kayko funding)
+  createWalletTransfer: async (data: WalletTransferData) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/wallets/transfers", data);
+    return response.data;
+  },
+
+  // Admin: get all wallet transfers with filters
+  getAllWalletTransfers: async (filters?: WalletTransferFilters) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/wallets/transfers", { params: filters });
+    return response.data;
+  },
+
+  // Restaurant: get my wallet transfers (unused voucher amounts credited)
+  getMyWalletTransfers: async () => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/wallets/my-transfers");
     return response.data;
   },
 };

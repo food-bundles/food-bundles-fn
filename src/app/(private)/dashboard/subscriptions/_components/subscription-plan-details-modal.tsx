@@ -66,6 +66,8 @@ export function SubscriptionPlanDetailsModal({
     receiveEBM: plan.receiveEBM,
     advertisingAccess: plan.advertisingAccess,
     otherServices: plan.otherServices,
+    loanAccess: plan.loanAccess,
+    loanProviderId: plan.loanProviderId,
     features: plan.features || [],
     isActive: plan.isActive,
   });
@@ -84,6 +86,8 @@ export function SubscriptionPlanDetailsModal({
       receiveEBM: plan.receiveEBM,
       advertisingAccess: plan.advertisingAccess,
       otherServices: plan.otherServices,
+      loanAccess: plan.loanAccess,
+      loanProviderId: plan.loanProviderId,
       features: plan.features || [],
       isActive: plan.isActive,
     });
@@ -103,6 +107,8 @@ export function SubscriptionPlanDetailsModal({
       receiveEBM: plan.receiveEBM,
       advertisingAccess: plan.advertisingAccess,
       otherServices: plan.otherServices,
+      loanAccess: plan.loanAccess,
+      loanProviderId: plan.loanProviderId,
       features: plan.features || [],
       isActive: plan.isActive,
     });
@@ -124,6 +130,8 @@ export function SubscriptionPlanDetailsModal({
         receiveEBM: editData.receiveEBM,
         advertisingAccess: editData.advertisingAccess,
         otherServices: editData.otherServices,
+        loanAccess: editData.loanAccess,
+        loanProviderId: editData.loanAccess ? editData.loanProviderId || undefined : undefined,
         features: editData.features,
         isActive: editData.isActive,
       };
@@ -362,6 +370,40 @@ export function SubscriptionPlanDetailsModal({
                       Other Services
                     </Label>
                   </div>
+                  <div className="border-t pt-3">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="edit-loanAccess"
+                        checked={editData.loanAccess}
+                        onChange={(e) =>
+                          setEditData(prev => ({ ...prev, loanAccess: e.target.checked }))
+                        }
+                        disabled={isLoading}
+                        className="rounded border-gray-300"
+                      />
+                      <Label htmlFor="edit-loanAccess" className="text-sm">
+                        Includes Loan Access (financing on voucher card)
+                      </Label>
+                    </div>
+                    {editData.loanAccess && (
+                      <div className="ml-6 mt-2">
+                        <Label htmlFor="edit-loanProviderId" className="text-xs text-gray-600">
+                          Loan Provider ID
+                        </Label>
+                        <Input
+                          id="edit-loanProviderId"
+                          value={editData.loanProviderId || ""}
+                          onChange={(e) =>
+                            setEditData(prev => ({ ...prev, loanProviderId: e.target.value }))
+                          }
+                          disabled={isLoading}
+                          placeholder="Loan provider ID"
+                          className="bg-white border-gray-300 text-gray-900 h-8 text-xs"
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -539,6 +581,17 @@ export function SubscriptionPlanDetailsModal({
                         {plan.otherServices ? "✓" : "✗"}
                       </Badge>
                       <span className="text-gray-900">Other Services</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge className={plan.loanAccess ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"}>
+                        {plan.loanAccess ? "✓" : "✗"}
+                      </Badge>
+                      <span className="text-gray-900">
+                        Loan Access
+                        {plan.loanAccess && plan.loanProvider && (
+                          <span className="text-gray-500"> — {plan.loanProvider.name}</span>
+                        )}
+                      </span>
                     </div>
                   </div>
                 </div>

@@ -16,7 +16,10 @@ export default function VoucherStats() {
     usedVouchers: { count: 0, totalAmount: 0 },
     maturedVouchers: { count: 0, totalAmount: 0 },
     settledVouchers: { count: 0, totalAmount: 0 },
-    pendingLoans: 0
+    pendingLoans: 0,
+    totalCards: 0,
+    activeCards: 0,
+    pendingSessions: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -27,13 +30,15 @@ export default function VoucherStats() {
   const loadStats = async () => {
     setLoading(true);
     try {
-      const [vouchersResponse, loansResponse] = await Promise.all([
+      const [vouchersResponse, loansResponse, cardStatsResponse] = await Promise.all([
         voucherService.getAllVouchers({ page: 1, limit: 1 }), // Get statistics from API
-        voucherService.getAllLoanApplications()
+        voucherService.getAllLoanApplications(),
+        voucherService.getCardStats()
       ]);
 
       const voucherStats = vouchersResponse.statistics || {};
       const loans = loansResponse.data || [];
+      const cardStats = cardStatsResponse.data || {};
 
       setStats({
         totalVouchers: voucherStats.totalVouchers || 0,
@@ -43,7 +48,10 @@ export default function VoucherStats() {
         usedVouchers: voucherStats.usedVouchers || { count: 0, totalAmount: 0 },
         maturedVouchers: voucherStats.maturedVouchers || { count: 0, totalAmount: 0 },
         settledVouchers: voucherStats.settledVouchers || { count: 0, totalAmount: 0 },
-        pendingLoans: loans.filter((l: any) => l.status === "PENDING").length
+        pendingLoans: loans.filter((l: any) => l.status === "PENDING").length,
+        totalCards: cardStats.totalCards || 0,
+        activeCards: cardStats.activeCards || 0,
+        pendingSessions: cardStats.pendingSessions || 0
       });
     } catch (error) {
       console.error("Failed to load stats:", error);
@@ -66,26 +74,26 @@ export default function VoucherStats() {
             ) : (
               <>
                 <p className="text-xl font-bold  text-green-600">
-                  {stats.totalVouchers}
+                  {stats.totalCards + stats.totalVouchers}
                 </p>
                 <div>
                   <div className="flex items-center justify-center  gap-2">
                     <p className="text-xs font-medium ">
                       Act:{" "}
                       <span className="text-green-500 text-xs">
-                        {stats.activeVouchers}
+                        {stats.activeCards + stats.activeVouchers}
                       </span>
                     </p>
                     <p className="text-xs font-medium ">
-                      Susp:{" "}
+                      Cards:{" "}
                       <span className=" text-xs ">
-                        {stats.suspendedVouchers}
+                        {stats.totalCards}
                       </span>
                     </p>
                     <p className=" text-xs font-medium ">
-                      Exp:{" "}
+                      Susp:{" "}
                       <span className="text-red-600 text-xs ">
-                        {stats.expiredVouchers}
+                        {stats.suspendedVouchers}
                       </span>
                     </p>
                   </div>
@@ -175,9 +183,14 @@ export default function VoucherStats() {
             {loading ? (
               <Skeleton className="h-7 w-12 mx-auto" />
             ) : (
-              <p className="text-xl font-bold text-orange-900">
-                {stats.pendingLoans}
-              </p>
+              <>
+                <p className="text-xl font-bold text-orange-900">
+                  {stats.pendingLoans + stats.pendingSessions}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Awaiting approval
+                </p>
+              </>
             )}
           </div>
         </CardContent>

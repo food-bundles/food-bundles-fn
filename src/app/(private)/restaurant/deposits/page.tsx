@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { WalletCard } from "./_components/WalletCard";
 import { DepositForm } from "./_components/DepositForm";
 import { TransactionsList } from "./_components/TransactionsList";
+import { VoucherTransfersList } from "./_components/VoucherTransfersList";
 import { PaymentModal } from "./_components/PaymentModal";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 
@@ -190,6 +191,8 @@ export default function DepositsPage() {
         </WalletCard>
 
         <TransactionsList transactions={transactions} />
+
+        <VoucherTransfersList />
 
         <PaymentModal
           isOpen={showCardModal}
