@@ -43,4 +43,10 @@ export const customerTypeService = {
     const response = await axiosClient.delete(`/customer-types/${id}`);
     return response.data;
   },
+
+  toggleCustomerTypeStatus: async (id: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(`/customer-types/${id}/status`);
+    return response.data;
+  },
 };
