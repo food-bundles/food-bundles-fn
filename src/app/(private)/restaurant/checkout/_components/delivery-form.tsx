@@ -84,6 +84,7 @@ const getUserFullAddress = (user: any): string => {
 };
 
 type PaymentMethod = "prepaid" | "momo" | "card" | "voucher";
+type PaymentMethodOrEmpty = PaymentMethod | "";
 
 export function Checkout() {
   const { cart, totalItems, totalQuantity, totalAmount, isLoading } = useCart();
@@ -132,7 +133,7 @@ export function Checkout() {
   const [verificationError, setVerificationError] = useState("");
   const [verificationType, setVerificationType] = useState<"OTP" | "2FA">("OTP");
   const [otherServices, setOtherServices] = useState(false);
-  const [method, setMethod] = useState<PaymentMethod>("momo");
+  const [method, setMethod] = useState<PaymentMethodOrEmpty>("");
 
   // Promo Code State
   const [promoCode, setPromoCode] = useState("");
@@ -205,11 +206,20 @@ export function Checkout() {
           );
           setPaymentMethods(filteredMethods);
           // Set default payment method to first available (preferably CASH for prepaid)
-          const cashMethod = filteredMethods.find((pm: PaymentMethodType) => pm.name === "CASH");
-          if (cashMethod) {
-            setSelectedPaymentMethodId(cashMethod.id);
-          } else if (filteredMethods.length > 0) {
-            setSelectedPaymentMethodId(filteredMethods[0].id);
+          const methodOrder = ["MOBILE_MONEY", "CASH", "CARD", "VOUCHER"];
+          const defaultMethod = methodOrder.find((name) =>
+            filteredMethods.some((pm: PaymentMethodType) => pm.name === name)
+          );
+          if (defaultMethod) {
+            const methodMap: Record<string, PaymentMethod> = {
+              MOBILE_MONEY: "momo",
+              CASH: "prepaid",
+              CARD: "card",
+              VOUCHER: "voucher",
+            };
+            setMethod(methodMap[defaultMethod]);
+            const pm = filteredMethods.find((p: PaymentMethodType) => p.name === defaultMethod);
+            if (pm) setSelectedPaymentMethodId(pm.id);
           }
         }
       } catch (error) {
@@ -282,29 +292,15 @@ export function Checkout() {
 
   // Update selected payment method ID when payment method changes
   useEffect(() => {
-    if (paymentMethods.length > 0) {
-      let targetPaymentMethod;
-
-      switch (method) {
-        case "prepaid":
-          targetPaymentMethod = paymentMethods.find((pm: PaymentMethodType) => pm.name === "CASH");
-          break;
-        case "momo":
-          targetPaymentMethod = paymentMethods.find((pm: PaymentMethodType) => pm.name === "MOBILE_MONEY");
-          break;
-        case "card":
-          targetPaymentMethod = paymentMethods.find((pm: PaymentMethodType) => pm.name === "CARD");
-          break;
-        case "voucher":
-          targetPaymentMethod = paymentMethods.find((pm: PaymentMethodType) => pm.name === "VOUCHER");
-          break;
-        default:
-          targetPaymentMethod = paymentMethods[0];
-      }
-
-      if (targetPaymentMethod) {
-        setSelectedPaymentMethodId(targetPaymentMethod.id);
-      }
+    if (paymentMethods.length > 0 && method) {
+      const nameMap: Record<string, string> = {
+        prepaid: "CASH",
+        momo: "MOBILE_MONEY",
+        card: "CARD",
+        voucher: "VOUCHER",
+      };
+      const target = paymentMethods.find((pm: PaymentMethodType) => pm.name === nameMap[method]);
+      if (target) setSelectedPaymentMethodId(target.id);
     }
   }, [method, paymentMethods]);
 
@@ -340,7 +336,7 @@ export function Checkout() {
         }
       };
       fetchLoanSessions();
-    } else if (method !== "voucher") {
+    } else if (method && method !== "voucher") {
       setAvailableVouchers([]);
       setLoanSessions([]);
       setIsLoadingVouchers(false);
@@ -348,7 +344,7 @@ export function Checkout() {
   }, [method, isAuthenticated, getMyVouchers]);
 
   useEffect(() => {
-    if (method === "voucher" && (myVouchers || loanSessions.length > 0)) {
+    if (method === "voucher" && (myVouchers || loanSessions.length > 0)) { // eslint-disable-line
       const validVouchers = (myVouchers || []).filter((voucher: any) =>
         voucher.status === "ACTIVE" &&
         voucher.remainingCredit > 0 &&
@@ -531,6 +527,11 @@ export function Checkout() {
     setIsSubmitting(true);
 
     try {
+      if (!method) {
+        setErrors({ submit: "Please select a payment method." });
+        return;
+      }
+
       const paymentMethodMap = {
         prepaid: "CASH" as const,
         momo: "MOBILE_MONEY" as const,
@@ -541,11 +542,11 @@ export function Checkout() {
       // Validate prepaid balance
       if (method === "prepaid") {
         if (!wallet) {
-          setErrors({ submit: "Prepaid account not found. Please create one first." });
+          setErrors({ submit: "No prepaid wallet found. Please create one first.", submitLink: "/restaurant/wallet" });
           return;
         }
         if (walletBalance < finalTotal) {
-          setErrors({ submit: `Insufficient prepaid balance. Available: ${walletBalance.toLocaleString()} RWF, Required: ${finalTotal.toLocaleString()} RWF` });
+          setErrors({ submit: `Insufficient prepaid balance. Available: ${walletBalance.toLocaleString()} RWF, Required: ${finalTotal.toLocaleString()} RWF. Please top up.`, submitLink: "/restaurant/deposits" });
           return;
         }
       }
@@ -555,7 +556,7 @@ export function Checkout() {
         const paymentMethodId =
           selectedPaymentMethodId ||
           paymentMethods.find(
-            (pm: PaymentMethodType) => pm.name === paymentMethodMap[method]
+            (pm: PaymentMethodType) => pm.name === paymentMethodMap[method as PaymentMethod]
           )?.id ||
           paymentMethods[0]?.id;
 
@@ -570,7 +571,7 @@ export function Checkout() {
       const checkoutPayload: CheckoutRequest = {
         cartId: cart!.id,
         paymentMethodId: paymentMethodId,
-        paymentMethod: paymentMethodMap[method],
+        paymentMethod: paymentMethodMap[method as PaymentMethod],
         billingName: formData.fullName,
         billingEmail: method === "card" ? user?.email || "" : undefined,
         billingPhone:
@@ -603,7 +604,7 @@ export function Checkout() {
       const response = await checkoutService.createCheckout(checkoutPayload);
 
       if (response.success) {
-        localStorage.setItem("selectedPaymentMethod", paymentMethodMap[method]);
+        localStorage.setItem("selectedPaymentMethod", paymentMethodMap[method as PaymentMethod]);
 
         // Handle voucher verification requirement
         if (method === "voucher" && response.requiresVerification) {
@@ -821,12 +822,18 @@ export function Checkout() {
           {errors.submit && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm mb-4">
               <p className="font-medium">{errors.submit}</p>
+              {errors.submitLink && (
+                <Link
+                  href={errors.submitLink}
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+                >
+                  {errors.submitLink === "/restaurant/wallet" ? "Create Wallet" : "Top Up Balance"}
+                </Link>
+              )}
               {paymentFailed && (
                 <button
                   type="button"
-                  onClick={() => {
-                    window.location.href = "/restaurant/orders";
-                  }}
+                  onClick={() => { window.location.href = "/restaurant/orders"; }}
                   className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
                 >
                   View Order & Retry Payment
@@ -976,42 +983,60 @@ export function Checkout() {
                     <label className="text-[14px] font-medium text-gray-900 mb-2 block">
                       Payment Method
                     </label>
-                    <Select
-                      value={method}
-                      onValueChange={(value: PaymentMethod) => setMethod(value)}
-                      disabled={isSubmitting}
-                    >
-                      <SelectTrigger className={`w-full h-10 ${
-                        method === "prepaid" ? "text-blue-600" :
-                        method === "momo" ? "text-green-600" :
-                        method === "card" ? "text-purple-600" :
-                        method === "voucher" ? "text-orange-600" : ""
-                      }`}>
-                        <SelectValue placeholder="Select payment method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="prepaid" disabled={!wallet || walletBalance < finalTotal}>
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            Prepaid
-                          </span>
-                        </SelectItem>
-                        <SelectItem value="momo">
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            MoMo
-                          </span>
-                        </SelectItem>
-                        <SelectItem value="card">
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                            Card
-                          </span>
-                        </SelectItem>
-                        <SelectItem value="voucher">
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                            Voucher
-                          </span>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {isLoadingPaymentMethods ? (
+                      <div className="h-10 flex items-center">
+                        <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                      </div>
+                    ) : paymentMethods.length === 0 ? (
+                      <p className="text-xs text-red-600 border border-red-200 bg-red-50 rounded px-3 py-2">
+                        No payment methods available. Please contact the administrator.
+                      </p>
+                    ) : (
+                      <Select
+                        value={method}
+                        onValueChange={(value: string) => setMethod(value as PaymentMethod)}
+                        disabled={isSubmitting}
+                      >
+                        <SelectTrigger className={`w-full h-10 ${
+                          method === "prepaid" ? "text-blue-600" :
+                          method === "momo" ? "text-green-600" :
+                          method === "card" ? "text-purple-600" :
+                          method === "voucher" ? "text-orange-600" : ""
+                        }`}>
+                          <SelectValue placeholder="Select payment method" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {paymentMethods.some((pm) => pm.name === "CASH") && (
+                            <SelectItem value="prepaid">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                Prepaid
+                              </span>
+                            </SelectItem>
+                          )}
+                          {paymentMethods.some((pm) => pm.name === "MOBILE_MONEY") && (
+                            <SelectItem value="momo">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                MoMo
+                              </span>
+                            </SelectItem>
+                          )}
+                          {paymentMethods.some((pm) => pm.name === "CARD") && (
+                            <SelectItem value="card">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                Card
+                              </span>
+                            </SelectItem>
+                          )}
+                          {paymentMethods.some((pm) => pm.name === "VOUCHER") && (
+                            <SelectItem value="voucher">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                Voucher
+                              </span>
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1019,21 +1044,42 @@ export function Checkout() {
               {/* Prepaid Balance Display */}
               {method === "prepaid" && (
                 <div className="mt-3 p-3 bg-gray-50 rounded border">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-700">Available Balance:</span>
-                    <span className="font-medium text-green-600">
-                      {walletBalance.toLocaleString()} RWF
-                    </span>
-                  </div>
-                  {walletBalance < finalTotal && (
-                    <p className="text-xs text-red-600 mt-1">
-                      Insufficient balance. Need {(finalTotal - walletBalance).toLocaleString()} RWF more.
-                    </p>
-                  )}
-                  {!wallet && (
-                    <p className="text-xs text-red-600 mt-1">
-                      No prepaid account found. Please create one first.
-                    </p>
+                  {!wallet ? (
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-medium text-gray-800">No prepaid wallet found</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Create a wallet to use prepaid payments.</p>
+                      </div>
+                      <Link
+                        href="/restaurant/wallet"
+                        className="shrink-0 inline-flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors"
+                      >
+                        Create Wallet
+                      </Link>
+                    </div>
+                  ) : walletBalance < finalTotal ? (
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-gray-700">Balance:</span>
+                          <span className="text-xs font-medium text-gray-900 ml-2">{walletBalance.toLocaleString()} RWF</span>
+                        </div>
+                        <p className="text-xs text-red-600 mt-0.5">
+                          Need {(finalTotal - walletBalance).toLocaleString()} RWF more to proceed.
+                        </p>
+                      </div>
+                      <Link
+                        href="/restaurant/deposits"
+                        className="shrink-0 inline-flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors"
+                      >
+                        Top Up
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-700">Available Balance:</span>
+                      <span className="text-xs font-medium text-green-600">{walletBalance.toLocaleString()} RWF</span>
+                    </div>
                   )}
                 </div>
               )}

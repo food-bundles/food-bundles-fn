@@ -42,12 +42,10 @@ export function CartProvider({ children }: CartProviderProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated, user, isLoading: authLoading } = useAuth();
-  // const lastAuthState = useRef<boolean>(false);
   const refreshingRef = useRef(false);
-  const lastAuthState: { current: boolean | null } = { current: false };
-  
+  const lastAuthState = useRef<boolean | null>(false);
 
-  const refreshCart = useCallback(async () => {
+  const refreshCart = useCallback(async (silent = false) => {
     // Don't fetch if auth is still loading or user is not authenticated
     if (authLoading || !isAuthenticated || !user) {
       setCart(null);
@@ -64,7 +62,8 @@ export function CartProvider({ children }: CartProviderProps) {
     refreshingRef.current = true;
 
     try {
-      setIsLoading(true);
+      // Only show loading spinner on initial/explicit loads, not background syncs
+      if (!silent) setIsLoading(true);
       setError(null);
 
       const response = await cartService.getMyCart();
@@ -121,7 +120,7 @@ export function CartProvider({ children }: CartProviderProps) {
         return false;
       }
 
-      // Optimistic update: reflect new quantity/total immediately
+      // Optimistic update: reflect new quantity/total immediately in UI
       setCart((prevCart) => {
         if (!prevCart) return prevCart;
         const newCartItems = prevCart.cartItems.map((item) =>
@@ -143,19 +142,17 @@ export function CartProvider({ children }: CartProviderProps) {
       try {
         setError(null);
         const response = await cartService.updateCartItem(cartItemId, quantity);
-
-        if (response.success) {
-          await refreshCart();
-          return true;
-        } else {
+        if (!response.success) {
+          // Revert on failure by re-fetching
           setError(response.message || "Failed to update cart item");
-          await refreshCart();
+          await refreshCart(true);
           return false;
         }
+        return true;
       } catch (error) {
         console.error("Error updating cart item:", error);
         setError("Failed to update cart item");
-        await refreshCart();
+        await refreshCart(true);
         return false;
       }
     },
