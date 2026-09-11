@@ -13,8 +13,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+<<<<<<< HEAD
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Users, UserCheck, UserX, ArrowLeftRight, BarChart3 } from "lucide-react";
+=======
+import { Plus, Users, UserCheck, UserX } from "lucide-react";
+>>>>>>> 3dd9eae (desc: addition of column,card and to activate the status)
 import { createCustomerTypeColumns } from "./_components/customer-type-columns";
 import { CustomerTypeModal } from "./_components/CustomerTypeModal";
 import { PriceUsage } from "./_components/PriceUsage";
