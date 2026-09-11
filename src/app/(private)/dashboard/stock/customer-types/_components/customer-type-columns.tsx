@@ -2,14 +2,23 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Power } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { CustomerType } from "@/app/services/customerTypeService";
 
 export const createCustomerTypeColumns = (
   onEdit: (customerType: CustomerType) => void,
-  onDelete: (id: string) => void
+  onDelete: (id: string) => void,
+  onToggle: (id: string) => void
 ): ColumnDef<CustomerType>[] => [
+  {
+    id: "nbr",
+    header: "Nbr",
+    cell: ({ row }) => (
+      <span className="text-gray-600">{row.index + 1}</span>
+    ),
+    size: 50,
+  },
   {
     accessorKey: "name",
     header: "Name",
@@ -59,6 +68,19 @@ export const createCustomerTypeColumns = (
     header: "Actions",
     cell: ({ row }) => (
       <div className="flex gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onToggle(row.original.id)}
+          title={row.original.isActive ? "Deactivate" : "Activate"}
+          className={`h-8 w-8 p-0 ${
+            row.original.isActive
+              ? "text-gray-600 hover:text-orange-600 hover:bg-orange-50"
+              : "text-gray-600 hover:text-green-600 hover:bg-green-50"
+          }`}
+        >
+          <Power className="h-4 w-4" />
+        </Button>
         <Button
           variant="ghost"
           size="sm"
