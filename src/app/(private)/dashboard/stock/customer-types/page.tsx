@@ -3,8 +3,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/data-table";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,7 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Users, UserCheck, UserX, Loader2 } from "lucide-react";
+import { Plus, Users, UserCheck, UserX } from "lucide-react";
 import { createCustomerTypeColumns } from "./_components/customer-type-columns";
 import { CustomerTypeModal } from "./_components/CustomerTypeModal";
 import { toast } from "sonner";
@@ -84,6 +82,16 @@ export default function CustomerTypesPage() {
     }
   };
 
+  const handleToggle = async (id: string) => {
+    try {
+      const response = await customerTypeService.toggleCustomerTypeStatus(id);
+      toast.success(response.message);
+      await fetchCustomerTypes();
+    } catch (error) {
+      toast.error("Failed to toggle customer type status");
+    }
+  };
+
   const handleSubmit = async (data: CustomerTypeFormData) => {
     try {
       if (editingType) {
@@ -107,7 +115,7 @@ export default function CustomerTypesPage() {
     setEditingType(null);
   };
 
-  const columns = createCustomerTypeColumns(handleEdit, handleDeleteClick);
+  const columns = createCustomerTypeColumns(handleEdit, handleDeleteClick, handleToggle);
 
   return (
     <div className="p-6">
@@ -127,46 +135,60 @@ export default function CustomerTypesPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <Card className="border-none shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-50">
-                <Users className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 font-medium">Total Types</p>
-                <p className="text-xl font-bold text-gray-900">{isLoading ? "—" : stats.total}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-none shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-green-50">
-                <UserCheck className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 font-medium">Active</p>
-                <p className="text-xl font-bold text-green-600">{isLoading ? "—" : stats.active}</p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        {/* Total Types */}
+        <div className="p-4 rounded-lg border bg-blue-50 transition-all duration-200 hover:shadow-md">
+          <div className="flex items-center justify-between mb-2">
+            <Users className="w-5 h-5 text-blue-600" />
+            <div className="flex items-center gap-1 text-xs text-blue-600">
+              <div className="w-3 h-3">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M7 14l5-5 5 5z" />
+                </svg>
               </div>
             </div>
-          </CardContent>
-        </Card>
-        <Card className="border-none shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-red-50">
-                <UserX className="w-5 h-5 text-red-600" />
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 font-medium">Inactive</p>
-                <p className="text-xl font-bold text-red-600">{isLoading ? "—" : stats.inactive}</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs text-gray-600 font-medium">Total Types</p>
+            <p className="text-sm font-bold text-blue-600">{isLoading ? "—" : stats.total}</p>
+          </div>
+        </div>
+
+        {/* Active */}
+        <div className="p-4 rounded-lg border bg-green-50 transition-all duration-200 hover:shadow-md">
+          <div className="flex items-center justify-between mb-2">
+            <UserCheck className="w-5 h-5 text-green-600" />
+            <div className="flex items-center gap-1 text-xs text-green-600">
+              <div className="w-3 h-3">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M7 14l5-5 5 5z" />
+                </svg>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs text-gray-600 font-medium">Active</p>
+            <p className="text-sm font-bold text-green-600">{isLoading ? "—" : stats.active}</p>
+          </div>
+        </div>
+
+        {/* Inactive */}
+        <div className="p-4 rounded-lg border bg-red-50 transition-all duration-200 hover:shadow-md">
+          <div className="flex items-center justify-between mb-2">
+            <UserX className="w-5 h-5 text-red-600" />
+            <div className="flex items-center gap-1 text-xs text-red-600">
+              <div className="w-3 h-3">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17 10l-5 5-5-5z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div className="space-y-1">
+            <p className="text-xs text-gray-600 font-medium">Inactive</p>
+            <p className="text-sm font-bold text-red-600">{isLoading ? "—" : stats.inactive}</p>
+          </div>
+        </div>
       </div>
 
       <DataTable
