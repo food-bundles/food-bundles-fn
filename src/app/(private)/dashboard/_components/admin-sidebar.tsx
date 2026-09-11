@@ -31,6 +31,9 @@ import {
   CreditCard,
   MailOpen,
   ShieldCheck,
+  Brain,
+  Sprout,
+  FileCheck,
 } from "lucide-react";
 import NotificationsDrawer from "@/app/(private)/restaurant/_components/notificationDrawer";
 import { usePathname } from "next/navigation";
@@ -93,6 +96,21 @@ const menuItems = [
     icon: TrendingUp,
     label: "Market Prices",
     href: "/dashboard/markets",
+  },
+  {
+    icon: Brain,
+    label: "Predictive Intelligence",
+    href: "/dashboard/predictive-intelligence",
+  },
+  {
+    icon: Sprout,
+    label: "Supply Intelligence",
+    href: "/dashboard/supply-intelligence",
+  },
+  {
+    icon: FileCheck,
+    label: "Market Reports",
+    href: "/dashboard/market-reports",
   },
   {
     icon: ShieldCheck,
