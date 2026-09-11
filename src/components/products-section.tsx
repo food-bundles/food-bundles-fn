@@ -123,36 +123,48 @@ const ProductCard = memo(function ProductCard({
   // - if item is not in cart yet, auto-add it once quantity is increased past 1
   //   (default qty 1 still waits for the cart icon click)
   const autoUpdateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isUpdatingRef = useRef(false);
+
+  // Reconcile local quantity from the cart on every change, unless an update is
+  // in flight. This prevents the card and the drawer from pushing stale values
+  // back and forth (the "shaking" total), and survives page refreshes.
+  useEffect(() => {
+    if (isUpdatingRef.current || isAddingToCart) return;
+    if (cartQuantity > 0) {
+      setQuantity(cartQuantity);
+      setInputValue(cartQuantity.toString());
+    }
+  }, [cartQuantity]);
 
   useEffect(() => {
-    if (isAddingToCart) return;
+    if (isAddingToCart || isUpdatingRef.current) return;
 
     if (isInCart && cartItem) {
       if (quantity === cartQuantity) return;
 
-      if (autoUpdateTimerRef.current) {
-        clearTimeout(autoUpdateTimerRef.current);
-      }
+      if (autoUpdateTimerRef.current) clearTimeout(autoUpdateTimerRef.current);
 
       autoUpdateTimerRef.current = setTimeout(() => {
-        updateCartItem(cartItem.id, quantity);
+        isUpdatingRef.current = true;
+        updateCartItem(cartItem.id, quantity).finally(() => {
+          isUpdatingRef.current = false;
+        });
       }, 400);
     } else {
       if (quantity <= 1) return;
 
-      if (autoUpdateTimerRef.current) {
-        clearTimeout(autoUpdateTimerRef.current);
-      }
+      if (autoUpdateTimerRef.current) clearTimeout(autoUpdateTimerRef.current);
 
       autoUpdateTimerRef.current = setTimeout(() => {
-        addToCart(id, quantity);
+        isUpdatingRef.current = true;
+        addToCart(id, quantity).finally(() => {
+          isUpdatingRef.current = false;
+        });
       }, 400);
     }
 
     return () => {
-      if (autoUpdateTimerRef.current) {
-        clearTimeout(autoUpdateTimerRef.current);
-      }
+      if (autoUpdateTimerRef.current) clearTimeout(autoUpdateTimerRef.current);
     };
   }, [quantity, isInCart, cartItem, cartQuantity, updateCartItem, addToCart, isAddingToCart, id]);
 
