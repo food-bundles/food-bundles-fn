@@ -27,7 +27,10 @@ export default function SupportPage() {
         <div className="max-w-6xl mx-auto px-4 pt-12 pb-12 md:pt-16 md:pb-16">
           <span className="inline-flex items-center gap-2 bg-white/10 text-green-100 text-xs font-medium px-3 py-1 rounded-full">
             <LifeBuoy className="h-3.5 w-3.5" />
-            Help Center
+            Help Center  
+          </span>
+          <span className="ml-4 text-green-100 text-lg font-bold mt-2">
+            +250 788 963 267
           </span>
           <h1 className="text-3xl md:text-4xl font-bold mt-4 leading-tight">
             How can we help you today?
