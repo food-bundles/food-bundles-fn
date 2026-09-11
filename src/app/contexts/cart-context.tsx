@@ -121,6 +121,25 @@ export function CartProvider({ children }: CartProviderProps) {
         return false;
       }
 
+      // Optimistic update: reflect new quantity/total immediately
+      setCart((prevCart) => {
+        if (!prevCart) return prevCart;
+        const newCartItems = prevCart.cartItems.map((item) =>
+          item.id === cartItemId
+            ? { ...item, quantity, subtotal: item.unitPrice * quantity }
+            : item
+        );
+        const totalQuantity = newCartItems.reduce((s, i) => s + i.quantity, 0);
+        const totalAmount = newCartItems.reduce((s, i) => s + i.subtotal, 0);
+        return {
+          ...prevCart,
+          cartItems: newCartItems,
+          totalQuantity,
+          totalAmount,
+          totalItems: newCartItems.length,
+        };
+      });
+
       try {
         setError(null);
         const response = await cartService.updateCartItem(cartItemId, quantity);
@@ -130,11 +149,13 @@ export function CartProvider({ children }: CartProviderProps) {
           return true;
         } else {
           setError(response.message || "Failed to update cart item");
+          await refreshCart();
           return false;
         }
       } catch (error) {
         console.error("Error updating cart item:", error);
         setError("Failed to update cart item");
+        await refreshCart();
         return false;
       }
     },

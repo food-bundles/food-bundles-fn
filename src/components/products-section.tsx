@@ -4,7 +4,7 @@
 "use client";
 
 import type React from "react";
-import { useState, useCallback, useMemo, useEffect, memo } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef, memo } from "react";
 import { Card } from "@/components/ui/card";
 import CartDrawer from "@/components/cartDrawer";
 import { useCartSummary } from "@/app/contexts/cart-context";
@@ -117,6 +117,44 @@ const ProductCard = memo(function ProductCard({
     setQuantity(finalValue);
     setInputValue(finalValue.toString());
   };
+
+  // Auto-sync cart when quantity changes:
+  // - if item is already in cart, update its quantity automatically
+  // - if item is not in cart yet, auto-add it once quantity is increased past 1
+  //   (default qty 1 still waits for the cart icon click)
+  const autoUpdateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (isAddingToCart) return;
+
+    if (isInCart && cartItem) {
+      if (quantity === cartQuantity) return;
+
+      if (autoUpdateTimerRef.current) {
+        clearTimeout(autoUpdateTimerRef.current);
+      }
+
+      autoUpdateTimerRef.current = setTimeout(() => {
+        updateCartItem(cartItem.id, quantity);
+      }, 400);
+    } else {
+      if (quantity <= 1) return;
+
+      if (autoUpdateTimerRef.current) {
+        clearTimeout(autoUpdateTimerRef.current);
+      }
+
+      autoUpdateTimerRef.current = setTimeout(() => {
+        addToCart(id, quantity);
+      }, 400);
+    }
+
+    return () => {
+      if (autoUpdateTimerRef.current) {
+        clearTimeout(autoUpdateTimerRef.current);
+      }
+    };
+  }, [quantity, isInCart, cartItem, cartQuantity, updateCartItem, addToCart, isAddingToCart, id]);
 
   const handleCartAction = useCallback(async () => {
     setIsAddingToCart(true);
