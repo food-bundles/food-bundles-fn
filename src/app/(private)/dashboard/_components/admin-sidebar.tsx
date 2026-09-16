@@ -99,18 +99,25 @@ const menuItems = [
   },
   {
     icon: Brain,
-    label: "Predictive Intelligence",
-    href: "/dashboard/predictive-intelligence",
-  },
-  {
-    icon: Sprout,
-    label: "Supply Intelligence",
-    href: "/dashboard/supply-intelligence",
-  },
-  {
-    icon: FileCheck,
-    label: "Market Reports",
-    href: "/dashboard/market-reports",
+    label: "Intelligence",
+    href: "/dashboard/intelligence",
+    subItems: [
+      {
+        icon: Brain,
+        label: "Predictive Intelligence",
+        href: "/dashboard/predictive-intelligence",
+      },
+      {
+        icon: Sprout,
+        label: "Supply Intelligence",
+        href: "/dashboard/supply-intelligence",
+      },
+      {
+        icon: TrendingUp,
+        label: "Market Price Intelligence",
+        href: "/dashboard/market-price-intelligence",
+      },
+    ],
   },
   {
     icon: ShieldCheck,
