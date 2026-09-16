@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev --turbopack -p 3000",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
@@ -86,7 +86,7 @@
     "@types/node": "^20.19.24",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.1.7",
-    "baseline-browser-mapping": "^2.11.19",
+    "baseline-browser-mapping": "^2.11.23",
     "eslint": "^9",
     "eslint-config-next": "15.4.5",
     "tailwindcss": "^4.1.9",

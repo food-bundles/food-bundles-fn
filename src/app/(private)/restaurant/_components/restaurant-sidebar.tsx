@@ -23,8 +23,8 @@ import { useAuth } from "@/app/contexts/auth-context";
 
 const menuItems = [
   { icon: Home, label: "Shop", href: "/restaurant" },
-  { icon: UtensilsCrossed, label: "BNPL Menu", href: "/restaurant/menu" },
-  { icon: Utensils, label: "Recipe Costing", href: "/restaurant/recipe-costing" },
+  // { icon: UtensilsCrossed, label: "BNPL Menu", href: "/restaurant/menu" },
+  // { icon: Utensils, label: "Recipe Costing", href: "/restaurant/recipe-costing" },
   { icon: Bell, label: "Updates", href: "/restaurant/updates" },
   { icon: ShoppingCart, label: "Orders", href: "/restaurant/orders" },
   { icon: Wallet, label: "Deposits", href: "/restaurant/deposits" },
