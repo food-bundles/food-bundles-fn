@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { orderService } from "@/app/services/orderService";
 import { ViewOrderModal, CancelOrderModal } from "./_components/order-modals";
 import CreateOrderModal from "./_components/CreateOrderModal";
+import { PaymentMethodProvider } from "@/app/contexts/paymentMethodContext";
 import { useWebSocket } from "@/hooks/useOrderWebSocket";
 import { useAuth } from "@/app/contexts/auth-context";
 import {
@@ -587,11 +588,13 @@ export default function AdminOrdersPage() {
       
 
       {/* Modals */}
-      <CreateOrderModal
-        open={createOrderOpen}
-        onOpenChange={setCreateOrderOpen}
-        onSuccess={() => fetchOrders(pagination.page, pagination.limit)}
-      />
+      <PaymentMethodProvider>
+        <CreateOrderModal
+          open={createOrderOpen}
+          onOpenChange={setCreateOrderOpen}
+          onSuccess={() => fetchOrders(pagination.page, pagination.limit)}
+        />
+      </PaymentMethodProvider>
 
       <ViewOrderModal
         open={viewModalOpen}

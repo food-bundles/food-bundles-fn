@@ -21,6 +21,7 @@ import { ViewOrderModal } from "./_components/view-order-modal";
 import { ReorderDrawer } from "./_components/ReorderDrawer";
 import CreateOrderModal from "./_components/CreateOrderModal";
 import PaymentLinkModal from "./_components/PaymentLinkModal";
+import { PaymentMethodProvider } from "@/app/contexts/paymentMethodContext";
 
 export default function RestaurantOrdersPage() {
   const [searchValue, setSearchValue] = useState("");
@@ -472,11 +473,13 @@ export default function RestaurantOrdersPage() {
       />
 
       {/* Create Order Modal */}
-      <CreateOrderModal
-        open={createOrderOpen}
-        onOpenChange={setCreateOrderOpen}
-        onSuccess={() => fetchOrders()}
-      />
+      <PaymentMethodProvider>
+        <CreateOrderModal
+          open={createOrderOpen}
+          onOpenChange={setCreateOrderOpen}
+          onSuccess={() => fetchOrders()}
+        />
+      </PaymentMethodProvider>
 
       {/* Share Payment Link Modal */}
       <PaymentLinkModal
