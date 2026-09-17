@@ -387,9 +387,26 @@ export const voucherService = {
     return response.data;
   },
 
-  acceptLoanSession: async (sessionId: string, fundingTraderId?: string) => {
+  acceptLoanSession: async (
+    sessionId: string,
+    data: {
+      fundingTraderId?: string;
+      approvalPercentage?: number;
+      approvedAmount?: number;
+      repaymentDays?: number;
+    },
+  ) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.patch(`/vouchers/sessions/${sessionId}/accept`, { fundingTraderId });
+    const response = await axiosClient.patch(`/vouchers/sessions/${sessionId}/accept`, data);
+    return response.data;
+  },
+
+  checkTraderLoanCapacity: async (traderId: string, amount?: number) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get(
+      `/vouchers/sessions/trader-capacity/${traderId}`,
+      { params: amount && amount > 0 ? { amount } : {} },
+    );
     return response.data;
   },
 

@@ -54,8 +54,8 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
     try {
       const response = await restaurantService.getAllRestaurants(params);
 
-      if (response.success && response.data?.restaurants) {
-        const transformedRestaurants = response.data.restaurants.map((restaurant: any) => {
+      if (response.success && Array.isArray(response.data?.data)) {
+        const transformedRestaurants = response.data.data.map((restaurant: any) => {
           const ordersCount = restaurant.orders?.length || 0;
           const totalSpent = restaurant.orders?.reduce((sum: number, order: any) => {
             return order.status === "DELIVERED" ? sum + order.totalAmount : sum;
