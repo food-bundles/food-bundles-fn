@@ -141,7 +141,7 @@ export function CreateAdminOrderModal({
         limit: 100,
         status: "ACTIVE",
       });
-      const data = response.data || response.restaurants || [];
+      const data = response.data?.data || response.data || response.restaurants || [];
       setRestaurants(data);
     } catch (error) {
       console.error("Failed to load restaurants:", error);

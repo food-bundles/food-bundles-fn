@@ -742,6 +742,7 @@ export default function DepositsManagementPage() {
       });
       // Be more resilient with response structure
       const restaurantData =
+        response.data?.data ||
         response.data?.restaurants ||
         response.restaurants ||
         (Array.isArray(response.data) ? response.data : []);

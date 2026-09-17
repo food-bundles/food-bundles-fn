@@ -77,8 +77,8 @@ function PhysicalCard({ card }: { card: IVoucherCard }) {
               className="rounded-full bg-white object-cover"
             />
             <div>
-              <p className="text-[9px] uppercase tracking-widest text-white/60 leading-none">Food Bundles Card</p>
-              <p className="text-[7px] text-white/40 whitespace-nowrap leading-none">Apply to access voucher</p>
+              <p className="text-[9px] uppercase tracking-widest text-white/90 leading-none">Food Bundles Card</p>
+              <p className="text-[7px] text-white/60 whitespace-nowrap leading-none mt-1">Apply to access voucher</p>
             </div>
           </div>
           {/* Contactless waves + EMV chip */}
@@ -123,11 +123,11 @@ function PhysicalCard({ card }: { card: IVoucherCard }) {
         {/* Bottom row */}
         <div className="absolute bottom-4 left-5 right-5 flex justify-between items-end">
           <div>
-            <p className="text-[8px] uppercase text-white/50 mb-0.5">Card Holder</p>
+            <p className="text-[8px] uppercase text-white/60 mb-0.5">Card Holder</p>
             <p className="text-[11px] font-semibold truncate max-w-[140px]">{(card as any).restaurant?.name ?? card.restaurantName}</p>
           </div>
           <div className="text-right">
-            <p className="text-[8px] uppercase text-white/50 mb-0.5">Issued</p>
+            <p className="text-[8px] uppercase text-white/60 mb-0.5">Issued</p>
             <p className="text-[11px] font-semibold">{new Date(card.issuedDate).toLocaleDateString()}</p>
           </div>
        

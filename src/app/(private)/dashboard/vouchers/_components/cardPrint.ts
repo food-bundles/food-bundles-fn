@@ -78,7 +78,7 @@ export function printVoucherCard(card: IVoucherCard) {
   .brand { display: flex; align-items: center; gap: 8px; }
   .brand-logo { width: 20px; height: 20px; border-radius: 50%; background: #ffffff; object-fit: cover; }
   .brand-name { font-size: 9px; text-transform: uppercase; letter-spacing: 3px; color: rgba(255,255,255,0.65); line-height: 1; }
-  .brand-sub { font-size: 7px; color: rgba(255,255,255,0.4); white-space: nowrap; line-height: 1; }
+  .brand-sub { font-size: 7px; color: rgba(255,255,255,0.4); white-space: nowrap; line-height: 1; margin-top: 4px; }
 
   .waves { display: flex; align-items: center; gap: 6px; }
   .waves svg { color: rgba(255,255,255,0.7); transform: rotate(180deg); }
@@ -104,7 +104,6 @@ export function printVoucherCard(card: IVoucherCard) {
   .holder-name { font-size: 11px; font-weight: 600; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .issued-label { font-size: 8px; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,0.5); margin-bottom: 2px; }
   .issued-value { font-size: 11px; font-weight: 600; text-align: right; }
-  .fruit { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 16px; }
 
   /* Status overlay */
   .overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
@@ -163,7 +162,6 @@ export function printVoucherCard(card: IVoucherCard) {
         <p class="issued-label">Issued</p>
         <p class="issued-value">${escapeHtml(issuedDate)}</p>
       </div>
-      <div class="fruit">🍉</div>
     </div>
 
     ${overlay ? `<div class="overlay"><span>${overlay}</span></div>` : ""}
