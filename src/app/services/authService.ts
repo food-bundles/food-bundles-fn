@@ -126,6 +126,26 @@ export const authService = {
     return response.data;
   },
 
+  forgotPasswordPhone: async (phone: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/forgot-password-phone", { phone });
+    return response.data;
+  },
+
+  resetPasswordPhone: async (
+    phone: string,
+    otp: string,
+    newPassword: string,
+  ) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/reset-password-phone", {
+      phone,
+      otp,
+      newPassword,
+    });
+    return response.data;
+  },
+
   googleLogin: async (credential: string) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.post("/google-login", { credential });

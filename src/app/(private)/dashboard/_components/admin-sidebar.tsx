@@ -30,6 +30,10 @@ import {
   TrendingUp,
   CreditCard,
   MailOpen,
+  ShieldCheck,
+  Brain,
+  Sprout,
+  FileCheck,
 } from "lucide-react";
 import NotificationsDrawer from "@/app/(private)/restaurant/_components/notificationDrawer";
 import { usePathname } from "next/navigation";
@@ -92,6 +96,33 @@ const menuItems = [
     icon: TrendingUp,
     label: "Market Prices",
     href: "/dashboard/markets",
+  },
+  {
+    icon: Brain,
+    label: "Intelligence",
+    href: "/dashboard/intelligence",
+    subItems: [
+      {
+        icon: Brain,
+        label: "Predictive Intelligence",
+        href: "/dashboard/predictive-intelligence",
+      },
+      {
+        icon: Sprout,
+        label: "Supply Intelligence",
+        href: "/dashboard/supply-intelligence",
+      },
+      {
+        icon: TrendingUp,
+        label: "Market Price Intelligence",
+        href: "/dashboard/market-price-intelligence",
+      },
+    ],
+  },
+  {
+    icon: ShieldCheck,
+    label: "Restaurant KYC",
+    href: "/dashboard/restaurant-kyc",
   },
   {
     icon: Ticket,
