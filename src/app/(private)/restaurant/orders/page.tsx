@@ -436,7 +436,7 @@ export default function RestaurantOrdersPage() {
         order={selectedReorderOrder}
       />
 
-      {/* Edit Order Modal */}
+{/* Edit Order Modal */}
       <EditOrderModal
         open={editModalOpen}
         onClose={() => setEditModalOpen(false)}
