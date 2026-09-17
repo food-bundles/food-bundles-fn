@@ -323,6 +323,32 @@ export const voucherService = {
     return response.data;
   },
 
+  submitKycConsent: async (data: {
+    restaurantName: string;
+    tinNumber: string;
+    phoneNumber: string;
+    businessAddress: string;
+    district: string;
+    sector?: string;
+    ownerName: string;
+    ownerNationalId: string;
+    businessType: string;
+    yearsInOperation: string | number;
+    consentVubaBuba: boolean;
+    consentKayko: boolean;
+    consentRRA: boolean;
+  }) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/vouchers/card/kyc-consent", data);
+    return response.data;
+  },
+
+  getMyKycConsent: async () => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/vouchers/card/kyc-consent");
+    return response.data;
+  },
+
   issueVoucherCard: async (data: { restaurantId: string; loanLimit?: number }) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.post("/vouchers/card/issue", data);

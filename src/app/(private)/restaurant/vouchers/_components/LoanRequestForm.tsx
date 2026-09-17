@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +23,15 @@ interface Trader {
   id: string;
   name: string;
   termsAndConditions?: string | null;
+  requiresSubscription?: boolean;
 }
+
+const FOOD_BUNDLES_SHORT_TERMS = `Terms for Food Bundles financing:
+- Loan amount is credited to your voucher card after approval.
+- Repayment falls due per the repayment days agreed at request time.
+- A one-time unlock fee may apply before funds are made available.
+- Overdue loans must be settled before a new request is made.
+- Failure to repay may affect your future voucher financing.`;
 
 export default function LoanRequestForm({ onSuccess }: LoanRequestFormProps) {
   const [step, setStep] = useState<"form" | "terms">("form");
@@ -35,9 +44,12 @@ export default function LoanRequestForm({ onSuccess }: LoanRequestFormProps) {
   const [loadingTerms, setLoadingTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [subscriptionRequired, setSubscriptionRequired] = useState(false);
 
   // Load traders when TRADER provider type is selected
   useEffect(() => {
+    setSubscriptionRequired(false);
+    setError(null);
     if (providerType === "TRADER") {
       setLoadingTraders(true);
       voucherService
@@ -61,6 +73,7 @@ export default function LoanRequestForm({ onSuccess }: LoanRequestFormProps) {
   const handleProceed = async () => {
     if (!canProceed) return;
     setError(null);
+    setSubscriptionRequired(false);
     setLoadingTerms(true);
     try {
       const params: Parameters<typeof voucherService.getLoanTerms>[0] = {
@@ -70,12 +83,23 @@ export default function LoanRequestForm({ onSuccess }: LoanRequestFormProps) {
       const res = await voucherService.getLoanTerms(params);
       const data = res?.data;
 
+      // Trader requires an active subscription — stop and point to subscribe
+      if (data?.requiresSubscription && data?.hasActiveSubscription === false) {
+        setSubscriptionRequired(true);
+        setError(`${data.providerName} requires an active subscription to provide a loan. Please subscribe first.`);
+        return;
+      }
+
       // If already accepted before, skip T&C modal and submit directly
       if (data?.alreadyAccepted) {
         await submitLoan();
       } else {
+        const terms =
+          data?.terms ||
+          (providerType === "FOOD_BUNDLES" ? FOOD_BUNDLES_SHORT_TERMS : "") ||
+          "No specific terms provided.";
         setTermsData({
-          terms: data?.terms ?? "No specific terms provided.",
+          terms,
           alreadyAccepted: false,
           providerId: data?.providerId ?? (providerType === "FOOD_BUNDLES" ? "food-bundles" : selectedTraderId),
           providerName: data?.providerName ?? (providerType === "FOOD_BUNDLES" ? "Food Bundles" : selectedTrader?.name ?? ""),
@@ -83,8 +107,18 @@ export default function LoanRequestForm({ onSuccess }: LoanRequestFormProps) {
         setStep("terms");
       }
     } catch {
-      // If terms endpoint fails, just submit directly
-      await submitLoan();
+      // If terms endpoint fails, fall back to short Food Bundles terms then try again
+      if (providerType === "FOOD_BUNDLES") {
+        setTermsData({
+          terms: FOOD_BUNDLES_SHORT_TERMS,
+          alreadyAccepted: false,
+          providerId: "food-bundles",
+          providerName: "Food Bundles",
+        });
+        setStep("terms");
+      } else {
+        setError("Failed to load trader terms. Please try again.");
+      }
     } finally {
       setLoadingTerms(false);
     }
@@ -221,7 +255,14 @@ export default function LoanRequestForm({ onSuccess }: LoanRequestFormProps) {
                           <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center shrink-0">
                             <User className="h-3.5 w-3.5 text-green-600" />
                           </div>
-                          <span className="text-sm font-medium">{trader.name}</span>
+                          <span className="text-sm font-medium">
+                            {trader.name}
+                          </span>
+                          {trader.requiresSubscription && (
+                            <span className="text-[10px] font-semibold text-white bg-amber-500 px-1.5 py-0.5 rounded-full">
+                              Requires subscription
+                            </span>
+                          )}
                           {selectedTraderId === trader.id && (
                             <CheckCircle className="h-4 w-4 text-green-600 ml-auto" />
                           )}
@@ -232,7 +273,25 @@ export default function LoanRequestForm({ onSuccess }: LoanRequestFormProps) {
                 </div>
               )}
 
-              {error && <p className="text-red-600 text-xs">{error}</p>}
+              {error && (
+                <div className="space-y-2">
+                  {subscriptionRequired ? (
+                    <>
+                      <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-2.5">
+                        {error}
+                      </p>
+                      <Link
+                        href="/restaurant/subscribe"
+                        className="block text-center text-xs font-medium text-green-700 underline underline-offset-2 hover:text-green-800"
+                      >
+                        Subscribe now to continue
+                      </Link>
+                    </>
+                  ) : (
+                    <p className="text-red-600 text-xs">{error}</p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="mt-4">
