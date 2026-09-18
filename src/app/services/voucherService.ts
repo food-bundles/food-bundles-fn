@@ -323,6 +323,32 @@ export const voucherService = {
     return response.data;
   },
 
+  submitKycConsent: async (data: {
+    restaurantName: string;
+    tinNumber: string;
+    phoneNumber: string;
+    businessAddress: string;
+    district: string;
+    sector?: string;
+    ownerName: string;
+    ownerNationalId: string;
+    businessType: string;
+    yearsInOperation: string | number;
+    consentVubaBuba: boolean;
+    consentKayko: boolean;
+    consentRRA: boolean;
+  }) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/vouchers/card/kyc-consent", data);
+    return response.data;
+  },
+
+  getMyKycConsent: async () => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/vouchers/card/kyc-consent");
+    return response.data;
+  },
+
   issueVoucherCard: async (data: { restaurantId: string; loanLimit?: number }) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.post("/vouchers/card/issue", data);
@@ -361,9 +387,26 @@ export const voucherService = {
     return response.data;
   },
 
-  acceptLoanSession: async (sessionId: string, fundingTraderId?: string) => {
+  acceptLoanSession: async (
+    sessionId: string,
+    data: {
+      fundingTraderId?: string;
+      approvalPercentage?: number;
+      approvedAmount?: number;
+      repaymentDays?: number;
+    },
+  ) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.patch(`/vouchers/sessions/${sessionId}/accept`, { fundingTraderId });
+    const response = await axiosClient.patch(`/vouchers/sessions/${sessionId}/accept`, data);
+    return response.data;
+  },
+
+  checkTraderLoanCapacity: async (traderId: string, amount?: number) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get(
+      `/vouchers/sessions/trader-capacity/${traderId}`,
+      { params: amount && amount > 0 ? { amount } : {} },
+    );
     return response.data;
   },
 

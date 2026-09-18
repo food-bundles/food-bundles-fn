@@ -67,7 +67,7 @@ export default function WalletTransfersAdmin() {
   const loadRestaurants = () => {
     restaurantService
       .getAllRestaurants({ limit: 100 })
-      .then((res) => setRestaurants(res?.data ?? []))
+      .then((res) => setRestaurants(res?.data?.data ?? []))
       .catch(() => setRestaurants([]));
   };
 

@@ -17,7 +17,7 @@ import { subscriptionService } from "@/app/services/subscriptionService";
 import { exportService } from "@/app/services/exportService";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -29,7 +29,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-type ActiveTab = "plans" | "subscriptions";
+type ActiveTab = "plans" | "subscriptions" | "traders";
 
 const statusOptions = [
   { label: "All Status", value: "all" },
@@ -100,6 +100,8 @@ export default function AdminSubscriptionsPage() {
   });
   const [loanProviders, setLoanProviders] = useState<any[]>([]);
   const [currentFeature, setCurrentFeature] = useState("");
+  const [loanTraders, setLoanTraders] = useState<any[]>([]);
+  const [tradersLoading, setTradersLoading] = useState(false);
 
   // Load data with pagination
   const loadSubscriptionPlans = async (page = 1, limit = 10, isPagination = false) => {
@@ -183,9 +185,44 @@ export default function AdminSubscriptionsPage() {
         subscriptionService.getAllLoanProviders()
           .then((res) => setLoanProviders(res?.data ?? []))
           .catch(() => setLoanProviders([])),
+        loadLoanTraders(),
       ]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadLoanTraders = async () => {
+    setTradersLoading(true);
+    try {
+      const res = await subscriptionService.getAllLoanTraders();
+      setLoanTraders(res?.data ?? []);
+    } catch (error) {
+      console.error("Failed to load loan traders:", error);
+      toast.error("Failed to load loan traders");
+    } finally {
+      setTradersLoading(false);
+    }
+  };
+
+  const handleToggleTraderSubscription = async (traderId: string, requiresSubscription: boolean) => {
+    try {
+      await subscriptionService.updateTraderRequiresSubscription(
+        traderId,
+        requiresSubscription
+      );
+      setLoanTraders((prev) =>
+        prev.map((t) =>
+          t.id === traderId ? { ...t, requiresSubscription } : t
+        )
+      );
+      toast.success(requiresSubscription
+        ? "Trader now requires restaurants to have an active subscription"
+        : "Trader no longer requires a subscription");
+    } catch (error: any) {
+      console.error("Failed to update trader:", error);
+      toast.error(error.response?.data?.message || "Failed to update trader");
+      await loadLoanTraders();
     }
   };
 
@@ -663,6 +700,19 @@ export default function AdminSubscriptionsPage() {
               {planPagination.total}
             </span>
           </button>
+          <button
+            onClick={() => setActiveTab("traders")}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === "traders"
+                ? "border-green-500 text-green-600"
+                : "border-transparent text-gray-700 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            Loan Traders
+            <span className="ml-2 bg-gray-100 text-gray-900 py-0.5 px-2 rounded-full text-xs">
+              {loanTraders.length}
+            </span>
+          </button>
         </nav>
       </div>
 
@@ -685,6 +735,90 @@ export default function AdminSubscriptionsPage() {
           pagination={subscriptionPagination}
           onPaginationChange={handleSubscriptionPaginationChange}
         />
+      ) : activeTab === "traders" ? (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-medium text-gray-900">Loan Traders</h2>
+              <p className="text-xs text-gray-500">
+                Mark a trader as requiring an active subscription before restaurants can request a loan from them. Terms shown come from the trader&apos;s invitation acceptance.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={loadLoanTraders}
+              size="sm"
+              className="text-xs"
+            >
+              Refresh
+            </Button>
+          </div>
+
+          {tradersLoading ? (
+            <div className="flex items-center justify-center py-10">
+              <Loader2 className="h-5 w-5 animate-spin text-green-600" />
+            </div>
+          ) : loanTraders.length === 0 ? (
+            <div className="text-center py-10 text-sm text-gray-500 border rounded-lg bg-white">
+              No traders found. Invite a trader in the Invitations page.
+            </div>
+          ) : (
+            <div className="border rounded-lg overflow-hidden bg-white">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 text-left text-xs text-gray-500 uppercase tracking-wide">
+                    <th className="px-4 py-3 font-medium">Trader</th>
+                    <th className="px-4 py-3 font-medium">Phone</th>
+                    <th className="px-4 py-3 font-medium">Loan Terms & Conditions</th>
+                    <th className="px-4 py-3 font-medium">Requires Subscription</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loanTraders.map((trader) => {
+                    const terms = trader.loanTermsAndConditions || trader.termsAndConditions || "";
+                    return (
+                      <tr key={trader.id} className="border-t">
+                        <td className="px-4 py-3">
+                          <p className="font-medium text-gray-900">{trader.username}</p>
+                          <p className="text-xs text-gray-500">{trader.email}</p>
+                        </td>
+                        <td className="px-4 py-3 text-gray-600">{trader.phone || "—"}</td>
+                        <td className="px-4 py-3">
+                          {terms ? (
+                            <p className="text-xs text-gray-600 max-w-sm line-clamp-2 whitespace-pre-wrap">
+                              {terms}
+                            </p>
+                          ) : (
+                            <span className="text-xs text-red-500">No loan terms provided</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={trader.requiresSubscription}
+                            onClick={() => handleToggleTraderSubscription(trader.id, !trader.requiresSubscription)}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                              trader.requiresSubscription
+                                ? "bg-green-600"
+                                : "bg-gray-200"
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                                trader.requiresSubscription ? "translate-x-6" : "translate-x-1"
+                              }`}
+                            />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       ) : (
         <DataTable
           columns={subscriptionPlansColumns}

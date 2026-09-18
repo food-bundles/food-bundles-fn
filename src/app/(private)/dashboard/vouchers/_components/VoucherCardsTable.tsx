@@ -12,10 +12,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CreditCard, MoreHorizontal, Plus, Copy, Check, Percent } from "lucide-react";
+import { CreditCard, MoreHorizontal, Plus, Copy, Check, Percent, Printer } from "lucide-react";
 import { voucherService } from "@/app/services/voucherService";
 import { IVoucherCard, CardStatus } from "@/lib/types";
 import IssueVoucherCardModal from "./IssueVoucherCardModal";
+import { printVoucherCard } from "./cardPrint";
 import { RestaurantProvider } from "@/app/contexts/RestaurantContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -211,6 +212,10 @@ export default function VoucherCardsTable() {
               <DropdownMenuItem onClick={() => copyPan(card.pan, card.id)}>
                 <Copy className="mr-2 h-4 w-4" />
                 Copy PAN
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => printVoucherCard(card)}>
+                <Printer className="mr-2 h-4 w-4" />
+                Print Card
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => openFeeEditor(card)}>
                 <Percent className="mr-2 h-4 w-4" />

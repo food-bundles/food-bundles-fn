@@ -243,7 +243,7 @@ export default function RecentActivitiesFeed({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-green-600" />
-              Approve Loan — {approving?.restaurantName}
+              Approve Loan: {approving?.restaurantName}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">

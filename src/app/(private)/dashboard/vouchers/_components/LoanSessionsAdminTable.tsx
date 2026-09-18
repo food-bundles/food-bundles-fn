@@ -113,6 +113,16 @@ export default function LoanSessionsAdminTable() {
   const [selectedTraderId, setSelectedTraderId] = useState("");
   const [onBehalfTraderId, setOnBehalfTraderId] = useState("");
   const [isLoadingTraders, setIsLoadingTraders] = useState(false);
+  const [traderCapacity, setTraderCapacity] = useState<{
+    traderId: string;
+    name: string;
+    email?: string;
+    availableBalance: number;
+    requiredAmount: number | null;
+    canFund: boolean;
+    shortfall: number;
+  } | null>(null);
+  const [checkingBalance, setCheckingBalance] = useState(false);
 
   const loadTraders = async (prefill?: string) => {
     setOnBehalfTraderId("");
@@ -177,6 +187,10 @@ export default function LoanSessionsAdminTable() {
   const openAccept = async (session: LoanSession) => {
     setSelected(session);
     setSelectedTraderId(session.fundingTrader?.id ?? "");
+    setApprovedAmount(session.requestedAmount.toString());
+    setApprovalPct("100");
+    setRepaymentDays(session.repaymentDays?.toString() ?? "30");
+    setTraderCapacity(null);
     setIsLoadingTraders(true);
     setAcceptOpen(true);
     try {
@@ -195,7 +209,18 @@ export default function LoanSessionsAdminTable() {
     try {
       // Prefer the trader the restaurant picked; otherwise the admin-selected trader.
       const traderId = selected.fundingTrader?.id || selectedTraderId || undefined;
-      await voucherService.acceptLoanSession(selected.id, traderId);
+      const approvedAmountValue =
+        parseInt(approvedAmount) ||
+        Math.round(
+          selected.requestedAmount *
+            ((parseFloat(approvalPct) || 100) / 100),
+        );
+      await voucherService.acceptLoanSession(selected.id, {
+        fundingTraderId: traderId,
+        approvalPercentage: parseFloat(approvalPct),
+        approvedAmount: approvedAmountValue,
+        repaymentDays: parseInt(repaymentDays),
+      });
       toast.success(
         traderId
           ? "Loan accepted and sent to the trader for approval"
@@ -266,6 +291,39 @@ export default function LoanSessionsAdminTable() {
       setSubmitting(false);
     }
   };
+
+  // Live trader-capacity check: whenever a trader is selected in the Accept or
+  // Approve-on-behalf dialog, ask the backend if that trader can fund the amount.
+  const activeCapacityTraderId = approveOpen
+    ? onBehalfTraderId
+    : acceptOpen
+      ? selectedTraderId
+      : "";
+
+  useEffect(() => {
+    if (!activeCapacityTraderId || !selected) {
+      setTraderCapacity(null);
+      setCheckingBalance(false);
+      return;
+    }
+    let cancelled = false;
+    setCheckingBalance(true);
+    const amount = parseFloat(approvedAmount) || selected.requestedAmount;
+    voucherService
+      .checkTraderLoanCapacity(activeCapacityTraderId, amount)
+      .then((res) => {
+        if (!cancelled) setTraderCapacity(res?.data ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setTraderCapacity(null);
+      })
+      .finally(() => {
+        if (!cancelled) setCheckingBalance(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [approveOpen, acceptOpen, activeCapacityTraderId, approvedAmount, selected]);
 
   // Derived: effective unlock fee for the selected pending session (admin-input, no default fee)
   const parsedAmount = parseFloat(approvedAmount) || 0;
@@ -483,11 +541,11 @@ export default function LoanSessionsAdminTable() {
 
       {/* Approve modal */}
       <Dialog open={approveOpen} onOpenChange={setApproveOpen}>
-        <DialogContent className="sm:max-w-md bg-white">
+        <DialogContent className="bg-white max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-green-600" />
-              Approve Loan — {selected?.restaurant.name}
+              Approve Loan: {selected?.restaurant.name}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
@@ -511,19 +569,30 @@ export default function LoanSessionsAdminTable() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-1">Approval % (credit given on the requested amount)</label>
-              <Input
-                type="number"
-                min="1"
-                max="100"
-                value={approvalPct}
-                onChange={(e) => handlePctChange(e.target.value)}
-                className="h-10 text-sm"
-              />
-              <p className="text-xs text-gray-400 mt-1">
-                The client's requested amount is never modified — this percentage only sets the credit granted.
-              </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Approval % (credit given on the requested amount)</label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={approvalPct}
+                  onChange={(e) => handlePctChange(e.target.value)}
+                  className="h-10 text-sm"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  The client's requested amount is never modified — this percentage only sets the credit granted.
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Repayment Days</label>
+                <Input
+                  type="number"
+                  value={repaymentDays}
+                  onChange={(e) => setRepaymentDays(e.target.value)}
+                  className="h-10 text-sm"
+                />
+              </div>
             </div>
 
             <div className="bg-white border border-gray-200 rounded-lg p-3 text-sm space-y-1">
@@ -610,22 +679,12 @@ export default function LoanSessionsAdminTable() {
               </div>
             )}
 
-            <div>
-              <label className="block text-sm font-medium mb-1">Repayment Days</label>
-              <Input
-                type="number"
-                value={repaymentDays}
-                onChange={(e) => setRepaymentDays(e.target.value)}
-                className="h-10 text-sm"
-              />
-            </div>
-
             {/* Approve on behalf of a delegation trader */}
             <div>
               <label className="block text-sm font-medium mb-1">
                 Approve on behalf of trader (optional)
               </label>
-              <div className="space-y-2">
+              <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
                 {traders.filter(
                   (t) => t.canTradeOnBehalf && t.delegationStatus === "ACCEPTED"
                 ).length > 0 ? (
@@ -664,9 +723,31 @@ export default function LoanSessionsAdminTable() {
                 )}
               </div>
               {onBehalfTraderId && (
-                <p className="text-xs text-gray-400 mt-1">
-                  The selected trader&rsquo;s wallet balance will be reserved for this loan.
-                </p>
+                <div className="text-xs mt-1 space-y-1">
+                  {checkingBalance && (
+                    <p className="text-gray-400 flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin" /> Checking trader balance...
+                    </p>
+                  )}
+                  {!checkingBalance && traderCapacity && !traderCapacity.canFund && (
+                    <p className="text-red-600 bg-red-50 border border-red-200 rounded p-2">
+                      Insufficient balance. {traderCapacity.name} has{" "}
+                      {traderCapacity.availableBalance.toLocaleString()} RWF available but{" "}
+                      {traderCapacity.requiredAmount?.toLocaleString() ?? parsedAmount.toLocaleString()} RWF is required
+                      (short {traderCapacity.shortfall.toLocaleString()} RWF). Choose another trader or lower the approval %.
+                    </p>
+                  )}
+                  {!checkingBalance && traderCapacity && traderCapacity.canFund && (
+                    <p className="text-green-600 bg-green-50 border border-green-200 rounded p-2">
+                      Sufficient balance. {traderCapacity.name} can fund{" "}
+                      {traderCapacity.requiredAmount?.toLocaleString() ?? parsedAmount.toLocaleString()} RWF
+                      ({traderCapacity.availableBalance.toLocaleString()} RWF available).
+                    </p>
+                  )}
+                  <p className="text-gray-400">
+                    The selected trader&rsquo;s wallet balance will be reserved for this loan.
+                  </p>
+                </div>
               )}
             </div>
 
@@ -677,7 +758,10 @@ export default function LoanSessionsAdminTable() {
                   submitting ||
                   !approvedAmount ||
                   !repaymentDays ||
-                  (requireUnlockFee && (!unlockFeePct || parseFloat(unlockFeePct) <= 0))
+                  (requireUnlockFee && (!unlockFeePct || parseFloat(unlockFeePct) <= 0)) ||
+                  (!!onBehalfTraderId &&
+                    !!traderCapacity &&
+                    !traderCapacity.canFund)
                 }
                 className="flex-1 bg-green-600 hover:bg-green-700"
               >
@@ -694,7 +778,7 @@ export default function LoanSessionsAdminTable() {
 
       {/* Accept dialog — send to trader */}
       <Dialog open={acceptOpen} onOpenChange={setAcceptOpen}>
-        <DialogContent className="sm:max-w-md bg-white">
+        <DialogContent className="bg-white max-h-[90vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-blue-600" />
@@ -709,6 +793,12 @@ export default function LoanSessionsAdminTable() {
                   {selected?.requestedAmount.toLocaleString()} RWF
                 </span>
               </div>
+              {selected?.purpose && (
+                <div className="flex justify-between mt-1">
+                  <span className="text-gray-500">Purpose</span>
+                  <span className="text-gray-700">{selected.purpose}</span>
+                </div>
+              )}
               <div className="flex justify-between mt-1">
                 <span className="text-gray-500">RRN</span>
                 <span className="font-mono text-xs">{selected?.rrn}</span>
@@ -721,6 +811,61 @@ export default function LoanSessionsAdminTable() {
                   )}
                 </span>
               </div>
+            </div>
+
+            {/* Amount — same as approve flow */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Approval % (credit given on the requested amount)
+                </label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={approvalPct}
+                  onChange={(e) => handlePctChange(e.target.value)}
+                  className="h-10 text-sm"
+                />
+                <p className="text-xs text-gray-400 mt-1">
+                  The client's requested amount is never modified — this
+                  percentage only sets the credit granted.
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Repayment Days
+                </label>
+                <Input
+                  type="number"
+                  value={repaymentDays}
+                  onChange={(e) => setRepaymentDays(e.target.value)}
+                  className="h-10 text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded-lg p-3 text-sm space-y-1">
+              <div className="flex justify-between">
+                <span className="text-gray-500">Requested</span>
+                <span className="font-semibold">
+                  {selected?.requestedAmount.toLocaleString()} RWF
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Approved ({approvalPct}%)</span>
+                <span className="font-semibold text-green-600">
+                  {parsedAmount.toLocaleString()} RWF
+                </span>
+              </div>
+              {extraAmount > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Extra the client pays at checkout</span>
+                  <span className="font-semibold text-orange-600">
+                    {extraAmount.toLocaleString()} RWF
+                  </span>
+                </div>
+              )}
             </div>
 
             <div>
@@ -739,7 +884,7 @@ export default function LoanSessionsAdminTable() {
                   accepted, but no trader will be notified.
                 </p>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
                   {traders.map((t) => (
                     <label
                       key={t.id}
@@ -771,12 +916,43 @@ export default function LoanSessionsAdminTable() {
                   ))}
                 </div>
               )}
+
+              {selectedTraderId && !isLoadingTraders && (
+                <div className="text-xs mt-2 space-y-1">
+                  {checkingBalance && (
+                    <p className="text-gray-400 flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin" /> Checking trader balance...
+                    </p>
+                  )}
+                  {!checkingBalance && traderCapacity && traderCapacity.canFund && (
+                    <p className="text-green-600 bg-green-50 border border-green-200 rounded-lg p-2">
+                      Sufficient balance — {traderCapacity.name} can fund{" "}
+                      {traderCapacity.requiredAmount?.toLocaleString() ?? parsedAmount.toLocaleString()} RWF
+                      ({traderCapacity.availableBalance.toLocaleString()} RWF available).
+                    </p>
+                  )}
+                  {!checkingBalance && traderCapacity && !traderCapacity.canFund && (
+                    <p className="text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">
+                      Insufficient balance — {traderCapacity.name} has{" "}
+                      {traderCapacity.availableBalance.toLocaleString()} RWF available but{" "}
+                      {traderCapacity.requiredAmount?.toLocaleString() ?? parsedAmount.toLocaleString()} RWF
+                      is required (short {traderCapacity.shortfall.toLocaleString()} RWF). Choose
+                      another trader or lower the approval %.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="flex gap-2 pt-1">
               <Button
                 onClick={handleAccept}
-                disabled={submitting}
+                disabled={
+                  submitting ||
+                  (!!selectedTraderId &&
+                    !!traderCapacity &&
+                    !traderCapacity.canFund)
+                }
                 className="flex-1 bg-blue-600 hover:bg-blue-700"
               >
                 {submitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}

@@ -550,6 +550,32 @@ export const subscriptionService = {
   },
 
   /**
+   * Get all loan traders (Admin only)
+   * GET /subscriptions/loan/traders
+   */
+  getAllLoanTraders: async (): Promise<{ message: string; data: any[] }> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/subscriptions/loan/traders");
+    return response.data;
+  },
+
+  /**
+   * Toggle whether a trader requires an active subscription (Admin only)
+   * PATCH /subscriptions/loan/traders/:traderId
+   */
+  updateTraderRequiresSubscription: async (
+    traderId: string,
+    requiresSubscription: boolean
+  ): Promise<{ message: string; data: any }> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(
+      `/subscriptions/loan/traders/${traderId}`,
+      { requiresSubscription }
+    );
+    return response.data;
+  },
+
+  /**
    * Request loan access via a loan-enabled plan (Restaurant/Hotel/Affiliator)
    * POST /subscriptions/loan/request
    */
