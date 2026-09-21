@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,8 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { traderService } from "@/app/services/traderService";
 import { paymentMethodService } from "@/app/services/paymentMethodService";
+import { walletService } from "@/app/services/walletService";
 import {toast} from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, ExternalLink, Smartphone, RefreshCcw, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface PaymentMethod {
   id: string;
@@ -27,15 +28,21 @@ interface TopUpModalProps {
 
 export function TopUpModal({ isOpen, onClose, onSuccess }: TopUpModalProps) {
   const [loading, setLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [showPaymentContinue, setShowPaymentContinue] = useState(false);
+  const [stage, setStage] = useState<"form" | "redirect" | "pending">("form");
+  const [transactionId, setTransactionId] = useState("");
   const [redirectUrl, setRedirectUrl] = useState("");
+  const [notice, setNotice] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     amount: "",
     paymentMethodId: "",
     phoneNumber: "",
     description: "",
   });
+
+  const verifyInFlight = useRef(false);
 
   useEffect(() => {
     const fetchPaymentMethods = async () => {
@@ -57,6 +64,81 @@ export function TopUpModal({ isOpen, onClose, onSuccess }: TopUpModalProps) {
     }
   }, [isOpen]);
 
+  const resetState = () => {
+    setStage("form");
+    setRedirectUrl("");
+    setTransactionId("");
+    setNotice("");
+    setError(null);
+  };
+
+  const handleClose = () => {
+    if (loading) return;
+    resetState();
+    onClose();
+  };
+
+  const performVerify = useCallback(
+    async (options?: { silent?: boolean }) => {
+      if (!transactionId) return;
+      if (verifyInFlight.current) return;
+      verifyInFlight.current = true;
+      const { silent = false } = options || {};
+      if (!silent) {
+        setError(null);
+        setVerifying(true);
+      }
+      try {
+        const response: any = await walletService.verifyTopUp(transactionId);
+        const data = response?.data || {};
+        if (data.verified) {
+          setStage("form");
+          setTransactionId("");
+          setNotice("");
+          setError(null);
+          toast.success("Top-up confirmed! Your wallet has been funded.");
+          onClose();
+          onSuccess();
+          return;
+        }
+        if (!silent) {
+          setNotice(
+            data.message ||
+              "Payment not confirmed yet. Please complete it on your phone or in the payment tab."
+          );
+        }
+      } catch (err: any) {
+        if (!silent) {
+          const msg =
+            err?.response?.data?.message ??
+            "Could not check payment status. Please try again.";
+          setError(msg);
+        }
+      } finally {
+        verifyInFlight.current = false;
+        if (!silent) setVerifying(false);
+      }
+    },
+    [transactionId, onClose, onSuccess]
+  );
+
+  // Auto-poll the payment status while the user completes payment.
+  useEffect(() => {
+    if (!isOpen || stage !== "pending" || !transactionId) return;
+
+    let attempts = 0;
+    const intervalId = setInterval(() => {
+      attempts += 1;
+      if (attempts > 36) {
+        clearInterval(intervalId);
+        return;
+      }
+      performVerify({ silent: true });
+    }, 5000);
+
+    return () => clearInterval(intervalId);
+  }, [isOpen, stage, transactionId, performVerify]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -77,6 +159,7 @@ export function TopUpModal({ isOpen, onClose, onSuccess }: TopUpModalProps) {
     }
 
     setLoading(true);
+    setError(null);
     try {
       const response = await traderService.topUpWallet({
         amount: Number(formData.amount),
@@ -86,50 +169,61 @@ export function TopUpModal({ isOpen, onClose, onSuccess }: TopUpModalProps) {
       });
 
       if (response.success || response.data) {
+        const data = response.data || {};
+        const txId = data?.transaction?.id || "";
+
         if (selectedMethod?.name === "CARD") {
-          const redirectUrl = response.data?.redirectUrl;
-          if (redirectUrl) {
-            setRedirectUrl(redirectUrl);
-            setShowPaymentContinue(true);
+          const url = data?.redirectUrl;
+          if (url) {
+            setTransactionId(txId);
+            setRedirectUrl(url);
+            setStage("redirect");
           } else {
             toast.error("Payment redirect URL not received");
+            if (txId) {
+              // Still track the payment even without a redirect link.
+              setTransactionId(txId);
+              setNotice("Payment initiated. We are checking its status automatically...");
+              setStage("pending");
+            }
           }
         } else {
-          toast.success("Top-up initiated successfully!");
-          onSuccess();
-          handleClose();
+          if (txId) {
+            setTransactionId(txId);
+            setNotice(
+              `Payment initiated to ${formData.phoneNumber}. Please approve it on your phone. Your wallet is funded automatically once confirmed.`
+            );
+            setStage("pending");
+          } else {
+            toast.success("Top-up initiated successfully!");
+            onSuccess();
+            handleClose();
+          }
         }
       }
     } catch (error: any) {
       console.error("Top-up error:", error);
+      setError(error.response?.data?.message || "Failed to initiate top-up");
       toast.error(error.response?.data?.message || "Failed to initiate top-up");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleClose = () => {
-    if (!loading) {
-      onClose();
-      setShowPaymentContinue(false);
-      setRedirectUrl("");
-      setFormData({
-        amount: "",
-        paymentMethodId: "",
-        phoneNumber: "",
-        description: "",
-      });
-    }
-  };
-
   const handleContinuePayment = () => {
+    if (!redirectUrl) return;
     setLoading(true);
-    window.location.href = redirectUrl;
+    // Open the secure payment page in a new tab so we can keep tracking here.
+    window.open(redirectUrl, "_blank", "noopener,noreferrer");
+    setStage("pending");
+    setNotice(
+      "Complete the payment in the new tab. Your wallet is funded automatically once payment is confirmed."
+    );
+    setLoading(false);
   };
 
   const handleCancelPayment = () => {
-    setShowPaymentContinue(false);
-    setRedirectUrl("");
+    resetState();
     toast.info("Payment cancelled");
   };
 
@@ -140,15 +234,31 @@ export function TopUpModal({ isOpen, onClose, onSuccess }: TopUpModalProps) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {showPaymentContinue ? "Complete Payment" : "Top Up Digital Food Store Wallet"}
+            {stage === "form"
+              ? "Top Up Digital Food Store Wallet"
+              : stage === "redirect"
+              ? "Complete Payment"
+              : "Confirming Payment"}
           </DialogTitle>
         </DialogHeader>
         
-        {showPaymentContinue ? (
+        {stage === "redirect" && (
           <div className="space-y-4">
-            <p className="text-gray-600 text-sm">
-              Click Continue to complete your payment on Flutterwave.
-            </p>
+            <div className="flex items-start gap-3 bg-purple-50 border border-purple-200 rounded-lg p-4">
+              <ExternalLink className="w-5 h-5 text-purple-600 mt-0.5 shrink-0" />
+              <p className="text-sm text-purple-900">
+                Your payment page is ready. We'll open it in a new tab so you can
+                complete your card payment securely.
+              </p>
+            </div>
+
+            {error && (
+              <div className="flex items-start gap-2 text-red-600 text-sm bg-red-50 rounded p-3">
+                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
             <div className="flex gap-3">
               <Button
                 type="button"
@@ -165,11 +275,56 @@ export function TopUpModal({ isOpen, onClose, onSuccess }: TopUpModalProps) {
                 className="flex-1 bg-green-600 hover:bg-green-700"
               >
                 {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                <ExternalLink className="w-4 h-4 mr-2" />
                 Continue
               </Button>
             </div>
           </div>
-        ) : (
+        )}
+
+        {stage === "pending" && (
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 bg-green-50 border border-green-200 rounded-lg p-4">
+              <Smartphone className="w-5 h-5 text-green-600 mt-0.5 shrink-0" />
+              <div className="text-sm text-green-800">
+                {notice}
+                <span className="flex items-center gap-1.5 mt-2 text-xs text-green-700">
+                  <RefreshCcw className="w-3 h-3 animate-spin" />
+                  Checking automatically every 5 seconds. Your wallet is funded the
+                  moment payment is confirmed.
+                </span>
+              </div>
+            </div>
+
+            {error && (
+              <div className="flex items-start gap-2 text-red-600 text-sm bg-red-50 rounded p-3">
+                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-2">
+              <Button
+                onClick={() => performVerify({ silent: false })}
+                disabled={verifying}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                {verifying && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                {verifying ? "Checking..." : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    I've Paid — Check Status
+                  </>
+                )}
+              </Button>
+              <Button variant="outline" onClick={handleClose} disabled={verifying}>
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {stage === "form" && (
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="amount">Amount (RWF)</Label>
@@ -224,6 +379,13 @@ export function TopUpModal({ isOpen, onClose, onSuccess }: TopUpModalProps) {
                 onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                 required
               />
+            </div>
+          )}
+
+          {error && (
+            <div className="flex items-start gap-2 text-red-600 text-sm bg-red-50 rounded p-3">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 

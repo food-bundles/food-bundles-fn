@@ -64,7 +64,8 @@ import WalletTransfersAdmin from "./_components/WalletTransfersAdmin";
 import { ExportButton } from "@/components/ExportButton";
 import Image from "next/image";
 import { GenericExportModal, type GenericExportConfig, type ExportColumnDef } from "@/components/generic-export-modal";
-import { exportService, type ExportModuleType } from "@/app/services/exportService";
+import type { ExportModuleType } from "@/app/services/exportService";
+import { exportService } from "@/app/services/exportService";
 
 const WALLET_COLUMNS: ExportColumnDef[] = [
   { id: "restaurantName", label: "Restaurant Name", description: "Name of the restaurant" },
@@ -198,13 +199,13 @@ export default function DepositsManagementPage() {
 
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [exportSelectedRows, setExportSelectedRows] = useState<any[]>([]);
-  const [exportModule, setExportModule] = useState<string>("wallets");
+  const [exportModule, setExportModule] = useState<ExportModuleType>("wallets");
   const [exportModuleName, setExportModuleName] = useState<string>("Wallets");
   const [exportColumns, setExportColumns] = useState<ExportColumnDef[]>(WALLET_COLUMNS);
   const [exportFilters, setExportFilters] = useState<any>({});
 
   const handleOpenExportModal = (
-    module: "wallets" | "transactions" | "deposits",
+    module: "wallets" | "transactions" | "deposits" | "loans",
     moduleName: string,
     columns: ExportColumnDef[],
     selectedRows: any[],

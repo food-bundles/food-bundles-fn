@@ -65,6 +65,24 @@ export interface DashboardStats {
       nearMaturityVouchers: number;
       farmerPayments: number;
     };
+    timeBreakdown: Record<
+      string,
+      {
+        year: number;
+        revenue: number;
+        expenses: number;
+        profit: number;
+        months?: Record<
+          string,
+          {
+            monthName: string;
+            revenue: number;
+            expenses: number;
+            profit: number;
+          }
+        >;
+      }
+    >;
   };
   subscriptions: {
     totalSubscriptions: number;
@@ -156,7 +174,7 @@ export const statisticsService = {
         data: {
           users: { totalUsers: 0, restaurants: 0, farmers: 0, admins: 0, affiliators: 0, logistics: 0, timeSeriesData: [], growth: { totalChange: 0, restaurantChange: 0, farmerChange: 0, adminChange: 0 } },
           orders: { totalOrders: 0, completedOrders: 0, cancelledOrders: 0, ongoingOrders: 0, timeSeriesData: [], growth: { totalChange: 0, completedChange: 0 } },
-          finance: { totalRevenue: 0, totalExpenses: 0, netProfit: 0, profitMargin: 0, timeSeriesData: [], revenueBreakdown: { orders: 0, subscriptions: 0, vouchers: 0 }, expenseBreakdown: { usedVouchers: 0, maturedVouchers: 0, nearMaturityVouchers: 0, farmerPayments: 0 } },
+          finance: { totalRevenue: 0, totalExpenses: 0, netProfit: 0, profitMargin: 0, timeSeriesData: [], revenueBreakdown: { orders: 0, subscriptions: 0, vouchers: 0 }, expenseBreakdown: { usedVouchers: 0, maturedVouchers: 0, nearMaturityVouchers: 0, farmerPayments: 0 }, timeBreakdown: {} },
           subscriptions: { totalSubscriptions: 0, activeSubscriptions: 0, expiredSubscriptions: 0, planBreakdown: [], growth: { totalChange: 0, activeChange: 0 } },
           vouchers: { totalVouchers: 0, usedVouchers: 0, maturedVouchers: 0, nearMaturityVouchers: 0, totalValue: 0, usedValue: 0, timeSeriesData: [], growth: { totalChange: 0, usedChange: 0 } },
           quickStats: { totalUsers: { value: 0, change: 0 }, totalOrders: { value: 0, change: 0 }, totalRevenue: { value: 0, change: 0 }, activeSubscriptions: { value: 0, change: 0 }, usedVouchers: { value: 0, change: 0 }, completionRate: { value: 0, change: 0 } },

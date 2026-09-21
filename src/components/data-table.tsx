@@ -97,7 +97,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
 
   // Header configuration
-  title?: string;
+  title?: React.ReactNode;
   description?: React.ReactNode;
   showExport?: boolean;
   onExport?: (selectedRows: TData[], format: "excel" | "csv" | "pdf") => void;

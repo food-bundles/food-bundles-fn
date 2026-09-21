@@ -236,6 +236,39 @@ export interface LoanAccessFilters {
   loanProviderId?: string;
 }
 
+export interface TraderLoanProvider {
+  id: string;
+  username: string;
+  email: string;
+  phone?: string | null;
+  requiresSubscription: boolean;
+  walletId: string | null;
+  balance: number;
+  walletActive: boolean;
+  unlockFeeEnabled: boolean;
+  unlockFeePercentage?: number | null;
+  leftoverPolicy?: string;
+}
+
+export interface PlatformLoanProvider {
+  id: string;
+  name: string;
+  isActive: boolean;
+  unlockFeeEnabled: boolean;
+  unlockFeePercentage?: number | null;
+  leftoverPolicy?: string;
+}
+
+export interface LoanAccessProvidersData {
+  traders: TraderLoanProvider[];
+  platform: PlatformLoanProvider;
+}
+
+export interface LoanAccessProvidersResponse {
+  message: string;
+  data: LoanAccessProvidersData;
+}
+
 // ==================== RESPONSE TYPES ====================
 
 export interface SubscriptionPlansResponse {
@@ -552,6 +585,7 @@ export const subscriptionService = {
       isActive?: boolean;
       unlockFeeEnabled?: boolean;
       unlockFeePercentage?: number | null;
+      leftoverPolicy?: string;
     }
   ): Promise<LoanProviderResponse> => {
     const axiosClient = createAxiosClient();
@@ -584,6 +618,48 @@ export const subscriptionService = {
     const response = await axiosClient.patch(
       `/subscriptions/loan/traders/${traderId}`,
       { requiresSubscription }
+    );
+    return response.data;
+  },
+
+  /**
+   * Overview of all configurable loan providers — traders + Food Bundles platform (Admin only)
+   * GET /subscriptions/loan/access-providers
+   */
+  getLoanAccessProviders: async (): Promise<LoanAccessProvidersResponse> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/subscriptions/loan/access-providers");
+    return response.data;
+  },
+
+  /**
+   * Set/clear a trader's loan unlock fee (Admin only)
+   * PATCH /subscriptions/loan/traders/:traderId/unlock-fee
+   */
+  updateTraderUnlockFee: async (
+    traderId: string,
+    data: { unlockFeeEnabled: boolean; unlockFeePercentage?: number | null }
+  ): Promise<{ message: string; data: any }> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(
+      `/subscriptions/loan/traders/${traderId}/unlock-fee`,
+      data
+    );
+    return response.data;
+  },
+
+  /**
+   * Set a trader-funded loan's leftover policy (Admin only)
+   * PATCH /subscriptions/loan/traders/:traderId/leftover-policy
+   */
+  updateTraderLeftoverPolicy: async (
+    traderId: string,
+    leftoverPolicy: "USELESS" | "TOPUP_WALLET"
+  ): Promise<{ message: string; data: any }> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(
+      `/subscriptions/loan/traders/${traderId}/leftover-policy`,
+      { leftoverPolicy }
     );
     return response.data;
   },

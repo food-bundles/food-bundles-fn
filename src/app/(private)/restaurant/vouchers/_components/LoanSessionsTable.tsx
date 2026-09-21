@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table";
 import { voucherService } from "@/app/services/voucherService";
 import { ILoanSession, LoanSessionStatus } from "@/lib/types";
-import { Lock, Unlock, AlertCircle } from "lucide-react";
+import { Lock, Unlock, AlertCircle, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import UnlockFeeModal from "./UnlockFeeModal";
+import RepayVoucherModal from "./RepayVoucherModal";
 import { toast } from "sonner";
+import { useAuth } from "@/app/contexts/auth-context";
+import { useLoanWebSocket } from "@/hooks/useLoanWebSocket";
 
 const STATUS_COLORS: Record<string, string> = {
   REQUESTED: "text-yellow-600",
@@ -44,6 +47,13 @@ export default function LoanSessionsTable() {
   const [loading, setLoading] = useState(true);
   const [unlockSession, setUnlockSession] = useState<ILoanSession | null>(null);
   const [unlockModalOpen, setUnlockModalOpen] = useState(false);
+  const [repaySession, setRepaySession] = useState<ILoanSession | null>(null);
+  const [repayModalOpen, setRepayModalOpen] = useState(false);
+
+  const { user } = useAuth();
+  const { loanUpdates } = useLoanWebSocket(user?.id || "", user?.id);
+  const loanUpdateCountRef = useRef(0);
+  const autoCheckedRef = useRef<Set<string>>(new Set());
 
   const loadSessions = () => {
     voucherService
@@ -56,6 +66,53 @@ export default function LoanSessionsTable() {
   useEffect(() => {
     loadSessions();
   }, []);
+
+  // Live refresh: whenever the backend broadcasts a LOAN_UPDATE (payment
+  // confirmed, repayment, etc.) reload the list. If the update is for the
+  // session currently trying to unlock, close its modal — payment succeeded.
+  useEffect(() => {
+    if (loanUpdates.length === 0) return;
+    if (loanUpdates.length === loanUpdateCountRef.current) return;
+    loanUpdateCountRef.current = loanUpdates.length;
+
+    const latest = loanUpdates[loanUpdates.length - 1];
+    loadSessions();
+
+    if (
+      unlockSession &&
+      latest.loanId === unlockSession.id &&
+      (latest.data?.status === "ACTIVE" ||
+        latest.data?.unlockStatus === "UNLOCKED")
+    ) {
+      setUnlockModalOpen(false);
+      toast.success("Unlock fee paid — your loan is now active!");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loanUpdates]);
+
+  // Recovery: on load, re-check any session stuck in UNLOCK_FEE_PENDING. The
+  // backend now reads the PayPack status correctly, so a payment that already
+  // went through activates immediately — no need to pay twice.
+  useEffect(() => {
+    if (loading) return;
+    const pending = sessions.filter(
+      (s) => s.status === LoanSessionStatus.UNLOCK_FEE_PENDING
+    );
+    pending.forEach((s) => {
+      if (autoCheckedRef.current.has(s.id)) return;
+      autoCheckedRef.current.add(s.id);
+      voucherService
+        .verifyUnlockFeePayment(s.id)
+        .then((res) => {
+          const data = res?.data || {};
+          if (data.verified || data.alreadyUnlocked) loadSessions();
+        })
+        .catch(() => {
+          // ignore — user can retry from the modal
+        });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessions, loading]);
 
   const columns: ColumnDef<ILoanSession>[] = [
     {
@@ -77,24 +134,14 @@ export default function LoanSessionsTable() {
       header: "Loan Amount",
       cell: ({ row }) => {
         const s = row.original;
-        return (
-          <div className="text-xs">
-            <p className="text-gray-400">
-              Requested:{" "}
-              <span className="text-gray-700">{s.requestedAmount.toLocaleString()} RWF</span>
-            </p>
-            <p className="font-semibold text-green-600">
-              Approved: {s.approvedAmount?.toLocaleString() ?? s.requestedAmount.toLocaleString()} RWF
-            </p>
-            {s.approvalPercentage && (
-              <p className="text-gray-400">({s.approvalPercentage}% credit)</p>
-            )}
-            {s.approvedAmount != null && s.approvedAmount < s.requestedAmount && (
-              <p className="text-red-500 font-medium">
-                Extra to pay: {(s.requestedAmount - s.approvedAmount).toLocaleString()} RWF
-              </p>
-            )}
-          </div>
+        return s.approvedAmount != null ? (
+          <p className="text-xs font-semibold text-green-600">
+            {s.approvedAmount.toLocaleString()} RWF
+          </p>
+        ) : (
+          <p className="text-xs text-gray-700">
+            {s.requestedAmount.toLocaleString()} RWF
+          </p>
         );
       },
     },
@@ -107,14 +154,13 @@ export default function LoanSessionsTable() {
         return (
           <div className="text-xs">
             <p className="font-medium text-orange-600">{s.unlockFee.toLocaleString()} RWF</p>
-            <p className="text-gray-400">{s.unlockFeePercentage ?? 0}%</p>
           </div>
         );
       },
     },
     {
       id: "usage",
-      header: "Used / Outstanding",
+      header: "Outstanding",
       cell: ({ row }) => {
         const s = row.original;
         return (
@@ -179,7 +225,16 @@ export default function LoanSessionsTable() {
           s.status === LoanSessionStatus.APPROVED_LOCKED ||
           s.status === LoanSessionStatus.UNLOCK_FEE_PENDING;
 
-        if (!unlockable || s.unlockFee == null) {
+        const repayable =
+          s.outstandingAmount > 0 &&
+          [
+            LoanSessionStatus.ACTIVE,
+            LoanSessionStatus.PARTIALLY_USED,
+            LoanSessionStatus.FULLY_USED,
+            LoanSessionStatus.OVERDUE,
+          ].includes(s.status);
+
+        if (!unlockable && !repayable) {
           return (
             <span className="text-xs text-gray-300">
               {s.unlockStatus === "UNLOCKED" ? "Unlocked" : "—"}
@@ -188,18 +243,36 @@ export default function LoanSessionsTable() {
         }
 
         return (
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-8 border-orange-400 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
-            onClick={() => {
-              setUnlockSession(s);
-              setUnlockModalOpen(true);
-            }}
-          >
-            <Unlock className="w-3.5 h-3.5 mr-1.5" />
-            Unlock
-          </Button>
+          <div className="flex items-center gap-2">
+            {unlockable && s.unlockFee != null && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 border-orange-400 text-orange-600 hover:bg-orange-50 hover:text-orange-700"
+                onClick={() => {
+                  setUnlockSession(s);
+                  setUnlockModalOpen(true);
+                }}
+              >
+                <Unlock className="w-3.5 h-3.5 mr-1.5" />
+                Unlock
+              </Button>
+            )}
+            {repayable && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 border-blue-400 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                onClick={() => {
+                  setRepaySession(s);
+                  setRepayModalOpen(true);
+                }}
+              >
+                <Wallet className="w-3.5 h-3.5 mr-1.5" />
+                Pay Voucher
+              </Button>
+            )}
+          </div>
         );
       },
     },
@@ -225,6 +298,18 @@ export default function LoanSessionsTable() {
           onSuccess={() => {
             setUnlockModalOpen(false);
             toast.success("Unlock fee paid — your loan is now active!");
+            loadSessions();
+          }}
+        />
+      )}
+      {repaySession && (
+        <RepayVoucherModal
+          open={repayModalOpen}
+          onClose={() => setRepayModalOpen(false)}
+          session={repaySession}
+          onSuccess={() => {
+            setRepayModalOpen(false);
+            toast.success("Voucher repaid — thank you!");
             loadSessions();
           }}
         />

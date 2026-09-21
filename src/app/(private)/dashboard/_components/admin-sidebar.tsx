@@ -322,7 +322,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                 className="w-7 h-7 md:w-8 md:h-8 rounded-full object-cover"
               />
               <h1 className="text-sm font-bold text-green-100">
-                Food Bundles Ltd
+                Food Bundles
               </h1>
             </div>
           </Link>

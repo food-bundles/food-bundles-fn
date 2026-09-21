@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useWallet } from "@/app/contexts/WalletContext";
+import { walletService } from "@/app/services/walletService";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +17,7 @@ interface TransactionHistoryProps {
 }
 
 export function TransactionHistory({ isOpen, onClose }: TransactionHistoryProps) {
-  const { transactions, getTransactions, verifyTopUp, loading } = useWallet();
+  const { transactions, getTransactions, loading } = useWallet();
   const [page, setPage] = useState(1);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
 
@@ -30,7 +31,7 @@ export function TransactionHistory({ isOpen, onClose }: TransactionHistoryProps)
   const handleVerifyTransaction = async (transactionId: string) => {
     setVerifyingId(transactionId);
     try {
-      await verifyTopUp(transactionId);
+      await walletService.verifyTopUp(transactionId);
     } catch (error) {
       console.error("Verification error:", error);
     } finally {
@@ -139,10 +140,10 @@ export function TransactionHistory({ isOpen, onClose }: TransactionHistoryProps)
                       </div>
                     </div>
                     
-                    {transaction.flwTxRef && (
+                    {transaction.flwRef && (
                       <div className="mt-2 pt-2 border-t border-gray-100">
                         <p className="text-xs text-gray-500">
-                          Ref: {transaction.flwTxRef}
+                          Ref: {transaction.flwRef}
                         </p>
                       </div>
                     )}

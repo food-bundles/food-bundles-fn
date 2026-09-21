@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { voucherService } from "@/app/services/voucherService";
 import { toast } from "sonner";
+import ApproveLoanSessionModal from "./ApproveLoanSessionModal";
 
 interface LoanSession {
   id: string;
@@ -40,7 +41,7 @@ interface LoanSession {
   approvalPercentage?: number;
   unlockFee?: number;
   unlockFeePercentage?: number;
-  // Effective config (admin-set, no default) resolved from card then provider
+  // Effective config (admin-set, no default) resolved from the selected loan provider
   effectiveUnlockFeeEnabled?: boolean;
   effectiveUnlockFeePercentage?: number;
   unlockStatus: string;
@@ -53,6 +54,7 @@ interface LoanSession {
   dueDate?: string;
   requestedAt: string;
   approvedAt?: string;
+  loanProviderType?: "TRADER" | "FOOD_BUNDLES" | string | null;
   restaurant: { id: string; name: string; email: string };
   approver?: { id: string; username: string };
   fundingTrader?: { id: string; username: string; email: string };
@@ -67,6 +69,8 @@ interface LoanTrader {
   availableBalance: number;
   canTradeOnBehalf: boolean;
   delegationStatus: string;
+  unlockFeeEnabled?: boolean;
+  unlockFeePercentage?: number | null;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -99,19 +103,16 @@ export default function LoanSessionsAdminTable() {
   const [sessions, setSessions] = useState<LoanSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<LoanSession | null>(null);
-  const [approveOpen, setApproveOpen] = useState(false);
   const [acceptOpen, setAcceptOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [approvedAmount, setApprovedAmount] = useState("");
   const [approvalPct, setApprovalPct] = useState("100");
   const [repaymentDays, setRepaymentDays] = useState("30");
-  const [requireUnlockFee, setRequireUnlockFee] = useState(false);
-  const [unlockFeePct, setUnlockFeePct] = useState("");
   const [rejectReason, setRejectReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [traders, setTraders] = useState<LoanTrader[]>([]);
   const [selectedTraderId, setSelectedTraderId] = useState("");
-  const [onBehalfTraderId, setOnBehalfTraderId] = useState("");
+  const [approveOpen, setApproveOpen] = useState(false);
   const [isLoadingTraders, setIsLoadingTraders] = useState(false);
   const [traderCapacity, setTraderCapacity] = useState<{
     traderId: string;
@@ -123,17 +124,6 @@ export default function LoanSessionsAdminTable() {
     shortfall: number;
   } | null>(null);
   const [checkingBalance, setCheckingBalance] = useState(false);
-
-  const loadTraders = async (prefill?: string) => {
-    setOnBehalfTraderId("");
-    setSelectedTraderId(prefill ?? "");
-    try {
-      const res = await voucherService.getLoanTraders();
-      setTraders(res?.data ?? []);
-    } catch {
-      setTraders([]);
-    }
-  };
 
   const load = () => {
     setLoading(true);
@@ -148,33 +138,24 @@ export default function LoanSessionsAdminTable() {
     load();
   }, []);
 
+  const loadTraders = async () => {
+    setIsLoadingTraders(true);
+    try {
+      const res = await voucherService.getLoanTraders();
+      setTraders(res?.data ?? []);
+    } catch {
+      setTraders([]);
+    } finally {
+      setIsLoadingTraders(false);
+    }
+  };
+
   // Sync amount when percentage changes (amount is always derived from the requested amount)
   const handlePctChange = (val: string) => {
     setApprovalPct(val);
     if (selected) {
       const pct = parseFloat(val) || 0;
       setApprovedAmount(String(Math.round((selected.requestedAmount * pct) / 100)));
-    }
-  };
-
-  const openApprove = async (session: LoanSession) => {
-    setSelected(session);
-    setApprovedAmount(session.requestedAmount.toString());
-    setApprovalPct("100");
-    setRepaymentDays(session.repaymentDays?.toString() ?? "30");
-    setRequireUnlockFee(session.effectiveUnlockFeeEnabled ?? false);
-    setUnlockFeePct(
-      session.effectiveUnlockFeeEnabled
-        ? String(session.effectiveUnlockFeePercentage ?? "")
-        : "",
-    );
-    setOnBehalfTraderId("");
-    setApproveOpen(true);
-    try {
-      const res = await voucherService.getLoanTraders();
-      setTraders(res?.data ?? []);
-    } catch {
-      setTraders([]);
     }
   };
 
@@ -191,16 +172,13 @@ export default function LoanSessionsAdminTable() {
     setApprovalPct("100");
     setRepaymentDays(session.repaymentDays?.toString() ?? "30");
     setTraderCapacity(null);
-    setIsLoadingTraders(true);
     setAcceptOpen(true);
-    try {
-      const res = await voucherService.getLoanTraders();
-      setTraders(res?.data ?? []);
-    } catch {
-      setTraders([]);
-    } finally {
-      setIsLoadingTraders(false);
-    }
+    await loadTraders();
+  };
+
+  const openApprove = (session: LoanSession) => {
+    setSelected(session);
+    setApproveOpen(true);
   };
 
   const handleAccept = async () => {
@@ -235,48 +213,6 @@ export default function LoanSessionsAdminTable() {
     }
   };
 
-  const handleApprove = async () => {
-    if (!selected) return;
-    setSubmitting(true);
-    try {
-      const approvedAmountValue = parseInt(approvedAmount) || Math.round(selected.requestedAmount * (parseFloat(approvalPct) || 100) / 100);
-
-      // Approve on behalf of a delegation trader
-      if (onBehalfTraderId) {
-        await voucherService.adminApproveLoanSessionOnBehalf(
-          selected.id,
-          onBehalfTraderId,
-          {
-            approvalPercentage: parseFloat(approvalPct),
-            approvedAmount: approvedAmountValue,
-            repaymentDays: parseInt(repaymentDays),
-          },
-        );
-        toast.success(`Loan approved on behalf of trader — ${selected.restaurant.name}`);
-        setApproveOpen(false);
-        load();
-        return;
-      }
-
-      await voucherService.approveLoanSession(selected.id, {
-        approvedAmount: approvedAmountValue,
-        approvalPercentage: parseFloat(approvalPct),
-        repaymentDays: parseInt(repaymentDays),
-        requireUnlockFee: requireUnlockFee,
-        unlockFeePercentage: requireUnlockFee
-          ? parseFloat(unlockFeePct) || 0
-          : undefined,
-      });
-      toast.success(`Loan approved for ${selected.restaurant.name}`);
-      setApproveOpen(false);
-      load();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message ?? "Failed to approve");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   const handleReject = async () => {
     if (!selected) return;
     setSubmitting(true);
@@ -292,13 +228,9 @@ export default function LoanSessionsAdminTable() {
     }
   };
 
-  // Live trader-capacity check: whenever a trader is selected in the Accept or
-  // Approve-on-behalf dialog, ask the backend if that trader can fund the amount.
-  const activeCapacityTraderId = approveOpen
-    ? onBehalfTraderId
-    : acceptOpen
-      ? selectedTraderId
-      : "";
+  // Live trader-capacity check: whenever a trader is selected in the Accept
+  // dialog, ask the backend if that trader can fund the amount.
+  const activeCapacityTraderId = acceptOpen ? selectedTraderId : "";
 
   useEffect(() => {
     if (!activeCapacityTraderId || !selected) {
@@ -323,14 +255,10 @@ export default function LoanSessionsAdminTable() {
     return () => {
       cancelled = true;
     };
-  }, [approveOpen, acceptOpen, activeCapacityTraderId, approvedAmount, selected]);
+  }, [acceptOpen, activeCapacityTraderId, approvedAmount, selected]);
 
-  // Derived: effective unlock fee for the selected pending session (admin-input, no default fee)
+  // Derived values for the accept dialog
   const parsedAmount = parseFloat(approvedAmount) || 0;
-  const parsedFeePct = parseFloat(unlockFeePct) || 0;
-  const effectiveFeePct =
-    selected?.status === "REQUESTED" && requireUnlockFee ? parsedFeePct : 0;
-  const unlockFeePreview = effectiveFeePct > 0 ? parsedAmount * (effectiveFeePct / 100) : 0;
   const extraAmount = selected && parsedAmount > 0 ? Math.max(0, selected.requestedAmount - parsedAmount) : 0;
 
   const columns: ColumnDef<LoanSession>[] = [
@@ -362,7 +290,16 @@ export default function LoanSessionsAdminTable() {
       id: "provider",
       header: "Trader",
       cell: ({ row }) => {
-        const t = row.original.fundingTrader;
+        const s = row.original;
+        if (s.loanProviderType === "FOOD_BUNDLES") {
+          return (
+            <div>
+              <p className="text-sm font-medium text-gray-800">Food Bundles</p>
+              <p className="text-xs text-gray-400">Platform lender</p>
+            </div>
+          );
+        }
+        const t = s.fundingTrader;
         return t ? (
           <div>
             <p className="text-sm font-medium text-gray-800">{t.username}</p>
@@ -370,7 +307,7 @@ export default function LoanSessionsAdminTable() {
           </div>
         ) : (
           <span className="text-xs text-gray-400">
-            {row.original.status === "REQUESTED" ? "Not assigned" : "—"}
+            {s.status === "REQUESTED" ? "Not assigned" : "—"}
           </span>
         );
       },
@@ -496,10 +433,10 @@ export default function LoanSessionsAdminTable() {
                 onClick={() => openApprove(s)}
               >
                 <CheckCircle className="mr-2 h-4 w-4 text-green-600" />
-                Approve (Food Bundles)
+                Approve
               </DropdownMenuItem>
               <DropdownMenuItem
-                disabled={!isPending}
+                disabled={!isPending || s.loanProviderType === "FOOD_BUNDLES"}
                 onClick={() => openAccept(s)}
               >
                 <CheckCircle className="mr-2 h-4 w-4 text-blue-600" />
@@ -539,242 +476,31 @@ export default function LoanSessionsAdminTable() {
         />
       </div>
 
-      {/* Approve modal */}
-      <Dialog open={approveOpen} onOpenChange={setApproveOpen}>
-        <DialogContent className="bg-white max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-green-600" />
-              Approve Loan: {selected?.restaurant.name}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {/* Requested info */}
-            <div className="bg-gray-50 rounded-lg p-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Requested</span>
-                <span className="font-semibold">
-                  {selected?.requestedAmount.toLocaleString()} RWF
-                </span>
-              </div>
-              {selected?.purpose && (
-                <div className="flex justify-between mt-1">
-                  <span className="text-gray-500">Purpose</span>
-                  <span className="text-gray-700">{selected.purpose}</span>
-                </div>
-              )}
-              <div className="flex justify-between mt-1">
-                <span className="text-gray-500">RRN</span>
-                <span className="font-mono text-xs">{selected?.rrn}</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Approval % (credit given on the requested amount)</label>
-                <Input
-                  type="number"
-                  min="1"
-                  max="100"
-                  value={approvalPct}
-                  onChange={(e) => handlePctChange(e.target.value)}
-                  className="h-10 text-sm"
-                />
-                <p className="text-xs text-gray-400 mt-1">
-                  The client's requested amount is never modified — this percentage only sets the credit granted.
-                </p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Repayment Days</label>
-                <Input
-                  type="number"
-                  value={repaymentDays}
-                  onChange={(e) => setRepaymentDays(e.target.value)}
-                  className="h-10 text-sm"
-                />
-              </div>
-            </div>
-
-            <div className="bg-white border border-gray-200 rounded-lg p-3 text-sm space-y-1">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Requested</span>
-                <span className="font-semibold">
-                  {selected?.requestedAmount.toLocaleString()} RWF
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Approved ({approvalPct}%)</span>
-                <span className="font-semibold text-green-600">
-                  {parsedAmount.toLocaleString()} RWF
-                </span>
-              </div>
-              {extraAmount > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Extra the client pays at checkout</span>
-                  <span className="font-semibold text-orange-600">
-                    {extraAmount.toLocaleString()} RWF
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Require unlock fee — admin override, defaults to the configured card/provider fee */}
-            <label className="flex items-center gap-2 text-sm text-gray-700 bg-gray-50 rounded-lg p-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={requireUnlockFee}
-                onChange={(e) => setRequireUnlockFee(e.target.checked)}
-                className="w-4 h-4 accent-green-600"
-              />
-              <span>
-                Require unlock fee before this loan activates
-                <span className="block text-xs text-gray-400">
-                  The unlock fee is not static — you set the percentage applied at approval.
-                </span>
-              </span>
-            </label>
-
-            {requireUnlockFee && (
-              <div>
-                <label className="block text-sm font-medium mb-1">Unlock Fee %</label>
-                <Input
-                  type="number"
-                  min="0.1"
-                  step="0.1"
-                  value={unlockFeePct}
-                  onChange={(e) => setUnlockFeePct(e.target.value)}
-                  placeholder="e.g. 5"
-                  className="h-10 text-sm"
-                />
-              </div>
-            )}
-
-            {/* Unlock fee preview — uses the admin-set percentage, not static */}
-            {parsedAmount > 0 && effectiveFeePct > 0 && (
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm">
-                <p className="font-medium text-orange-800">Unlock Fee Applied</p>
-                <p className="text-orange-700 mt-0.5">
-                  {parsedAmount.toLocaleString()} × {effectiveFeePct}% ={" "}
-                  <strong>{unlockFeePreview.toLocaleString()} RWF</strong>
-                </p>
-                <p className="text-orange-500 text-xs mt-1">
-                  Restaurant pays this before the loan activates.
-                </p>
-              </div>
-            )}
-            {requireUnlockFee && parsedAmount > 0 && effectiveFeePct <= 0 && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm">
-                <p className="font-medium text-yellow-800">Enter the unlock fee percentage</p>
-                <p className="text-yellow-700 text-xs mt-0.5">
-                  Approving with a fee enabled but no percentage will not lock the loan.
-                </p>
-              </div>
-            )}
-            {!requireUnlockFee && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm">
-                <p className="font-medium text-green-800">No Unlock Fee Applies</p>
-                <p className="text-green-700 text-xs mt-0.5">
-                  The loan activates immediately upon approval.
-                </p>
-              </div>
-            )}
-
-            {/* Approve on behalf of a delegation trader */}
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Approve on behalf of trader (optional)
-              </label>
-              <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
-                {traders.filter(
-                  (t) => t.canTradeOnBehalf && t.delegationStatus === "ACCEPTED"
-                ).length > 0 ? (
-                  traders
-                    .filter(
-                      (t) => t.canTradeOnBehalf && t.delegationStatus === "ACCEPTED"
-                    )
-                    .map((t) => (
-                      <label
-                        key={t.id}
-                        className={`flex items-start gap-2 border rounded-lg p-3 cursor-pointer text-sm ${
-                          onBehalfTraderId === t.id
-                            ? "border-blue-500 bg-blue-50"
-                            : "border-gray-200 hover:border-gray-300"
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="onBehalfTrader"
-                          checked={onBehalfTraderId === t.id}
-                          onChange={() => setOnBehalfTraderId(t.id)}
-                          className="w-4 h-4 mt-0.5 accent-blue-600"
-                        />
-                        <span className="flex-1">
-                          <span className="block font-medium text-gray-800">{t.name}</span>
-                          <span className="block text-xs text-gray-500">
-                            {t.availableBalance.toLocaleString()} RWF available
-                          </span>
-                        </span>
-                      </label>
-                    ))
-                ) : (
-                  <p className="text-xs text-gray-400 py-1">
-                    No delegation traders available.
-                  </p>
-                )}
-              </div>
-              {onBehalfTraderId && (
-                <div className="text-xs mt-1 space-y-1">
-                  {checkingBalance && (
-                    <p className="text-gray-400 flex items-center gap-1">
-                      <Loader2 className="w-3 h-3 animate-spin" /> Checking trader balance...
-                    </p>
-                  )}
-                  {!checkingBalance && traderCapacity && !traderCapacity.canFund && (
-                    <p className="text-red-600 bg-red-50 border border-red-200 rounded p-2">
-                      Insufficient balance. {traderCapacity.name} has{" "}
-                      {traderCapacity.availableBalance.toLocaleString()} RWF available but{" "}
-                      {traderCapacity.requiredAmount?.toLocaleString() ?? parsedAmount.toLocaleString()} RWF is required
-                      (short {traderCapacity.shortfall.toLocaleString()} RWF). Choose another trader or lower the approval %.
-                    </p>
-                  )}
-                  {!checkingBalance && traderCapacity && traderCapacity.canFund && (
-                    <p className="text-green-600 bg-green-50 border border-green-200 rounded p-2">
-                      Sufficient balance. {traderCapacity.name} can fund{" "}
-                      {traderCapacity.requiredAmount?.toLocaleString() ?? parsedAmount.toLocaleString()} RWF
-                      ({traderCapacity.availableBalance.toLocaleString()} RWF available).
-                    </p>
-                  )}
-                  <p className="text-gray-400">
-                    The selected trader&rsquo;s wallet balance will be reserved for this loan.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className="flex gap-2 pt-1">
-              <Button
-                onClick={handleApprove}
-                disabled={
-                  submitting ||
-                  !approvedAmount ||
-                  !repaymentDays ||
-                  (requireUnlockFee && (!unlockFeePct || parseFloat(unlockFeePct) <= 0)) ||
-                  (!!onBehalfTraderId &&
-                    !!traderCapacity &&
-                    !traderCapacity.canFund)
-                }
-                className="flex-1 bg-green-600 hover:bg-green-700"
-              >
-                {submitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                {submitting ? "Approving..." : "Approve Loan"}
-              </Button>
-              <Button variant="outline" onClick={() => setApproveOpen(false)} disabled={submitting}>
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Approve loan modal (shared with the pending activities feed) */}
+      <ApproveLoanSessionModal
+        open={approveOpen}
+        session={
+          selected
+            ? {
+                id: selected.id,
+                rrn: selected.rrn,
+                restaurantName: selected.restaurant.name,
+                requestedAmount: selected.requestedAmount,
+                purpose: selected.purpose,
+                repaymentDays: selected.repaymentDays,
+                loanProviderType: selected.loanProviderType,
+                fundingTraderId: selected.fundingTrader?.id ?? null,
+                effectiveUnlockFeeEnabled: selected.effectiveUnlockFeeEnabled,
+                effectiveUnlockFeePercentage: selected.effectiveUnlockFeePercentage,
+              }
+            : null
+        }
+        onClose={() => setApproveOpen(false)}
+        onSuccess={() => {
+          setApproveOpen(false);
+          load();
+        }}
+      />
 
       {/* Accept dialog — send to trader */}
       <Dialog open={acceptOpen} onOpenChange={setAcceptOpen}>
@@ -827,10 +553,6 @@ export default function LoanSessionsAdminTable() {
                   onChange={(e) => handlePctChange(e.target.value)}
                   className="h-10 text-sm"
                 />
-                <p className="text-xs text-gray-400 mt-1">
-                  The client's requested amount is never modified — this
-                  percentage only sets the credit granted.
-                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">
@@ -942,6 +664,24 @@ export default function LoanSessionsAdminTable() {
                   )}
                 </div>
               )}
+
+              {selectedTraderId &&
+                (() => {
+                  const t = traders.find((x) => x.id === selectedTraderId);
+                  if (!t) return null;
+                  const feeApplies =
+                    t.unlockFeeEnabled && (t.unlockFeePercentage ?? 0) > 0;
+                  return feeApplies ? (
+                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 mt-2">
+                      Unlock fee applies — {t.unlockFeePercentage}% will be applied
+                      automatically when this trader&apos;s loan is approved.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-2 mt-2">
+                      No unlock fee — this trader&apos;s loan activates without a fee.
+                    </p>
+                  );
+                })()}
             </div>
 
             <div className="flex gap-2 pt-1">

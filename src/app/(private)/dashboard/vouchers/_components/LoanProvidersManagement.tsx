@@ -13,39 +13,93 @@ import {
 } from "@/components/ui/dialog";
 import {
   Building2,
-  Plus,
   Loader2,
   PauseCircle,
-  PlayCircle,
   Percent,
+  PlayCircle,
+  Wallet,
 } from "lucide-react";
 import {
   subscriptionService,
-  LoanProvider,
+  LoanAccessProvidersData,
+  PlatformLoanProvider,
+  TraderLoanProvider,
 } from "@/app/services/subscriptionService";
 import { toast } from "sonner";
 
+type FeeTargetKind = "platform" | "trader";
+
+interface FeeTarget {
+  kind: FeeTargetKind;
+  id: string;
+  name: string;
+}
+
+const feeBadge = (enabled: boolean, pct?: number | null) =>
+  enabled && (pct ?? 0) > 0 ? (
+    <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[10px] rounded">
+      Active — {pct}%
+    </Badge>
+  ) : (
+    <Badge className="bg-gray-100 text-gray-500 text-[10px] rounded">
+      Paused — no fee
+    </Badge>
+  );
+
+type LeftoverPolicy = "USELESS" | "TOPUP_WALLET";
+
+// Admin control for what happens to a loan's unused amount after the voucher is
+// used once: credited back to the restaurant's wallet, or recorded as useless.
+function LeftoverSelect({
+  value,
+  saving,
+  disabled,
+  onChange,
+}: {
+  value?: string;
+  saving: boolean;
+  disabled: boolean;
+  onChange: (policy: LeftoverPolicy) => void;
+}) {
+  const policy: LeftoverPolicy = value === "TOPUP_WALLET" ? "TOPUP_WALLET" : "USELESS";
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">
+        Leftover
+      </span>
+      <select
+        value={policy}
+        disabled={disabled || saving}
+        onChange={(e) => onChange(e.target.value as LeftoverPolicy)}
+        title="What happens to the unused amount left on a loan once its voucher is used at checkout"
+        className="h-7 text-[11px] border border-gray-300 rounded px-1.5 bg-white text-gray-700 disabled:opacity-50"
+      >
+        <option value="USELESS">Useless (recorded)</option>
+        <option value="TOPUP_WALLET">Top up wallet</option>
+      </select>
+      {saving && <Loader2 className="w-3 h-3 animate-spin text-green-600" />}
+    </div>
+  );
+}
+
 export default function LoanProvidersManagement() {
-  const [providers, setProviders] = useState<LoanProvider[]>([]);
+  const [data, setData] = useState<LoanAccessProvidersData | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  // Create modal fee fields
-  const [createFeeEnabled, setCreateFeeEnabled] = useState(false);
-  const [createFeePct, setCreateFeePct] = useState("");
-  // Edit-fee modal state
-  const [feeProvider, setFeeProvider] = useState<LoanProvider | null>(null);
+  const [feeTarget, setFeeTarget] = useState<FeeTarget | null>(null);
   const [feeEnabled, setFeeEnabled] = useState(false);
   const [feePct, setFeePct] = useState("");
+  const [leftoverSaving, setLeftoverSaving] = useState<{
+    kind: FeeTargetKind;
+    id: string;
+  } | null>(null);
 
   const load = () => {
     setLoading(true);
     subscriptionService
-      .getAllLoanProviders()
-      .then((res) => setProviders(res?.data ?? []))
-      .catch(() => setProviders([]))
+      .getLoanAccessProviders()
+      .then((res) => setData(res?.data ?? null))
+      .catch(() => setData(null))
       .finally(() => setLoading(false));
   };
 
@@ -53,60 +107,41 @@ export default function LoanProvidersManagement() {
     load();
   }, []);
 
-  const handleCreate = async () => {
-    if (!name.trim()) return;
-    setSubmitting(true);
-    try {
-      await subscriptionService.createLoanProvider({
-        name: name.trim(),
-        description: description.trim() || undefined,
-        unlockFeeEnabled: createFeeEnabled,
-        unlockFeePercentage: createFeeEnabled ? (parseFloat(createFeePct) || null) : null,
-      });
-      toast.success("Loan provider created");
-      setCreateOpen(false);
-      setName("");
-      setDescription("");
-      setCreateFeeEnabled(false);
-      setCreateFeePct("");
-      load();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message ?? "Failed to create loan provider");
-    } finally {
-      setSubmitting(false);
-    }
+  const openFeeEditor = (
+    kind: FeeTargetKind,
+    id: string,
+    name: string,
+    enabled: boolean,
+    pct?: number | null,
+  ) => {
+    setFeeTarget({ kind, id, name });
+    setFeeEnabled(enabled);
+    setFeePct(pct ? String(pct) : "");
   };
 
-  const handleToggle = async (provider: LoanProvider) => {
+  const saveFee = async (
+    kind: FeeTargetKind,
+    id: string,
+    enabled: boolean,
+    pct: number | null,
+  ) => {
     setSubmitting(true);
     try {
-      await subscriptionService.updateLoanProviderStatus(provider.id, { isActive: !provider.isActive });
-      toast.success(`Loan provider ${provider.isActive ? "deactivated" : "activated"}`);
-      load();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message ?? "Failed to update loan provider");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const openFeeEditor = (provider: LoanProvider) => {
-    setFeeProvider(provider);
-    setFeeEnabled(provider.unlockFeeEnabled ?? false);
-    setFeePct(provider.unlockFeePercentage ? String(provider.unlockFeePercentage) : "");
-  };
-
-  const handleSaveFee = async () => {
-    if (!feeProvider) return;
-    setSubmitting(true);
-    try {
-      const pct = parseFloat(feePct);
-      await subscriptionService.updateLoanProviderStatus(feeProvider.id, {
-        unlockFeeEnabled: feeEnabled,
-        unlockFeePercentage: feeEnabled && !isNaN(pct) && pct > 0 ? pct : null,
-      });
-      toast.success(feeEnabled ? "Unlock fee configured" : "Unlock fee disabled (no fee applies)");
-      setFeeProvider(null);
+      if (kind === "trader") {
+        await subscriptionService.updateTraderUnlockFee(id, {
+          unlockFeeEnabled: enabled,
+          unlockFeePercentage: pct,
+        });
+      } else {
+        await subscriptionService.updateLoanProviderStatus(id, {
+          unlockFeeEnabled: enabled,
+          unlockFeePercentage: pct,
+        });
+      }
+      toast.success(
+        enabled ? "Unlock fee activated" : "Unlock fee paused",
+      );
+      setFeeTarget(null);
       load();
     } catch (err: any) {
       toast.error(err.response?.data?.message ?? "Failed to update unlock fee");
@@ -115,185 +150,142 @@ export default function LoanProvidersManagement() {
     }
   };
 
+  const handleSaveFee = () => {
+    if (!feeTarget) return;
+    const pct = parseFloat(feePct);
+    const validPct = !isNaN(pct) && pct > 0 ? pct : null;
+    if (feeEnabled && validPct === null) {
+      toast.error("Enter a fee percentage greater than 0");
+      return;
+    }
+    saveFee(feeTarget.kind, feeTarget.id, feeEnabled, feeEnabled ? validPct : null);
+  };
+
+  const handleLeftoverPolicy = async (
+    kind: FeeTargetKind,
+    id: string,
+    leftoverPolicy: "USELESS" | "TOPUP_WALLET",
+  ) => {
+    setLeftoverSaving({ kind, id });
+    try {
+      if (kind === "trader") {
+        await subscriptionService.updateTraderLeftoverPolicy(id, leftoverPolicy);
+      } else {
+        await subscriptionService.updateLoanProviderStatus(id, { leftoverPolicy });
+      }
+      toast.success(
+        leftoverPolicy === "TOPUP_WALLET"
+          ? "Leftover will be topped up to the restaurant's wallet"
+          : "Leftover will be useless (recorded but not reusable)",
+      );
+      load();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message ?? "Failed to update leftover policy");
+    } finally {
+      setLeftoverSaving(null);
+    }
+  };
+
+  // Quick pause/activate. Enabling without a saved percentage opens the editor.
+  const toggleFee = (
+    kind: FeeTargetKind,
+    id: string,
+    name: string,
+    enabled: boolean,
+    pct?: number | null,
+  ) => {
+    if (!enabled && (!pct || pct <= 0)) {
+      openFeeEditor(kind, id, name, true, pct);
+      return;
+    }
+    saveFee(kind, id, !enabled, enabled ? null : pct ?? null);
+  };
+
+  const platform = data?.platform;
+  const traders = data?.traders ?? [];
+
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-5">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-green-600" />
-            Loan Providers
-          </h3>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Institutions that fund financing on voucher cards. Plans can link to a provider.
-          </p>
-        </div>
-        <Button size="sm" onClick={() => setCreateOpen(true)} className="bg-green-600 hover:bg-green-700">
-          <Plus className="w-4 h-4 mr-1" />
-          Add Provider
-        </Button>
+      <div className="mb-4">
+        <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+          <Percent className="w-4 h-4 text-green-600" />
+          Loan Providers &amp; Unlock Fees
+        </h3>
+        <p className="text-xs text-gray-500 mt-0.5">
+          Set the unlock fee applied when a loan is approved. Only traders and the Food
+          Bundles platform can fund loans. When a fee is active it is applied
+          automatically during approval — no need to set it again when sending a loan to a
+          trader.
+        </p>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-8 text-gray-400">
           <Loader2 className="h-5 w-5 animate-spin" />
         </div>
-      ) : providers.length === 0 ? (
+      ) : !data ? (
         <div className="text-center py-8 text-gray-500 border border-dashed border-gray-200 rounded-lg">
           <Building2 className="h-10 w-10 mx-auto mb-2 text-gray-300" />
-          <p className="text-sm">No loan providers yet</p>
-          <p className="text-xs text-gray-400 mt-1">
-            Add a provider so loan-enabled subscription plans can be offered
-          </p>
+          <p className="text-sm">Could not load loan providers</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {providers.map((provider) => (
-            <div
-              key={provider.id}
-              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
-            >
-              <div className="flex items-center gap-3">
-                <Building2 className="h-4 w-4 text-gray-400" />
-                <div>
-                  <p className="text-sm font-medium text-gray-800 flex items-center gap-2">
-                    {provider.name}
-                    {provider.isActive ? (
-                      <Badge className="bg-green-100 text-green-700 text-[10px] rounded">
-                        Active
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-gray-100 text-gray-500 text-[10px] rounded">
-                        Inactive
-                      </Badge>
-                    )}
-                  </p>
-                  {provider.description && (
-                    <p className="text-xs text-gray-500 mt-0.5">{provider.description}</p>
-                  )}
-                  {provider.unlockFeeEnabled && (provider.unlockFeePercentage ?? 0) > 0 ? (
-                    <p className="text-xs mt-0.5 text-amber-600">
-                      Unlock fee: {provider.unlockFeePercentage}% applies
-                    </p>
-                  ) : (
-                    <p className="text-xs mt-0.5 text-gray-400">No unlock fee (default)</p>
-                  )}
-                  {provider.plans && provider.plans.length > 0 && (
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {provider.plans.length} linked plan{provider.plans.length === 1 ? "" : "s"}
-                    </p>
-                  )}
-                </div>
+        <div className="space-y-4">
+          {/* Platform lender */}
+          {platform && (
+            <PlatformRow
+              platform={platform}
+              onConfigure={openFeeEditor}
+              onToggle={toggleFee}
+              onLeftoverChange={handleLeftoverPolicy}
+              leftoverSaving={
+                leftoverSaving?.kind === "platform" ? leftoverSaving.id : null
+              }
+              disabled={submitting}
+            />
+          )}
+
+          {/* Traders */}
+          <div>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+              Traders ({traders.length})
+            </p>
+            {traders.length === 0 ? (
+              <div className="text-center py-6 text-gray-500 border border-dashed border-gray-200 rounded-lg">
+                <p className="text-sm">No traders yet</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  Traders become loan providers once they self-register or accept an invitation
+                </p>
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={submitting}
-                  onClick={() => openFeeEditor(provider)}
-                >
-                  <Percent className="w-4 h-4 mr-1" />
-                  Unlock Fee
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={submitting}
-                  onClick={() => handleToggle(provider)}
-                  className={provider.isActive ? "text-gray-500 hover:text-gray-700" : "text-green-600 hover:text-green-700"}
-                >
-                  {provider.isActive ? (
-                    <PauseCircle className="w-4 h-4 mr-1" />
-                  ) : (
-                    <PlayCircle className="w-4 h-4 mr-1" />
-                  )}
-                  {provider.isActive ? "Deactivate" : "Activate"}
-                </Button>
+            ) : (
+              <div className="space-y-3">
+                {traders.map((trader) => (
+                  <TraderRow
+                    key={trader.id}
+                    trader={trader}
+                    onConfigure={openFeeEditor}
+                    onToggle={toggleFee}
+                    onLeftoverChange={handleLeftoverPolicy}
+                    leftoverSaving={
+                      leftoverSaving?.kind === "trader" && leftoverSaving.id === trader.id
+                        ? trader.id
+                        : null
+                    }
+                    disabled={submitting}
+                  />
+                ))}
               </div>
-            </div>
-          ))}
+            )}
+          </div>
         </div>
       )}
 
-      {/* Create provider modal */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="sm:max-w-sm bg-white">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-green-600" />
-              New Loan Provider
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Name *</label>
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Bank of Kigali"
-                className="h-10 text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Description (optional)</label>
-              <Input
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="e.g. Premier financing partner"
-                className="h-10 text-sm"
-              />
-            </div>
-            <div className="rounded-lg border border-gray-200 p-3 space-y-3">
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <input
-                  type="checkbox"
-                  checked={createFeeEnabled}
-                  onChange={(e) => setCreateFeeEnabled(e.target.checked)}
-                  className="h-4 w-4 accent-green-600"
-                />
-                Apply unlock fee for this provider's loans
-              </label>
-              {createFeeEnabled && (
-                <div>
-                  <label className="block text-sm font-medium mb-1">Fee percentage (%)</label>
-                  <Input
-                    type="number"
-                    min={0}
-                    step="0.1"
-                    value={createFeePct}
-                    onChange={(e) => setCreateFeePct(e.target.value)}
-                    placeholder="e.g. 5"
-                    className="h-10 text-sm"
-                  />
-                </div>
-              )}
-              <p className="text-xs text-gray-400">
-                Leave disabled to apply no unlock fee (no default).
-              </p>
-            </div>
-            <div className="flex gap-2 pt-1">
-              <Button
-                onClick={handleCreate}
-                disabled={submitting || !name.trim()}
-                className="flex-1 bg-green-600 hover:bg-green-700"
-              >
-                {submitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                {submitting ? "Creating..." : "Create Provider"}
-              </Button>
-              <Button variant="outline" onClick={() => setCreateOpen(false)} disabled={submitting}>
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit unlock fee modal */}
-      <Dialog open={feeProvider !== null} onOpenChange={(open) => !open && setFeeProvider(null)}>
+      {/* Unlock fee editor */}
+      <Dialog open={feeTarget !== null} onOpenChange={(open) => !open && setFeeTarget(null)}>
         <DialogContent className="sm:max-w-sm bg-white">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Percent className="w-4 h-4 text-green-600" />
-              Unlock Fee — {feeProvider?.name}
+              Unlock Fee — {feeTarget?.name}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
@@ -304,7 +296,9 @@ export default function LoanProvidersManagement() {
                 onChange={(e) => setFeeEnabled(e.target.checked)}
                 className="h-4 w-4 accent-green-600"
               />
-              Apply unlock fee for this provider's loans
+              {feeTarget?.kind === "trader"
+                ? "Apply an unlock fee when this trader funds a loan"
+                : "Apply an unlock fee for platform-funded loans"}
             </label>
             {feeEnabled && (
               <div>
@@ -321,7 +315,7 @@ export default function LoanProvidersManagement() {
               </div>
             )}
             <p className="text-xs text-gray-400">
-              No default fee — if disabled, loans from this provider are activated without an
+              No default fee — when paused, loans from this provider activate without an
               unlock fee.
             </p>
             <div className="flex gap-2 pt-1">
@@ -333,13 +327,190 @@ export default function LoanProvidersManagement() {
                 {submitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                 {submitting ? "Saving..." : "Save Fee Config"}
               </Button>
-              <Button variant="outline" onClick={() => setFeeProvider(null)} disabled={submitting}>
+              <Button variant="outline" onClick={() => setFeeTarget(null)} disabled={submitting}>
                 Cancel
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function PlatformRow({
+  platform,
+  onConfigure,
+  onToggle,
+  onLeftoverChange,
+  leftoverSaving,
+  disabled,
+}: {
+  platform: PlatformLoanProvider;
+  onConfigure: (
+    kind: FeeTargetKind,
+    id: string,
+    name: string,
+    enabled: boolean,
+    pct?: number | null,
+  ) => void;
+  onToggle: (
+    kind: FeeTargetKind,
+    id: string,
+    name: string,
+    enabled: boolean,
+    pct?: number | null,
+  ) => void;
+  onLeftoverChange: (kind: FeeTargetKind, id: string, policy: LeftoverPolicy) => void;
+  leftoverSaving: string | null;
+  disabled: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between p-3 bg-green-50/50 rounded-lg border border-green-200">
+      <div className="flex items-center gap-3">
+        <Building2 className="h-4 w-4 text-green-600" />
+        <div>
+          <p className="text-sm font-medium text-gray-800 flex items-center gap-2">
+            {platform.name}
+            <Badge className="bg-green-100 text-green-700 text-[10px] rounded">
+              Platform lender
+            </Badge>
+            {feeBadge(platform.unlockFeeEnabled, platform.unlockFeePercentage)}
+          </p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Default lender when no trader is selected.
+          </p>
+        </div>
+      </div>
+      <div className="flex flex-col items-stretch gap-2">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={disabled}
+            onClick={() =>
+              onConfigure("platform", platform.id, platform.name, platform.unlockFeeEnabled, platform.unlockFeePercentage)
+            }
+          >
+            <Percent className="w-4 h-4 mr-1" />
+            Unlock Fee
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={disabled}
+            onClick={() =>
+              onToggle("platform", platform.id, platform.name, platform.unlockFeeEnabled, platform.unlockFeePercentage)
+            }
+            className={platform.unlockFeeEnabled ? "text-gray-500 hover:text-gray-700" : "text-green-600 hover:text-green-700"}
+          >
+            {platform.unlockFeeEnabled ? (
+              <PauseCircle className="w-4 h-4 mr-1" />
+            ) : (
+              <PlayCircle className="w-4 h-4 mr-1" />
+            )}
+            {platform.unlockFeeEnabled ? "Pause" : "Activate"}
+          </Button>
+        </div>
+        <div className="flex justify-end">
+          <LeftoverSelect
+            value={platform.leftoverPolicy}
+            saving={leftoverSaving === platform.id}
+            disabled={disabled}
+            onChange={(policy) =>
+              onLeftoverChange("platform", platform.id, policy)
+            }
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TraderRow({
+  trader,
+  onConfigure,
+  onToggle,
+  onLeftoverChange,
+  leftoverSaving,
+  disabled,
+}: {
+  trader: TraderLoanProvider;
+  onConfigure: (
+    kind: FeeTargetKind,
+    id: string,
+    name: string,
+    enabled: boolean,
+    pct?: number | null,
+  ) => void;
+  onToggle: (
+    kind: FeeTargetKind,
+    id: string,
+    name: string,
+    enabled: boolean,
+    pct?: number | null,
+  ) => void;
+  onLeftoverChange: (kind: FeeTargetKind, id: string, policy: LeftoverPolicy) => void;
+  leftoverSaving: string | null;
+  disabled: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+      <div className="flex items-center gap-3">
+        <Wallet className="h-4 w-4 text-gray-400" />
+        <div>
+          <p className="text-sm font-medium text-gray-800 flex items-center gap-2">
+            {trader.username}
+            {feeBadge(trader.unlockFeeEnabled, trader.unlockFeePercentage)}
+          </p>
+          <p className="text-xs text-gray-500 mt-0.5">{trader.email}</p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Balance: {trader.balance.toLocaleString()} RWF
+            {trader.requiresSubscription && " · subscription required"}
+          </p>
+        </div>
+      </div>
+      <div className="flex flex-col items-stretch gap-2">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={disabled}
+            onClick={() =>
+              onConfigure("trader", trader.id, trader.username, trader.unlockFeeEnabled, trader.unlockFeePercentage)
+            }
+          >
+            <Percent className="w-4 h-4 mr-1" />
+            Unlock Fee
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={disabled}
+            onClick={() =>
+              onToggle("trader", trader.id, trader.username, trader.unlockFeeEnabled, trader.unlockFeePercentage)
+            }
+            className={trader.unlockFeeEnabled ? "text-gray-500 hover:text-gray-700" : "text-green-600 hover:text-green-700"}
+          >
+            {trader.unlockFeeEnabled ? (
+              <PauseCircle className="w-4 h-4 mr-1" />
+            ) : (
+              <PlayCircle className="w-4 h-4 mr-1" />
+            )}
+            {trader.unlockFeeEnabled ? "Pause" : "Activate"}
+          </Button>
+        </div>
+        <div className="flex justify-end">
+          <LeftoverSelect
+            value={trader.leftoverPolicy}
+            saving={leftoverSaving === trader.id}
+            disabled={disabled}
+            onChange={(policy) =>
+              onLeftoverChange("trader", trader.id, policy)
+            }
+          />
+        </div>
+      </div>
     </div>
   );
 }
