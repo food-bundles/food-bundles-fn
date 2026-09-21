@@ -3,16 +3,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useWallet } from "@/app/contexts/WalletContext";
 import { useWalletWebSocket } from "@/hooks/useWalletWebSocket";
 import { useAuth } from "@/app/contexts/auth-context";
 import { toast } from "sonner";
+import { walletService } from "@/app/services/walletService";
 import { WalletCard } from "./_components/WalletCard";
 import { DepositForm } from "./_components/DepositForm";
 import { TransactionsList } from "./_components/TransactionsList";
 import { VoucherTransfersList } from "./_components/VoucherTransfersList";
 import { PaymentModal } from "./_components/PaymentModal";
+import { CardPaymentModal } from "./_components/CardPaymentModal";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 
 export default function DepositsPage() {
@@ -26,10 +28,16 @@ export default function DepositsPage() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [showCardModal, setShowCardModal] = useState(false);
   const [cardRedirectUrl, setCardRedirectUrl] = useState("");
+  const [paymentStage, setPaymentStage] = useState<"redirect" | "pending" | null>(null);
+  const [topUpTxId, setTopUpTxId] = useState("");
+  const [paymentNotice, setPaymentNotice] = useState("");
+  const [isCheckingPayment, setIsCheckingPayment] = useState(false);
+  const checkInFlight = useRef(false);
 
   const [topUpData, setTopUpData] = useState({
     amount: "",
     paymentMethodId: "",
+    paymentMethodName: "",
     phoneNumber: "",
     description: "Top Up",
   });
@@ -56,7 +64,6 @@ export default function DepositsPage() {
     const fetchData = async () => {
       try {
         await getMyWallet();
-        await getActivePaymentMethods();
         await fetchTransactions(1);
       } catch (error) {
         console.log("Error fetching wallet data");
@@ -67,25 +74,94 @@ export default function DepositsPage() {
     fetchData();
   }, []);
 
+  const resetTopUpForm = () => {
+    setTopUpData({ amount: "", paymentMethodId: "", paymentMethodName: "", phoneNumber: "", description: "" });
+  };
+
+  const completeTopUp = useCallback(
+    (message: string) => {
+      toast.success(message);
+      setShowCardModal(false);
+      setCardRedirectUrl("");
+      setPaymentStage(null);
+      setTopUpTxId("");
+      setPaymentNotice("");
+      setIsCheckingPayment(false);
+      setShowDepositForm(false);
+      resetTopUpForm();
+      getMyWallet();
+      fetchTransactions(pagination.page);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pagination.page, getMyWallet, fetchTransactions]
+  );
+
+  const performPaymentCheck = useCallback(
+    async (options?: { silent?: boolean }) => {
+      if (!topUpTxId) return;
+      if (checkInFlight.current) return;
+      checkInFlight.current = true;
+      const { silent = false } = options || {};
+      if (!silent) setIsCheckingPayment(true);
+      try {
+        const res: any = await walletService.verifyTopUp(topUpTxId);
+        const data = res?.data || {};
+        if (data.verified) {
+          setPaymentStage(null);
+          setTopUpTxId("");
+          setPaymentNotice("");
+          completeTopUp("Top-up confirmed! Your wallet has been funded.");
+        } else if (!silent) {
+          setPaymentNotice(
+            data.message ||
+              "Payment not confirmed yet. Please complete it on your phone or in the payment tab."
+          );
+        }
+      } catch (err: any) {
+        if (!silent) {
+          const msg =
+            err?.response?.data?.message ||
+            "Could not check payment status. Please try again.";
+          setPaymentNotice(msg);
+          toast.error(msg);
+        }
+      } finally {
+        checkInFlight.current = false;
+        if (!silent) setIsCheckingPayment(false);
+      }
+    },
+    [topUpTxId, completeTopUp]
+  );
+
   useEffect(() => {
     if (walletUpdates.length > 0) {
       const latestUpdate = walletUpdates[walletUpdates.length - 1];
       console.log("Wallet update received:", latestUpdate);
       
       if (latestUpdate.action === "TOP_UP" && latestUpdate.data?.status === "COMPLETED") {
-        toast.success(`Payment completed! ${latestUpdate.data.amount} RWF added to your wallet`);
-        getMyWallet();
-        fetchTransactions(pagination.page);
-        
-        if (showCardModal) {
-          setShowCardModal(false);
-          setCardRedirectUrl("");
-          setShowDepositForm(false);
-          setTopUpData({ amount: "", paymentMethodId: "", phoneNumber: "", description: "" });
-        }
+        completeTopUp(
+          `Payment completed! ${latestUpdate.data.amount} RWF added to your wallet`
+        );
       }
     }
-  }, [walletUpdates, pagination.page, showCardModal]);
+  }, [walletUpdates, completeTopUp]);
+
+  // Auto-poll the payment status while the user completes the payment.
+  useEffect(() => {
+    if (!showCardModal || paymentStage !== "pending" || !topUpTxId) return;
+
+    let attempts = 0;
+    const intervalId = setInterval(() => {
+      attempts += 1;
+      if (attempts > 36) {
+        clearInterval(intervalId);
+        return;
+      }
+      performPaymentCheck({ silent: true });
+    }, 5000);
+
+    return () => clearInterval(intervalId);
+  }, [showCardModal, paymentStage, topUpTxId, performPaymentCheck]);
 
   useEffect(() => {
     const handleTransactionUpdate = () => {
@@ -110,7 +186,7 @@ export default function DepositsPage() {
     }
 
     const selectedMethod = paymentMethods.find(method => method.id === topUpData.paymentMethodId);
-    if (selectedMethod?.name === "MOBILE_MONEY" && !topUpData.phoneNumber) {
+    if (topUpData.paymentMethodName === "MOBILE_MONEY" && !topUpData.phoneNumber) {
       toast.error("Phone number is required for mobile money");
       return;
     }
@@ -124,22 +200,57 @@ export default function DepositsPage() {
       const response = await topUpWallet({
         amount: parseFloat(topUpData.amount),
         paymentMethodId: topUpData.paymentMethodId,
-        phoneNumber: selectedMethod?.name === "MOBILE_MONEY" ? topUpData.phoneNumber : undefined,
+        phoneNumber: topUpData.paymentMethodName === "MOBILE_MONEY" ? topUpData.phoneNumber : undefined,
         description: "Wallet top-up",
       });
 
-      // Show modal only for CARD payments
+      // Show the payment modal and track until it is confirmed.
       if (response.success || response.data) {
-        if (selectedMethod?.name === "CARD") {
-          const redirectUrl = response.data?.redirectUrl || "https://checkout.flutterwave.com/demo";
-          setCardRedirectUrl(redirectUrl);
-          setShowCardModal(true);
+        const data = response.data || {};
+        const txId = data?.transaction?.id || "";
+        const isCard =
+          data?.transaction?.paymentMethod === "CARD" ||
+          selectedMethod?.name === "CARD";
+        if (isCard) {
+          const redirectUrl =
+            data?.redirectUrl ||
+            data?.transaction?.metadata?.paymentResponse?.redirectUrl;
+          if (redirectUrl) {
+            setTopUpTxId(txId);
+            setCardRedirectUrl(redirectUrl);
+            setPaymentNotice("");
+            setPaymentStage("redirect");
+            setShowCardModal(true);
+          } else {
+            if (txId) {
+              setTopUpTxId(txId);
+              setPaymentNotice(
+                "Payment was initiated. Your wallet is funded automatically once the payment is confirmed."
+              );
+              setPaymentStage("pending");
+              setShowCardModal(true);
+            } else {
+              setShowDepositForm(false);
+              resetTopUpForm();
+              getMyWallet();
+              fetchTransactions(pagination.page);
+            }
+          }
         } else {
-          toast.success("Top-up initiated successfully!");
-          setShowDepositForm(false);
-          setTopUpData({ amount: "", paymentMethodId: "", phoneNumber: "", description: "" });
-          getMyWallet();
-          fetchTransactions(pagination.page);
+          if (txId) {
+            setTopUpTxId(txId);
+            setPaymentNotice(
+              `Payment initiated to ${topUpData.phoneNumber}. Please approve it on your phone. Your wallet is funded automatically once confirmed.`
+            );
+            setPaymentStage("pending");
+            setShowCardModal(true);
+          } else {
+            toast.success("Top-up initiated successfully!");
+            setShowDepositForm(false);
+            resetTopUpForm();
+            getMyWallet();
+            fetchTransactions(pagination.page);
+          }
         }
       }
     } catch (error: any) {
@@ -149,13 +260,23 @@ export default function DepositsPage() {
     }
   };
 
-  const handleContinuePayment = () => {
-    window.location.href = cardRedirectUrl;
+  const handleCardContinue = () => {
+    if (!cardRedirectUrl) return;
+    // Open the secure Flutterwave page in a new tab and keep tracking here so
+    // the modal closes automatically once the payment is confirmed.
+    window.open(cardRedirectUrl, "_blank", "noopener,noreferrer");
+    setPaymentStage("pending");
+    setPaymentNotice(
+      "Complete the payment in the new tab. Your wallet is topped up automatically once confirmed."
+    );
   };
 
   const handleCancelPayment = () => {
     setShowCardModal(false);
     setCardRedirectUrl("");
+    setPaymentStage(null);
+    setTopUpTxId("");
+    setPaymentNotice("");
     toast.info("Payment cancelled");
   };
 
@@ -175,15 +296,15 @@ export default function DepositsPage() {
           isActive={wallet?.isActive || false}
           showDepositForm={showDepositForm}
           onShowDepositForm={() => setShowDepositForm(true)}
+          holderName={user?.name}
         >
           <DepositForm
             amount={topUpData.amount}
             paymentMethodId={topUpData.paymentMethodId}
             phoneNumber={topUpData.phoneNumber}
             isLoading={isTopUpLoading}
-            paymentMethods={paymentMethods}
             onAmountChange={(amount) => setTopUpData(prev => ({ ...prev, amount }))}
-            onPaymentMethodChange={(paymentMethodId) => setTopUpData(prev => ({ ...prev, paymentMethodId }))}
+            onPaymentMethodChange={(paymentMethodId, paymentMethodName) => setTopUpData(prev => ({ ...prev, paymentMethodId, paymentMethodName }))}
             onPhoneNumberChange={(phoneNumber) => setTopUpData(prev => ({ ...prev, phoneNumber }))}
             onCancel={() => setShowDepositForm(false)}
             onSubmit={handleTopUp}
@@ -194,9 +315,25 @@ export default function DepositsPage() {
 
         <VoucherTransfersList />
 
+        <CardPaymentModal
+          isOpen={showCardModal && !!cardRedirectUrl}
+          redirectUrl={cardRedirectUrl}
+          mode={paymentStage === "pending" ? "pending" : "redirect"}
+          notice={paymentNotice}
+          verifying={isCheckingPayment}
+          onContinue={handleCardContinue}
+          onReturnToPayment={() => {}}
+          onCheckStatus={() => performPaymentCheck({ silent: false })}
+          onCancel={handleCancelPayment}
+        />
+
         <PaymentModal
-          isOpen={showCardModal}
-          onContinue={handleContinuePayment}
+          isOpen={showCardModal && !cardRedirectUrl}
+          mode={paymentStage === "pending" ? "pending" : "redirect"}
+          notice={paymentNotice}
+          verifying={isCheckingPayment}
+          onCheckStatus={() => performPaymentCheck({ silent: false })}
+          onContinue={handleCardContinue}
           onCancel={handleCancelPayment}
         />
       </div>

@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   User,
   Phone,
@@ -17,6 +17,8 @@ import {
   Gift,
   Tag,
   CheckCircle2,
+  Smartphone,
+  RefreshCcw,
 } from "lucide-react";
 import { promoService, IPromoCode } from "@/app/services/promoService";
 import { toast } from "sonner";
@@ -94,6 +96,12 @@ export function Checkout() {
   const [showFlutterwaveInfo, setShowFlutterwaveInfo] = useState(false);
   const [flutterwaveRedirectUrl, setFlutterwaveRedirectUrl] =
     useState<string>("");
+  const [showPendingCheckoutModal, setShowPendingCheckoutModal] = useState(false);
+  const [pendingCheckoutOrderId, setPendingCheckoutOrderId] = useState("");
+  const [checkoutStage, setCheckoutStage] = useState<"redirect" | "pending" | null>(null);
+  const [pendingCheckoutNotice, setPendingCheckoutNotice] = useState("");
+  const [isCheckingOrder, setIsCheckingOrder] = useState(false);
+  const checkoutCheckInFlight = useRef(false);
   const [availableVouchers, setAvailableVouchers] = useState<any[]>([]);
   const [loanSessions, setLoanSessions] = useState<any[]>([]);
   const [isLoadingVouchers, setIsLoadingVouchers] = useState(false);
@@ -132,6 +140,7 @@ export function Checkout() {
   const [checkoutSessionId, setCheckoutSessionId] = useState("");
   const [verificationError, setVerificationError] = useState("");
   const [verificationType, setVerificationType] = useState<"OTP" | "2FA">("OTP");
+  const [isConverting, setIsConverting] = useState(false);
   const [otherServices, setOtherServices] = useState(false);
   const [method, setMethod] = useState<PaymentMethodOrEmpty>("");
 
@@ -343,6 +352,46 @@ export function Checkout() {
     }
   }, [method, isAuthenticated, getMyVouchers]);
 
+  // Check subscription benefits
+  const cartWithRestaurant = cart as any;
+  const hasActiveSubscription = cartWithRestaurant?.restaurant?.subscriptions?.some(
+    (sub: any) => sub.status === 'ACTIVE' && sub.plan
+  );
+  const subscriptionPlan = hasActiveSubscription
+    ? cartWithRestaurant?.restaurant?.subscriptions?.find((sub: any) => sub.status === 'ACTIVE')?.plan
+    : null;
+
+  const hasFreeDelivery = subscriptionPlan?.freeDelivery || false;
+  const hasOtherServices = subscriptionPlan?.otherServices || false;
+
+  // Mirror the backend fee rules: delivery is free between 4-9 AM (off-peak) or
+  // when the plan includes free delivery; otherwise it is 5,000 RWF.
+  const currentHour = new Date().getHours();
+  const isOffPeakHours = currentHour >= 4 && currentHour < 9;
+  const deliveryFee = hasFreeDelivery || isOffPeakHours ? 0 : 5000;
+  const packagingFee = hasOtherServices ? 0 : (otherServices ? 15000 : 0);
+
+  // Calculate totals based on promo response
+  let subtotalAmount = totalAmount;
+  let promoDiscount = 0;
+  let finalTotal = totalAmount + deliveryFee + packagingFee;
+
+  if (appliedPromo) {
+    subtotalAmount = appliedPromo.originalAmount;
+    promoDiscount = appliedPromo.discountAmount;
+    finalTotal = appliedPromo.finalAmount + deliveryFee + packagingFee;
+  }
+
+  const summaryData = {
+    totalItems,
+    totalQuantity,
+    subtotal: appliedPromo ? appliedPromo.originalAmount : totalAmount,
+    discount: promoDiscount,
+    deliveryFee,
+    packagingFee,
+    total: finalTotal,
+  };
+
   useEffect(() => {
     if (method === "voucher" && (myVouchers || loanSessions.length > 0)) { // eslint-disable-line
       const validVouchers = (myVouchers || []).filter((voucher: any) =>
@@ -373,43 +422,6 @@ export function Checkout() {
       setAvailableVouchers([]);
     }
   }, [myVouchers, loanSessions, method]);
-
-  // Check subscription benefits
-  const cartWithRestaurant = cart as any;
-  const hasActiveSubscription = cartWithRestaurant?.restaurant?.subscriptions?.some(
-    (sub: any) => sub.status === 'ACTIVE' && sub.plan
-  );
-  const subscriptionPlan = hasActiveSubscription
-    ? cartWithRestaurant?.restaurant?.subscriptions?.find((sub: any) => sub.status === 'ACTIVE')?.plan
-    : null;
-
-  const hasFreeDelivery = subscriptionPlan?.freeDelivery || false;
-  const hasOtherServices = subscriptionPlan?.otherServices || false;
-
-  // Calculate fees
-  const deliveryFee = 0; // Currently free for all users
-  const packagingFee = hasOtherServices ? 0 : (otherServices ? 15000 : 0);
-
-  // Calculate totals based on promo response
-  let subtotalAmount = totalAmount;
-  let promoDiscount = 0;
-  let finalTotal = totalAmount + packagingFee;
-
-  if (appliedPromo) {
-    subtotalAmount = appliedPromo.originalAmount;
-    promoDiscount = appliedPromo.discountAmount;
-    finalTotal = appliedPromo.finalAmount + packagingFee;
-  }
-
-  const summaryData = {
-    totalItems,
-    totalQuantity,
-    subtotal: appliedPromo ? appliedPromo.originalAmount : totalAmount,
-    discount: promoDiscount,
-    deliveryFee,
-    packagingFee,
-    total: finalTotal,
-  };
 
   const handleInputChange = (field: string, value: string) => {
     if (field === "deliveryAddress" && value.trim()) {
@@ -619,14 +631,27 @@ export function Checkout() {
         const requiresRedirect = responseData?.requiresRedirect;
         const redirectUrl = responseData?.redirectUrl;
         const paymentProvider = responseData?.checkout?.paymentProvider;
+        const orderId = responseData?.checkout?.id || "";
 
         if (requiresRedirect && redirectUrl && paymentProvider === "FLUTTERWAVE") {
-          // Flutterwave requires redirect - show modal
+          // Flutterwave requires redirect - show modal, then track the order
+          // to confirmation so we can leave the payment page automatically.
+          setPendingCheckoutOrderId(orderId);
           setFlutterwaveRedirectUrl(redirectUrl);
           setShowFlutterwaveInfo(true);
         } else if (paymentProvider === "PAYPACK") {
-          // Paypack sends USSD to phone - redirect to orders
-          window.location.href = "/restaurant";
+          // Paypack sends a USSD request to the phone - keep this page and
+          // track the order until payment is confirmed.
+          if (orderId) {
+            setPendingCheckoutOrderId(orderId);
+            setPendingCheckoutNotice(
+              `A PayPack payment request has been sent to ${formData.momoPhoneNumber}. Please approve it on your phone. Your order is placed the moment payment is confirmed.`
+            );
+            setCheckoutStage("pending");
+            setShowPendingCheckoutModal(true);
+          } else {
+            window.location.href = "/restaurant";
+          }
         } else {
           window.location.href = "/restaurant";
         }
@@ -645,10 +670,111 @@ export function Checkout() {
   };
 
   const handleFlutterwaveRedirect = () => {
-    if (flutterwaveRedirectUrl) {
+    if (!flutterwaveRedirectUrl) return;
+    if (pendingCheckoutOrderId) {
+      try {
+        localStorage.setItem(
+          "fb_pending_checkout",
+          JSON.stringify({
+            orderId: pendingCheckoutOrderId,
+            redirectUrl: flutterwaveRedirectUrl,
+          })
+        );
+      } catch (e) {
+        console.warn(e);
+      }
+      // Redirect the user to Flutterwave's hosted payment page. Once payment is
+      // confirmed there, the order is placed automatically.
       window.location.href = flutterwaveRedirectUrl;
+      return;
     }
+    // No order id to track — fall back to the original redirect behavior.
+    window.location.href = flutterwaveRedirectUrl;
   };
+
+  // If the user was redirected to Flutterwave and comes back to this page,
+  // resume tracking the payment until the order is confirmed.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("fb_pending_checkout");
+      if (!raw) return;
+      const pending = JSON.parse(raw);
+      if (pending?.orderId && !pendingCheckoutOrderId && !showPendingCheckoutModal) {
+        setPendingCheckoutOrderId(pending.orderId);
+        setPendingCheckoutNotice(
+          "Resuming your card payment. Complete it on Flutterwave's page — your order is placed once payment is confirmed."
+        );
+        setCheckoutStage("pending");
+        setShowPendingCheckoutModal(true);
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+  }, [pendingCheckoutOrderId, showPendingCheckoutModal]);
+
+  const performCheckoutCheck = useCallback(
+    async (options?: { silent?: boolean }) => {
+      if (!pendingCheckoutOrderId) return;
+      if (checkoutCheckInFlight.current) return;
+      checkoutCheckInFlight.current = true;
+      const { silent = false } = options || {};
+      if (!silent) setIsCheckingOrder(true);
+      try {
+        const res = await checkoutService.getCheckoutStatus(pendingCheckoutOrderId);
+        const data = res?.data || {};
+        if (data.paymentStatus === "COMPLETED") {
+          try {
+            localStorage.removeItem("fb_pending_checkout");
+          } catch (e) {
+            console.warn(e);
+          }
+          toast.success("Payment confirmed! Your order has been placed.");
+          window.location.href = "/restaurant";
+          return;
+        }
+        if (!silent && (data.paymentStatus === "FAILED" || data.paymentStatus === "CANCELLED")) {
+          setPendingCheckoutNotice(
+            "Payment was not completed. If you were charged, your order is safe and we will confirm it shortly."
+          );
+          toast.error("Payment not completed. Please check with support if you were charged.");
+        } else if (!silent) {
+          setPendingCheckoutNotice(
+            data.message ||
+              "Payment not confirmed yet. Please complete it on your phone or in the payment tab."
+          );
+        }
+      } catch (err: any) {
+        if (!silent) {
+          const msg =
+            err?.response?.data?.message ||
+            "Could not check payment status. Please try again.";
+          setPendingCheckoutNotice(msg);
+          toast.error(msg);
+        }
+      } finally {
+        checkoutCheckInFlight.current = false;
+        if (!silent) setIsCheckingOrder(false);
+      }
+    },
+    [pendingCheckoutOrderId]
+  );
+
+  // Auto-poll the order status while the user completes the payment.
+  useEffect(() => {
+    if (!showPendingCheckoutModal || checkoutStage !== "pending" || !pendingCheckoutOrderId) return;
+
+    let attempts = 0;
+    const intervalId = setInterval(() => {
+      attempts += 1;
+      if (attempts > 36) {
+        clearInterval(intervalId);
+        return;
+      }
+      performCheckoutCheck({ silent: true });
+    }, 5000);
+
+    return () => clearInterval(intervalId);
+  }, [showPendingCheckoutModal, checkoutStage, pendingCheckoutOrderId, performCheckoutCheck]);
 
   const handleVerification = async (code: string, type: "OTP" | "2FA") => {
     if (!code.trim()) {
@@ -677,6 +803,59 @@ export function Checkout() {
       throw error;
     } finally {
       setIsVerifying(false);
+    }
+  };
+
+  // Convert a selected loan session's remaining credit into the prepaid wallet.
+  // The voucher is consumed (used once) and the wallet balance increases so the
+  // order can be paid from the wallet instead. Falls back to the prepaid method.
+  const handleConvertLoanToWallet = async (rrn: string) => {
+    if (!rrn.trim()) return;
+    setIsConverting(true);
+    setVerificationError("");
+    try {
+      const res: any = await voucherService.convertLoanToWallet(rrn);
+      toast.success(
+        res?.message || "Voucher amount added to your prepaid wallet"
+      );
+
+      try {
+        await getMyWallet();
+      } catch {
+        // wallet refresh is best-effort
+      }
+
+      // Clear the consumed loan; switch to prepaid so the user pays from wallet.
+      handleInputChange("loanSessionRrn", "");
+      handleInputChange("voucherCode", "");
+      if (paymentMethods.some((pm: PaymentMethodType) => pm.name === "CASH")) {
+        setMethod("prepaid");
+      }
+
+      // Refresh the loan session list (the consumed session is now FULLY_USED).
+      try {
+        const sessionsRes: any = await voucherService.getMyLoanSessions();
+        const sessions = Array.isArray(sessionsRes?.data)
+          ? sessionsRes.data
+          : [];
+        setLoanSessions(
+          sessions.filter(
+            (s: any) =>
+              (s.status === "ACTIVE" || s.status === "PARTIALLY_USED") &&
+              s.unlockStatus === "UNLOCKED" &&
+              ((s.approvedAmount ?? 0) - (s.amountUsed ?? 0)) > 0
+          )
+        );
+      } catch {
+        // ignore — the list refreshes next time the voucher method is selected
+      }
+    } catch (error: any) {
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to move voucher amount to wallet"
+      );
+    } finally {
+      setIsConverting(false);
     }
   };
 
@@ -715,6 +894,13 @@ export function Checkout() {
               <div className="flex justify-between text-gray-900">
                 <span>Other services</span>
                 <span>Rwf {packagingFee.toLocaleString()}</span>
+              </div>
+            )}
+
+            {deliveryFee > 0 && (
+              <div className="flex justify-between text-gray-900">
+                <span>Delivery</span>
+                <span>Rwf {deliveryFee.toLocaleString()}</span>
               </div>
             )}
 
@@ -1214,19 +1400,71 @@ export function Checkout() {
                         </p>
                       )}
                       {(() => {
-                        const selectedLoan = formData.loanSessionRrn
+                        const selected = formData.loanSessionRrn || formData.voucherCode
                           ? availableVouchers.find(
-                              (v) => v.voucherCode === formData.loanSessionRrn
+                              (v) =>
+                                v.voucherCode ===
+                                (formData.loanSessionRrn || formData.voucherCode)
                             )
                           : null;
-                        if (selectedLoan && selectedLoan.remainingCredit < finalTotal) {
-                          const shortfall = finalTotal - selectedLoan.remainingCredit;
+                        // A voucher/loan can never cover PART of an order. When
+                        // the selected item's credit is below the order total:
+                        //  - a LOAN can be converted: its remaining value is
+                        //    moved into the prepaid wallet (voucher consumed) so
+                        //    the order can be paid from the wallet instead.
+                        //  - a regular VOUCHER must simply not be used for this
+                        //    order.
+                        if (selected && selected.remainingCredit < finalTotal) {
+                          if (selected.source === "LOAN") {
+                            return (
+                              <div className="rounded-md border border-blue-200 bg-blue-50 p-3 space-y-2">
+                                <p className="text-xs text-blue-800 flex items-start gap-1">
+                                  <Info className="h-3 w-3 mt-0.5 shrink-0" />
+                                  This loan has{" "}
+                                  {selected.remainingCredit.toLocaleString()} RWF but your order
+                                  total is {finalTotal.toLocaleString()} RWF. A voucher can&rsquo;t
+                                  pay for part of an order. Move this loan credit to your prepaid
+                                  wallet to consume the voucher loan, then top up the wallet if
+                                  needed and return here to complete your order payment.
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleConvertLoanToWallet(selected.voucherCode)
+                                  }
+                                  disabled={isConverting}
+                                  className="w-full h-9 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded transition-colors flex items-center justify-center gap-2"
+                                >
+                                  {isConverting ? (
+                                    <>
+                                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                      Moving to wallet...
+                                    </>
+                                  ) : (
+                                    <>
+                                      Move {selected.remainingCredit.toLocaleString()} RWF to
+                                      prepaid wallet (uses this voucher)
+                                    </>
+                                  )}
+                                </button>
+                                <p className="text-[10px] text-blue-500">
+                                  After moving, pay for this order from your prepaid wallet (top up
+                                  the wallet first if it&rsquo;s still short).
+                                </p>
+                              </div>
+                            );
+                          }
                           return (
-                            <p className="text-amber-600 text-xs flex items-start gap-1">
-                              <Info className="h-3 w-3 mt-0.5 shrink-0" />
-                              This loan covers {selectedLoan.remainingCredit.toLocaleString()} RWF. You&rsquo;ll pay the extra{" "}
-                              {shortfall.toLocaleString()} RWF at checkout/delivery.
-                            </p>
+                            <div className="rounded-md border border-red-200 bg-red-50 p-3">
+                              <p className="text-xs text-red-700 flex items-start gap-1">
+                                <Info className="h-3 w-3 mt-0.5 shrink-0" />
+                                This voucher has{" "}
+                                {selected.remainingCredit.toLocaleString()} RWF, which is less than
+                                the order total of {finalTotal.toLocaleString()} RWF. A voucher
+                                can&rsquo;t pay for part of an order — please choose another
+                                payment method.
+                              </p>
+                            </div>
                           );
                         }
                         return null;
@@ -1341,9 +1579,31 @@ export function Checkout() {
 
             <div className="p-4 space-y-4">
               <p className="text-xs text-gray-700">
-                You will be redirected to complete your payment. Choose your
-                preferred payment method:
+                Here is how the card payment works:
               </p>
+              <ol className="text-xs text-gray-700 space-y-2 list-decimal list-inside">
+                <li>Click <span className="font-medium">Continue</span> below.</li>
+                <li>
+                  You'll be taken to <span className="font-medium">Flutterwave's secure page</span>{" "}
+                  to enter your card details and complete the payment.
+                </li>
+                <li>
+                  As soon as payment is confirmed, your order is placed
+                  automatically.
+                </li>
+              </ol>
+
+              {flutterwaveRedirectUrl && (
+                <div className="rounded bg-gray-50 border border-gray-200 p-2">
+                  <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-1">
+                    Payment page link
+                  </p>
+                  <p className="text-xs text-gray-700 break-all font-mono">
+                    {flutterwaveRedirectUrl}
+                  </p>
+                </div>
+              )}
+
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowFlutterwaveInfo(false)}
@@ -1359,6 +1619,81 @@ export function Checkout() {
                   Continue
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Tracking Modal — shown while the payment is being confirmed */}
+      {showPendingCheckoutModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-md w-full max-w-md flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 className="text-[16px] font-medium text-gray-900 flex items-center gap-2">
+                <Smartphone className="h-4 w-4 text-green-500" />
+                Confirming Payment
+              </h3>
+              <button
+                onClick={() => {
+                  try {
+                    localStorage.removeItem("fb_pending_checkout");
+                  } catch (e) {
+                    console.warn(e);
+                  }
+                  setShowPendingCheckoutModal(false);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <Smartphone className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+                  <p className="text-xs text-green-800">{pendingCheckoutNotice}</p>
+                </div>
+                {checkoutStage === "pending" && (
+                  <p className="flex items-center gap-1.5 mt-2 text-xs text-green-700">
+                    <RefreshCcw className="h-3 w-3 animate-spin" />
+                    Checking automatically every 5 seconds. You'll be taken to your orders page the
+                    moment payment is confirmed.
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowPendingCheckoutModal(false);
+                    setCheckoutStage(null);
+                  }}
+                  disabled={isCheckingOrder}
+                  className="flex-1 h-10 border border-gray-300 hover:border-gray-400 text-gray-900 text-[14px] font-medium cursor-pointer disabled:opacity-50"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => performCheckoutCheck({ silent: false })}
+                  disabled={isCheckingOrder}
+                  className="flex-1 h-10 bg-green-600 hover:bg-green-700 text-white text-[14px] font-medium cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isCheckingOrder ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4" />
+                  )}
+                  {isCheckingOrder ? "Checking..." : "I've Paid — Check Status"}
+                </button>
+              </div>
+
+              <a
+                href="/restaurant/orders"
+                className="block text-center text-xs text-blue-600 hover:text-blue-700"
+              >
+                View my orders
+              </a>
             </div>
           </div>
         </div>

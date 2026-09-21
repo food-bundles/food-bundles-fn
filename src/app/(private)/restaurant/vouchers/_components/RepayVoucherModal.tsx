@@ -15,7 +15,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { voucherService } from "@/app/services/voucherService";
 import { ILoanSession } from "@/lib/types";
 import {
-  Unlock,
+  Wallet,
   Loader2,
   AlertCircle,
   Smartphone,
@@ -24,7 +24,7 @@ import {
   RefreshCcw,
 } from "lucide-react";
 
-interface UnlockFeeModalProps {
+interface RepayVoucherModalProps {
   open: boolean;
   onClose: () => void;
   session: ILoanSession;
@@ -32,20 +32,22 @@ interface UnlockFeeModalProps {
 }
 
 const PAYMENT_METHODS = [
+  { value: "CASH", label: "Prepaid Wallet" },
   { value: "MOBILE_MONEY", label: "Mobile Money (MoMo)" },
   { value: "CARD", label: "Card" },
-  { value: "BANK_TRANSFER", label: "Bank Transfer" },
 ];
 
-export default function UnlockFeeModal({
+const fmtDate = (d?: Date | string | null) =>
+  d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "";
+
+export default function RepayVoucherModal({
   open,
   onClose,
   session,
   onSuccess,
-}: UnlockFeeModalProps) {
-  const [paymentMethod, setPaymentMethod] = useState("MOBILE_MONEY");
+}: RepayVoucherModalProps) {
+  const [paymentMethod, setPaymentMethod] = useState("CASH");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [paymentReference, setPaymentReference] = useState("");
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +56,7 @@ export default function UnlockFeeModal({
   const [notice, setNotice] = useState("");
 
   const verifyInFlight = useRef(false);
+  const recoveredRef = useRef<Set<string>>(new Set());
 
   const resetState = () => {
     setStage("form");
@@ -78,9 +81,9 @@ export default function UnlockFeeModal({
         setVerifying(true);
       }
       try {
-        const response = await voucherService.verifyUnlockFeePayment(session.id);
+        const response = await voucherService.verifyLoanRepayment(session.id);
         const data = response?.data || {};
-        if (data.verified || data.alreadyUnlocked) {
+        if (data.verified || data.alreadySettled) {
           setStage("form");
           setNotice("");
           setError(null);
@@ -96,8 +99,8 @@ export default function UnlockFeeModal({
       } catch (err: unknown) {
         if (!silent) {
           const msg =
-            (err as { response?: { data?: { message?: string } } })?.response?.data
-              ?.message ?? "Could not check payment status. Please try again.";
+            (err as { response?: { data?: { message?: string } } })?.response
+              ?.data?.message ?? "Could not check payment status. Please try again.";
           setError(msg);
         }
       } finally {
@@ -108,10 +111,9 @@ export default function UnlockFeeModal({
     [session.id, onSuccess]
   );
 
-  // Auto-poll the payment status while we wait for the user to complete
-  // the MoMo (PayPack) or card (Flutterwave) payment on their phone/browser.
+  // Auto-poll the payment status while the user completes the payment.
   useEffect(() => {
-    if (!open || stage !== "pending" || paymentMethod === "BANK_TRANSFER") return;
+    if (!open || stage !== "pending" || paymentMethod === "CASH") return;
 
     let attempts = 0;
     const intervalId = setInterval(() => {
@@ -126,26 +128,24 @@ export default function UnlockFeeModal({
     return () => clearInterval(intervalId);
   }, [open, stage, paymentMethod, performVerify]);
 
-  // Recovery: if this session already has a pending unlock-fee payment (e.g. the
-  // user paid earlier, or just came back from the Flutterwave redirect), check it
-  // immediately and confirm the loan — never let them pay twice.
+  // Recovery: if this session already has a pending repayment (e.g. the user
+  // paid earlier or just returned from the Flutterwave redirect), verify it
+  // immediately so they never pay twice.
   useEffect(() => {
     if (!open) return;
-    if (session.status !== "UNLOCK_FEE_PENDING") return;
+    if (session.outstandingAmount <= 0) return;
+    if (recoveredRef.current.has(session.id)) return;
 
-    let active = true;
     voucherService
-      .verifyUnlockFeePayment(session.id)
+      .verifyLoanRepayment(session.id)
       .then((response) => {
-        if (!active) return;
         const data = response?.data || {};
-        if (data.verified || data.alreadyUnlocked) {
-          setStage("form");
-          setNotice("");
-          setError(null);
+        if (data.verified || data.alreadySettled) {
           onSuccess();
           return;
         }
+        // A real pending repayment — surface it and keep polling.
+        recoveredRef.current.add(session.id);
         setNotice(
           data.message ||
             "Payment detected. We are checking its status automatically..."
@@ -153,40 +153,44 @@ export default function UnlockFeeModal({
         setStage("pending");
       })
       .catch(() => {
-        // keep the form so the restaurant can start a fresh payment
+        // no pending payment — keep the form so the restaurant can pay
       });
-
-    return () => {
-      active = false;
-    };
-  }, [open, session.id, session.status, onSuccess]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, session.id, session.outstandingAmount, onSuccess]);
 
   const handlePay = async () => {
     setError(null);
     setLoading(true);
     try {
-      const response = await voucherService.payUnlockFee(session.id, {
+      const response = await voucherService.repayLoanSession(session.id, {
         paymentMethod,
-        paymentReference: paymentReference || undefined,
+        paymentReference: undefined,
         phoneNumber: paymentMethod === "MOBILE_MONEY" ? phoneNumber : undefined,
       });
 
       const data = response?.data || {};
 
-      // Flutterwave hosted checkout — redirect the user to complete payment
+      // Prepaid wallet — completed immediately on the server.
+      if (data.status === "completed") {
+        setStage("form");
+        onSuccess();
+        return;
+      }
+
+      // Flutterwave hosted checkout — redirect the user to complete payment.
       if (data.requiresRedirect && data.redirectUrl) {
         setRedirectUrl(data.redirectUrl);
         setStage("redirect");
         return;
       }
 
-      // PayPack pushes a request to the customer's phone (or bank transfer pending)
-      setNotice(data.message || "Payment initiated. Please complete it to activate your loan.");
+      // PayPack pushed a request to the customer's phone.
+      setNotice(data.message || "Payment initiated. Please complete it to pay this voucher.");
       setStage("pending");
     } catch (err: unknown) {
       const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
-        "Payment failed. Please try again.";
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? "Payment failed. Please try again.";
       setError(msg);
     } finally {
       setLoading(false);
@@ -199,34 +203,47 @@ export default function UnlockFeeModal({
     if (redirectUrl) window.location.href = redirectUrl;
   };
 
+  const outstanding = session.outstandingAmount ?? 0;
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md bg-white">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Unlock className="w-5 h-5 text-orange-500" />
-            Pay Unlock Fee
+            <Wallet className="w-5 h-5 text-blue-600" />
+            Pay Voucher
           </DialogTitle>
           <DialogDescription>
-            Pay the unlock fee to activate your approved loan of{" "}
-            <strong>{(session.approvedAmount ?? 0).toLocaleString()} RWF</strong>
+            Repay the credit you used on this voucher before it comes due.
           </DialogDescription>
         </DialogHeader>
 
-        {/* Fee summary */}
-        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-2">
+        {/* Outstanding summary */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Approved Loan</span>
-            <span className="font-semibold">{(session.approvedAmount ?? 0).toLocaleString()} RWF</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">
-              Unlock Fee ({session.unlockFeePercentage ?? 0}%)
-            </span>
-            <span className="font-bold text-orange-700">
-              {(session.unlockFee ?? 0).toLocaleString()} RWF
+            <span className="text-gray-600">Amount Used</span>
+            <span className="font-semibold">
+              {(session.amountUsed ?? 0).toLocaleString()} RWF
             </span>
           </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Repaid</span>
+            <span className="font-semibold text-green-600">
+              {(session.amountRepaid ?? 0).toLocaleString()} RWF
+            </span>
+          </div>
+          <div className="flex justify-between text-sm pt-1 border-t border-blue-200">
+            <span className="text-gray-600">Outstanding to Pay</span>
+            <span className="font-bold text-blue-700">
+              {outstanding.toLocaleString()} RWF
+            </span>
+          </div>
+          {session.dueDate && (
+            <div className="flex justify-between text-xs text-gray-500 pt-1">
+              <span>Due Date</span>
+              <span>{fmtDate(session.dueDate)}</span>
+            </div>
+          )}
         </div>
 
         {stage === "form" && (
@@ -260,19 +277,11 @@ export default function UnlockFeeModal({
               </div>
             )}
 
-            {paymentMethod === "BANK_TRANSFER" && (
-              <div>
-                <Label htmlFor="ref" className="text-sm font-medium mb-1 block">
-                  Payment Reference
-                </Label>
-                <Input
-                  id="ref"
-                  value={paymentReference}
-                  onChange={(e) => setPaymentReference(e.target.value)}
-                  placeholder="Transaction reference from your bank transfer"
-                  className="h-10 text-sm"
-                />
-              </div>
+            {paymentMethod === "CASH" && (
+              <p className="text-xs text-gray-500">
+                The outstanding amount will be deducted from your prepaid wallet
+                balance. This confirms instantly.
+              </p>
             )}
 
             {error && (
@@ -285,11 +294,11 @@ export default function UnlockFeeModal({
             <div className="flex gap-2 pt-2">
               <Button
                 onClick={handlePay}
-                disabled={loading || (paymentMethod === "MOBILE_MONEY" && !phoneNumber) || (paymentMethod === "BANK_TRANSFER" && !paymentReference)}
-                className="flex-1 bg-orange-500 hover:bg-orange-600"
+                disabled={loading || (paymentMethod === "MOBILE_MONEY" && !phoneNumber)}
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
               >
                 {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                {loading ? "Processing..." : `Pay ${(session.unlockFee ?? 0).toLocaleString()} RWF`}
+                {loading ? "Processing..." : `Pay ${outstanding.toLocaleString()} RWF`}
               </Button>
               <Button variant="outline" onClick={handleClose} disabled={loading}>
                 Cancel
@@ -303,9 +312,9 @@ export default function UnlockFeeModal({
             <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-lg p-4">
               <ExternalLink className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
               <div className="text-sm text-blue-800">
-                Your payment page is ready. You'll be redirected to a secure payment page
-                to complete the unlock fee payment of{" "}
-                <strong>{(session.unlockFee ?? 0).toLocaleString()} RWF</strong>.
+                Your payment page is ready. You'll be redirected to a secure payment
+                page to pay{" "}
+                <strong>{outstanding.toLocaleString()} RWF</strong>.
               </div>
             </div>
 
@@ -319,7 +328,7 @@ export default function UnlockFeeModal({
             <div className="flex gap-2 pt-2">
               <Button
                 onClick={handleContinueToPayment}
-                className="flex-1 bg-orange-500 hover:bg-orange-600"
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
                 Continue to Payment
@@ -342,13 +351,11 @@ export default function UnlockFeeModal({
                     Phone: {phoneNumber}
                   </span>
                 )}
-                {paymentMethod !== "BANK_TRANSFER" && (
-                  <span className="flex items-center gap-1.5 mt-2 text-xs text-green-700">
-                    <RefreshCcw className="w-3 h-3 animate-spin" />
-                    Checking automatically every 5 seconds. Your loan activates the
-                    moment payment is confirmed.
-                  </span>
-                )}
+                <span className="flex items-center gap-1.5 mt-2 text-xs text-green-700">
+                  <RefreshCcw className="w-3 h-3 animate-spin" />
+                  Checking automatically every 5 seconds. Your voucher is repaid the
+                  moment payment is confirmed.
+                </span>
               </div>
             </div>
 
@@ -363,7 +370,7 @@ export default function UnlockFeeModal({
               <Button
                 onClick={handleVerify}
                 disabled={verifying}
-                className="flex-1 bg-orange-500 hover:bg-orange-600"
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
               >
                 {verifying && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                 {verifying ? "Checking..." : (

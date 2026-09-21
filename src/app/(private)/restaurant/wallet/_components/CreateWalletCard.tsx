@@ -14,7 +14,7 @@ export function CreateWalletCard() {
   const handleCreateWallet = async () => {
     setIsCreating(true);
     try {
-      await createWallet({ currency: "RWF" });
+      await createWallet();
       toast.success("Wallet created successfully!");
     } catch (error) {
       console.error("Create wallet error:", error);

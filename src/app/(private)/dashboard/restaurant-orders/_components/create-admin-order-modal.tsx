@@ -141,7 +141,14 @@ export function CreateAdminOrderModal({
         limit: 100,
         status: "ACTIVE",
       });
-      const data = response.data?.data || response.data || response.restaurants || [];
+      const payload = response?.data;
+      const data = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.restaurants)
+          ? payload.restaurants
+          : Array.isArray(payload?.data)
+            ? payload.data
+            : [];
       setRestaurants(data);
     } catch (error) {
       console.error("Failed to load restaurants:", error);

@@ -5,21 +5,18 @@ import { useEffect, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { CreditCard, MoreHorizontal, Plus, Copy, Check, Percent, Printer } from "lucide-react";
+import { CreditCard, MoreHorizontal, Plus, Copy, Check, Printer } from "lucide-react";
 import { voucherService } from "@/app/services/voucherService";
 import { IVoucherCard, CardStatus } from "@/lib/types";
 import IssueVoucherCardModal from "./IssueVoucherCardModal";
 import { printVoucherCard } from "./cardPrint";
 import { RestaurantProvider } from "@/app/contexts/RestaurantContext";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import toast from "react-hot-toast";
 
 const STATUS_COLORS: Record<CardStatus, string> = {
@@ -35,11 +32,6 @@ export default function VoucherCardsTable() {
   const [issueModalOpen, setIssueModalOpen] = useState(false);
   const [preselected, setPreselected] = useState<{ id: string; name: string } | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  // Unlock fee editor state
-  const [feeCard, setFeeCard] = useState<IVoucherCard | null>(null);
-  const [feeEnabled, setFeeEnabled] = useState(false);
-  const [feePct, setFeePct] = useState("");
-  const [savingFee, setSavingFee] = useState(false);
 
   const loadCards = () => {
     setLoading(true);
@@ -62,31 +54,6 @@ export default function VoucherCardsTable() {
   };
 
   const formatPan = (pan: string) => pan.replace(/(.{4})/g, "$1 ").trim();
-
-  const openFeeEditor = (card: IVoucherCard) => {
-    setFeeCard(card);
-    setFeeEnabled(card.unlockFeeEnabled ?? false);
-    setFeePct(card.unlockFeePercentage ? String(card.unlockFeePercentage) : "");
-  };
-
-  const handleSaveFee = async () => {
-    if (!feeCard) return;
-    setSavingFee(true);
-    try {
-      const pct = parseFloat(feePct);
-      await voucherService.updateCardUnlockFee(feeCard.id, {
-        unlockFeeEnabled: feeEnabled,
-        unlockFeePercentage: feeEnabled && !isNaN(pct) && pct > 0 ? pct : null,
-      });
-      toast.success(feeEnabled ? "Card unlock fee configured" : "Card unlock fee disabled (no fee applies)");
-      setFeeCard(null);
-      loadCards();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message ?? "Failed to update unlock fee");
-    } finally {
-      setSavingFee(false);
-    }
-  };
 
   // ── Issued cards columns ─────────────────────────────────────────────────
   const cardColumns: ColumnDef<IVoucherCard>[] = [
@@ -157,21 +124,6 @@ export default function VoucherCardsTable() {
       },
     },
     {
-      id: "unlockFee",
-      header: "Unlock Fee",
-      cell: ({ row }) => {
-        const card = row.original;
-        const enabled = card.unlockFeeEnabled && (card.unlockFeePercentage ?? 0) > 0;
-        return enabled ? (
-          <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-xs rounded">
-            {card.unlockFeePercentage}%
-          </Badge>
-        ) : (
-          <span className="text-xs text-gray-400">None</span>
-        );
-      },
-    },
-    {
       id: "eligible",
       header: "Eligible",
       cell: ({ row }) => (
@@ -216,10 +168,6 @@ export default function VoucherCardsTable() {
               <DropdownMenuItem onClick={() => printVoucherCard(card)}>
                 <Printer className="mr-2 h-4 w-4" />
                 Print Card
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => openFeeEditor(card)}>
-                <Percent className="mr-2 h-4 w-4" />
-                Configure Unlock Fee
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -272,60 +220,6 @@ export default function VoucherCardsTable() {
         onSuccess={loadCards}
         preselectedRestaurant={preselected}
       />
-
-      {/* ── Card Unlock Fee Config ─────────────────────────────────────── */}
-      <Dialog open={feeCard !== null} onOpenChange={(open) => !open && setFeeCard(null)}>
-        <DialogContent className="sm:max-w-sm bg-white">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Percent className="w-4 h-4 text-green-600" />
-              Unlock Fee — PAN {feeCard ? formatPan(feeCard.pan) : ""}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <input
-                type="checkbox"
-                checked={feeEnabled}
-                onChange={(e) => setFeeEnabled(e.target.checked)}
-                className="h-4 w-4 accent-green-600"
-              />
-              Apply unlock fee for this restaurant's loans
-            </label>
-            {feeEnabled && (
-              <div>
-                <label className="block text-sm font-medium mb-1">Fee percentage (%)</label>
-                <Input
-                  type="number"
-                  min={0}
-                  step="0.1"
-                  value={feePct}
-                  onChange={(e) => setFeePct(e.target.value)}
-                  placeholder="e.g. 4"
-                  className="h-10 text-sm"
-                />
-              </div>
-            )}
-            <p className="text-xs text-gray-400">
-              No default fee — if disabled, this restaurant's loans are activated without an
-              unlock fee (unless the linked loan provider sets one).
-            </p>
-            <div className="flex gap-2 pt-1">
-              <Button
-                onClick={handleSaveFee}
-                disabled={savingFee || (feeEnabled && !(parseFloat(feePct) > 0))}
-                className="flex-1 bg-green-600 hover:bg-green-700"
-              >
-                {savingFee && <Check className="w-4 h-4 animate-pulse mr-2" />}
-                {savingFee ? "Saving..." : "Save Fee Config"}
-              </Button>
-              <Button variant="outline" onClick={() => setFeeCard(null)} disabled={savingFee}>
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </RestaurantProvider>
   );
 }

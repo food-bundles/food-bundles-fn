@@ -115,6 +115,20 @@ export interface StatisticsResponse {
   message?: string;
 }
 
+export interface PublicOrderSummary {
+  id: string;
+  orderNumber: string;
+  restaurantName: string;
+  currency: string;
+  totalAmount: number;
+  items: Array<{
+    productName: string;
+    quantity: number;
+    unit?: string;
+    subtotal: number;
+  }>;
+}
+
 export const orderService = {
   createOrderFromCheckout: async (
     checkoutData: CreateOrderFromCheckoutData
@@ -317,5 +331,28 @@ export const orderService = {
     } catch (error: any) {
       return { success: false, message: error.response?.data?.message || error.message };
     }
+  },
+
+  // Public (unauthenticated) payment-link flow used by /pay/[token].
+  // NOTE: the backend has no public payment-link endpoints yet; these will throw
+  // a 404 and the page renders its "invalid or expired" state until added.
+  getOrderByPaymentLink: async (
+    token: string
+  ): Promise<{ success: boolean; data: PublicOrderSummary; message?: string }> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get(`/orders/public/${token}`);
+    return response.data;
+  },
+
+  payViaPaymentLink: async (
+    token: string,
+    paymentData: {
+      paymentMethod: "CASH" | "MOBILE_MONEY" | "CARD" | "BANK_TRANSFER";
+      phoneNumber?: string;
+    }
+  ): Promise<{ success: boolean; data?: any; message?: string }> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(`/orders/public/${token}/pay`, paymentData);
+    return { success: true, data: response.data.data, message: response.data.message };
   },
 };

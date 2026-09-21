@@ -361,6 +361,14 @@ export const voucherService = {
     return response.data;
   },
 
+  convertLoanToWallet: async (rrn: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(
+      `/vouchers/sessions/${rrn}/convert-to-wallet`
+    );
+    return response.data;
+  },
+
   getLoanTraders: async () => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.get("/vouchers/sessions/loan-traders");
@@ -437,6 +445,30 @@ export const voucherService = {
     return response.data;
   },
 
+  repayLoanSession: async (
+    sessionId: string,
+    paymentData: {
+      paymentMethod: string;
+      paymentReference?: string;
+      phoneNumber?: string;
+    },
+  ) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(
+      `/vouchers/sessions/${sessionId}/repay`,
+      paymentData
+    );
+    return response.data;
+  },
+
+  verifyLoanRepayment: async (sessionId: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get(
+      `/vouchers/sessions/${sessionId}/repay/verify`
+    );
+    return response.data;
+  },
+
   getAllLoanSessions: async (params?: {
     status?: string;
     restaurantId?: string;
@@ -454,7 +486,7 @@ export const voucherService = {
     approvalPercentage?: number;
     repaymentDays: number;
     notes?: string;
-    fundingTraderId?: string;
+    fundingTraderId?: string | null;
     requireUnlockFee?: boolean;
     unlockFeePercentage?: number;
   }) => {
@@ -513,15 +545,6 @@ export const voucherService = {
   getCardStats: async () => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.get("/vouchers/card-stats");
-    return response.data;
-  },
-
-  updateCardUnlockFee: async (
-    cardId: string,
-    data: { unlockFeeEnabled: boolean; unlockFeePercentage?: number | null }
-  ) => {
-    const axiosClient = createAxiosClient();
-    const response = await axiosClient.patch(`/vouchers/card/${cardId}/unlock-fee`, data);
     return response.data;
   },
 
