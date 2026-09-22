@@ -13,7 +13,6 @@ export interface CustomerType {
   createdAt: string;
 }
 
-<<<<<<< HEAD
 export interface CustomerTypeUsageProduct {
   id: string;
   productName: string;
@@ -69,8 +68,6 @@ export interface PriceUsageData {
   customerTypes: { id: string; name: string; isActive: boolean }[];
 }
 
-=======
->>>>>>> de818a5 (dec: this is the customer type feature which will need to make a change on the drawer of create a product and on the productcontroler, model)
 export const customerTypeService = {
   createCustomerType: async (data: CustomerTypeFormData) => {
     const axiosClient = createAxiosClient();
@@ -101,17 +98,12 @@ export const customerTypeService = {
     const response = await axiosClient.delete(`/customer-types/${id}`);
     return response.data;
   },
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 3dd9eae (desc: addition of column,card and to activate the status)
 
   toggleCustomerTypeStatus: async (id: string) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.patch(`/customer-types/${id}/status`);
     return response.data;
   },
-<<<<<<< HEAD
 
   getCustomerTypeUsage: async () => {
     const axiosClient = createAxiosClient();
@@ -136,8 +128,5 @@ export const customerTypeService = {
     const response = await axiosClient.patch("/customer-types/assign-customer-type", { restaurantId, customerTypeId });
     return response.data;
   },
-=======
->>>>>>> de818a5 (dec: this is the customer type feature which will need to make a change on the drawer of create a product and on the productcontroler, model)
-=======
->>>>>>> 3dd9eae (desc: addition of column,card and to activate the status)
+
 };
