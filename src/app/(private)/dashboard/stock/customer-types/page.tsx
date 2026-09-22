@@ -13,9 +13,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Users, UserCheck, UserX } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Users, UserCheck, UserX, ArrowLeftRight, BarChart3 } from "lucide-react";
 import { createCustomerTypeColumns } from "./_components/customer-type-columns";
 import { CustomerTypeModal } from "./_components/CustomerTypeModal";
+import { PriceUsage } from "./_components/PriceUsage";
+import { SwapPricingDialog } from "./_components/SwapPricingDialog";
 import { toast } from "sonner";
 import {
   customerTypeService,
@@ -30,6 +33,8 @@ export default function CustomerTypesPage() {
   const [editingType, setEditingType] = useState<CustomerType | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [typeToDelete, setTypeToDelete] = useState<CustomerType | null>(null);
+  const [activeTab, setActiveTab] = useState("types");
+  const [isSwapDialogOpen, setIsSwapDialogOpen] = useState(false);
 
   const stats = useMemo(() => {
     const total = customerTypes.length;
@@ -115,6 +120,10 @@ export default function CustomerTypesPage() {
     setEditingType(null);
   };
 
+  const handleSwapComplete = () => {
+    setIsSwapDialogOpen(false);
+  };
+
   const columns = createCustomerTypeColumns(handleEdit, handleDeleteClick, handleToggle);
 
   return (
@@ -128,25 +137,27 @@ export default function CustomerTypesPage() {
             Manage customer types for product pricing
           </p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)} className="bg-green-600 hover:bg-green-700">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Customer Type
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setIsSwapDialogOpen(true)}
+            className="border-gray-300"
+          >
+            <ArrowLeftRight className="h-4 w-4 mr-2" />
+            Swap Pricing
+          </Button>
+          <Button onClick={() => setIsModalOpen(true)} className="bg-green-600 hover:bg-green-700">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Customer Type
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        {/* Total Types */}
         <div className="p-4 rounded-lg border bg-blue-50 transition-all duration-200 hover:shadow-md">
           <div className="flex items-center justify-between mb-2">
             <Users className="w-5 h-5 text-blue-600" />
-            <div className="flex items-center gap-1 text-xs text-blue-600">
-              <div className="w-3 h-3">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M7 14l5-5 5 5z" />
-                </svg>
-              </div>
-            </div>
           </div>
           <div className="space-y-1">
             <p className="text-xs text-gray-600 font-medium">Total Types</p>
@@ -154,17 +165,9 @@ export default function CustomerTypesPage() {
           </div>
         </div>
 
-        {/* Active */}
         <div className="p-4 rounded-lg border bg-green-50 transition-all duration-200 hover:shadow-md">
           <div className="flex items-center justify-between mb-2">
             <UserCheck className="w-5 h-5 text-green-600" />
-            <div className="flex items-center gap-1 text-xs text-green-600">
-              <div className="w-3 h-3">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M7 14l5-5 5 5z" />
-                </svg>
-              </div>
-            </div>
           </div>
           <div className="space-y-1">
             <p className="text-xs text-gray-600 font-medium">Active</p>
@@ -172,17 +175,9 @@ export default function CustomerTypesPage() {
           </div>
         </div>
 
-        {/* Inactive */}
         <div className="p-4 rounded-lg border bg-red-50 transition-all duration-200 hover:shadow-md">
           <div className="flex items-center justify-between mb-2">
             <UserX className="w-5 h-5 text-red-600" />
-            <div className="flex items-center gap-1 text-xs text-red-600">
-              <div className="w-3 h-3">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M17 10l-5 5-5-5z" />
-                </svg>
-              </div>
-            </div>
           </div>
           <div className="space-y-1">
             <p className="text-xs text-gray-600 font-medium">Inactive</p>
@@ -191,22 +186,47 @@ export default function CustomerTypesPage() {
         </div>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={customerTypes}
-        title=""
-        description=""
-        showPagination={false}
-        showColumnVisibility={false}
-        showRowSelection={false}
-        isLoading={isLoading}
-      />
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="types" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Customer Types
+          </TabsTrigger>
+          <TabsTrigger value="usage" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Price Usage
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="types">
+          <DataTable
+            columns={columns}
+            data={customerTypes}
+            title=""
+            description=""
+            showPagination={true}
+            showColumnVisibility={false}
+            showRowSelection={false}
+            isLoading={isLoading}
+          />
+        </TabsContent>
+
+        <TabsContent value="usage">
+          <PriceUsage />
+        </TabsContent>
+      </Tabs>
 
       <CustomerTypeModal
         open={isModalOpen}
         onOpenChange={handleModalClose}
         customerType={editingType}
         onSubmit={handleSubmit}
+      />
+
+      <SwapPricingDialog
+        open={isSwapDialogOpen}
+        onOpenChange={setIsSwapDialogOpen}
+        onComplete={handleSwapComplete}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

@@ -9,9 +9,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    const secret = process.env.CHATBOT_IDENTITY_SECRET;
+    const secret = process.env.CHATBOT_IDENTITY_SECRET || process.env.JWT_SECRET;
     if (!secret) {
-      return NextResponse.json({ error: 'Chatbot secret not configured' }, { status: 500 });
+      console.warn('Chatbot secret not configured in environment variables');
+      return NextResponse.json({ error: 'Chatbot secret not configured' }, { status: 503 });
     }
 
     // Get user info from your auth system

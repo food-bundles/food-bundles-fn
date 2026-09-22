@@ -86,7 +86,7 @@ export function ProductManagementModal({
     quantity: 0,
     unit: "",
     expiryDate: "",
-    customerTypePrices: [] as { customerTypeId: string; price: number }[],
+    customerTypePrices: [] as { customerTypeId: string; price: number; purchasePrice: number }[],
   });
 
   useEffect(() => {
@@ -94,10 +94,11 @@ export function ProductManagementModal({
       const existingPrices = (product.customerTypePrices || []).map((ctp) => ({
         customerTypeId: ctp.customerType.id,
         price: ctp.price,
+        purchasePrice: ctp.purchasePrice || 0,
       }));
       const allPrices = customerTypes.map((ct) => {
         const existing = existingPrices.find((p) => p.customerTypeId === ct.id);
-        return existing || { customerTypeId: ct.id, price: 0 };
+        return existing || { customerTypeId: ct.id, price: 0, purchasePrice: 0 };
       });
       setEditData({
         productName: product.productName,
@@ -154,10 +155,11 @@ export function ProductManagementModal({
       const existingPrices = (product.customerTypePrices || []).map((ctp) => ({
         customerTypeId: ctp.customerType.id,
         price: ctp.price,
+        purchasePrice: ctp.purchasePrice || 0,
       }));
       const allPrices = customerTypes.map((ct) => {
         const existing = existingPrices.find((p) => p.customerTypeId === ct.id);
-        return existing || { customerTypeId: ct.id, price: 0 };
+        return existing || { customerTypeId: ct.id, price: 0, purchasePrice: 0 };
       });
       setEditData({
         productName: product.productName,
@@ -403,22 +405,26 @@ export function ProductManagementModal({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="purchasePrice" className="text-gray-900">
-                    Purchase Price (RWF)
-                  </Label>
-                  <Input
-                    id="purchasePrice"
-                    type="number"
-                    value={editData.purchasePrice}
-                    onChange={(e) =>
-                      setEditData((prev) => ({
-                        ...prev,
-                        purchasePrice: Number(e.target.value),
-                      }))
-                    }
-                    disabled={isLoading}
-                    className="bg-white border-gray-300 text-gray-900"
-                  />
+                  {selectedCustomerTypeIds.length === 0 && (
+                    <>
+                      <Label htmlFor="purchasePrice" className="text-gray-900">
+                        Purchase Price (RWF)
+                      </Label>
+                      <Input
+                        id="purchasePrice"
+                        type="number"
+                        value={editData.purchasePrice}
+                        onChange={(e) =>
+                          setEditData((prev) => ({
+                            ...prev,
+                            purchasePrice: Number(e.target.value),
+                          }))
+                        }
+                        disabled={isLoading}
+                        className="bg-white border-gray-300 text-gray-900"
+                      />
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -493,25 +499,50 @@ export function ProductManagementModal({
                     const ct = customerTypes.find((c) => c.id === ctp.customerTypeId);
                     if (!ct) return null;
                     return (
-                      <div key={ctp.customerTypeId} className="flex items-center gap-2">
-                        <span className="text-sm text-gray-700 w-32 shrink-0">{ct.name}</span>
-                        <Input
-                          type="number"
-                          value={ctp.price || ""}
-                          onChange={(e) =>
-                            setEditData((prev) => ({
-                              ...prev,
-                              customerTypePrices: prev.customerTypePrices.map((p) =>
-                                p.customerTypeId === ctp.customerTypeId
-                                  ? { ...p, price: Number(e.target.value) }
-                                  : p
-                              ),
-                            }))
-                          }
-                          disabled={isLoading}
-                          placeholder="Enter price"
-                          className="bg-white border-gray-300 text-gray-900"
-                        />
+                      <div key={ctp.customerTypeId} className="space-y-1">
+                        <span className="text-sm text-gray-700 font-medium">{ct.name}</span>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <Label className="text-xs text-gray-500">Price</Label>
+                            <Input
+                              type="number"
+                              value={ctp.price || ""}
+                              onChange={(e) =>
+                                setEditData((prev) => ({
+                                  ...prev,
+                                  customerTypePrices: prev.customerTypePrices.map((p) =>
+                                    p.customerTypeId === ctp.customerTypeId
+                                      ? { ...p, price: Number(e.target.value) }
+                                      : p
+                                  ),
+                                }))
+                              }
+                              disabled={isLoading}
+                              placeholder="Selling price"
+                              className="bg-white border-gray-300 text-gray-900"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs text-gray-500">Purchase Price</Label>
+                            <Input
+                              type="number"
+                              value={ctp.purchasePrice || ""}
+                              onChange={(e) =>
+                                setEditData((prev) => ({
+                                  ...prev,
+                                  customerTypePrices: prev.customerTypePrices.map((p) =>
+                                    p.customerTypeId === ctp.customerTypeId
+                                      ? { ...p, purchasePrice: Number(e.target.value) }
+                                      : p
+                                  ),
+                                }))
+                              }
+                              disabled={isLoading}
+                              placeholder="Cost price"
+                              className="bg-white border-gray-300 text-gray-900"
+                            />
+                          </div>
+                        </div>
                       </div>
                     );
                   })}
