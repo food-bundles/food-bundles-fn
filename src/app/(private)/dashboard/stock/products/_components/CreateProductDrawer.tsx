@@ -42,7 +42,7 @@ export interface ProductFormData {
   images: File[];
   expiryDate: Date | undefined;
   unit: string;
-  customerTypePrices?: { customerTypeId: string; price: number }[];
+  customerTypePrices?: { customerTypeId: string; price: number; purchasePrice: number }[];
 }
 
 interface CreateProductDrawerProps {
@@ -100,6 +100,7 @@ export function CreateProductDrawer({
         customerTypePrices: customerTypes.map((ct) => ({
           customerTypeId: ct.id,
           price: 0,
+          purchasePrice: 0,
         })),
       }));
       setSelectedCustomerTypeIds([]);
@@ -144,6 +145,15 @@ export function CreateProductDrawer({
       ...prev,
       customerTypePrices: (prev.customerTypePrices || []).map((ctp) =>
         ctp.customerTypeId === customerTypeId ? { ...ctp, price } : ctp
+      ),
+    }));
+  };
+
+  const handleCustomerTypePurchasePriceChange = (customerTypeId: string, purchasePrice: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      customerTypePrices: (prev.customerTypePrices || []).map((ctp) =>
+        ctp.customerTypeId === customerTypeId ? { ...ctp, purchasePrice } : ctp
       ),
     }));
   };
@@ -196,7 +206,7 @@ export function CreateProductDrawer({
       !formData.unit ||
       formData.quantity <= 0 ||
       formData.unitPrice <= 0 ||
-      formData.purchasePrice <= 0
+      (selectedCustomerTypeIds.length === 0 && formData.purchasePrice <= 0)
     ) {
       const missingFields = [];
       if (!formData.productName) missingFields.push('Product Name');
@@ -205,7 +215,7 @@ export function CreateProductDrawer({
       if (!formData.unit) missingFields.push('Unit');
       if (formData.quantity <= 0) missingFields.push('Quantity (must be > 0)');
       if (formData.unitPrice <= 0) missingFields.push('Unit Price (must be > 0)');
-      if (formData.purchasePrice <= 0) missingFields.push('Purchase Price (must be > 0)');
+      if (selectedCustomerTypeIds.length === 0 && formData.purchasePrice <= 0) missingFields.push('Purchase Price (must be > 0)');
       
       console.log('Missing required fields:', missingFields);
       toast.error(`Please fill in all required fields: ${missingFields.join(', ')}`);
@@ -266,6 +276,7 @@ export function CreateProductDrawer({
       customerTypePrices: customerTypes.map((ct) => ({
         customerTypeId: ct.id,
         price: 0,
+        purchasePrice: 0,
       })),
     });
     setSelectedCustomerTypeIds([]);
@@ -534,24 +545,51 @@ export function CreateProductDrawer({
                           if (!ct) return null;
                           return (
                             <div key={ctp.customerTypeId} className="space-y-2">
-                              <Label htmlFor={`ct-${ctp.customerTypeId}`} className="text-xs font-medium">
-                                {ct.name} Price
+                              <Label className="text-xs font-medium">
+                                {ct.name}
                               </Label>
-                              <Input
-                                id={`ct-${ctp.customerTypeId}`}
-                                type="number"
-                                min="0"
-                                step="1"
-                                value={ctp.price || ""}
-                                onChange={(e) =>
-                                  handleCustomerTypePriceChange(
-                                    ctp.customerTypeId,
-                                    e.target.value ? Number.parseFloat(e.target.value) : 0,
-                                  )
-                                }
-                                placeholder="Enter price"
-                                className="focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                              />
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-1">
+                                  <Label htmlFor={`ct-${ctp.customerTypeId}`} className="text-xs text-gray-500">
+                                    Price
+                                  </Label>
+                                  <Input
+                                    id={`ct-${ctp.customerTypeId}`}
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    value={ctp.price || ""}
+                                    onChange={(e) =>
+                                      handleCustomerTypePriceChange(
+                                        ctp.customerTypeId,
+                                        e.target.value ? Number.parseFloat(e.target.value) : 0,
+                                      )
+                                    }
+                                    placeholder="Selling price"
+                                    className="focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <Label htmlFor={`ct-purchase-${ctp.customerTypeId}`} className="text-xs text-gray-500">
+                                    Purchase Price
+                                  </Label>
+                                  <Input
+                                    id={`ct-purchase-${ctp.customerTypeId}`}
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    value={ctp.purchasePrice || ""}
+                                    onChange={(e) =>
+                                      handleCustomerTypePurchasePriceChange(
+                                        ctp.customerTypeId,
+                                        e.target.value ? Number.parseFloat(e.target.value) : 0,
+                                      )
+                                    }
+                                    placeholder="Cost price"
+                                    className="focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                  />
+                                </div>
+                              </div>
                             </div>
                           );
                         })}
@@ -616,30 +654,32 @@ export function CreateProductDrawer({
 
                 {/* Right Side */}
                 <div className="flex-1 space-y-4">
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="purchasePrice"
-                      className="text-xs font-medium"
-                    >
-                      Purchase Price *
-                    </Label>
-                    <Input
-                      id="purchasePrice"
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={formData.purchasePrice || ""}
-                      onChange={(e) =>
-                        handleInputChange(
-                          "purchasePrice",
-                          Number.parseFloat(e.target.value) || 0,
-                        )
-                      }
-                      placeholder="0"
-                      className="focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      required
-                    />
-                  </div>
+                  {selectedCustomerTypeIds.length === 0 && (
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="purchasePrice"
+                        className="text-xs font-medium"
+                      >
+                        Purchase Price *
+                      </Label>
+                      <Input
+                        id="purchasePrice"
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={formData.purchasePrice || ""}
+                        onChange={(e) =>
+                          handleInputChange(
+                            "purchasePrice",
+                            Number.parseFloat(e.target.value) || 0,
+                          )
+                        }
+                        placeholder="0"
+                        className="focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        required
+                      />
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <Label htmlFor="quantity" className="text-xs font-medium">
                       Quantity *

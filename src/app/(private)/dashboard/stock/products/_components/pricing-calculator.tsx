@@ -27,7 +27,7 @@ interface ProductData {
   unitPrice: number;
   purchasePrice: number;
   unit: string;
-  customerTypePrices?: { id: string; price: number; customerType: { id: string; name: string } }[];
+  customerTypePrices?: { id: string; price: number; purchasePrice: number; customerType: { id: string; name: string } }[];
   latestMarketPrices?: MarketPrice[];
 }
 
