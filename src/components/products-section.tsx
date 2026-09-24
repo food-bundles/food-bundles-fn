@@ -48,13 +48,29 @@ import RestaurantAvailablePromos from "@/app/(private)/restaurant/_components/Re
 // import { ChristmasAnimation } from "@/components/ChristmasAnimation";
 import Link from "next/link";
 
-// Helper function to get role-based price
-const getRoleBasedPrice = (product: any, userRole: string) => {
-  if (userRole === "HOTEL" && product.hotelPrice !== null && product.hotelPrice !== undefined) {
-    return product.hotelPrice;
+// Helper function to get role-based price from customerTypePrices
+const getRoleBasedPrice = (product: any, userRole: string, customerTypeId?: string | null) => {
+  const customerTypePrices = product.customerTypePrices || [];
+  // An explicitly assigned customer type wins over the role-based default
+  if (customerTypeId) {
+    const assigned = customerTypePrices.find(
+      (ctp: any) => ctp.customerType?.id === customerTypeId
+    );
+    return assigned ? assigned.price : product.unitPrice || 0;
   }
-  if ((userRole === "RESTAURANT" || userRole === "AFFILIATOR") && product.restaurantPrice !== null && product.restaurantPrice !== undefined) {
-    return product.restaurantPrice;
+  if (customerTypePrices.length > 0) {
+    const roleToCustomerType: Record<string, string> = {
+      HOTEL: "Hotel",
+      RESTAURANT: "Restaurant",
+      AFFILIATOR: "Restaurant",
+    };
+    const targetName = roleToCustomerType[userRole];
+    if (targetName) {
+      const match = customerTypePrices.find(
+        (ctp: any) => ctp.customerType?.name?.toLowerCase() === targetName.toLowerCase()
+      );
+      if (match) return match.price;
+    }
   }
   return product.unitPrice || 0;
 };
@@ -71,6 +87,7 @@ interface ProductCardProps {
   category?: string;
   productData?: Product;
   userRole?: string;
+  customerTypeId?: string | null;
 }
 
 const ProductCard = memo(function ProductCard({
@@ -83,6 +100,7 @@ const ProductCard = memo(function ProductCard({
   unit,
   productData,
   userRole,
+  customerTypeId,
 }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
@@ -97,7 +115,7 @@ const ProductCard = memo(function ProductCard({
   const isUpdateDisabled = isInCart && quantity === cartQuantity;
 
   // Get role-based price with fallback
-  const displayPrice = productData ? getRoleBasedPrice(productData, userRole || 'RESTAURANT') : (price || 0);
+  const displayPrice = productData ? getRoleBasedPrice(productData, userRole || 'RESTAURANT', customerTypeId) : (price || 0);
   const safeDisplayPrice = typeof displayPrice === 'number' && displayPrice > 0 ? displayPrice : (price || 0);
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -708,7 +726,7 @@ export function ProductsSection({
                             const data = await productService.getDiscountedProducts();
                             console.log('Discounted products response:', data);
                             const transformedProducts = data.data.map((product: any) => {
-                              const roleBasedPrice = getRoleBasedPrice(product, user?.role || 'RESTAURANT');
+                              const roleBasedPrice = getRoleBasedPrice(product, user?.role || 'RESTAURANT', user?.customerTypeId);
                               return {
                                 id: product.id,
                                 name: product.productName,
@@ -827,6 +845,7 @@ export function ProductsSection({
                         unit={product.unit}
                         productData={product}
                         userRole={user?.role}
+                        customerTypeId={user?.customerTypeId}
                       />
                     ))}
                   </div>

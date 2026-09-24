@@ -10,15 +10,31 @@ import { useProductSection } from "@/hooks/useProductSection";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import { useAuth } from "@/app/contexts/auth-context";
 
-// Helper function to get role-based price
-const getRoleBasedPrice = (product: any, userRole: string) => {
-  if (userRole === "HOTEL" && product.hotelPrice) {
-    return product.hotelPrice;
+// Helper function to get role-based price from customerTypePrices
+const getRoleBasedPrice = (product: any, userRole: string, customerTypeId?: string | null) => {
+  const customerTypePrices = product.customerTypePrices || [];
+  // An explicitly assigned customer type wins over the role-based default
+  if (customerTypeId) {
+    const assigned = customerTypePrices.find(
+      (ctp: any) => ctp.customerType?.id === customerTypeId
+    );
+    return assigned ? assigned.price : product.unitPrice || 0;
   }
-  if ((userRole === "RESTAURANT" || userRole === "AFFILIATOR") && product.restaurantPrice) {
-    return product.restaurantPrice;
+  if (customerTypePrices.length > 0) {
+    const roleToCustomerType: Record<string, string> = {
+      HOTEL: "Hotel",
+      RESTAURANT: "Restaurant",
+      AFFILIATOR: "Restaurant",
+    };
+    const targetName = roleToCustomerType[userRole];
+    if (targetName) {
+      const match = customerTypePrices.find(
+        (ctp: any) => ctp.customerType?.name?.toLowerCase() === targetName.toLowerCase()
+      );
+      if (match) return match.price;
+    }
   }
-  return product.unitPrice;
+  return product.unitPrice || 0;
 };
 
 function SearchLoading() {
@@ -97,7 +113,7 @@ export default function RestaurantPage() {
       const pagination = response.pagination || {};
 
       const transformedProducts = productsData.map((product: any) => {
-        const roleBasedPrice = getRoleBasedPrice(product, user?.role || 'RESTAURANT');
+        const roleBasedPrice = getRoleBasedPrice(product, user?.role || 'RESTAURANT', user?.customerTypeId);
         return {
           id: product.id,
           name: product.productName,

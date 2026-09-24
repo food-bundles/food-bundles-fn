@@ -173,7 +173,7 @@ export const getInventoryColumns = (
     },
   },
   {
-    accessorKey: "restaurantPrice",
+    accessorKey: "customerTypePrices",
     header: ({ column }) => {
       return (
         <Button
@@ -181,45 +181,26 @@ export const getInventoryColumns = (
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-auto p-0 text-xs"
         >
-          Restaurant Price
+          Customer Prices
         </Button>
       );
     },
     cell: ({ row }) => {
-      const restaurantPrice = row.original.restaurantPrice;
+      const customerTypePrices = row.original.customerTypePrices || [];
       const unit = row.original.unit;
+      if (customerTypePrices.length === 0) {
+        return <span className="text-xs text-gray-500">N/A</span>;
+      }
       return (
-        <div className="flex flex-col">
-          <span className="text-xs text-gray-900">
-            {restaurantPrice !== null && restaurantPrice !== undefined ? `${restaurantPrice.toLocaleString()} RWF` : 'N/A'}
-          </span>
-          {restaurantPrice !== null && restaurantPrice !== undefined && <span className="text-xs text-gray-600">per {unit}</span>}
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "hotelPrice",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-auto p-0 text-xs"
-        >
-          Hotel Price
-        </Button>
-      );
-    },
-    cell: ({ row }) => {
-      const hotelPrice = row.original.hotelPrice;
-      const unit = row.original.unit;
-      return (
-        <div className="flex flex-col">
-          <span className="text-xs text-gray-900">
-            {hotelPrice !== null && hotelPrice !== undefined ? `${hotelPrice.toLocaleString()} RWF` : 'N/A'}
-          </span>
-          {hotelPrice !== null && hotelPrice !== undefined && <span className="text-xs text-gray-600">per {unit}</span>}
+        <div className="flex flex-col gap-0.5">
+          {customerTypePrices.map((ctp) => (
+            <div key={ctp.id} className="flex items-center gap-1">
+              <span className="text-xs text-gray-500">{ctp.customerType.name}:</span>
+              <span className="text-xs text-gray-900 font-medium">
+                {ctp.price.toLocaleString()} RWF
+              </span>
+            </div>
+          ))}
         </div>
       );
     },

@@ -19,6 +19,7 @@ interface User {
   email: string;
   phone?: string;
   role: string;
+  customerTypeId?: string | null;
   profileImage?: string;
   location?: string;
   restaurantId?: string;
