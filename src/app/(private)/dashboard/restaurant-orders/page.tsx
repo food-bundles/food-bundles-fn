@@ -232,7 +232,7 @@ export default function AdminOrdersPage() {
           <div class="invoice">
             <div class="header">
               <img src="https://res.cloudinary.com/dzxyelclu/image/upload/v1760111270/Food_bundle_logo_cfsnsw.png" alt="Logo" style="width: 50px; height: 50px; margin: 0 auto 8px; border-radius: 50%;">
-              <h1>Food Bundles Ltd</h1>
+              <h1>Food Bundles</h1>
               <p>Order Invoice</p>
             </div>
             <div class="info-section">

@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { voucherService } from "@/app/services/voucherService";
 import { CardStatus, IVoucherCard } from "@/lib/types";
 import {
   CreditCard, Copy, Check, ShieldCheck, ShieldOff,
-  AlertCircle, Loader2, X, Building2,
+  AlertCircle, Loader2, X, Building2, RotateCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -15,6 +15,15 @@ import createAxiosClient from "@/app/hooks/axiosClient";
 
 const FOOD_BUNDLES_LOGO =
   "https://res.cloudinary.com/dzxyelclu/image/upload/v1760111270/Food_bundle_logo_cfsnsw.png";
+
+// Deterministic 3-digit CVV derived from the PAN (no secret stored on the card)
+const deriveCvv = (pan: string) => {
+  let hash = 0;
+  for (let i = 0; i < pan.length; i++) {
+    hash = (hash * 31 + pan.charCodeAt(i)) % 997;
+  }
+  return String(100 + (hash % 900));
+};
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface RestaurantProfile {
@@ -37,6 +46,11 @@ const CONSENT_TEXT =
 // ─── Physical card ────────────────────────────────────────────────────────────
 function PhysicalCard({ card }: { card: IVoucherCard }) {
   const [copied, setCopied] = useState(false);
+  const [showBack, setShowBack] = useState(false);
+
+  const flipRef = useRef<HTMLDivElement>(null);
+  const frontRef = useRef<HTMLDivElement>(null);
+  const backRef = useRef<HTMLDivElement>(null);
 
   const copyPan = () => {
     navigator.clipboard.writeText(card.pan);
@@ -54,14 +68,29 @@ function PhysicalCard({ card }: { card: IVoucherCard }) {
   };
 
   const gradient = gradients[card.status] ?? gradients[CardStatus.ACTIVE];
+  const cvv = deriveCvv(card.pan);
 
   return (
     <div className="flex flex-col items-center gap-4">
       {/* Card — standard credit-card ratio 85.6×53.98 mm = 1.586 */}
       <div
-        className={`relative w-80 rounded-2xl bg-gradient-to-br ${gradient} text-white shadow-2xl overflow-hidden select-none`}
-        style={{ aspectRatio: "1.586" }}
+        className="relative"
+        style={{ width: 320, height: 202, perspective: 1200 }}
       >
+        <div
+          ref={flipRef}
+          className="relative h-full w-full"
+          style={{
+            transformStyle: "preserve-3d",
+            transition: "transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1)",
+            transform: showBack ? "rotateY(180deg)" : "rotateY(0deg)",
+          }}
+        >
+          <div
+            ref={frontRef}
+            className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${gradient} text-white shadow-2xl overflow-hidden select-none`}
+            style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden" }}
+          >
         {/* Decorative circles */}
         <div className="absolute -top-12 -right-12 w-44 h-44 rounded-full bg-white/10" />
         <div className="absolute -bottom-10 -left-10 w-36 h-36 rounded-full bg-white/10" />
@@ -75,10 +104,11 @@ function PhysicalCard({ card }: { card: IVoucherCard }) {
               width={20}
               height={20}
               className="rounded-full bg-white object-cover"
+              crossOrigin="anonymous"
             />
             <div>
               <p className="text-[9px] uppercase tracking-widest text-white/90 leading-none">Food Bundles Card</p>
-              <p className="text-[7px] text-white/60 whitespace-nowrap leading-none mt-1">Apply to access voucher</p>
+              <p className="text-[7px] text-white/60 whitespace-nowrap leading-none mt-1">Your Supply, Always Secured</p>
             </div>
           </div>
           {/* Contactless waves + EMV chip */}
@@ -124,7 +154,7 @@ function PhysicalCard({ card }: { card: IVoucherCard }) {
         <div className="absolute bottom-4 left-5 right-5 flex justify-between items-end">
           <div>
             <p className="text-[8px] uppercase text-white/60 mb-0.5">Card Holder</p>
-            <p className="text-[11px] font-semibold truncate max-w-[140px]">{(card as any).restaurant?.name ?? card.restaurantName}</p>
+            <p className="text-[11px] font-semibold truncate max-w-[140px]">{(card as { restaurant?: { name?: string } }).restaurant?.name ?? card.restaurantName}</p>
           </div>
           <div className="text-right">
             <p className="text-[8px] uppercase text-white/60 mb-0.5">Issued</p>
@@ -141,6 +171,68 @@ function PhysicalCard({ card }: { card: IVoucherCard }) {
             </span>
           </div>
         )}
+          </div>
+
+          {/* Back face */}
+          <div
+            ref={backRef}
+            className="absolute inset-0 rounded-2xl bg-[linear-gradient(135deg,#268b69_0%,#126044_55%,#0b4935_100%)] text-white shadow-2xl overflow-hidden select-none"
+            style={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
+          >
+            {/* Magnetic stripe */}
+            <div className="absolute top-0 inset-x-0 h-[49px] bg-[rgba(0,0,0,0.82)]" />
+
+            <div className="absolute -right-[60px] -bottom-[90px] h-[180px] w-[180px] rounded-full border border-white/10" />
+
+            {/* Message */}
+            <div className="absolute left-[22px] right-[22px] top-[60px] text-center">
+              <span className="inline-block max-w-full text-white font-extrabold text-[11px] leading-[1.35] tracking-wide">
+                Backed by Food Bundles. Trusted Across Our Market.
+              </span>
+              <p className="text-[8px] text-white/70 mt-[4px] leading-[1.55]">
+                This card guarantees supply not debt. Use it to grow.
+              </p>
+              <p className="text-[8px] text-white/70 mt-[4px] leading-[1.55]">
+                This card is property of Food Bundles Limited, for use exclusively on the Food Bundles platform and with authorized partners. Not a bank card.
+              </p>
+            </div>
+
+            {/* Signature strip: brand bottom-left + CVV */}
+            <div className="absolute left-[26px] right-[26px] bottom-[19px] bg-[#f4f0e7] border border-white/40 rounded-[7.5px] px-[15px] py-[10px] flex items-center justify-between text-gray-900">
+              <div className="flex items-center gap-2">
+                <Image
+                  src={FOOD_BUNDLES_LOGO}
+                  alt="Food Bundles Logo"
+                  width={20}
+                  height={20}
+                  className="rounded-full bg-white object-cover border border-gray-200"
+                  crossOrigin="anonymous"
+                />
+                <div>
+                  <p className="text-[9px] uppercase tracking-widest text-gray-900 leading-none font-semibold">Food Bundles Card</p>
+                  <p className="text-[7px] text-gray-500 whitespace-nowrap leading-none mt-1">Your Supply, Always Secured</p>
+                </div>
+              </div>
+              <div className="bg-white border border-gray-200 rounded-md px-2.5 py-1 text-center min-w-[42px]">
+                <p className="text-[6px] uppercase tracking-widest text-gray-400 text-left">CVV</p>
+                <p className="font-mono text-[12px] font-bold tracking-widest text-gray-900 leading-none">{cvv}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Flip control */}
+      <div className="w-80 flex items-center justify-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex-1"
+          onClick={() => setShowBack((prev) => !prev)}
+        >
+          <RotateCw className="w-3 h-3 mr-1.5" />
+          {showBack ? "View Front" : "View Back"}
+        </Button>
       </div>
 
       {/* Stats */}

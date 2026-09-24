@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import { ExportModuleType } from "@/app/services/exportService";
 import {
   Dialog,
   DialogContent,
@@ -33,7 +34,7 @@ export interface GenericExportConfig {
   endDate?: string;
   columns: string[];
   scope: "all" | "selected";
-  module: string;
+  module: ExportModuleType;
 }
 
 export interface ExportColumnDef {
@@ -49,7 +50,7 @@ interface GenericExportModalProps {
   initialDateRange?: { from?: Date; to?: Date };
   onExport: (config: GenericExportConfig) => Promise<void>;
   isLoading?: boolean;
-  exportModule: string;
+  exportModule: ExportModuleType;
   moduleName?: string;
   columns: ExportColumnDef[];
 }

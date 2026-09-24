@@ -143,6 +143,26 @@ class CheckoutService {
     }
   }
 
+  // Get checkout payment status for tracking (lightweight polling endpoint)
+  async getCheckoutStatus(orderId: string): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.axiosClient.get(
+        `/checkouts/${orderId}/status`
+      );
+      return {
+        success: true,
+        message: "Fetched payment status successfully",
+        data: response.data.data,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || "Failed to fetch payment status",
+      };
+    }
+  }
+
   // Update checkout (before payment completion)
   async updateCheckout(
     checkoutId: string,

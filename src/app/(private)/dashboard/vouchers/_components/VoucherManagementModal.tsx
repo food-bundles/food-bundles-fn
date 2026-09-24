@@ -286,7 +286,9 @@ export function VoucherManagementModal({
                     Expiry Date:
                   </div>
                   <div className="text-sm col-span-2 text-gray-900">
-                    {new Date(voucher.expiryDate).toLocaleDateString()}
+                    {voucher.expiryDate
+                      ? new Date(voucher.expiryDate).toLocaleDateString()
+                      : "N/A"}
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
