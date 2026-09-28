@@ -202,7 +202,7 @@ function buildCardHtml(card: IVoucherCard): string {
       <div class="brand">
         <img class="brand-logo" src="${FOOD_BUNDLES_LOGO}" alt="Food Bundles Logo" />
         <div>
-          <p class="brand-name">Food Bundles Card</p>
+          <p class="brand-name">FoodBundles Card</p>
           <p class="brand-sub">Your Supply, Always Secured</p>
         </div>
       </div>
@@ -251,7 +251,7 @@ function buildCardHtml(card: IVoucherCard): string {
       <div class="brand">
         <img class="brand-logo" src="${FOOD_BUNDLES_LOGO}" alt="Food Bundles Logo" />
         <div>
-          <p class="brand-name">Food Bundles Card</p>
+          <p class="brand-name">FoodBundles Card</p>
           <p class="brand-sub">Your Supply, Always Secured</p>
         </div>
       </div>

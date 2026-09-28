@@ -107,7 +107,7 @@ function PhysicalCard({ card }: { card: IVoucherCard }) {
               crossOrigin="anonymous"
             />
             <div>
-              <p className="text-[9px] uppercase tracking-widest text-white/90 leading-none">Food Bundles Card</p>
+              <p className="text-[9px] uppercase tracking-widest text-white/90 leading-none">FoodBundles Card</p>
               <p className="text-[7px] text-white/60 whitespace-nowrap leading-none mt-1">Your Supply, Always Secured</p>
             </div>
           </div>
@@ -198,7 +198,7 @@ function PhysicalCard({ card }: { card: IVoucherCard }) {
             </div>
 
             {/* Signature strip: brand bottom-left + CVV */}
-            <div className="absolute left-[26px] right-[26px] bottom-[19px] bg-[#f4f0e7] border border-white/40 rounded-[7.5px] px-[15px] py-[10px] flex items-center justify-between text-gray-900">
+            <div className="absolute left-[26px] right-[26px] bottom-[10px] bg-[#f4f0e7] border border-white/40 rounded-[7.5px] px-[15px] py-[2px] flex items-center justify-between text-gray-900">
               <div className="flex items-center gap-2">
                 <Image
                   src={FOOD_BUNDLES_LOGO}
@@ -209,7 +209,7 @@ function PhysicalCard({ card }: { card: IVoucherCard }) {
                   crossOrigin="anonymous"
                 />
                 <div>
-                  <p className="text-[9px] uppercase tracking-widest text-gray-900 leading-none font-semibold">Food Bundles Card</p>
+                  <p className="text-[9px] uppercase tracking-widest text-gray-900 leading-none font-semibold">FoodBundles Card</p>
                   <p className="text-[7px] text-gray-500 whitespace-nowrap leading-none mt-1">Your Supply, Always Secured</p>
                 </div>
               </div>

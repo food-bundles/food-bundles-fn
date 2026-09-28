@@ -91,7 +91,7 @@ export default function LoanRequestForm({ onSuccess }: LoanRequestFormProps) {
       }
 
       // If already accepted before, skip T&C modal and submit directly
-      if (data?.alreadyAccepted) {
+      if (data?.accepted) {
         await submitLoan();
       } else {
         const terms =
@@ -129,7 +129,7 @@ export default function LoanRequestForm({ onSuccess }: LoanRequestFormProps) {
     setLoading(true);
     try {
       await voucherService.acceptLoanTerms({
-        providerType,
+        providerType: providerType as "TRADER" | "FOOD_BUNDLES",
         providerId: termsData.providerId,
         providerName: termsData.providerName,
       });
