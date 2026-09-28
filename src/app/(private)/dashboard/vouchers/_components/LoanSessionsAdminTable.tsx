@@ -27,6 +27,7 @@ import {
   Loader2,
   Lock,
   Unlock,
+  Check,
 } from "lucide-react";
 import { voucherService } from "@/app/services/voucherService";
 import { toast } from "sonner";
@@ -41,24 +42,27 @@ interface LoanSession {
   approvalPercentage?: number;
   unlockFee?: number;
   unlockFeePercentage?: number;
-  // Effective config (admin-set, no default) resolved from the selected loan provider
   effectiveUnlockFeeEnabled?: boolean;
   effectiveUnlockFeePercentage?: number;
   unlockStatus: string;
   amountUsed: number;
+  amountRepaid: number;
+  amountTransferredToWallet: number;
   outstandingAmount: number;
   status: string;
   purpose?: string;
   notes?: string;
   repaymentDays?: number;
   dueDate?: string;
-  requestedAt: string;
   approvedAt?: string;
+  unlockedAt?: string;
+  requestedAt: string;
   loanProviderType?: "TRADER" | "FOOD_BUNDLES" | string | null;
-  restaurant: { id: string; name: string; email: string };
+  restaurant: { id: string; name: string; phone?: string };
   approver?: { id: string; username: string };
-  fundingTrader?: { id: string; username: string; email: string };
+  fundingTrader?: { id: string; username: string; phone?: string };
   card?: { id: string; pan: string };
+  unlockPayments?: { id: string; status: string; amount: number; paymentMethod: string; confirmedAt?: string }[];
 }
 
 interface LoanTrader {
@@ -91,8 +95,8 @@ const STATUS_LABELS: Record<string, string> = {
   APPROVED_LOCKED: "Approved (Locked)",
   UNLOCK_FEE_PENDING: "Unlock Fee Due",
   ACTIVE: "Active",
-  PARTIALLY_USED: "Partially Used",
-  FULLY_USED: "Fully Used",
+  PARTIALLY_USED: "Used",
+  FULLY_USED: "Used",
   CLOSED: "Closed",
   SETTLED: "Settled",
   REJECTED: "Rejected",
@@ -282,7 +286,9 @@ export default function LoanSessionsAdminTable() {
       cell: ({ row }) => (
         <div>
           <p className="text-sm font-medium text-gray-800">{row.original.restaurant.name}</p>
-          <p className="text-xs text-gray-400">{row.original.restaurant.email}</p>
+          {row.original.restaurant.phone && (
+            <p className="text-xs text-gray-400">{row.original.restaurant.phone}</p>
+          )}
         </div>
       ),
     },
@@ -303,7 +309,7 @@ export default function LoanSessionsAdminTable() {
         return t ? (
           <div>
             <p className="text-sm font-medium text-gray-800">{t.username}</p>
-            <p className="text-xs text-gray-400">{t.email}</p>
+            {t.phone && <p className="text-xs text-gray-400">{t.phone}</p>}
           </div>
         ) : (
           <span className="text-xs text-gray-400">
@@ -314,14 +320,26 @@ export default function LoanSessionsAdminTable() {
     },
     {
       id: "pan",
-      header: "Card (PAN)",
-      cell: ({ row }) => (
-        <span className="font-mono text-xs text-gray-500">
-          {row.original.card?.pan
-            ? row.original.card.pan.replace(/(.{4})/g, "$1 ").trim()
-            : "—"}
-        </span>
-      ),
+      header: "Days / Due",
+      cell: ({ row }) => {
+        const s = row.original;
+        if (!s.repaymentDays || !s.approvedAt) {
+          return <span className="text-xs text-gray-400">—</span>;
+        }
+        const dueDate = s.dueDate ? new Date(s.dueDate) : null;
+        const now = new Date();
+        const daysRemaining = dueDate
+          ? Math.ceil((dueDate.getTime() - now.getTime()) / 86400000)
+          : null;
+        const hasDebt = s.outstandingAmount > 0;
+        const isOverdue = daysRemaining !== null && daysRemaining < 0 && hasDebt;
+        return (
+          <div className="text-xs space-y-0.5">
+            <p className="text-xs text-gray-500">{s.repaymentDays}/{daysRemaining !== null ? daysRemaining : "—"}</p>
+           
+          </div>
+        );
+      },
     },
     {
       id: "amounts",
@@ -330,14 +348,12 @@ export default function LoanSessionsAdminTable() {
         const s = row.original;
         return (
           <div className="text-xs">
-            <p className="font-semibold text-gray-800">
-              {s.requestedAmount.toLocaleString()} RWF
-            </p>
+            <p className="text-xs font-semibold text-gray-800">{s.requestedAmount.toLocaleString()} RWF</p>
             {s.approvedAmount && (
-              <p className="text-green-600">
+              <p className="text-xs text-green-600">
                 → {s.approvedAmount.toLocaleString()} RWF
                 {s.approvalPercentage && s.approvalPercentage < 100 && (
-                  <span className="text-gray-400 ml-1">({s.approvalPercentage}%)</span>
+                  <span className="text-xs text-gray-400 ml-1">({s.approvalPercentage}%)</span>
                 )}
               </p>
             )}
@@ -346,17 +362,40 @@ export default function LoanSessionsAdminTable() {
       },
     },
     {
+      id: "paid",
+      header: "Paid",
+      cell: ({ row }) => {
+        const paid = row.original.amountRepaid ?? 0;
+        return (
+          <p className={`text-xs font-medium ${paid > 0 ? "text-green-600" : "text-gray-400"}`}>
+            {paid.toLocaleString()} RWF
+          </p>
+        );
+      },
+    },
+    {
+      id: "outstanding",
+      header: "Outstanding",
+      cell: ({ row }) => {
+        const s = row.original;
+        return (
+          <p className={`text-xs font-medium ${s.outstandingAmount > 0 ? "text-red-600" : "text-gray-400"}`}>
+            {s.outstandingAmount.toLocaleString()} RWF
+          </p>
+        );
+      },
+    },
+    {
       id: "unlockFee",
       header: "Unlock Fee",
       cell: ({ row }) => {
         const s = row.original;
+        const paidPayment = s.unlockPayments?.find((p) => p.status === "COMPLETED");
+
         if (s.status === "REQUESTED") {
           if (s.effectiveUnlockFeeEnabled && (s.effectiveUnlockFeePercentage ?? 0) > 0) {
             return (
               <div className="text-xs">
-                <p className="text-amber-600 font-medium" title="Will apply at approval">
-                  {s.effectiveUnlockFeePercentage}% (pending)
-                </p>
                 <p className="text-gray-400">
                   {(s.requestedAmount * ((s.effectiveUnlockFeePercentage ?? 0) / 100)).toLocaleString()} RWF
                 </p>
@@ -367,11 +406,17 @@ export default function LoanSessionsAdminTable() {
         }
         if (!s.unlockFee) return <span className="text-xs text-gray-400">None</span>;
         return (
-          <div className="text-xs">
-            <p className="text-orange-600 font-medium">{s.unlockFee.toLocaleString()} RWF</p>
-            <p className="text-gray-400">
-              {s.unlockFeePercentage ? `${s.unlockFeePercentage}%` : "snapshot"}
-            </p>
+          <div className="text-xs space-y-0.5 flex items-center gap-1">
+            <p className="text-xs text-orange-600 font-medium">{s.unlockFee.toLocaleString()} RWF</p>
+            {paidPayment ? (
+              <span className="inline-flex items-center gap-1 text-green-700 bg-transparent rounded px-1.5 py-0.5 text-[10px] font-medium">
+                <Check className="w-3 h-3" />
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-orange-600 bg-orange-50 border border-orange-200 rounded px-1.5 py-0.5 text-[10px]">
+                <Lock className="w-3 h-3" /> Unpaid
+              </span>
+            )}
           </div>
         );
       },
@@ -397,13 +442,6 @@ export default function LoanSessionsAdminTable() {
           </Badge>
         );
       },
-    },
-    {
-      id: "purpose",
-      header: "Purpose",
-      cell: ({ row }) => (
-        <span className="text-xs text-gray-500">{row.original.purpose ?? "—"}</span>
-      ),
     },
     {
       id: "requestedAt",

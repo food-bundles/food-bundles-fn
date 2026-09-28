@@ -1175,7 +1175,7 @@ export function Checkout() {
                       </div>
                     ) : paymentMethods.length === 0 ? (
                       <p className="text-xs text-red-600 border border-red-200 bg-red-50 rounded px-3 py-2">
-                        No payment methods available. Please contact the administrator.
+                        Something went wrong.
                       </p>
                     ) : (
                       <Select

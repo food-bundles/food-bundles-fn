@@ -32,6 +32,7 @@ interface UnlockFeeModalProps {
 }
 
 const PAYMENT_METHODS = [
+  { value: "CASH", label: "Prepaid Wallet" },
   { value: "MOBILE_MONEY", label: "Mobile Money (MoMo)" },
   { value: "CARD", label: "Card" },
   { value: "BANK_TRANSFER", label: "Bank Transfer" },
@@ -43,7 +44,7 @@ export default function UnlockFeeModal({
   session,
   onSuccess,
 }: UnlockFeeModalProps) {
-  const [paymentMethod, setPaymentMethod] = useState("MOBILE_MONEY");
+  const [paymentMethod, setPaymentMethod] = useState("CASH");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [paymentReference, setPaymentReference] = useState("");
   const [loading, setLoading] = useState(false);
@@ -79,8 +80,8 @@ export default function UnlockFeeModal({
       }
       try {
         const response = await voucherService.verifyUnlockFeePayment(session.id);
-        const data = response?.data || {};
-        if (data.verified || data.alreadyUnlocked) {
+        const res = response?.data?.data ?? response?.data ?? {};
+        if (res.verified || res.alreadyUnlocked) {
           setStage("form");
           setNotice("");
           setError(null);
@@ -89,7 +90,7 @@ export default function UnlockFeeModal({
         }
         if (!silent) {
           setNotice(
-            data.message ||
+            res.message ||
               "Payment not confirmed yet. Please complete it on your phone."
           );
         }
@@ -111,7 +112,7 @@ export default function UnlockFeeModal({
   // Auto-poll the payment status while we wait for the user to complete
   // the MoMo (PayPack) or card (Flutterwave) payment on their phone/browser.
   useEffect(() => {
-    if (!open || stage !== "pending" || paymentMethod === "BANK_TRANSFER") return;
+    if (!open || stage !== "pending" || paymentMethod === "BANK_TRANSFER" || paymentMethod === "CASH") return;
 
     let attempts = 0;
     const intervalId = setInterval(() => {
@@ -138,8 +139,8 @@ export default function UnlockFeeModal({
       .verifyUnlockFeePayment(session.id)
       .then((response) => {
         if (!active) return;
-        const data = response?.data || {};
-        if (data.verified || data.alreadyUnlocked) {
+        const res = response?.data?.data ?? response?.data ?? {};
+        if (res.verified || res.alreadyUnlocked) {
           setStage("form");
           setNotice("");
           setError(null);
@@ -147,7 +148,7 @@ export default function UnlockFeeModal({
           return;
         }
         setNotice(
-          data.message ||
+          res.message ||
             "Payment detected. We are checking its status automatically..."
         );
         setStage("pending");
@@ -171,7 +172,15 @@ export default function UnlockFeeModal({
         phoneNumber: paymentMethod === "MOBILE_MONEY" ? phoneNumber : undefined,
       });
 
-      const data = response?.data || {};
+      // Controller wraps result in { success, data, message } — unwrap it.
+      const data = response?.data?.data ?? response?.data ?? {};
+
+      // Prepaid wallet — completed immediately on the server.
+      if (data.status === "completed" || response?.data?.status === "completed") {
+        setStage("form");
+        onSuccess();
+        return;
+      }
 
       // Flutterwave hosted checkout — redirect the user to complete payment
       if (data.requiresRedirect && data.redirectUrl) {
@@ -181,7 +190,7 @@ export default function UnlockFeeModal({
       }
 
       // PayPack pushes a request to the customer's phone (or bank transfer pending)
-      setNotice(data.message || "Payment initiated. Please complete it to activate your loan.");
+      setNotice(data.message || response?.data?.message || "Payment initiated. Please complete it to activate your loan.");
       setStage("pending");
     } catch (err: unknown) {
       const msg =
@@ -258,6 +267,13 @@ export default function UnlockFeeModal({
                   className="h-10 text-sm"
                 />
               </div>
+            )}
+
+            {paymentMethod === "CASH" && (
+              <p className="text-xs text-gray-500">
+                The unlock fee will be deducted from your prepaid wallet balance.
+                This confirms instantly.
+              </p>
             )}
 
             {paymentMethod === "BANK_TRANSFER" && (

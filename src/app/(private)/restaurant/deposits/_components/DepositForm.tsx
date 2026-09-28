@@ -92,7 +92,7 @@ export function DepositForm({
           <div className="flex items-start gap-2 border border-red-200 bg-red-50 rounded px-3 py-2">
             <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
             <p className="text-xs text-red-600">
-              No payment methods available. Please contact the administrator.
+             Something went wrong.
             </p>
           </div>
         ) : (

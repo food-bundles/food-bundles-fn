@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CreditCard, MoreHorizontal, Plus, Copy, Check, Printer } from "lucide-react";
 import { voucherService } from "@/app/services/voucherService";
-import { IVoucherCard, CardStatus } from "@/lib/types";
+import { CardStatus } from "@/lib/types";
 import IssueVoucherCardModal from "./IssueVoucherCardModal";
 import { printVoucherCard } from "./cardPrint";
 import { RestaurantProvider } from "@/app/contexts/RestaurantContext";
@@ -26,8 +26,26 @@ const STATUS_COLORS: Record<CardStatus, string> = {
   [CardStatus.DEACTIVATED]: "text-gray-400",
 };
 
+interface VoucherCard {
+  id: string;
+  pan: string;
+  restaurantId: string;
+  status: CardStatus;
+  loanLimit: number;
+  riskScore?: number | null;
+  issuedDate: string;
+  issuedBy: string;
+  createdAt: string;
+  unlockFeeEnabled: boolean;
+  unlockFeePercentage?: number | null;
+  restaurant: { id: string; name: string; email: string; phone?: string };
+  issuer?: { id: string; username: string };
+  loanSessions: { outstandingAmount: number; status: string }[];
+  totalOutstandingLoans: number;
+}
+
 export default function VoucherCardsTable() {
-  const [cards, setCards] = useState<IVoucherCard[]>([]);
+  const [cards, setCards] = useState<VoucherCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [issueModalOpen, setIssueModalOpen] = useState(false);
   const [preselected, setPreselected] = useState<{ id: string; name: string } | null>(null);
@@ -55,8 +73,7 @@ export default function VoucherCardsTable() {
 
   const formatPan = (pan: string) => pan.replace(/(.{4})/g, "$1 ").trim();
 
-  // ── Issued cards columns ─────────────────────────────────────────────────
-  const cardColumns: ColumnDef<IVoucherCard>[] = [
+  const cardColumns: ColumnDef<VoucherCard>[] = [
     {
       id: "index",
       header: "#",
@@ -87,11 +104,15 @@ export default function VoucherCardsTable() {
     {
       id: "restaurant",
       header: "Restaurant",
-      cell: ({ row }) => (
-        <span className="text-sm font-medium text-gray-800">
-          {(row.original as any).restaurant?.name ?? row.original.restaurantName}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const r = row.original.restaurant;
+        return (
+          <div>
+            <p className="text-sm font-medium text-gray-800">{r.name}</p>
+            {r.phone && <p className="text-xs text-gray-400">{r.phone}</p>}
+          </div>
+        );
+      },
     },
     {
       id: "status",
@@ -117,31 +138,24 @@ export default function VoucherCardsTable() {
       cell: ({ row }) => {
         const amt = row.original.totalOutstandingLoans;
         return (
-          <span className={`text-sm ${amt > 0 ? "text-orange-600 font-medium" : "text-gray-400"}`}>
+          <span className={`text-sm font-medium ${amt > 0 ? "text-red-600" : "text-gray-400"}`}>
             {amt.toLocaleString()} RWF
           </span>
         );
       },
     },
     {
-      id: "eligible",
-      header: "Eligible",
+      id: "issuer",
+      header: "Issued By",
       cell: ({ row }) => (
-        <span className={`text-xs ${row.original.isEligible ? "text-green-600" : "text-gray-400"}`}>
-          {row.original.isEligible ? "Yes" : (row.original.eligibilityReason ?? "No")}
+        <span className="text-xs text-gray-600">
+          {row.original.issuer?.username ?? "—"}
         </span>
       ),
     },
     {
-      id: "orders",
-      header: "Orders",
-      cell: ({ row }) => (
-        <span className="text-xs text-gray-600">{row.original.qualifyingOrders}</span>
-      ),
-    },
-    {
       id: "issued",
-      header: "Issued",
+      header: "Issued Date",
       cell: ({ row }) => (
         <span className="text-xs text-gray-500">
           {new Date(row.original.issuedDate).toLocaleDateString()}
@@ -165,7 +179,7 @@ export default function VoucherCardsTable() {
                 <Copy className="mr-2 h-4 w-4" />
                 Copy PAN
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => printVoucherCard(card)}>
+              <DropdownMenuItem onClick={() => printVoucherCard(card as any)}>
                 <Printer className="mr-2 h-4 w-4" />
                 Print Card
               </DropdownMenuItem>
