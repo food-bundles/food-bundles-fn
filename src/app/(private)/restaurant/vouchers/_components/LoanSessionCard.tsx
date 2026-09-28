@@ -54,7 +54,7 @@ const STATUS_CONFIG: Record<
     icon: <CheckCircle className="w-3 h-3" />,
   },
   [LoanSessionStatus.FULLY_USED]: {
-    label: "Fully Used",
+    label: "Used",
     color: "text-indigo-700",
     bg: "bg-gradient-to-tr from-indigo-500 to-purple-500",
     icon: <CheckCircle className="w-3 h-3" />,
@@ -180,11 +180,6 @@ export default function LoanSessionCard() {
               {(session.approvedAmount ?? session.requestedAmount).toLocaleString()}{" "}
               <span className="text-sm font-normal text-gray-500">RWF</span>
             </p>
-            {session.approvalPercentage && (
-              <p className="text-xs text-green-600">
-                Approved at {session.approvalPercentage}% of the requested amount
-              </p>
-            )}
           </div>
 
           <div className="space-y-2 text-xs flex-1">

@@ -39,7 +39,6 @@ import {
   ArrowDownRight,
   Loader2,
   Users,
-  DollarSign,
   Search,
   Package,
   Calendar,
@@ -63,6 +62,95 @@ import { DelegationApprovalModal } from "./_components/DelegationApprovalModal";
 import WalletTransfersAdmin from "./_components/WalletTransfersAdmin";
 import { ExportButton } from "@/components/ExportButton";
 import Image from "next/image";
+
+const FOOD_BUNDLES_LOGO =
+  "https://res.cloudinary.com/dzxyelclu/image/upload/v1760111270/Food_bundle_logo_cfsnsw.png";
+
+function CardShell({
+  gradient,
+  children,
+}: {
+  gradient: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={`relative h-[150px] rounded-2xl bg-gradient-to-br ${gradient} text-white shadow-2xl overflow-hidden select-none p-4 flex flex-col`}
+    >
+      <div className="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-white/10" />
+      <div className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full bg-white/10" />
+      <div className="relative flex justify-between items-start">
+        <div className="flex items-center gap-2">
+          <Image
+            src={FOOD_BUNDLES_LOGO}
+            alt="Food Bundles"
+            width={20}
+            height={20}
+            className="rounded-full bg-white object-cover"
+            crossOrigin="anonymous"
+          />
+          <div>
+            <p className="text-[9px] uppercase tracking-widest text-white/90 leading-none">FoodBundles Card</p>
+            <p className="text-[7px] text-white/60 whitespace-nowrap leading-none mt-1">Your Supply, Always Secured</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" className="w-5 h-5 text-white/70 rotate-180">
+            <path d="M6 8.32a7.43 7.43 0 0 1 0 7.36" />
+            <path d="M9.46 6.21a11.76 11.76 0 0 1 0 11.58" />
+            <path d="M12.91 4.1a15.91 15.91 0 0 1 0 15.8" />
+            <path d="M16.37 2a20.16 20.16 0 0 1 0 20" />
+          </svg>
+          <div className="w-9 h-7 rounded bg-yellow-300/90 flex items-center justify-center">
+            <div className="w-6 h-5 rounded-sm border border-yellow-600/40 grid grid-cols-2 gap-px p-0.5">
+              {[...Array(4)].map((_, i) => <div key={i} className="bg-yellow-600/50 rounded-sm" />)}
+            </div>
+          </div>
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function CardStat({
+  label,
+  value,
+  subLabel,
+  subValue,
+  loading,
+}: {
+  label: string;
+  value: React.ReactNode;
+  subLabel?: string;
+  subValue?: React.ReactNode;
+  loading: boolean;
+}) {
+  return (
+    <>
+      <div className="relative flex-1 flex flex-col justify-center min-h-0">
+        <p className="text-[9px] uppercase tracking-widest text-white/70">{label}</p>
+        {loading ? (
+          <div className="h-7 w-16 mt-1 bg-white/20 rounded animate-pulse" />
+        ) : (
+          <p className="text-2xl font-bold drop-shadow leading-tight">{value}</p>
+        )}
+      </div>
+      {subLabel && (
+        <div className="relative flex justify-between items-end">
+          <div>
+            <p className="text-[8px] uppercase tracking-wider text-white/60 leading-none">{subLabel}</p>
+            {loading ? (
+              <div className="h-3 w-20 mt-1 bg-white/20 rounded animate-pulse" />
+            ) : (
+              <p className="text-[11px] font-semibold leading-none mt-1">{subValue}</p>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 import { GenericExportModal, type GenericExportConfig, type ExportColumnDef } from "@/components/generic-export-modal";
 import type { ExportModuleType } from "@/app/services/exportService";
 import { exportService } from "@/app/services/exportService";
@@ -1113,114 +1201,66 @@ export default function DepositsManagementPage() {
         </div>
       </div>
       {initialLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="p-4 rounded-lg border bg-gray-50">
-              <div className="h-5 bg-gray-200 rounded w-16 animate-pulse mb-2"></div>
-              <div className="h-4 bg-gray-200 rounded w-20 animate-pulse mb-1"></div>
-              <div className="h-6 bg-gray-200 rounded w-24 animate-pulse"></div>
-            </div>
+            <div key={i} className="h-[150px] rounded-2xl bg-gray-200 animate-pulse" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <div className="p-4 rounded-lg border bg-green-50 transition-all duration-200 hover:shadow-md">
-            <div className="flex items-center justify-between mb-2">
-              <DollarSign className="w-5 h-5 text-green-600" />
-              <div className="flex items-center gap-1 text-xs text-green-600">
-                <div className="w-3 h-3">
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M7 14l5-5 5 5z" />
-                  </svg>
-                </div>
-                {/* +12.5% */}
-              </div>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs text-gray-600 font-medium">Total Balance</p>
-              <p className="text-sm font-bold text-green-600">
-                {totalBalance.toLocaleString()} RWF
-              </p>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <CardShell gradient="from-emerald-600 to-green-800">
+            <CardStat
+              label="Total Balance"
+              value={`${totalBalance.toLocaleString()} RWF`}
+              subLabel="All Wallets"
+              subValue={`${restaurantPagination.total + traderPagination.total} wallets`}
+              loading={false}
+            />
+          </CardShell>
 
-          <div className="p-4 rounded-lg border bg-blue-50 transition-all duration-200 hover:shadow-md">
-            <div className="flex items-center justify-between mb-2">
-              <Wallet className="w-5 h-5 text-blue-600" />
-              <div className="flex items-center gap-1 text-xs text-blue-600">
-                <div className="w-3 h-3">
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M7 14l5-5 5 5z" />
-                  </svg>
-                </div>
-                {/* +8.2% */}
-              </div>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs text-gray-600 font-medium">Active Cash</p>
-              <p className="text-sm font-bold text-blue-600">{activeWallets}</p>
-            </div>
-          </div>
+          <CardShell gradient="from-blue-600 to-blue-900">
+            <CardStat
+              label="Active Wallets"
+              value={activeWallets}
+              subLabel="Total Wallets"
+              subValue={restaurantPagination.total + traderPagination.total}
+              loading={false}
+            />
+          </CardShell>
 
-          <div className="p-4 rounded-lg border bg-purple-50 transition-all duration-200 hover:shadow-md">
-            <div className="flex items-center justify-between mb-2">
-              <Users className="w-5 h-5 text-purple-600" />
-              <div className="flex items-center gap-1 text-xs text-purple-600">
-                <div className="w-3 h-3">
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M7 14l5-5 5 5z" />
-                  </svg>
+          <CardShell gradient="from-violet-600 to-purple-900">
+            <div className="relative flex-1 flex items-center justify-between gap-3 min-h-0">
+              {[
+                { label: "Restaurants", value: restaurantPagination.total },
+                { label: "Traders", value: traderPagination.total },
+              ].map((r) => (
+                <div key={r.label} className="flex-1">
+                  <p className="text-[9px] uppercase tracking-widest text-white/70">{r.label}</p>
+                  <p className="text-2xl font-bold drop-shadow leading-tight">{r.value}</p>
                 </div>
-                {/* +5.1% */}
-              </div>
+              ))}
             </div>
-            <div className="space-y-1">
-              <p className="text-xs text-gray-600 font-medium">Total Cash</p>
-              <p className="text-sm font-bold text-purple-600">
-                {restaurantPagination.total + traderPagination.total}
-              </p>
-            </div>
-          </div>
+          </CardShell>
 
-          <div className="p-4 rounded-lg border bg-green-50 transition-all duration-200 hover:shadow-md">
-            <div className="flex items-center justify-between mb-2">
-              <ArrowUpRight className="w-5 h-5 text-green-600" />
-              <div className="flex items-center gap-1 text-xs text-green-600">
-                <div className="w-3 h-3">
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M7 14l5-5 5 5z" />
-                  </svg>
-                </div>
-                {/* +15.3% */}
-              </div>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs text-gray-600 font-medium">Top-ups</p>
-              <p className="text-sm font-bold text-green-600">
-                {transactionStats.topUp}
-              </p>
-            </div>
-          </div>
+          <CardShell gradient="from-teal-500 to-emerald-700">
+            <CardStat
+              label="Top-ups"
+              value={transactionStats.topUp}
+              subLabel="Total Transactions"
+              subValue={transactionStats.total}
+              loading={false}
+            />
+          </CardShell>
 
-          <div className="p-4 rounded-lg border bg-red-50 transition-all duration-200 hover:shadow-md">
-            <div className="flex items-center justify-between mb-2">
-              <ArrowDownRight className="w-5 h-5 text-red-600" />
-              <div className="flex items-center gap-1 text-xs text-red-600">
-                <div className="w-3 h-3">
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M17 10l-5 5-5-5z" />
-                  </svg>
-                </div>
-                {/* -3.7% */}
-              </div>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs text-gray-600 font-medium">Payments</p>
-              <p className="text-sm font-bold text-red-600">
-                {transactionStats.payment}
-              </p>
-            </div>
-          </div>
+          <CardShell gradient="from-rose-500 to-red-700">
+            <CardStat
+              label="Payments"
+              value={transactionStats.payment}
+              subLabel="Top-ups vs Payments"
+              subValue={`${transactionStats.topUp} / ${transactionStats.payment}`}
+              loading={false}
+            />
+          </CardShell>
         </div>
       )}
 

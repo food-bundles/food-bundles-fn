@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { VoucherProvider } from "@/app/contexts/VoucherContext";
 import { RestaurantProvider } from "@/app/contexts/RestaurantContext";
 import VoucherStats from "./_components/VoucherStats";
@@ -8,25 +8,21 @@ import LoanApplicationsTable from "./_components/LoanApplicationsTable";
 import LoanSessionsAdminTable from "./_components/LoanSessionsAdminTable";
 import LoanAccessAdminTable from "./_components/LoanAccessAdminTable";
 import LoanProvidersManagement from "./_components/LoanProvidersManagement";
-import VouchersTable from "./_components/VouchersTable";
 import VoucherCardsTable from "./_components/VoucherCardsTable";
 import RecentActivitiesFeed from "./_components/RecentActivitiesFeed";
-import CreateVoucherForm from "./_components/CreateVoucherForm";
 import { ExportButton } from "@/components/ExportButton";
 
-type ActiveTab = "cards" | "loan-sessions" | "loans" | "vouchers" | "loan-access";
+type ActiveTab = "loan-sessions" | "loan-access" | "loans" | "cards";
 
 export default function VoucherManagementPage() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>("cards");
+  const [activeTab, setActiveTab] = useState<ActiveTab>("loan-sessions");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const createVoucherRef = useRef<{ openModal: () => void }>(null);
 
   const tabs: { key: ActiveTab; label: string }[] = [
-    { key: "cards", label: "Voucher Cards" },
     { key: "loan-sessions", label: "Loan Requests" },
     { key: "loan-access", label: "Loan Access" },
     { key: "loans", label: "Old Loan Applications" },
-    { key: "vouchers", label: "All Vouchers" },
+    { key: "cards", label: "Voucher Cards" },
   ];
 
   return (
@@ -75,7 +71,6 @@ export default function VoucherManagementPage() {
           />
 
           <div className="space-y-6 mt-6">
-            {activeTab === "cards" && <VoucherCardsTable key={refreshTrigger} />}
             {activeTab === "loan-sessions" && <LoanSessionsAdminTable key={refreshTrigger} />}
             {activeTab === "loan-access" && (
               <div className="space-y-6">
@@ -84,18 +79,8 @@ export default function VoucherManagementPage() {
               </div>
             )}
             {activeTab === "loans" && <LoanApplicationsTable />}
-            {activeTab === "vouchers" && (
-              <VouchersTable
-                onCreateVoucher={() => createVoucherRef.current?.openModal()}
-                key={refreshTrigger}
-              />
-            )}
+            {activeTab === "cards" && <VoucherCardsTable key={refreshTrigger} />}
           </div>
-
-          <CreateVoucherForm
-            ref={createVoucherRef}
-            onSuccess={() => setRefreshTrigger((p) => p + 1)}
-          />
         </div>
       </RestaurantProvider>
     </VoucherProvider>

@@ -31,8 +31,8 @@ const STATUS_LABELS: Record<string, string> = {
   APPROVED_LOCKED: "Approved (Locked)",
   UNLOCK_FEE_PENDING: "Unlock Fee Due",
   ACTIVE: "Active",
-  PARTIALLY_USED: "Partially Used",
-  FULLY_USED: "Fully Used",
+  PARTIALLY_USED: "Used",
+  FULLY_USED: "Used",
   CLOSED: "Closed",
   SETTLED: "Settled",
   REJECTED: "Rejected",
@@ -104,7 +104,7 @@ export default function LoanSessionsTable() {
       voucherService
         .verifyUnlockFeePayment(s.id)
         .then((res) => {
-          const data = res?.data || {};
+          const data = res?.data?.data ?? res?.data ?? {};
           if (data.verified || data.alreadyUnlocked) loadSessions();
         })
         .catch(() => {
@@ -131,7 +131,7 @@ export default function LoanSessionsTable() {
     },
     {
       id: "amounts",
-      header: "Loan Amount",
+      header: "Credit Amount",
       cell: ({ row }) => {
         const s = row.original;
         return s.approvedAmount != null ? (
@@ -153,7 +153,7 @@ export default function LoanSessionsTable() {
         if (s.unlockFee == null) return <span className="text-xs text-gray-400">—</span>;
         return (
           <div className="text-xs">
-            <p className="font-medium text-orange-600">{s.unlockFee.toLocaleString()} RWF</p>
+            <p className="text-xs font-medium text-orange-600">{s.unlockFee.toLocaleString()} RWF</p>
           </div>
         );
       },
@@ -164,12 +164,22 @@ export default function LoanSessionsTable() {
       cell: ({ row }) => {
         const s = row.original;
         return (
-          <div className="text-xs">
-            <p className="text-orange-600">{s.amountUsed.toLocaleString()} used</p>
-            <p className={s.outstandingAmount > 0 ? "text-red-600" : "text-gray-400"}>
-              {s.outstandingAmount.toLocaleString()} outstanding
-            </p>
-          </div>
+          <p className={`text-xs font-medium ${s.outstandingAmount > 0 ? "text-red-600" : "text-gray-400"}`}>
+            {s.outstandingAmount.toLocaleString()} RWF
+          </p>
+        );
+      },
+    },
+    {
+      id: "paid",
+      header: "Paid",
+      cell: ({ row }) => {
+        const s = row.original;
+        const paid = s.amountRepaid ?? 0;
+        return (
+          <p className={`text-xs font-medium ${paid > 0 ? "text-green-600" : "text-gray-400"}`}>
+            {paid.toLocaleString()} RWF
+          </p>
         );
       },
     },
@@ -205,9 +215,9 @@ export default function LoanSessionsTable() {
         const isOverdue = s.dueDate && new Date(s.dueDate) < new Date() && s.outstandingAmount > 0;
         return (
           <div className="text-xs text-gray-500 space-y-0.5">
-            <p>Req: {fmt(s.requestedAt)}</p>
+            <p className="text-xs text-gray-500">Req: {fmt(s.requestedAt)}</p>
             {s.dueDate && (
-              <p className={isOverdue ? "text-red-600 font-medium flex items-center gap-1" : ""}>
+              <p className={isOverdue ? " text-red-600 text-xs font-medium flex items-center gap-1" : "text-xs"}>
                 {isOverdue && <AlertCircle className="w-3 h-3" />}
                 Due: {fmt(s.dueDate)}
               </p>
@@ -284,7 +294,7 @@ export default function LoanSessionsTable() {
         columns={columns}
         data={sessions}
         title="Loan Session History"
-        description="All your loan sessions — each session is a separate RRN"
+        description=""
         showPagination
         showColumnVisibility={false}
         showRowSelection={false}

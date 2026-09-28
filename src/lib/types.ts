@@ -231,6 +231,7 @@ export interface ILoanSession {
   unlockStatus: "LOCKED" | "PENDING_PAYMENT" | "UNLOCKED";
   unlockPaidAt?: Date;
   amountUsed: number;
+  amountTransferredToWallet?: number;
   amountRemaining?: number;
   amountRepaid: number;
   outstandingAmount: number;

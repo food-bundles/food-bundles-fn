@@ -104,7 +104,7 @@ export function WalletCard({
               </div>
               <div className="flex items-center gap-1.5">
                 <span className={`text-[9px] font-semibold px-2 py-0.5 rounded-full ${isActive ? "bg-green-400/30 text-green-200" : "bg-red-400/30 text-red-200"}`}>
-                  {isActive ? "Active" : "Inactive"}
+                  {isActive ? "Active" : "Topup to Activate"}
                 </span>
               </div>
             </div>

@@ -451,6 +451,7 @@ export const voucherService = {
       paymentMethod: string;
       paymentReference?: string;
       phoneNumber?: string;
+      amount?: number;
     },
   ) => {
     const axiosClient = createAxiosClient();

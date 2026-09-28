@@ -136,6 +136,9 @@ interface DataTableProps<TData, TValue> {
   // Row click handler
   onRowClick?: (row: TData) => void;
 
+  // Row class name callback
+  getRowClassName?: (row: TData) => string;
+
   // Selection change callback
   onSelectionChange?: (selectedRows: TData[]) => void;
 }
@@ -161,6 +164,7 @@ export function DataTable<TData, TValue>({
   onPageSizeChange,
   isLoading = false,
   onRowClick,
+  getRowClassName,
   onSelectionChange,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);

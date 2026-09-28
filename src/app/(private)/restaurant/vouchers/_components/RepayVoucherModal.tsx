@@ -48,6 +48,7 @@ export default function RepayVoucherModal({
 }: RepayVoucherModalProps) {
   const [paymentMethod, setPaymentMethod] = useState("CASH");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [partialAmount, setPartialAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,11 +59,22 @@ export default function RepayVoucherModal({
   const verifyInFlight = useRef(false);
   const recoveredRef = useRef<Set<string>>(new Set());
 
+  const outstanding = session.outstandingAmount ?? 0;
+
+  // Resolve effective pay amount — capped at outstanding.
+  const parsedAmount = parseFloat(partialAmount);
+  const payAmount =
+    partialAmount === "" || isNaN(parsedAmount) || parsedAmount <= 0
+      ? outstanding
+      : Math.min(parsedAmount, outstanding);
+  const isPartial = payAmount < outstanding;
+
   const resetState = () => {
     setStage("form");
     setRedirectUrl("");
     setNotice("");
     setError(null);
+    setPartialAmount("");
   };
 
   const handleClose = () => {
@@ -82,8 +94,8 @@ export default function RepayVoucherModal({
       }
       try {
         const response = await voucherService.verifyLoanRepayment(session.id);
-        const data = response?.data || {};
-        if (data.verified || data.alreadySettled) {
+        const res = response?.data?.data ?? response?.data ?? {};
+        if (res.verified || res.alreadySettled) {
           setStage("form");
           setNotice("");
           setError(null);
@@ -91,10 +103,7 @@ export default function RepayVoucherModal({
           return;
         }
         if (!silent) {
-          setNotice(
-            data.message ||
-              "Payment not confirmed yet. Please complete it on your phone."
-          );
+          setNotice(res.message || "Payment not confirmed yet. Please complete it on your phone.");
         }
       } catch (err: unknown) {
         if (!silent) {
@@ -111,26 +120,19 @@ export default function RepayVoucherModal({
     [session.id, onSuccess]
   );
 
-  // Auto-poll the payment status while the user completes the payment.
+  // Auto-poll while the user completes MoMo / card payment.
   useEffect(() => {
     if (!open || stage !== "pending" || paymentMethod === "CASH") return;
-
     let attempts = 0;
     const intervalId = setInterval(() => {
       attempts += 1;
-      if (attempts > 36) {
-        clearInterval(intervalId);
-        return;
-      }
+      if (attempts > 36) { clearInterval(intervalId); return; }
       performVerify({ silent: true });
     }, 5000);
-
     return () => clearInterval(intervalId);
   }, [open, stage, paymentMethod, performVerify]);
 
-  // Recovery: if this session already has a pending repayment (e.g. the user
-  // paid earlier or just returned from the Flutterwave redirect), verify it
-  // immediately so they never pay twice.
+  // Recovery: verify any pending repayment on open so the user never pays twice.
   useEffect(() => {
     if (!open) return;
     if (session.outstandingAmount <= 0) return;
@@ -139,53 +141,42 @@ export default function RepayVoucherModal({
     voucherService
       .verifyLoanRepayment(session.id)
       .then((response) => {
-        const data = response?.data || {};
-        if (data.verified || data.alreadySettled) {
-          onSuccess();
-          return;
-        }
-        // A real pending repayment — surface it and keep polling.
+        const res = response?.data?.data ?? response?.data ?? {};
+        if (res.verified || res.alreadySettled) { onSuccess(); return; }
         recoveredRef.current.add(session.id);
-        setNotice(
-          data.message ||
-            "Payment detected. We are checking its status automatically..."
-        );
+        setNotice(res.message || "Payment detected. We are checking its status automatically...");
         setStage("pending");
       })
       .catch(() => {
-        // no pending payment — keep the form so the restaurant can pay
+        // no pending payment — keep the form
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, session.id, session.outstandingAmount, onSuccess]);
 
   const handlePay = async () => {
     setError(null);
+    if (payAmount <= 0) { setError("Please enter a valid amount."); return; }
     setLoading(true);
     try {
       const response = await voucherService.repayLoanSession(session.id, {
         paymentMethod,
-        paymentReference: undefined,
         phoneNumber: paymentMethod === "MOBILE_MONEY" ? phoneNumber : undefined,
+        amount: payAmount,
       });
 
-      const data = response?.data || {};
+      const data = response?.data?.data ?? response?.data ?? {};
 
-      // Prepaid wallet — completed immediately on the server.
-      if (data.status === "completed") {
+      if (data.status === "completed" || response?.data?.status === "completed") {
         setStage("form");
         onSuccess();
         return;
       }
-
-      // Flutterwave hosted checkout — redirect the user to complete payment.
       if (data.requiresRedirect && data.redirectUrl) {
         setRedirectUrl(data.redirectUrl);
         setStage("redirect");
         return;
       }
-
-      // PayPack pushed a request to the customer's phone.
-      setNotice(data.message || "Payment initiated. Please complete it to pay this voucher.");
+      setNotice(data.message || response?.data?.message || "Payment initiated. Please complete it to pay this voucher.");
       setStage("pending");
     } catch (err: unknown) {
       const msg =
@@ -198,12 +189,7 @@ export default function RepayVoucherModal({
   };
 
   const handleVerify = () => performVerify({ silent: false });
-
-  const handleContinueToPayment = () => {
-    if (redirectUrl) window.location.href = redirectUrl;
-  };
-
-  const outstanding = session.outstandingAmount ?? 0;
+  const handleContinueToPayment = () => { if (redirectUrl) window.location.href = redirectUrl; };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -218,25 +204,19 @@ export default function RepayVoucherModal({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Outstanding summary */}
+        {/* Summary */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Amount Used</span>
-            <span className="font-semibold">
-              {(session.amountUsed ?? 0).toLocaleString()} RWF
-            </span>
+            <span className="font-semibold">{(session.amountUsed ?? 0).toLocaleString()} RWF</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Repaid</span>
-            <span className="font-semibold text-green-600">
-              {(session.amountRepaid ?? 0).toLocaleString()} RWF
-            </span>
+            <span className="font-semibold text-green-600">{(session.amountRepaid ?? 0).toLocaleString()} RWF</span>
           </div>
           <div className="flex justify-between text-sm pt-1 border-t border-blue-200">
-            <span className="text-gray-600">Outstanding to Pay</span>
-            <span className="font-bold text-blue-700">
-              {outstanding.toLocaleString()} RWF
-            </span>
+            <span className="text-gray-600">Outstanding</span>
+            <span className="font-bold text-blue-700">{outstanding.toLocaleString()} RWF</span>
           </div>
           {session.dueDate && (
             <div className="flex justify-between text-xs text-gray-500 pt-1">
@@ -248,6 +228,26 @@ export default function RepayVoucherModal({
 
         {stage === "form" && (
           <div className="space-y-4">
+            {/* Partial amount */}
+            <div>
+              <Label className="text-sm font-medium mb-1 block">Amount to Pay (RWF)</Label>
+              <Input
+                type="number"
+                min={1}
+                max={outstanding}
+                value={partialAmount}
+                onChange={(e) => setPartialAmount(e.target.value)}
+                placeholder={`Max: ${outstanding.toLocaleString()} RWF`}
+                className="h-10 text-sm"
+              />
+              {isPartial && payAmount > 0 && (
+                <p className="text-xs text-amber-600 mt-1">
+                  Partial payment — {(outstanding - payAmount).toLocaleString()} RWF will remain outstanding.
+                </p>
+              )}
+            </div>
+
+            {/* Payment method */}
             <div>
               <Label className="text-sm font-medium mb-2 block">Payment Method</Label>
               <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-2">
@@ -264,9 +264,7 @@ export default function RepayVoucherModal({
 
             {paymentMethod === "MOBILE_MONEY" && (
               <div>
-                <Label htmlFor="phone" className="text-sm font-medium mb-1 block">
-                  Phone Number
-                </Label>
+                <Label htmlFor="phone" className="text-sm font-medium mb-1 block">Phone Number</Label>
                 <Input
                   id="phone"
                   value={phoneNumber}
@@ -279,8 +277,7 @@ export default function RepayVoucherModal({
 
             {paymentMethod === "CASH" && (
               <p className="text-xs text-gray-500">
-                The outstanding amount will be deducted from your prepaid wallet
-                balance. This confirms instantly.
+                The amount will be deducted from your prepaid wallet balance. This confirms instantly.
               </p>
             )}
 
@@ -298,11 +295,9 @@ export default function RepayVoucherModal({
                 className="flex-1 bg-blue-600 hover:bg-blue-700"
               >
                 {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                {loading ? "Processing..." : `Pay ${outstanding.toLocaleString()} RWF`}
+                {loading ? "Processing..." : `Pay ${payAmount.toLocaleString()} RWF`}
               </Button>
-              <Button variant="outline" onClick={handleClose} disabled={loading}>
-                Cancel
-              </Button>
+              <Button variant="outline" onClick={handleClose} disabled={loading}>Cancel</Button>
             </div>
           </div>
         )}
@@ -312,30 +307,22 @@ export default function RepayVoucherModal({
             <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-lg p-4">
               <ExternalLink className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
               <div className="text-sm text-blue-800">
-                Your payment page is ready. You'll be redirected to a secure payment
-                page to pay{" "}
-                <strong>{outstanding.toLocaleString()} RWF</strong>.
+                Your payment page is ready. You'll be redirected to complete payment of{" "}
+                <strong>{payAmount.toLocaleString()} RWF</strong>.
               </div>
             </div>
-
             {error && (
               <div className="flex items-start gap-2 text-red-600 text-sm bg-red-50 rounded p-3">
                 <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                 <span>{error}</span>
               </div>
             )}
-
             <div className="flex gap-2 pt-2">
-              <Button
-                onClick={handleContinueToPayment}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
-              >
+              <Button onClick={handleContinueToPayment} className="flex-1 bg-blue-600 hover:bg-blue-700">
                 <ExternalLink className="w-4 h-4 mr-2" />
                 Continue to Payment
               </Button>
-              <Button variant="outline" onClick={handleClose}>
-                Cancel
-              </Button>
+              <Button variant="outline" onClick={handleClose}>Cancel</Button>
             </div>
           </div>
         )}
@@ -347,42 +334,28 @@ export default function RepayVoucherModal({
               <div className="text-sm text-green-800">
                 {notice}
                 {paymentMethod === "MOBILE_MONEY" && phoneNumber && (
-                  <span className="block mt-1 text-xs text-green-600">
-                    Phone: {phoneNumber}
-                  </span>
+                  <span className="block mt-1 text-xs text-green-600">Phone: {phoneNumber}</span>
                 )}
                 <span className="flex items-center gap-1.5 mt-2 text-xs text-green-700">
                   <RefreshCcw className="w-3 h-3 animate-spin" />
-                  Checking automatically every 5 seconds. Your voucher is repaid the
-                  moment payment is confirmed.
+                  Checking automatically every 5 seconds.
                 </span>
               </div>
             </div>
-
             {error && (
               <div className="flex items-start gap-2 text-red-600 text-sm bg-red-50 rounded p-3">
                 <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                 <span>{error}</span>
               </div>
             )}
-
             <div className="flex gap-2 pt-2">
-              <Button
-                onClick={handleVerify}
-                disabled={verifying}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
-              >
+              <Button onClick={handleVerify} disabled={verifying} className="flex-1 bg-blue-600 hover:bg-blue-700">
                 {verifying && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                 {verifying ? "Checking..." : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                    I've Paid — Check Status
-                  </>
+                  <><CheckCircle2 className="w-4 h-4 mr-2" />I've Paid — Check Status</>
                 )}
               </Button>
-              <Button variant="outline" onClick={handleClose} disabled={verifying}>
-                Close
-              </Button>
+              <Button variant="outline" onClick={handleClose} disabled={verifying}>Close</Button>
             </div>
           </div>
         )}
