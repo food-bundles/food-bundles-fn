@@ -21,6 +21,7 @@ import {
   Plus,
 } from "lucide-react";
 
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -418,7 +419,10 @@ export function DataTable<TData, TValue>({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className="hover:bg-green-50 text-[13px] cursor-pointer"
+                    className={cn(
+                      "hover:bg-green-50 text-[13px] cursor-pointer",
+                      getRowClassName?.(row.original)
+                    )}
                     onClick={() => onRowClick && onRowClick(row.original)}
                   >
                     {row.getVisibleCells().map((cell) => (
