@@ -265,8 +265,10 @@ class CheckoutService {
       phoneNumber?: string;
       notes?: string;
       voucherCode?: string;
+      loanSessionRrn?: string;
       promoCode?: string;
       deliveryDate?: string;
+      otp?: string;
     }
   ): Promise<ApiResponse<any>> {
     try {
@@ -283,6 +285,56 @@ class CheckoutService {
       return {
         success: false,
         message: error.response?.data?.message || "Failed to create order",
+      };
+    }
+  }
+
+  // Usable loan sessions (vouchers) a restaurant can pay an admin order with
+  async getAdminOrderLoanSessions(restaurantId: string): Promise<ApiResponse<any[]>> {
+    try {
+      const response = await this.axiosClient.get(
+        `/checkouts/admin-order/loan-sessions/${restaurantId}`
+      );
+      return {
+        success: true,
+        message: response.data.message,
+        data: response.data.data,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Failed to load vouchers",
+      };
+    }
+  }
+
+  // Send OTP to restaurant before a voucher/prepaid order placed on its behalf
+  async requestAdminOrderOTP(
+    payload: {
+      restaurantId: string;
+      products: Array<{
+        productId: string;
+        quantity: number;
+      }>;
+      paymentMethod: string;
+      voucherCode?: string;
+      loanSessionRrn?: string;
+    }
+  ): Promise<ApiResponse<{ phone?: string; amount: number }>> {
+    try {
+      const response = await this.axiosClient.post(
+        "/checkouts/admin-order/request-otp",
+        payload
+      );
+      return {
+        success: true,
+        message: response.data.message || "OTP sent",
+        data: response.data.data,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Failed to send OTP",
       };
     }
   }

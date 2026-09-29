@@ -620,6 +620,11 @@ export default function AdminOrdersPage() {
           pagination={pagination}
           onPaginationChange={handlePaginationChange}
           isLoading={loading}
+          getRowClassName={(order) =>
+            new Date(order.createdAt).toDateString() === new Date().toDateString()
+              ? ""
+              : "bg-gray-100"
+          }
         />
       
 
