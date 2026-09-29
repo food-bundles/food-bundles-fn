@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,13 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { restaurantService } from "@/app/services/restaurantService";
 import { productService } from "@/app/services/productService";
 import { paymentMethodService } from "@/app/services/paymentMethodService";
@@ -32,8 +25,10 @@ import {
   Loader2,
   CreditCard,
   Smartphone,
-  Banknote,
   Wallet,
+  Check,
+  X,
+  ShieldCheck,
 } from "lucide-react";
 
 interface Restaurant {
@@ -52,6 +47,17 @@ interface Product {
   quantity: number;
   status: string;
   category?: { name: string };
+}
+
+// A restaurant "voucher" is an unlocked loan session with credit left
+interface RestaurantVoucher {
+  id: string;
+  rrn: string;
+  approvedAmount: number;
+  amountUsed: number;
+  availableCredit: number;
+  dueDate?: string | null;
+  status: string;
 }
 
 interface PaymentMethodOption {
@@ -80,7 +86,6 @@ interface CreateAdminOrderModalProps {
 const paymentMethodLabels: Record<string, string> = {
   MOBILE_MONEY: "Mobile Money (MoMo)",
   CARD: "Card Payment",
-  BANK_TRANSFER: "Bank Transfer",
   CASH: "Prepaid (Wallet)",
   VOUCHER: "Voucher",
 };
@@ -88,58 +93,130 @@ const paymentMethodLabels: Record<string, string> = {
 const paymentMethodIcons: Record<string, React.ReactNode> = {
   MOBILE_MONEY: <Smartphone className="w-4 h-4" />,
   CARD: <CreditCard className="w-4 h-4" />,
-  BANK_TRANSFER: <Banknote className="w-4 h-4" />,
   CASH: <Wallet className="w-4 h-4" />,
   VOUCHER: <Wallet className="w-4 h-4" />,
 };
+
+// Not yet implemented — hidden from the admin order flow
+const HIDDEN_PAYMENT_METHODS = ["BANK_TRANSFER"];
+
+// Restaurant must confirm these with an OTP sent to its phone
+const OTP_PAYMENT_METHODS = ["VOUCHER", "CASH"];
+
+const PRODUCTS_PAGE_SIZE = 20;
+const OTP_RESEND_SECONDS = 60;
 
 export function CreateAdminOrderModal({
   open,
   onClose,
   onCreated,
 }: CreateAdminOrderModalProps) {
+  // Restaurant search
+  const [restaurantQuery, setRestaurantQuery] = useState("");
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loadingRestaurants, setLoadingRestaurants] = useState(false);
-  const [selectedRestaurantId, setSelectedRestaurantId] = useState("");
-  const [productSearchQuery, setProductSearchQuery] = useState("");
-  const [productResults, setProductResults] = useState<Product[]>([]);
-  const [searchingProducts, setSearchingProducts] = useState(false);
-  const [showProductSearch, setShowProductSearch] = useState(false);
+  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
+
+  // Product browsing (search + infinite scroll)
+  const [productQuery, setProductQuery] = useState("");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productPage, setProductPage] = useState(1);
+  const [productTotalPages, setProductTotalPages] = useState(1);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const productRequestId = useRef(0);
+
   const [items, setItems] = useState<OrderItem[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodOption[]>([]);
   const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [notes, setNotes] = useState("");
-  const [showVoucherInput, setShowVoucherInput] = useState(false);
-  const [voucherCode, setVoucherCode] = useState("");
+  const [loanSessionRrn, setLoanSessionRrn] = useState("");
+  const [vouchers, setVouchers] = useState<RestaurantVoucher[]>([]);
+  const [loadingVouchers, setLoadingVouchers] = useState(false);
+
+  // OTP confirmation for voucher / prepaid
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpPhone, setOtpPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [resendIn, setResendIn] = useState(0);
+
   const [saving, setSaving] = useState(false);
 
-  // Load restaurants on open
+  const selectedMethodName =
+    paymentMethods.find((m) => m.id === selectedPaymentMethod)?.name.toUpperCase() || "";
+  const requiresOtp = OTP_PAYMENT_METHODS.includes(selectedMethodName);
+
+  // Reset state on open
   useEffect(() => {
     if (open) {
-      fetchRestaurants();
       fetchPaymentMethods();
-      // Reset state
-      setSelectedRestaurantId("");
+      setRestaurantQuery("");
+      setSelectedRestaurant(null);
       setItems([]);
       setSelectedPaymentMethod("");
       setPhoneNumber("");
       setNotes("");
-      setVoucherCode("");
-      setShowVoucherInput(false);
-      setProductSearchQuery("");
-      setProductResults([]);
-      setShowProductSearch(false);
+      setLoanSessionRrn("");
+      setProductQuery("");
+      resetOtp();
     }
   }, [open]);
 
-  const fetchRestaurants = async () => {
+  // Debounced restaurant search
+  useEffect(() => {
+    if (!open || selectedRestaurant) return;
+    const timeout = setTimeout(() => fetchRestaurants(restaurantQuery), 300);
+    return () => clearTimeout(timeout);
+  }, [restaurantQuery, open, selectedRestaurant]);
+
+  // Debounced product search — reloads from page 1
+  useEffect(() => {
+    if (!open || !selectedRestaurant) return;
+    const timeout = setTimeout(() => fetchProducts(1, productQuery), 300);
+    return () => clearTimeout(timeout);
+  }, [productQuery, open, selectedRestaurant]);
+
+  // Load the restaurant's usable vouchers when paying by voucher
+  useEffect(() => {
+    setLoanSessionRrn("");
+    setVouchers([]);
+    if (open && selectedRestaurant && selectedMethodName === "VOUCHER") {
+      fetchVouchers(selectedRestaurant.id);
+    }
+  }, [open, selectedRestaurant?.id, selectedMethodName]);
+
+  // Any change to what's being paid invalidates a previously sent OTP
+  useEffect(() => {
+    resetOtp();
+  }, [
+    selectedRestaurant?.id,
+    selectedPaymentMethod,
+    loanSessionRrn,
+    items.map((i) => `${i.productId}:${i.quantity}`).join(","),
+  ]);
+
+  // Resend countdown
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const timer = setTimeout(() => setResendIn((s) => s - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendIn]);
+
+  const resetOtp = () => {
+    setOtpSent(false);
+    setOtpPhone("");
+    setOtp("");
+    setResendIn(0);
+  };
+
+  const fetchRestaurants = async (search: string) => {
     try {
       setLoadingRestaurants(true);
       const response = await restaurantService.getAllRestaurants({
-        limit: 100,
-        status: "ACTIVE",
+        limit: 20,
+        search: search.trim() || undefined,
       });
       const payload = response?.data;
       const data = Array.isArray(payload)
@@ -158,12 +235,31 @@ export function CreateAdminOrderModal({
     }
   };
 
+  const fetchVouchers = async (restaurantId: string) => {
+    try {
+      setLoadingVouchers(true);
+      // Backend returns only usable sessions (active, unlocked, credit left)
+      const response = await checkoutService.getAdminOrderLoanSessions(restaurantId);
+      setVouchers(response.success ? response.data || [] : []);
+    } catch (error) {
+      console.error("Failed to load vouchers:", error);
+      toast.error("Failed to load restaurant vouchers");
+    } finally {
+      setLoadingVouchers(false);
+    }
+  };
+
   const fetchPaymentMethods = async () => {
     try {
       setLoadingPaymentMethods(true);
       const response = await paymentMethodService.getActivePaymentMethods();
       if (response.data) {
-        setPaymentMethods(response.data);
+        setPaymentMethods(
+          response.data.filter(
+            (m: PaymentMethodOption) =>
+              !HIDDEN_PAYMENT_METHODS.includes(m.name.toUpperCase())
+          )
+        );
       }
     } catch (error) {
       console.error("Failed to load payment methods:", error);
@@ -172,42 +268,56 @@ export function CreateAdminOrderModal({
     }
   };
 
-  // Debounced product search
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (showProductSearch && productSearchQuery.trim()) {
-        searchProducts(productSearchQuery);
-      } else if (!productSearchQuery.trim()) {
-        setProductResults([]);
-      }
-    }, 400);
-
-    return () => clearTimeout(timeout);
-  }, [productSearchQuery, showProductSearch]);
-
-  const searchProducts = async (query: string) => {
+  const fetchProducts = async (page: number, search: string) => {
+    const requestId = ++productRequestId.current;
     try {
-      setSearchingProducts(true);
+      setLoadingProducts(true);
       const response = await productService.getAllProducts({
-        search: query,
-        limit: 10,
+        search: search.trim() || undefined,
+        page,
+        limit: PRODUCTS_PAGE_SIZE,
       });
-      const products = (response?.data || []).filter(
+      // Ignore responses from searches that have since been superseded
+      if (requestId !== productRequestId.current) return;
+      const pageProducts = (response?.data || []).filter(
         (p: Product) => p.status === "ACTIVE"
       );
-      setProductResults(products);
+      setProducts((prev) => (page === 1 ? pageProducts : [...prev, ...pageProducts]));
+      setProductPage(page);
+      setProductTotalPages(response?.pagination?.totalPages || 1);
     } catch (error) {
-      console.error("Product search failed:", error);
-      setProductResults([]);
+      console.error("Failed to load products:", error);
+      if (page === 1) setProducts([]);
     } finally {
-      setSearchingProducts(false);
+      if (requestId === productRequestId.current) setLoadingProducts(false);
     }
   };
 
+  const handleProductListScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+    if (nearBottom && !loadingProducts && productPage < productTotalPages) {
+      fetchProducts(productPage + 1, productQuery);
+    }
+  };
+
+  const selectRestaurant = (restaurant: Restaurant) => {
+    setSelectedRestaurant(restaurant);
+    setItems([]);
+  };
+
+  const clearRestaurant = () => {
+    setSelectedRestaurant(null);
+    setRestaurantQuery("");
+    setItems([]);
+    setProducts([]);
+    setProductQuery("");
+  };
+
   const addProductToOrder = (product: Product) => {
-    const exists = items.find((i) => i.productId === product.id);
-    if (exists) {
-      toast.warning(`${product.productName} is already added`);
+    const existing = items.find((i) => i.productId === product.id);
+    if (existing) {
+      updateQuantity(existing.tempId, existing.quantity + 1);
       return;
     }
     setItems((prev) => [
@@ -223,9 +333,6 @@ export function CreateAdminOrderModal({
         stock: product.quantity,
       },
     ]);
-    setShowProductSearch(false);
-    setProductSearchQuery("");
-    setProductResults([]);
   };
 
   const updateQuantity = (tempId: string, quantity: number) => {
@@ -246,66 +353,102 @@ export function CreateAdminOrderModal({
 
   const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
 
-  const handlePaymentMethodChange = (methodId: string) => {
-    setSelectedPaymentMethod(methodId);
-    const method = paymentMethods.find((m) => m.id === methodId);
-    setShowVoucherInput(method?.name.toUpperCase() === "VOUCHER");
-  };
+  // A loan session must cover the whole order — no split payment
+  const selectedVoucher = vouchers.find((v) => v.rrn === loanSessionRrn);
+  const voucherShortfall =
+    selectedMethodName === "VOUCHER" && selectedVoucher && selectedVoucher.availableCredit < subtotal
+      ? selectedVoucher.availableCredit
+      : null;
 
-  const handleCreateOrder = async () => {
-    if (!selectedRestaurantId) {
+  const validateBasics = () => {
+    if (!selectedRestaurant) {
       toast.error("Please select a restaurant");
-      return;
+      return false;
     }
     if (items.length === 0) {
       toast.error("Please add at least one product");
-      return;
+      return false;
     }
     if (!selectedPaymentMethod) {
       toast.error("Please select a payment method");
-      return;
+      return false;
     }
-
-    const method = paymentMethods.find((m) => m.id === selectedPaymentMethod);
-    if (!method) {
-      toast.error("Invalid payment method");
-      return;
-    }
-
-    if (method.name.toUpperCase() === "MOBILE_MONEY" && !phoneNumber.trim()) {
+    if (selectedMethodName === "MOBILE_MONEY" && !phoneNumber.trim()) {
       toast.error("Mobile money payment requires a phone number");
-      return;
+      return false;
     }
+    if (selectedMethodName === "VOUCHER" && !loanSessionRrn) {
+      toast.error(
+        vouchers.length === 0
+          ? "No voucher found on this restaurant"
+          : "Please select a voucher"
+      );
+      return false;
+    }
+    if (voucherShortfall !== null) {
+      toast.error("Voucher credit is not enough for this order");
+      return false;
+    }
+    return true;
+  };
 
-    if (method.name.toUpperCase() === "VOUCHER" && !voucherCode.trim()) {
-      toast.error("Voucher payment requires a voucher code");
+  const handleSendOtp = async () => {
+    if (!validateBasics()) return;
+    try {
+      setSendingOtp(true);
+      const result = await checkoutService.requestAdminOrderOTP({
+        restaurantId: selectedRestaurant!.id,
+        products: items.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+        })),
+        paymentMethod: selectedMethodName,
+        loanSessionRrn: selectedMethodName === "VOUCHER" ? loanSessionRrn.trim() : undefined,
+      });
+      if (result.success) {
+        setOtpSent(true);
+        setOtpPhone(result.data?.phone || "");
+        setOtp("");
+        setResendIn(OTP_RESEND_SECONDS);
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  const handleCreateOrder = async () => {
+    if (!validateBasics()) return;
+
+    if (requiresOtp && (!otpSent || otp.trim().length !== 6)) {
+      toast.error("Enter the 6-digit OTP the restaurant received");
       return;
     }
 
     try {
       setSaving(true);
       const payload: any = {
-        restaurantId: selectedRestaurantId,
+        restaurantId: selectedRestaurant!.id,
         products: items.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
         })),
-        paymentMethod: method.name.toUpperCase(),
+        paymentMethod: selectedMethodName,
         notes: notes || undefined,
       };
 
       if (phoneNumber) payload.phoneNumber = phoneNumber;
-      if (method.name.toUpperCase() === "VOUCHER") payload.voucherCode = voucherCode;
+      if (selectedMethodName === "VOUCHER") payload.loanSessionRrn = loanSessionRrn.trim();
+      if (requiresOtp) payload.otp = otp.trim();
 
       const result = await checkoutService.createAdminOrder(payload);
 
       if (result.success) {
-        // Handle redirect if payment needs redirect
         if (result.data?.requiresRedirect && result.data?.redirectUrl) {
           toast.success("Order created. Opening payment link...");
           window.open(result.data.redirectUrl, "_blank");
-        } else if (result.data?.transferDetails) {
-          toast.success("Order created. Bank transfer details generated.");
         } else {
           toast.success("Order created successfully");
         }
@@ -335,150 +478,176 @@ export function CreateAdminOrderModal({
           {/* Step 1: Select Restaurant */}
           <div>
             <h3 className="text-sm font-semibold mb-3">1. Select Restaurant</h3>
-            <Select
-              value={selectedRestaurantId}
-              onValueChange={setSelectedRestaurantId}
-              disabled={loadingRestaurants}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={loadingRestaurants ? "Loading restaurants..." : "Choose a restaurant..."} />
-              </SelectTrigger>
-              <SelectContent>
-                {restaurants.map((restaurant) => (
-                  <SelectItem key={restaurant.id} value={restaurant.id}>
-                    {restaurant.name}
-                    {restaurant.phone ? ` - ${restaurant.phone}` : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {selectedRestaurant ? (
+              <div className="flex items-center justify-between p-3 rounded-lg border border-green-500 bg-green-50">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{selectedRestaurant.name}</p>
+                  <p className="text-xs text-gray-600 truncate">
+                    {[selectedRestaurant.phone, selectedRestaurant.email].filter(Boolean).join(" · ")}
+                  </p>
+                </div>
+                <Button size="sm" variant="outline" onClick={clearRestaurant} className="h-7 text-xs">
+                  <X className="h-3 w-3 mr-1" />
+                  Change
+                </Button>
+              </div>
+            ) : (
+              <div className="rounded-lg border bg-gray-50 p-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    value={restaurantQuery}
+                    onChange={(e) => setRestaurantQuery(e.target.value)}
+                    placeholder="Search restaurant by name, email or phone..."
+                    className="pl-9 text-sm bg-white"
+                  />
+                  {loadingRestaurants && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />
+                  )}
+                </div>
+                <div className="mt-2 max-h-56 overflow-y-auto space-y-1">
+                  {restaurants.map((restaurant) => (
+                    <button
+                      type="button"
+                      key={restaurant.id}
+                      onClick={() => selectRestaurant(restaurant)}
+                      className="w-full text-left p-2 rounded border border-transparent hover:bg-white hover:border-gray-200"
+                    >
+                      <p className="text-sm font-medium">{restaurant.name}</p>
+                      <p className="text-xs text-gray-500">
+                        {[restaurant.phone, restaurant.email].filter(Boolean).join(" · ")}
+                      </p>
+                    </button>
+                  ))}
+                  {!loadingRestaurants && restaurants.length === 0 && (
+                    <p className="text-xs text-gray-500 p-2">No restaurants found</p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Step 2: Add Products */}
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold">2. Add Products</h3>
-              {selectedRestaurantId && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowProductSearch(!showProductSearch)}
-                  className="h-8 text-xs"
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  Add Product
-                </Button>
-              )}
-            </div>
+            <h3 className="text-sm font-semibold mb-3">2. Add Products</h3>
 
-            {!selectedRestaurantId && (
+            {!selectedRestaurant ? (
               <p className="text-sm text-gray-500 border rounded-lg p-4 text-center bg-gray-50">
                 Select a restaurant first to add products
               </p>
-            )}
-
-            {showProductSearch && selectedRestaurantId && (
-              <div className="mb-4 p-3 bg-gray-50 rounded-lg border">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    value={productSearchQuery}
-                    onChange={(e) => setProductSearchQuery(e.target.value)}
-                    placeholder="Search products..."
-                    className="pl-9 text-sm"
-                    autoFocus
-                  />
-                </div>
-                {searchingProducts && (
-                  <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    Searching...
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Product catalog: search + scrollable list */}
+                <div className="rounded-lg border bg-gray-50 p-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      value={productQuery}
+                      onChange={(e) => setProductQuery(e.target.value)}
+                      placeholder="Search products..."
+                      className="pl-9 text-sm bg-white"
+                    />
                   </div>
-                )}
-                {productResults.length > 0 && (
-                  <div className="mt-2 space-y-1 max-h-48 overflow-y-auto">
-                    {productResults.map((product) => (
-                      <div
-                        key={product.id}
-                        className="flex items-center justify-between p-2 hover:bg-white rounded cursor-pointer border border-transparent hover:border-gray-200"
-                        onClick={() => addProductToOrder(product)}
-                      >
-                        <div className="flex items-center gap-2">
-                          {product.images?.[0] && (
-                            <img
-                              src={product.images[0]}
-                              alt={product.productName}
-                              className="w-8 h-8 object-cover rounded"
-                            />
-                          )}
-                          <div>
-                            <p className="text-sm font-medium">{product.productName}</p>
-                            <p className="text-xs text-gray-500">
-                              Stock: {product.quantity} {product.unit}
-                            </p>
+                  <div
+                    className="mt-2 h-72 overflow-y-auto space-y-1 pr-1"
+                    onScroll={handleProductListScroll}
+                  >
+                    {products.map((product) => {
+                      const added = items.some((i) => i.productId === product.id);
+                      return (
+                        <div
+                          key={product.id}
+                          className={`flex items-center justify-between p-2 rounded cursor-pointer border ${
+                            added
+                              ? "bg-green-50 border-green-200"
+                              : "border-transparent hover:bg-white hover:border-gray-200"
+                          }`}
+                          onClick={() => addProductToOrder(product)}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            {product.images?.[0] && (
+                              <img
+                                src={product.images[0]}
+                                alt={product.productName}
+                                className="w-8 h-8 object-cover rounded shrink-0"
+                              />
+                            )}
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">{product.productName}</p>
+                              <p className="text-xs text-gray-500">
+                                Stock: {product.quantity} {product.unit}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-sm font-medium text-green-600">
+                              {product.unitPrice.toLocaleString()} RWF
+                            </span>
+                            {added ? (
+                              <Check className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <Plus className="h-4 w-4 text-gray-400" />
+                            )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-green-600">
-                            {product.unitPrice.toLocaleString()} RWF
-                          </span>
-                          <Plus className="h-4 w-4 text-gray-400" />
-                        </div>
+                      );
+                    })}
+                    {loadingProducts && (
+                      <div className="flex items-center justify-center gap-2 py-3 text-xs text-gray-500">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Loading products...
                       </div>
-                    ))}
-                  </div>
-                )}
-                {productSearchQuery && !searchingProducts && productResults.length === 0 && (
-                  <p className="text-xs text-gray-500 mt-2">No products found</p>
-                )}
-              </div>
-            )}
-
-            {/* Items list */}
-            {items.length > 0 && (
-              <div className="space-y-2">
-                {items.map((item) => (
-                  <div
-                    key={item.tempId}
-                    className="flex items-center gap-3 p-3 rounded-lg border bg-white"
-                  >
-                    {item.images?.[0] && (
-                      <img
-                        src={item.images[0]}
-                        alt={item.productName}
-                        className="w-10 h-10 object-cover rounded"
-                      />
                     )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{item.productName}</p>
-                      <p className="text-xs text-gray-500">
-                        {item.unitPrice.toLocaleString()} RWF / {item.unit}
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <Label className="text-[10px] text-gray-500 mb-1">Qty</Label>
-                      <Input
-                        type="number"
-                        min={1}
-                        max={item.stock}
-                        value={item.quantity}
-                        onChange={(e) => updateQuantity(item.tempId, parseInt(e.target.value) || 1)}
-                        className="w-16 h-8 text-center text-sm"
-                      />
-                    </div>
-                    <div className="w-24 text-right">
-                      <p className="text-sm font-medium text-green-600">
-                        {(item.quantity * item.unitPrice).toLocaleString()} RWF
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => removeItem(item.tempId)}
-                      className="p-1.5 text-red-500 hover:bg-red-50 rounded transition-colors"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    {!loadingProducts && products.length === 0 && (
+                      <p className="text-xs text-gray-500 p-2">No products found</p>
+                    )}
                   </div>
-                ))}
+                </div>
+
+                {/* Selected items */}
+                <div className="rounded-lg border p-3">
+                  <p className="text-xs font-semibold text-gray-600 mb-2">
+                    Selected ({items.length})
+                  </p>
+                  {items.length === 0 ? (
+                    <p className="text-xs text-gray-500 text-center py-8">
+                      Click a product on the left to add it
+                    </p>
+                  ) : (
+                    <div className="h-72 overflow-y-auto space-y-2 pr-1">
+                      {items.map((item) => (
+                        <div
+                          key={item.tempId}
+                          className="flex items-center gap-2 p-2 rounded-lg border bg-white"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{item.productName}</p>
+                            <p className="text-xs text-gray-500">
+                              {item.unitPrice.toLocaleString()} RWF / {item.unit}
+                            </p>
+                          </div>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={item.stock}
+                            value={item.quantity}
+                            onChange={(e) => updateQuantity(item.tempId, parseInt(e.target.value) || 1)}
+                            className="w-16 h-8 text-center text-sm"
+                          />
+                          <p className="w-24 text-right text-sm font-medium text-green-600">
+                            {(item.quantity * item.unitPrice).toLocaleString()} RWF
+                          </p>
+                          <button
+                            onClick={() => removeItem(item.tempId)}
+                            className="p-1.5 text-red-500 hover:bg-red-50 rounded transition-colors"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -506,7 +675,7 @@ export function CreateAdminOrderModal({
                       type="radio"
                       name="paymentMethod"
                       checked={selectedPaymentMethod === method.id}
-                      onChange={() => handlePaymentMethodChange(method.id)}
+                      onChange={() => setSelectedPaymentMethod(method.id)}
                       className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
                     />
                     <div className={`p-1.5 rounded ${
@@ -525,44 +694,131 @@ export function CreateAdminOrderModal({
             )}
           </div>
 
-          {/* Mobile money phone + voucher inputs */}
-          {selectedPaymentMethod &&
-            paymentMethods.find((m) => m.id === selectedPaymentMethod)?.name.toUpperCase() === "MOBILE_MONEY" && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs mb-1">Phone Number</Label>
-                  <Input
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="078XXXXXXX"
-                    className="text-sm"
-                  />
-                </div>
+          {selectedMethodName === "MOBILE_MONEY" && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs mb-1">Phone Number</Label>
+                <Input
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="078XXXXXXX"
+                  className="text-sm"
+                />
               </div>
-            )}
-
-          {showVoucherInput && (
-            <div>
-              <Label className="text-xs mb-1">Voucher Code</Label>
-              <Input
-                value={voucherCode}
-                onChange={(e) => setVoucherCode(e.target.value)}
-                placeholder="Enter voucher code"
-                className="text-sm"
-              />
             </div>
           )}
 
-          {/* Notes */}
-          <div>
-            <Label className="text-xs mb-1">Notes</Label>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Optional notes for this order..."
-              className="text-sm"
-            />
-          </div>
+          {selectedMethodName === "VOUCHER" && (
+            <div>
+              <Label className="text-xs mb-2">Select Voucher</Label>
+              {loadingVouchers ? (
+                <div className="flex items-center gap-2 py-3 text-xs text-gray-500">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Loading vouchers...
+                </div>
+              ) : vouchers.length === 0 ? (
+                <p className="text-sm text-red-600 border border-red-200 bg-red-50 rounded-lg p-3 text-center">
+                  No voucher found on this restaurant
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto">
+                  {vouchers.map((voucher) => {
+                    const selected = loanSessionRrn === voucher.rrn;
+                    // A loan must cover the whole order — no split payment
+                    const insufficient = voucher.availableCredit < subtotal;
+                    return (
+                      <label
+                        key={voucher.id}
+                        className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                          selected
+                            ? "border-green-500 bg-green-50 ring-1 ring-green-200"
+                            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="voucher"
+                          checked={selected}
+                          onChange={() => setLoanSessionRrn(voucher.rrn)}
+                          className="h-4 w-4 mt-0.5 text-green-600 focus:ring-green-500 border-gray-300"
+                        />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium font-mono">{voucher.rrn}</p>
+                          <p className="text-xs text-gray-600">
+                            Available: {voucher.availableCredit.toLocaleString()} /{" "}
+                            {voucher.approvedAmount.toLocaleString()} RWF
+                          </p>
+                          {voucher.dueDate && (
+                            <p className="text-xs text-gray-500">
+                              Due {new Date(voucher.dueDate).toLocaleDateString()}
+                            </p>
+                          )}
+                          {insufficient && subtotal > 0 && (
+                            <p className="text-xs text-amber-600 mt-0.5">Not enough credit</p>
+                          )}
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+              {voucherShortfall !== null && (
+                <div className="mt-2 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+                  <p className="font-semibold">Voucher credit is not enough</p>
+                  <p className="mt-0.5">
+                    Available {voucherShortfall.toLocaleString()} RWF, order total{" "}
+                    {subtotal.toLocaleString()} RWF. Remove some items or choose another payment method.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* OTP confirmation from restaurant (voucher / prepaid) — for voucher, once a sufficient one is picked */}
+          {requiresOtp &&
+            (selectedMethodName !== "VOUCHER" || (loanSessionRrn && voucherShortfall === null)) && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-3">
+              <div className="flex items-start gap-2">
+                <ShieldCheck className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                <p className="text-xs text-amber-800">
+                  {selectedMethodName === "VOUCHER" ? "Voucher" : "Prepaid wallet"} payments must be
+                  confirmed by the restaurant owner. Send an OTP to the restaurant&apos;s phone and
+                  enter the code they share with you.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-end gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleSendOtp}
+                  disabled={sendingOtp || resendIn > 0}
+                  className="h-9 text-xs bg-white"
+                >
+                  {sendingOtp && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
+                  {otpSent
+                    ? resendIn > 0
+                      ? `Resend OTP in ${resendIn}s`
+                      : "Resend OTP"
+                    : "Send OTP to Restaurant"}
+                </Button>
+                {otpSent && (
+                  <div className="flex-1">
+                    <Label className="text-xs mb-1">
+                      OTP sent to {otpPhone || "restaurant phone"}
+                    </Label>
+                    <Input
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      placeholder="6-digit code"
+                      inputMode="numeric"
+                      className="text-sm bg-white tracking-widest"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
 
           {/* Summary */}
           <div className="bg-gray-50 p-4 rounded-lg border">
@@ -585,7 +841,7 @@ export function CreateAdminOrderModal({
           <Button
             size="sm"
             onClick={handleCreateOrder}
-            disabled={saving}
+            disabled={saving || voucherShortfall !== null || (requiresOtp && otp.length !== 6)}
             className="bg-green-600 hover:bg-green-700"
           >
             {saving && <Loader2 className="h-3 w-3 animate-spin mr-2" />}
