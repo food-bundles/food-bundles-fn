@@ -1,5 +1,9 @@
 // Frontend Axios Client - Cookie-Based
 import axios, { AxiosInstance, AxiosError, AxiosResponse } from "axios";
+import { ROLE_ROUTES, buildLoginUrl } from "@/lib/navigations";
+
+// Several requests can 401 at once — redirect only once
+let redirectingToLogin = false;
 
 const getToken = (): string | null => {
   if (typeof window !== "undefined") {
@@ -58,7 +62,25 @@ const createAxiosClient = (): AxiosInstance => {
   axiosClient.interceptors.response.use(
     (response: AxiosResponse) => response,
     (error: AxiosError) => {
-      // Remove automatic redirect to prevent infinite loops
+      // Session expired mid-use: send to login and come back here afterwards.
+      // Only when a token was sent and we're on a protected page — so wrong-password
+      // 401s on /login and public pages never redirect (no loops).
+      const sentToken = Boolean(error.config?.headers?.Authorization);
+      if (
+        error.response?.status === 401 &&
+        sentToken &&
+        typeof window !== "undefined" &&
+        !redirectingToLogin &&
+        Object.keys(ROLE_ROUTES).some((route) =>
+          window.location.pathname.startsWith(route)
+        )
+      ) {
+        redirectingToLogin = true;
+        removeToken();
+        document.cookie = "user-role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        localStorage.removeItem("user");
+        window.location.href = buildLoginUrl("expired");
+      }
       return Promise.reject(error);
     }
   );
