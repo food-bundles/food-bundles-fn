@@ -622,9 +622,18 @@ export default function AdminOrdersPage() {
           isLoading={loading}
           getRowClassName={(order) =>
             new Date(order.createdAt).toDateString() === new Date().toDateString()
-              ? ""
-              : "bg-gray-100"
+              ? // Cells set their own text colour, so style them from the row
+                "bg-gray-50 [&>td]:text-green-700 [&>td]:text-sm [&>td]:font-bold [&>td_*]:font-bold"
+              : "bg-gray-50"
           }
+          getRowGroup={(order) => {
+            const created = new Date(order.createdAt).toDateString();
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            if (created === new Date().toDateString()) return "Today";
+            if (created === yesterday.toDateString()) return "Yesterday";
+            return "Earlier orders";
+          }}
         />
       
 
