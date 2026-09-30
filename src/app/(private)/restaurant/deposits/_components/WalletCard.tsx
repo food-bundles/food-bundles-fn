@@ -161,9 +161,8 @@ export function WalletCard({
       {/* Flip control */}
       <div className="w-80 flex gap-2">
         <Button
-          variant="outline"
           size="sm"
-          className="flex-1"
+          className="flex-1 bg-green-600 hover:bg-green-700 text-white"
           onClick={() => setShowBack((p) => !p)}
         >
           <RotateCw className="w-3 h-3 mr-1.5" />
@@ -176,7 +175,7 @@ export function WalletCard({
             onClick={onShowDepositForm}
           >
             <Plus className="w-3 h-3 mr-1.5" />
-            Deposit Funds
+            Prepay order
           </Button>
         )}
       </div>

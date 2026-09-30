@@ -293,7 +293,7 @@ export default function LoanSessionsTable() {
       <DataTable
         columns={columns}
         data={sessions}
-        title="Loan Session History"
+        title="Credit Sessions"
         description=""
         showPagination
         showColumnVisibility={false}

@@ -301,7 +301,7 @@ export default function LoanRequestForm({ onSuccess }: LoanRequestFormProps) {
                 className="w-full bg-green-600 hover:bg-green-700 h-10 text-sm"
               >
                 {loadingTerms && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                {loadingTerms ? "Checking..." : "Request Financing"}
+                {loadingTerms ? "Checking..." : "Request Credit"}
               </Button>
             </div>
           </CardContent>
