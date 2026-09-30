@@ -4,7 +4,7 @@ const TraderAppUrl = process.env.NEXT_PUBLIC_TRADER_APP_URL as string;
 
 // Protected route prefixes and the roles allowed on them (used by middleware too)
 export const ROLE_ROUTES: Record<string, string | string[]> = {
-  "/dashboard": ["ADMIN", "SUPERUSER", "MARKET_PRICES"],
+  "/dashboard": ["ADMIN", "SUPERUSER", "MARKET_PRICES", "STAFF"],
   "/restaurant": "RESTAURANT",
   "/farmers": "FARMER",
   "/aggregator": "AGGREGATOR",
@@ -19,7 +19,7 @@ export function isRoleAllowedOnPath(role: string, pathname: string): boolean {
   if (!required) return true; // public route
   const allowed = Array.isArray(required) ? required : [required];
   if (allowed.includes(role)) {
-    return role !== "MARKET_PRICES" || pathname.startsWith("/dashboard/markets");
+    return true; // which dashboard pages: decided by permissions (see middleware)
   }
   return required === "RESTAURANT" && (role === "AFFILIATOR" || role === "HOTEL");
 }
@@ -77,7 +77,9 @@ export function getRedirectPath(userRole: UserRole): string {
     case UserRole.SUPERUSER:
       return "/dashboard";
     case UserRole.MARKET_PRICES:
-      return "/dashboard/markets";
+    case UserRole.STAFF:
+      // Dashboard users land on the dashboard; the sidebar shows what they may open
+      return "/dashboard";
     default:
       console.warn(`Unknown user role: ${userRole}. Redirecting to default.`);
       return "/";

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,13 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { RolePicker, toRolePayload } from "../../../_components/role-picker";
 import { UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -37,7 +31,6 @@ export function CreateAdminModal({
   onCreate,
 }: CreateAdminModalProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [userRole, setUserRole] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     username: "",
@@ -47,35 +40,6 @@ export function CreateAdminModal({
     password: "",
     role: "",
   });
-
-  useEffect(() => {
-    const fetchUserRole = async () => {
-      const token = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("auth-token="))
-        ?.split("=")[1];
-
-      if (!token) return;
-
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/me`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (response.ok) {
-          const userData = await response.json();
-          setUserRole(userData.user?.role || userData.data?.user?.role);
-        }
-      } catch (error) {
-        console.error("Failed to fetch user role:", error);
-      }
-    };
-
-    fetchUserRole();
-  }, [])
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -109,7 +73,9 @@ export function CreateAdminModal({
 
     setIsLoading(true);
     try {
-      await onCreate(formData);
+      // A dashboard role is sent as adminRoleId; built-in types as role
+      const { role, ...rest } = formData;
+      await onCreate({ ...rest, ...toRolePayload(role) });
       toast.success("Admin created successfully");
       setFormData({
         username: "",
@@ -254,26 +220,13 @@ export function CreateAdminModal({
                   <Label htmlFor="role" className="text-gray-900">
                     Role <span className="text-red-500">*</span>
                   </Label>
-                  <Select
+                  <RolePicker
                     value={formData.role}
-                    onValueChange={(value) =>
+                    onChange={(value) =>
                       setFormData((prev) => ({ ...prev, role: value }))
                     }
                     disabled={isLoading}
-                  >
-                    <SelectTrigger className="bg-white border-gray-300 text-gray-900">
-                      <SelectValue placeholder="Select role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ADMIN">ADMIN</SelectItem>
-                      <SelectItem value="AGGREGATOR">AGGREGATOR</SelectItem>
-                      <SelectItem value="LOGISTICS">LOGISTICS</SelectItem>
-                      <SelectItem value="TRADER">TRADER</SelectItem>
-                      {userRole === "SUPERUSER" && (
-                        <SelectItem value="SUPERUSER">SUPERUSER</SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
+                  />
                 </div>
               </div>
             </div>
