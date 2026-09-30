@@ -203,7 +203,7 @@ export default function LoanAccessCard({ onSuccess }: LoanAccessCardProps) {
             {current.status === "ACTIVE" ? (
               <span className="text-green-600 flex items-center gap-1">
                 <BadgeCheck className="w-3.5 h-3.5" />
-                You can request financing with your voucher card
+                You can request credit with your voucher card
               </span>
             ) : current.status === "PENDING" ? (
               <span className="text-yellow-600 flex items-center gap-1">
