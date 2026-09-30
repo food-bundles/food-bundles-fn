@@ -8,7 +8,7 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { ILoginData, UserRole } from "@/lib/types";
 import { authService } from "@/app/services/authService";
-import { getRedirectPath } from "@/lib/navigations";
+import { getPostLoginPath } from "@/lib/navigations";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,7 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [infoMessage, setInfoMessage] = useState("");
   const [identifierError, setIdentifierError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [isBackendAvailable, setIsBackendAvailable] = useState(true);
@@ -41,6 +42,16 @@ function LoginForm() {
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [phoneForTerms, setPhoneForTerms] = useState("");
   const [phoneError, setPhoneError] = useState("");
+
+  // Explain why the user landed here (set by middleware / axios 401 handler)
+  useEffect(() => {
+    const reason = new URLSearchParams(window.location.search).get("reason");
+    if (reason === "expired") {
+      setInfoMessage("Your session has expired. Please log in again to continue.");
+    } else if (new URLSearchParams(window.location.search).get("redirect")) {
+      setInfoMessage("Please log in to continue.");
+    }
+  }, []);
 
   // Load saved credentials on mount
   useEffect(() => {
@@ -194,7 +205,10 @@ function LoginForm() {
           const traderUrl = `${process.env.NEXT_PUBLIC_TRADER_APP_URL}?token=${encodeURIComponent(token)}`;
           window.location.href = traderUrl;
         } else {
-          const redirectPath = getRedirectPath(userRole as UserRole);
+          const redirectPath = getPostLoginPath(
+            userRole as UserRole,
+            new URLSearchParams(window.location.search).get("redirect")
+          );
           window.location.href = redirectPath;
         }
       } else {
@@ -299,7 +313,10 @@ function LoginForm() {
           const traderUrl = `${process.env.NEXT_PUBLIC_TRADER_APP_URL}?token=${encodeURIComponent(token)}`;
           window.location.href = traderUrl;
         } else {
-          const redirectPath = getRedirectPath(userRole as UserRole);
+          const redirectPath = getPostLoginPath(
+            userRole as UserRole,
+            new URLSearchParams(window.location.search).get("redirect")
+          );
           window.location.href = redirectPath;
         }
       } else {
@@ -359,6 +376,11 @@ function LoginForm() {
           {!isBackendAvailable && (
             <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 text-sm mb-4">
               {backendMessage}
+            </div>
+          )}
+          {infoMessage && !error && (
+            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 text-sm mb-4">
+              {infoMessage}
             </div>
           )}
           {error && (

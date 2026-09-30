@@ -3,21 +3,13 @@
 import { useState, useEffect } from "react";
 import { useDashboard } from "@/app/contexts/DashboardContext";
 import { DashboardFilters } from "./DashboardFilters";
-import { EnhancedMetricCard } from "./EnhancedMetricCard";
+import { DashboardStatCard } from "./DashboardStatCard";
 import { RecentActivity } from "./RecentActivity";
-import { QuickStats } from "./QuickStats";
 import { OrdersChart } from "./OrdersChart";
 import { FinanceChart } from "./FinanceChart";
 import { UsersChart } from "./UsersChart";
 import { SystemStatus } from "./SystemStatus";
 import { MarketPriceComparison } from "./MarketPriceComparison";
-import {
-  Users,
-  ShoppingCart,
-  DollarSign,
-  CreditCard,
-  Package,
-} from "lucide-react";
 
 export function DashboardContent() {
   const { stats, error, refreshStats, sectionLoading } = useDashboard();
@@ -47,7 +39,7 @@ export function DashboardContent() {
           <div className="h-16 bg-gray-200 animate-pulse rounded"></div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-32 bg-gray-200 animate-pulse rounded"></div>
+              <div key={i} className="h-[150px] bg-gray-200 animate-pulse rounded-2xl"></div>
             ))}
           </div>
         </div>
@@ -76,144 +68,76 @@ export function DashboardContent() {
   return (
     <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 p-6 rounded-md">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex gap-3 justify-start items-center">
-          <p className="text-gray-800 mt-1 flex items-center gap-2">
-            {currentTime?.toLocaleDateString("en-US", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
-          <p className="flex mt-1 items-center text-green-600 font-semibold">
-            {currentTime?.getHours().toString().padStart(2, "0")}:{" "}
-            {currentTime?.getMinutes().toString().padStart(2, "0")}:{" "}
-            {currentTime?.getSeconds().toString().padStart(2, "0")}
-          </p>
-        </div>
+      
 
         {/* Global Filters */}
         <DashboardFilters />
 
         {/* Enhanced Key Metrics - First Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <EnhancedMetricCard
+          <DashboardStatCard
             title="Total Users"
             value={stats?.users?.totalUsers || 0}
             previousValue={stats?.users?.growth?.totalChange}
-            icon={Users}
-            color="from-yellow-500 to-yellow-600"
+            gradient="from-emerald-600 to-green-800"
             loading={sectionLoading.users}
             subMetrics={[
-              {
-                label: "Restaurants",
-                value: stats?.users?.restaurants || 0,
-                color: "text-blue-600",
-              },
-              {
-                label: "Farmers",
-                value: stats?.users?.farmers || 0,
-                color: "text-green-600",
-              },
-              {
-                label: "Admins",
-                value: stats?.users?.admins || 0,
-                color: "text-purple-600",
-              },
+              { label: "Restaurants", value: stats?.users?.restaurants || 0 },
+              { label: "Farmers", value: stats?.users?.farmers || 0 },
+              { label: "Admins", value: stats?.users?.admins || 0 },
             ]}
           />
-          <EnhancedMetricCard
+          <DashboardStatCard
             title="Total Orders"
             value={stats?.orders?.totalOrders || 0}
             previousValue={stats?.orders?.growth?.totalChange}
-            icon={ShoppingCart}
-            color="from-yellow-500 to-yellow-600"
+            gradient="from-blue-600 to-blue-900"
             loading={sectionLoading.orders}
             subMetrics={[
-              {
-                label: "Completed",
-                value: stats?.orders?.completedOrders || 0,
-                color: "text-green-600",
-              },
-              {
-                label: "Cancelled",
-                value: stats?.orders?.cancelledOrders || 0,
-                color: "text-red-600",
-              },
-              {
-                label: "Ongoing",
-                value: stats?.orders?.ongoingOrders || 0,
-                color: "text-blue-600",
-              },
+              { label: "Completed", value: stats?.orders?.completedOrders || 0 },
+              { label: "Cancelled", value: stats?.orders?.cancelledOrders || 0 },
+              { label: "Ongoing", value: stats?.orders?.ongoingOrders || 0 },
             ]}
           />
-          <EnhancedMetricCard
+          <DashboardStatCard
             title="Finance Overview"
             value={stats?.finance?.totalRevenue || 0}
             previousValue={stats?.finance?.netProfit}
-            icon={DollarSign}
-            color="from-yellow-500 to-yellow-600"
+            gradient="from-indigo-600 to-indigo-900"
             suffix=" RWF"
             loading={sectionLoading.finance}
             subMetrics={[
-              {
-                label: "Revenue",
-                value: stats?.finance?.totalRevenue || 0,
-                color: "text-green-600",
-              },
-              {
-                label: "Expenses",
-                value: stats?.finance?.totalExpenses || 0,
-                color: "text-red-600",
-              },
+              { label: "Revenue", value: stats?.finance?.totalRevenue || 0 },
+              { label: "Expenses", value: stats?.finance?.totalExpenses || 0 },
             ]}
           />
-          <EnhancedMetricCard
+          <DashboardStatCard
             title="Subscriptions"
             value={stats?.subscriptions?.totalSubscriptions || 0}
             previousValue={stats?.subscriptions?.growth?.totalChange}
-            icon={CreditCard}
-            color="from-yellow-500 to-yellow-600"
+            gradient="from-amber-500 to-orange-700"
             loading={sectionLoading.subscriptions}
             subMetrics={[
-              {
-                label: "Active",
-                value: stats?.subscriptions?.activeSubscriptions || 0,
-                color: "text-green-600",
-              },
-              {
-                label: "Expired",
-                value: stats?.subscriptions?.expiredSubscriptions || 0,
-                color: "text-red-600",
-              },
+              { label: "Active", value: stats?.subscriptions?.activeSubscriptions || 0 },
+              { label: "Expired", value: stats?.subscriptions?.expiredSubscriptions || 0 },
             ]}
           />
         </div>
 
         {/* Enhanced Secondary Metrics - Second Row */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <EnhancedMetricCard
+          <DashboardStatCard
             title="Vouchers"
             value={stats?.vouchers?.totalVouchers || 0}
             previousValue={stats?.vouchers?.growth?.totalChange}
-            icon={Package}
-            color="from-green-600 to-green-700"
+            gradient="from-teal-600 to-cyan-900"
             loading={sectionLoading.vouchers}
             subMetrics={[
-              {
-                label: "Used",
-                value: stats?.vouchers?.usedVouchers || 0,
-                color: "text-green-600",
-              },
-              {
-                label: "Matured",
-                value: stats?.vouchers?.maturedVouchers || 0,
-                color: "text-blue-600",
-              },
+              { label: "Used", value: stats?.vouchers?.usedVouchers || 0 },
+              { label: "Matured", value: stats?.vouchers?.maturedVouchers || 0 },
             ]}
           />
-          <QuickStats loading={sectionLoading.quickStats} stats={stats} />
+          {/* <QuickStats loading={sectionLoading.quickStats} stats={stats} /> */}
         </div>
 
         {/* Charts Section */}
