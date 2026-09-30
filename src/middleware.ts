@@ -3,20 +3,25 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import jwt from "jsonwebtoken";
+import { ROLE_ROUTES, sanitizeRedirect } from "@/lib/navigations";
+
+// Send to login, remembering the page (with its query) to return to afterwards
+const redirectToLogin = (req: NextRequest, reason?: string) => {
+  const loginUrl = new URL("/login", req.url);
+  loginUrl.searchParams.set(
+    "redirect",
+    req.nextUrl.pathname + req.nextUrl.search,
+  );
+  if (reason) loginUrl.searchParams.set("reason", reason);
+  return NextResponse.redirect(loginUrl);
+};
 
 export async function middleware(req: NextRequest) {
   const token = req.cookies.get("auth-token")?.value;
   const pathname = req.nextUrl.pathname;
 
   // Role-based route protection
-  const roleRoutes: Record<string, string | string[]> = {
-    "/dashboard": ["ADMIN", "SUPERUSER", "MARKET_PRICES"],
-    "/restaurant": "RESTAURANT",
-    "/farmers": "FARMER",
-    "/aggregator": "AGGREGATOR",
-    "/logistics": "LOGISTICS",
-    "/traders": "TRADER",
-  };
+  const roleRoutes = ROLE_ROUTES;
 
   const protectedRoutes = Object.keys(roleRoutes);
   const isProtectedRoute = protectedRoutes.some((route) =>
@@ -38,7 +43,7 @@ export async function middleware(req: NextRequest) {
   ];
   const isAuthPage = authPages.includes(pathname);
 
-  // Handle auth pages - redirect logged-in users to home
+  // Handle auth pages - redirect logged-in users to where they were going (or home)
   if (isAuthPage) {
     if (token) {
       try {
@@ -46,7 +51,9 @@ export async function middleware(req: NextRequest) {
         if (decoded.exp && decoded.exp * 1000 < Date.now()) {
           return NextResponse.next();
         }
-        return NextResponse.redirect(new URL("/", req.url));
+        const target =
+          sanitizeRedirect(req.nextUrl.searchParams.get("redirect")) || "/";
+        return NextResponse.redirect(new URL(target, req.url));
       } catch (error) {
         return NextResponse.next();
       }
@@ -75,17 +82,14 @@ export async function middleware(req: NextRequest) {
   // Handle protected routes with role checking
   if (isProtectedRoute) {
     if (!token) {
-      return NextResponse.redirect(new URL("/", req.url));
+      return redirectToLogin(req);
     }
 
     try {
       const decoded: any = jwt.decode(token);
 
       if (decoded.exp && decoded.exp * 1000 < Date.now()) {
-        const redirectUrl = new URL("/login", req.url);
-        redirectUrl.searchParams.set("redirect", pathname);
-        redirectUrl.searchParams.set("reason", "expired");
-        return NextResponse.redirect(redirectUrl);
+        return redirectToLogin(req, "expired");
       }
 
       // Check user role via API
@@ -163,10 +167,7 @@ export async function middleware(req: NextRequest) {
       return NextResponse.next();
     } catch (error) {
       console.error("Middleware error:", error);
-      const redirectUrl = new URL("/login", req.url);
-      redirectUrl.searchParams.set("redirect", pathname);
-      redirectUrl.searchParams.set("reason", "error");
-      return NextResponse.redirect(redirectUrl);
+      return redirectToLogin(req, "error");
     }
   }
 

@@ -32,7 +32,7 @@ export function DashboardFilters() {
   ];
 
   return (
-    <Card className="mb-3 py-1 rounded inline-block max-w-max">
+    <Card className="mb-3 py-1 border-none shadow-none inline-block max-w-max">
       <CardContent className="p-3">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
