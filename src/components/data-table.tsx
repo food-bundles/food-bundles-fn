@@ -305,27 +305,27 @@ export function DataTable<TData, TValue>({
                       <Download className="h-3 w-3" />
                     )}
                     <span>
-                      {isExporting 
-                        ? "Exporting..." 
-                        : table.getFilteredSelectedRowModel().rows.length > 0 
-                          ? `Export Selected (${table.getFilteredSelectedRowModel().rows.length})` 
+                      {isExporting
+                        ? "Exporting..."
+                        : table.getFilteredSelectedRowModel().rows.length > 0
+                          ? `Export Selected (${table.getFilteredSelectedRowModel().rows.length})`
                           : "Export"}
                     </span>
                     <ChevronDown className="h-3 w-3 opacity-70" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => onExport && onExport(table.getFilteredSelectedRowModel().rows.map(r => r.original), "excel")}
                   >
                     Export as Excel
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => onExport && onExport(table.getFilteredSelectedRowModel().rows.map(r => r.original), "csv")}
                   >
                     Export as CSV
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => onExport && onExport(table.getFilteredSelectedRowModel().rows.map(r => r.original), "pdf")}
                   >
                     Export as PDF

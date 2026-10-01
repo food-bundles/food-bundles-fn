@@ -192,6 +192,14 @@ export interface CreateRestaurantSubscriptionData {
   bankDetails?: any;
 }
 
+export interface AdminCreateSubscriptionData {
+  restaurantId: string;
+  planId: string;
+  paymentMethodId: string;
+  phoneNumber?: string;
+  bankDetails?: any;
+}
+
 export interface UpdateRestaurantSubscriptionData {
   status?: SubscriptionStatus;
   autoRenew?: boolean;
@@ -264,7 +272,6 @@ export interface LoanAccessProvidersResponse {
 // ==================== RESPONSE TYPES ====================
 
 export interface SubscriptionPlansResponse {
-  success: boolean;
   data: SubscriptionPlan[];
   message?: string;
   pagination?: {
@@ -276,13 +283,11 @@ export interface SubscriptionPlansResponse {
 }
 
 export interface SubscriptionPlanResponse {
-  success: boolean;
   data: SubscriptionPlan;
   message?: string;
 }
 
 export interface SubscriptionsResponse {
-  success: boolean;
   data: RestaurantSubscription[];
   message?: string;
   pagination?: {
@@ -294,19 +299,16 @@ export interface SubscriptionsResponse {
 }
 
 export interface SubscriptionResponse {
-  success: boolean;
   data: RestaurantSubscription;
   message?: string;
 }
 
 export interface SubscriptionHistoryResponse {
-  success: boolean;
   data: SubscriptionHistory[];
   message?: string;
 }
 
 export interface CheckExpiredResponse {
-  success: boolean;
   message: string;
   count: number;
 }
@@ -375,6 +377,17 @@ export const subscriptionService = {
   ): Promise<SubscriptionResponse> => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.post("/subscriptions/restaurant", data);
+    return response.data;
+  },
+
+  /**
+   * Create a subscription on behalf of a restaurant (Admin only)
+   */
+  adminCreateSubscription: async (
+    data: AdminCreateSubscriptionData
+  ): Promise<SubscriptionResponse> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/subscriptions/admin/create", data);
     return response.data;
   },
 

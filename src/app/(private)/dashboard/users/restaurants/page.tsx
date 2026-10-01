@@ -6,10 +6,8 @@ import { useRestaurants } from "@/app/contexts/RestaurantContext";
 import { RestaurantManagement } from "./_components/restaurant-management";
 import type { Restaurant } from "@/app/contexts/RestaurantContext";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Store, Activity, Ban, AlertCircle, ChevronRight, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ExportButton } from "@/components/ExportButton";
 
 export default function RestaurantsPage() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);

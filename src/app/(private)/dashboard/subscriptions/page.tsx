@@ -28,6 +28,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import AssignSubscriptionModal from "./_components/AssignSubscriptionModal";
 
 type ActiveTab = "plans" | "subscriptions" | "traders";
 
@@ -83,6 +84,8 @@ export default function AdminSubscriptionsPage() {
 
   // Create plan modal
   const [createPlanOpen, setCreatePlanOpen] = useState(false);
+  // Assign subscription modal
+  const [assignSubscriptionOpen, setAssignSubscriptionOpen] = useState(false);
   const [newPlan, setNewPlan] = useState({
     name: "",
     description: "",
@@ -279,7 +282,7 @@ export default function AdminSubscriptionsPage() {
         planData
       );
 
-      if (response?.success) {
+      if (response?.data) {
         toast.success("Subscription plan created successfully");
         setCreatePlanOpen(false);
         setNewPlan({
@@ -387,6 +390,16 @@ export default function AdminSubscriptionsPage() {
         </div>
         <div className="flex items-center gap-3">
           <ExportButton module="subscriptions" label="Export Subscriptions" variant="outline" />
+          {activeTab === "subscriptions" && (
+            <Button
+              variant="green"
+              className="text-xs"
+              onClick={() => setAssignSubscriptionOpen(true)}
+            >
+              <Plus className="h-2 w-2" />
+              Assign Subscription
+            </Button>
+          )}
           {activeTab === "plans" && (
             <Dialog open={createPlanOpen} onOpenChange={setCreatePlanOpen}>
               <DialogTrigger asChild>
@@ -836,6 +849,17 @@ export default function AdminSubscriptionsPage() {
           onPaginationChange={handlePlanPaginationChange}
         />
       )}
+
+      <AssignSubscriptionModal
+        open={assignSubscriptionOpen}
+        onOpenChange={setAssignSubscriptionOpen}
+        onSuccess={() =>
+          loadRestaurantSubscriptions(
+            subscriptionPagination.page,
+            subscriptionPagination.limit
+          )
+        }
+      />
     </div>
   );
 }

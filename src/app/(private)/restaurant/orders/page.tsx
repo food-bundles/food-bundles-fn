@@ -18,6 +18,9 @@ import { useRouter } from "next/navigation";
 import { orderService } from "@/app/services/orderService";
 import { ViewOrderModal } from "./_components/view-order-modal";
 import { ReorderDrawer } from "./_components/ReorderDrawer";
+import CreateOrderModal from "./_components/CreateOrderModal";
+import PaymentLinkModal from "./_components/PaymentLinkModal";
+import { PaymentMethodProvider } from "@/app/contexts/paymentMethodContext";
 import { EditOrderModal } from "./_components/edit-order-modal";
 
 export default function RestaurantOrdersPage() {
@@ -41,6 +44,9 @@ export default function RestaurantOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [reorderDrawerOpen, setReorderDrawerOpen] = useState(false);
   const [selectedReorderOrder, setSelectedReorderOrder] = useState<any>(null);
+  const [createOrderOpen, setCreateOrderOpen] = useState(false);
+  const [paymentLinkOpen, setPaymentLinkOpen] = useState(false);
+  const [paymentLinkOrder, setPaymentLinkOrder] = useState<any>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editOrder, setEditOrder] = useState<any>(null);
   const router = useRouter();
@@ -314,6 +320,31 @@ export default function RestaurantOrdersPage() {
     }
   };
 
+  const handleShare = async (order: any) => {
+    const summary = `Order ${order.originalData?.orderNumber || order.orderId} — ${(
+      order.originalData?.totalAmount || order.totalAmount
+    ).toLocaleString()} Rwf. Items: ${order.items}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Order ${order.originalData?.orderNumber || order.orderId}`,
+          text: summary,
+        });
+      } catch {
+        // user cancelled the share sheet — no action needed
+      }
+    } else {
+      navigator.clipboard.writeText(summary);
+      toast.success("Order summary copied to clipboard");
+    }
+  };
+
+  const handleSharePaymentLink = (order: any) => {
+    setPaymentLinkOrder(order);
+    setPaymentLinkOpen(true);
+  };
+
   const handleReorder = (order: any) => {
     setSelectedReorderOrder(order);
     setReorderDrawerOpen(true);
@@ -364,6 +395,12 @@ export default function RestaurantOrdersPage() {
             </div>
             <div className="flex items-center gap-2">
               <button
+                onClick={() => setCreateOrderOpen(true)}
+                className="px-4 text-[13px] bg-green-600 text-white hover:bg-green-700 cursor-pointer rounded"
+              >
+                Create Order
+              </button>
+              <button
                 onClick={handleExport}
                 className="border-2 px-4 text-[13px] bg-green-700 border-green-500 text-white hover:bg-green-800 cursor-pointer rounded"
               >
@@ -373,7 +410,17 @@ export default function RestaurantOrdersPage() {
           </div>
 
           <DataTable
-            columns={ordersColumns(handleViewOrder, handleDownload, handleReorder, handleRetryPayment, handleEditOrder)}
+            columns={ordersColumns(
+              handleViewOrder,
+              handleDownload,
+              handleReorder,
+              {
+                onShare: handleShare,
+                onSharePaymentLink: handleSharePaymentLink,
+                onRetryPayment: handleRetryPayment,
+                onEdit: handleEditOrder,
+              }
+            )}
             data={filteredData}
             title=""
             description={`Total: ${pagination.total} orders`}
@@ -405,7 +452,24 @@ export default function RestaurantOrdersPage() {
         order={selectedReorderOrder}
       />
 
-{/* Edit Order Modal */}
+      {/* Create Order Modal */}
+      <PaymentMethodProvider>
+        <CreateOrderModal
+          open={createOrderOpen}
+          onOpenChange={setCreateOrderOpen}
+          onSuccess={() => fetchOrders()}
+        />
+      </PaymentMethodProvider>
+
+      {/* Share Payment Link Modal */}
+      <PaymentLinkModal
+        open={paymentLinkOpen}
+        onOpenChange={setPaymentLinkOpen}
+        orderId={paymentLinkOrder?.id || null}
+        orderNumber={paymentLinkOrder?.originalData?.orderNumber || paymentLinkOrder?.orderId}
+      />
+
+      {/* Edit Order Modal */}
       <EditOrderModal
         open={editModalOpen}
         onClose={() => setEditModalOpen(false)}

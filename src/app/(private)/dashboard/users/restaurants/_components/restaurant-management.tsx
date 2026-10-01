@@ -10,9 +10,8 @@ import { CreateRestaurantModal } from "./create-restaurant-modal";
 import type { Restaurant } from "@/app/contexts/RestaurantContext";
 import { toast } from "sonner";
 import { restaurantService } from "@/app/services/restaurantService";
-import { exportService } from "@/app/services/exportService";
+import { exportService, type ExportModuleType } from "@/app/services/exportService";
 import UserDetailsSheet from "../../farmers/_components/UserDetailsSheet";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GenericExportModal, type GenericExportConfig, type ExportColumnDef } from "@/components/generic-export-modal";
 
 export const RESTAURANT_COLUMNS: ExportColumnDef[] = [
@@ -28,7 +27,6 @@ export const RESTAURANT_COLUMNS: ExportColumnDef[] = [
   { id: "totalOrders", label: "Total Orders", description: "Lifetime orders count" },
   { id: "totalSubscriptions", label: "Total Subscriptions", description: "Active & past subscriptions" },
 ];
-import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
 interface RestaurantManagementProps {
@@ -47,13 +45,6 @@ interface RestaurantManagementProps {
   statusValue: string;
   onStatusChange: (value: string) => void;
 }
-
-const statusOptions = [
-  { label: "All Statuses", value: "all" },
-  { label: "Active", value: "active" },
-  { label: "Inactive", value: "inactive" },
-  { label: "Suspended", value: "suspended" },
-];
 
 export function RestaurantManagement({
   restaurants,
@@ -190,7 +181,7 @@ export function RestaurantManagement({
           ? exportSelectedRows.map((r) => r.id).join(",")
           : undefined;
 
-      await exportService.downloadExport(config.module, config.format, {
+      await exportService.downloadExport(config.module as ExportModuleType, config.format, {
         search: searchValue || undefined,
         status: statusValue !== "all" ? statusValue : undefined,
         startDate: config.startDate,
@@ -283,7 +274,7 @@ export function RestaurantManagement({
         open={isExportModalOpen}
         onOpenChange={setIsExportModalOpen}
         selectedRowsCount={exportSelectedRows.length}
-        exportModule="restaurants"
+        exportModule={exportModule}
         moduleName="Restaurants"
         columns={RESTAURANT_COLUMNS}
         onExport={handleExportSubmit}

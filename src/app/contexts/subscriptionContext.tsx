@@ -36,7 +36,7 @@ interface SubscriptionContextType {
   getAllSubscriptionPlans: (params?: any) => Promise<SubscriptionPlansResponse>;
   getSubscriptionPlanById: (planId: string) => Promise<SubscriptionPlanResponse>;
   updateSubscriptionPlan: (planId: string, data: UpdateSubscriptionPlanData) => Promise<SubscriptionPlanResponse>;
-  deleteSubscriptionPlan: (planId: string) => Promise<{ success: boolean; message?: string }>;
+  deleteSubscriptionPlan: (planId: string) => Promise<{ message?: string }>;
 
   createRestaurantSubscription: (data: CreateRestaurantSubscriptionData) => Promise<SubscriptionResponse>;
   getMySubscriptions: () => Promise<SubscriptionResponse>;
@@ -80,7 +80,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     try {
       setLoading(true);
       const response = await subscriptionService.createSubscriptionPlan(data);
-      if (response.success) {
+      if (response.data) {
         await refreshSubscriptionPlans();
       }
       return response;
@@ -96,7 +96,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     try {
       setLoading(true);
       const response = await subscriptionService.getAllSubscriptionPlans(params);
-      if (response.success) {
+      if (response.data) {
         setSubscriptionPlans(response.data || []);
       }
       return response;
@@ -124,7 +124,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     try {
       setLoading(true);
       const response = await subscriptionService.updateSubscriptionPlan(planId, data);
-      if (response.success) {
+      if (response.data) {
         await refreshSubscriptionPlans();
       }
       return response;
@@ -140,9 +140,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     try {
       setLoading(true);
       const response = await subscriptionService.deleteSubscriptionPlan(planId);
-      if (response.success) {
-        await refreshSubscriptionPlans();
-      }
+      await refreshSubscriptionPlans();
       return response;
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to delete subscription plan");
@@ -156,7 +154,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     try {
       setLoading(true);
       const response = await subscriptionService.createRestaurantSubscription(data);
-      if (response.success) {
+      if (response.data) {
         await refreshMySubscriptions();
       }
       return response;
@@ -172,7 +170,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     try {
       setLoading(true);
       const response = await subscriptionService.getMySubscriptions();
-      if (response.success) {
+      if (response.data) {
         setMySubscriptions(response.data ? [response.data] : []);
       }
       return response;
@@ -200,7 +198,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     try {
       setLoading(true);
       const response = await subscriptionService.updateSubscription(subscriptionId, data);
-      if (response.success) {
+      if (response.data) {
         await refreshMySubscriptions();
       }
       return response;
@@ -216,7 +214,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     try {
       setLoading(true);
       const response = await subscriptionService.cancelSubscription(subscriptionId, { reason });
-      if (response.success) {
+      if (response.data) {
         await refreshMySubscriptions();
       }
       return response;
@@ -232,7 +230,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     try {
       setLoading(true);
       const response = await subscriptionService.renewSubscription(subscriptionId);
-      if (response.success) {
+      if (response.data) {
         await refreshMySubscriptions();
       }
       return response;
@@ -248,7 +246,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     try {
       setLoading(true);
       const response = await subscriptionService.upgradeSubscription(subscriptionId, data);
-      if (response.success) {
+      if (response.data) {
         await refreshMySubscriptions();
       }
       return response;
@@ -264,7 +262,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     try {
       setLoading(true);
       const response = await subscriptionService.downgradeSubscription(subscriptionId, data);
-      if (response.success) {
+      if (response.data) {
         await refreshMySubscriptions();
       }
       return response;
@@ -280,7 +278,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     try {
       setLoading(true);
       const response = await subscriptionService.getSubscriptionHistory(subscriptionId);
-      if (response.success) {
+      if (response.data) {
         setSubscriptionHistory(response.data || []);
       }
       return response;
@@ -296,7 +294,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     try {
       setLoading(true);
       const response = await subscriptionService.getAllSubscriptions(params);
-      if (response.success) {
+      if (response.data) {
         setAllSubscriptions(response.data || []);
       }
       return response;
@@ -324,7 +322,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     try {
       setLoading(true);
       const response = await subscriptionService.getAllSubscriptionPlans();
-      if (response.success) {
+      if (response.data) {
         setSubscriptionPlans(response.data || []);
       }
     } catch (err: any) {
@@ -338,7 +336,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     try {
       setLoading(true);
       const response = await subscriptionService.getMySubscriptions();
-      if (response.success) {
+      if (response.data) {
         setMySubscriptions(response.data ? [response.data] : []);
       }
     } catch (err: any) {
@@ -352,7 +350,7 @@ export function SubscriptionProvider({ children }: SubscriptionProviderProps) {
     try {
       setLoading(true);
       const response = await subscriptionService.getAllSubscriptions();
-      if (response.success) {
+      if (response.data) {
         setAllSubscriptions(response.data || []);
       }
     } catch (err: any) {

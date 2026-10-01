@@ -71,18 +71,69 @@ export interface CreateOrderFromCheckoutData {
 }
 
 export interface CreateDirectOrderData {
-  restaurantId: string;
+  // Required when the caller isn't a RESTAURANT (e.g. ADMIN); ignored/derived
+  // from the authenticated user otherwise.
+  restaurantId?: string;
   items: Array<{
     productId: string;
     quantity: number;
-    unitPrice: number;
+    unitPrice?: number;
   }>;
-  billingName: string;
-  billingPhone: string;
-  billingEmail?: string;
-  billingAddress: string;
   paymentMethod: "CASH" | "MOBILE_MONEY" | "CARD" | "BANK_TRANSFER";
+  notes?: string;
+  requestedDelivery?: string;
+  // The following fields are accepted by the CreateDirectOrderData interface
+  // for compatibility with other order-creation flows, but are not read by
+  // the current POST /orders/direct backend controller.
+  billingName?: string;
+  billingPhone?: string;
+  billingEmail?: string;
+  billingAddress?: string;
   deliveryInstructions?: string;
+}
+
+export interface PaymentLinkResponse {
+  message: string;
+  data: {
+    token: string;
+    expiresAt: string;
+  };
+}
+
+export interface PublicOrderSummary {
+  orderNumber: string;
+  restaurantName: string;
+  status: Order["status"];
+  paymentStatus: Order["paymentStatus"];
+  currency: string;
+  totalAmount: number;
+  items: Array<{
+    productName: string;
+    quantity: number;
+    unitPrice: number;
+    subtotal: number;
+    unit: string;
+  }>;
+}
+
+export interface PublicOrderSummaryResponse {
+  message: string;
+  data: PublicOrderSummary;
+}
+
+export interface PayViaPaymentLinkData {
+  paymentMethod: "CASH" | "MOBILE_MONEY" | "CARD" | "BANK_TRANSFER";
+  phoneNumber?: string;
+  cardDetails?: {
+    cardNumber: string;
+    cvv: string;
+    expiryMonth: string;
+    expiryYear: string;
+    pin?: string;
+  };
+  bankDetails?: {
+    clientIp?: string;
+  };
 }
 
 export interface UpdateOrderData {
@@ -113,20 +164,6 @@ export interface StatisticsResponse {
   success: boolean;
   data: OrderStatistics;
   message?: string;
-}
-
-export interface PublicOrderSummary {
-  id: string;
-  orderNumber: string;
-  restaurantName: string;
-  currency: string;
-  totalAmount: number;
-  items: Array<{
-    productName: string;
-    quantity: number;
-    unit?: string;
-    subtotal: number;
-  }>;
 }
 
 export const orderService = {
@@ -219,6 +256,29 @@ export const orderService = {
     const response = await axiosClient.post(`/orders/${orderId}/reorder`, {
       ...(paymentMethodId ? { paymentMethodId } : {}),
     });
+    return response.data;
+  },
+
+  generatePaymentLink: async (orderId: string): Promise<PaymentLinkResponse> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(`/orders/${orderId}/payment-link`);
+    return response.data;
+  },
+
+  getOrderByPaymentLink: async (
+    token: string
+  ): Promise<PublicOrderSummaryResponse> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get(`/orders/pay/${token}`);
+    return response.data;
+  },
+
+  payViaPaymentLink: async (
+    token: string,
+    paymentData: PayViaPaymentLinkData
+  ): Promise<any> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(`/orders/pay/${token}`, paymentData);
     return response.data;
   },
 
@@ -333,26 +393,4 @@ export const orderService = {
     }
   },
 
-  // Public (unauthenticated) payment-link flow used by /pay/[token].
-  // NOTE: the backend has no public payment-link endpoints yet; these will throw
-  // a 404 and the page renders its "invalid or expired" state until added.
-  getOrderByPaymentLink: async (
-    token: string
-  ): Promise<{ success: boolean; data: PublicOrderSummary; message?: string }> => {
-    const axiosClient = createAxiosClient();
-    const response = await axiosClient.get(`/orders/public/${token}`);
-    return response.data;
-  },
-
-  payViaPaymentLink: async (
-    token: string,
-    paymentData: {
-      paymentMethod: "CASH" | "MOBILE_MONEY" | "CARD" | "BANK_TRANSFER";
-      phoneNumber?: string;
-    }
-  ): Promise<{ success: boolean; data?: any; message?: string }> => {
-    const axiosClient = createAxiosClient();
-    const response = await axiosClient.post(`/orders/public/${token}/pay`, paymentData);
-    return { success: true, data: response.data.data, message: response.data.message };
-  },
 };

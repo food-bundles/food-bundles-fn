@@ -5,56 +5,51 @@ import { X, Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-
-type Notification = {
-  id: string
-  title: string
-  message: string
-  orderId: string
-  timestamp: string
-  isRead: boolean
-  type: "order_initiated" | "order_completed" | "order_cancelled" | "payment_received"
-}
+import { formatDistanceToNow } from "date-fns"
+import { notificationService, Notification } from "@/app/services/notificationService"
+import { useNotifications } from "@/app/contexts/NotificationContext"
 
 interface NotificationsDrawerProps {
   isOpen: boolean
   onClose: () => void
-  notifications: Notification[]
 }
 
-export default function NotificationsDrawer({
-  isOpen,
-  onClose,
-  notifications: initialNotifications,
-}: NotificationsDrawerProps) {
-  const [notifications, setNotifications] = useState(initialNotifications)
+export default function NotificationsDrawer({ isOpen, onClose }: NotificationsDrawerProps) {
+  const { unreadCount, refreshUnreadCount, markAllAsRead: globalMarkAllRead } = useNotifications()
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [loading, setLoading] = useState(false)
   const [activeFilter, setActiveFilter] = useState<"all" | "read" | "unread">("all")
 
-  // Handle escape key
+  useEffect(() => {
+    if (isOpen) fetchNotifications()
+  }, [isOpen])
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true)
+      const response = await notificationService.getNotifications(1, 20)
+      setNotifications(response.data)
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        onClose()
-      }
+      if (e.key === "Escape" && isOpen) onClose()
     }
-
     document.addEventListener("keydown", handleEscape)
     return () => document.removeEventListener("keydown", handleEscape)
   }, [isOpen, onClose])
 
-  // Prevent body scroll when drawer is open
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden"
-    } else {
-      document.body.style.overflow = "unset"
-    }
+    document.body.style.overflow = isOpen ? "hidden" : "unset"
     return () => {
       document.body.style.overflow = "unset"
     }
   }, [isOpen])
-
-  const unreadCount = notifications.filter((n) => !n.isRead).length
 
   const filteredNotifications = notifications.filter((notification) => {
     if (activeFilter === "read") return notification.isRead
@@ -62,47 +57,40 @@ export default function NotificationsDrawer({
     return true
   })
 
-  const handleMarkAllRead = () => {
-    setNotifications((prev) => prev.map((notification) => ({ ...notification, isRead: true })))
-  }
-
-  const handleMarkAsUnread = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((notification) => (notification.id === id ? { ...notification, isRead: false } : notification)),
-    )
-  }
-
-  const handleMarkAsRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((notification) => (notification.id === id ? { ...notification, isRead: true } : notification)),
-    )
-  }
-
-  const handleDelete = (id: string) => {
-    setNotifications((prev) => prev.filter((notification) => notification.id !== id))
-  }
-
-  const getNotificationBg = (notification: Notification) => {
-    if (!notification.isRead) {
-      return "bg-accent/10 border-accent/20"
+  const handleMarkAllRead = async () => {
+    try {
+      await globalMarkAllRead()
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })))
+    } catch (error) {
+      console.error("Failed to mark all as read:", error)
     }
-    return "bg-card border-border"
   }
 
-  const getStatusBadge = (notification: Notification) => {
-    return (
-      <button
-        onClick={() => handleMarkAsUnread(notification.id)}
-        className="px-2 sm:px-3 py-1 bg-primary/20 text-primary text-[10px] sm:text-xs font-medium rounded-full hover:bg-primary/30 transition-colors whitespace-nowrap"
-      >
-        Mark as unread
-      </button>
-    )
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      await notificationService.markAsRead(id)
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)))
+      refreshUnreadCount()
+    } catch (error) {
+      console.error("Failed to mark as read:", error)
+    }
   }
+
+  const handleDelete = async (id: string) => {
+    try {
+      await notificationService.deleteNotification(id)
+      setNotifications((prev) => prev.filter((n) => n.id !== id))
+      refreshUnreadCount()
+    } catch (error) {
+      console.error("Failed to delete notification:", error)
+    }
+  }
+
+  const getNotificationBg = (notification: Notification) =>
+    notification.isRead ? "bg-card border-border" : "bg-accent/10 border-accent/20"
 
   return (
     <>
-      {/* Backdrop */}
       {isOpen && <div className="fixed inset-0 bg-black/20 z-40" onClick={onClose} />}
 
       <div
@@ -110,14 +98,11 @@ export default function NotificationsDrawer({
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        {/* Header */}
         <div className="sticky top-0 z-10 bg-background border-b border-border flex justify-between items-center p-4 sm:p-6">
           <div className="flex items-center gap-2">
             <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
             <span className="text-lg sm:text-xl font-bold text-foreground">Notifications</span>
-            {unreadCount > 0 && (
-              <Badge className="bg-destructive text-destructive-foreground text-xs">{unreadCount}</Badge>
-            )}
+            {unreadCount > 0 && <Badge className="bg-destructive text-destructive-foreground text-xs">{unreadCount}</Badge>}
           </div>
           <button
             onClick={onClose}
@@ -127,9 +112,7 @@ export default function NotificationsDrawer({
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-          {/* Mark all read button */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 sm:justify-between sm:items-center">
             <p className="text-muted-foreground text-xs sm:text-sm">
               You have {unreadCount} unread notification{unreadCount !== 1 ? "s" : ""}
@@ -143,7 +126,6 @@ export default function NotificationsDrawer({
             </Button>
           </div>
 
-          {/* Filter tabs */}
           <div className="flex items-center gap-4 sm:gap-6 border-b border-border overflow-x-auto">
             {[
               { key: "all", label: "All" },
@@ -164,9 +146,12 @@ export default function NotificationsDrawer({
             ))}
           </div>
 
-          {/* Notifications list */}
           <div className="space-y-3 sm:space-y-4">
-            {filteredNotifications.length === 0 ? (
+            {loading ? (
+              <div className="flex justify-center items-center h-32">
+                <p className="text-muted-foreground text-sm">Loading...</p>
+              </div>
+            ) : filteredNotifications.length === 0 ? (
               <Card>
                 <CardContent className="p-6 sm:p-8 text-center">
                   <p className="text-muted-foreground text-sm">No notifications found</p>
@@ -187,13 +172,17 @@ export default function NotificationsDrawer({
                         <h3 className="font-semibold text-foreground text-xs sm:text-sm flex-1 min-w-0 break-words">
                           {notification.title}
                         </h3>
-                        <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                          {getStatusBadge(notification)}
-                        </div>
+                        {!notification.isRead && (
+                          <span className="px-2 py-1 bg-primary/20 text-primary text-[10px] sm:text-xs font-medium rounded-full whitespace-nowrap">
+                            New
+                          </span>
+                        )}
                       </div>
                       <p className="text-muted-foreground text-xs sm:text-sm break-words">{notification.message}</p>
                       <div className="flex flex-col xs:flex-row gap-2 xs:items-center xs:justify-between">
-                        <p className="text-[10px] xs:text-xs text-muted-foreground">{notification.timestamp}</p>
+                        <p className="text-[10px] xs:text-xs text-muted-foreground">
+                          {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                        </p>
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
