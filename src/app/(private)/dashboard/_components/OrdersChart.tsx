@@ -2,314 +2,165 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   DashboardStats,
   statisticsService,
   StatsFilters,
 } from "@/app/services/statisticsService";
+import {
+  AreaGradient,
+  buildSeries,
+  chartCardClass,
+  ChartPeriodFilter,
+  periodDescription,
+} from "./ChartShared";
 
 interface OrdersChartProps {
   loading?: boolean;
   data?: DashboardStats["orders"];
 }
 
+const chartConfig = {
+  completed: { label: "Completed", color: "#16a34a" },
+  cancelled: { label: "Cancelled", color: "#dc2626" },
+  ongoing: { label: "Ongoing", color: "#2563eb" },
+} satisfies ChartConfig;
+
+type Series = keyof typeof chartConfig;
+const SERIES = ["completed", "cancelled", "ongoing"] as const;
+
+// Orders trend — shadcn "Line Chart - Interactive": click a total to switch the curve
 export function OrdersChart({ loading = false, data }: OrdersChartProps) {
   const [apiData, setApiData] = useState<any>(null);
-  const [localFilters, setLocalFilters] = useState<StatsFilters | null>(null);
-  const [localData, setLocalData] = useState<DashboardStats["orders"] | null>(
-    null
-  );
-  const [localLoading, setLocalLoading] = useState(false);
+  const [filters, setFilters] = useState<StatsFilters>({ year: new Date().getFullYear() });
+  const [fetching, setFetching] = useState(true);
+  const [activeSeries, setActiveSeries] = useState<Series>("completed");
 
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 3 }, (_, i) => currentYear - i);
-  const months = [
-    { value: 1, label: "Jan" },
-    { value: 2, label: "Feb" },
-    { value: 3, label: "Mar" },
-    { value: 4, label: "Apr" },
-    { value: 5, label: "May" },
-    { value: 6, label: "Jun" },
-    { value: 7, label: "Jul" },
-    { value: 8, label: "Aug" },
-    { value: 9, label: "Sep" },
-    { value: 10, label: "Oct" },
-    { value: 11, label: "Nov" },
-    { value: 12, label: "Dec" },
-  ];
-
-
-  const fetchApiData = async (year?: number, month?: number) => {
+  const fetchApiData = async (next: StatsFilters) => {
+    setFetching(true);
     try {
-      const filters: StatsFilters = {};
-      if (year) filters.year = year;
-      if (month) filters.month = month;
-      const response = await statisticsService.getOrderStats(filters);
+      const response = await statisticsService.getOrderStats(next);
       setApiData(response.data);
     } catch (error) {
-      console.error("Error fetching API data:", error);
+      console.error("Error fetching order stats:", error);
+    } finally {
+      setFetching(false);
     }
   };
 
   useEffect(() => {
-    fetchApiData();
+    fetchApiData(filters);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initial load only; filter changes fetch explicitly
   }, []);
 
-  const fetchLocalData = async (filters: StatsFilters) => {
-    setLocalLoading(true);
-    try {
-      const response = await statisticsService.getOrderStats(filters);
-      setLocalData(response.data);
-    } catch (error) {
-      console.error("Error fetching local orders data:", error);
-    } finally {
-      setLocalLoading(false);
-    }
+  const isLoading = loading || (fetching && !apiData);
+  const chartData = buildSeries(apiData?.timeBreakdown, filters, SERIES);
+  const totals: Record<Series, number> = {
+    completed: apiData?.completedOrders ?? data?.completedOrders ?? 0,
+    cancelled: apiData?.cancelledOrders ?? data?.cancelledOrders ?? 0,
+    ongoing: apiData?.ongoingOrders ?? data?.ongoingOrders ?? 0,
   };
-
-  const transformApiToChart = (apiData: any, year?: number, month?: number) => {
-    if (!apiData?.timeBreakdown) return [];
-    
-    if (!year) {
-      return Object.values(apiData.timeBreakdown).map((yearData: any) => ({
-        date: yearData.year.toString(),
-        completed: yearData.completed || 0,
-        cancelled: yearData.cancelled || 0,
-        ongoing: yearData.ongoing || 0,
-        total: yearData.total || 0,
-      }));
-    } else if (year && !month) {
-      const yearData = apiData.timeBreakdown[year];
-      if (!yearData?.months) return [];
-      
-      return Object.values(yearData.months)
-        .sort((a: any, b: any) => a.month - b.month)
-        .map((monthData: any) => ({
-          date: monthData.monthName,
-          completed: monthData.completed || 0,
-          cancelled: monthData.cancelled || 0,
-          ongoing: monthData.ongoing || 0,
-          total: monthData.total || 0,
-        }));
-    } else if (year && month) {
-      const monthData = apiData.timeBreakdown[year]?.months[month];
-      if (!monthData?.weeks) return [];
-      
-      return Object.values(monthData.weeks)
-        .sort((a: any, b: any) => a.week - b.week)
-        .map((weekData: any) => ({
-          date: `Week ${weekData.week}`,
-          completed: weekData.completed || 0,
-          cancelled: weekData.cancelled || 0,
-          ongoing: weekData.ongoing || 0,
-          total: weekData.total || 0,
-        }));
-    }
-    return [];
-  };
-
-  const activeData = localData || data;
-  const isLoading = loading || localLoading;
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-4 w-48" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-64 w-full" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const chartData = apiData
-    ? transformApiToChart(apiData, localFilters?.year, localFilters?.month)
-    : [];
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-sm font-semibold">
-              Orders Trend
-            </CardTitle>
+    <Card className={chartCardClass}>
+      <CardHeader className="flex flex-col gap-0 border-b border-emerald-100/80 p-0!">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-5">
+          <div className="grid gap-1">
+            <CardTitle className="text-sm font-semibold">Orders Trend</CardTitle>
+            <CardDescription className="text-xs">
+              {chartConfig[activeSeries].label} orders · {periodDescription(filters)}
+            </CardDescription>
           </div>
-
-          <div className="flex items-center gap-2">
-            <Select
-              value={localFilters?.year?.toString() || "all"}
-              onValueChange={(value) => {
-                const newFilters = { 
-                  year: value === "all" ? undefined : parseInt(value),
-                  month: undefined
-                };
-                setLocalFilters(newFilters);
-                if (value !== "all") {
-                  fetchApiData(parseInt(value));
-                } else {
-                  fetchApiData();
-                }
-              }}
+          <ChartPeriodFilter
+            filters={filters}
+            onChange={(next) => {
+              setFilters(next);
+              fetchApiData(next);
+            }}
+          />
+        </div>
+        <div className="grid grid-cols-3 border-t border-emerald-100/80">
+          {SERIES.map((series) => (
+            <button
+              key={series}
+              data-active={activeSeries === series}
+              className="relative flex flex-col justify-center gap-1 px-6 py-4 text-left transition-colors not-first:border-l not-first:border-emerald-100/80 hover:bg-white/60 data-[active=true]:bg-white cursor-pointer"
+              onClick={() => setActiveSeries(series)}
             >
-              <SelectTrigger className="h-5 text-xs w-20">
-                <SelectValue placeholder="Year" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all" className="text-xs">All</SelectItem>
-                {years.map((year) => (
-                  <SelectItem
-                    key={year}
-                    value={year.toString()}
-                    className="text-xs"
-                  >
-                    {year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={localFilters?.month?.toString() || "all"}
-              onValueChange={(value) => {
-                const newFilters = {
-                  ...localFilters,
-                  month: value === "all" ? undefined : parseInt(value),
-                };
-                setLocalFilters(newFilters);
-                if (value !== "all" && localFilters?.year) {
-                  fetchApiData(localFilters.year, parseInt(value));
-                } else if (value === "all" && localFilters?.year) {
-                  fetchApiData(localFilters.year);
-                }
-              }}
-              disabled={!localFilters?.year}
-            >
-              <SelectTrigger className="h-5 text-xs w-16">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all" className="text-xs">
-                  All
-                </SelectItem>
-                {months.map((month) => (
-                  <SelectItem
-                    key={month.value}
-                    value={month.value.toString()}
-                    className="text-xs"
-                  >
-                    {month.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+              {/* Active tab underline in the series colour */}
+              {activeSeries === series && (
+                <span
+                  className="absolute inset-x-0 bottom-0 h-0.5"
+                  style={{ backgroundColor: chartConfig[series].color }}
+                />
+              )}
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: chartConfig[series].color }}
+                />
+                {chartConfig[series].label}
+              </span>
+              {isLoading ? (
+                <Skeleton className="h-7 w-12" />
+              ) : (
+                <span className="text-2xl leading-none font-bold">
+                  {totals[series].toLocaleString()}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
       </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="#666" />
-            <YAxis tick={{ fontSize: 10 }} stroke="#666" />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "white",
-                border: "1px solid #e5e7eb",
-                borderRadius: "6px",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                fontSize: "12px", 
-              }}
-              labelStyle={{
-                fontSize: "12px",
-                marginBottom: "2px",
-              }}
-              itemStyle={{
-                fontSize: "12px", 
-                padding: "1px 0",
-              }}
-            />
-
-            <Line
-              type="monotone"
-              dataKey="completed"
-              stroke="#10B981"
-              strokeWidth={1.5}
-              name="Completed"
-              dot={{ fill: "#10B981", strokeWidth: 1, r: 2 }}
-              isAnimationActive={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="cancelled"
-              stroke="#EF4444"
-              strokeWidth={1.5}
-              name="Cancelled"
-              dot={{ fill: "#EF4444", strokeWidth: 1, r: 2 }}
-              isAnimationActive={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="ongoing"
-              stroke="#3B82F6"
-              strokeWidth={1.5}
-              name="Ongoing"
-              dot={{ fill: "#3B82F6", strokeWidth: 1, r: 2 }}
-              isAnimationActive={false}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-
-        {/* Summary Stats */}
-        <div className="grid grid-cols-3 gap-4  border-gray-100">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <p className="text-xs text-gray-500">Completed</p>
-            </div>
-            <p className="text-xs font-semibold text-green-600">
-              {(apiData?.completedOrders || activeData?.completedOrders || 0).toLocaleString()}
-            </p>
-          </div>
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-              <p className="text-xs text-gray-500">Cancelled</p>
-            </div>
-            <p className="text-xs font-semibold text-red-600">
-              {(apiData?.cancelledOrders || activeData?.cancelledOrders || 0).toLocaleString()}
-            </p>
-          </div>
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <p className="text-xs text-gray-500">Ongoing</p>
-            </div>
-            <p className="text-xs font-semibold text-blue-600">
-              {(apiData?.ongoingOrders || activeData?.ongoingOrders || 0).toLocaleString()}
-            </p>
-          </div>
-        </div>
+      <CardContent className="px-2 pt-4 pb-4 sm:px-6 sm:pt-6">
+        {isLoading || fetching ? (
+          <Skeleton className="h-[250px] w-full" />
+        ) : (
+          <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
+            <AreaChart accessibilityLayer data={chartData} margin={{ left: 12, right: 12 }}>
+              <defs>
+                {SERIES.map((s) => (
+                  <AreaGradient key={s} id={`fill-order-${s}`} color={`var(--color-${s})`} />
+                ))}
+              </defs>
+              <CartesianGrid vertical={false} strokeDasharray="3 3" />
+              <XAxis
+                dataKey="label"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                minTickGap={16}
+              />
+              <YAxis tickLine={false} axisLine={false} width={28} allowDecimals={false} />
+              <ChartTooltip content={<ChartTooltipContent className="w-[150px]" />} />
+              <Area
+                key={activeSeries}
+                dataKey={activeSeries}
+                type="monotone"
+                stroke={`var(--color-${activeSeries})`}
+                strokeWidth={2.5}
+                fill={`url(#fill-order-${activeSeries})`}
+                dot={{ r: 3, strokeWidth: 2, fill: "white" }}
+                activeDot={{ r: 5 }}
+              />
+            </AreaChart>
+          </ChartContainer>
+        )}
       </CardContent>
     </Card>
   );

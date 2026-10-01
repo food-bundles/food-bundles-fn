@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   User,
   Phone,
@@ -17,6 +17,8 @@ import {
   Gift,
   Tag,
   CheckCircle2,
+  Smartphone,
+  RefreshCcw,
 } from "lucide-react";
 import { promoService, IPromoCode } from "@/app/services/promoService";
 import { toast } from "sonner";
@@ -32,6 +34,7 @@ import { useCart } from "@/app/contexts/cart-context";
 import { useAuth } from "@/app/contexts/auth-context";
 import { useVouchers } from "@/app/contexts/VoucherContext";
 import { useWallet } from "@/app/contexts/WalletContext";
+import { voucherService } from "@/app/services/voucherService";
 import {
   checkoutService,
   CheckoutRequest,
@@ -83,6 +86,7 @@ const getUserFullAddress = (user: any): string => {
 };
 
 type PaymentMethod = "prepaid" | "momo" | "card" | "voucher";
+type PaymentMethodOrEmpty = PaymentMethod | "";
 
 export function Checkout() {
   const { cart, totalItems, totalQuantity, totalAmount, isLoading } = useCart();
@@ -92,7 +96,14 @@ export function Checkout() {
   const [showFlutterwaveInfo, setShowFlutterwaveInfo] = useState(false);
   const [flutterwaveRedirectUrl, setFlutterwaveRedirectUrl] =
     useState<string>("");
+  const [showPendingCheckoutModal, setShowPendingCheckoutModal] = useState(false);
+  const [pendingCheckoutOrderId, setPendingCheckoutOrderId] = useState("");
+  const [checkoutStage, setCheckoutStage] = useState<"redirect" | "pending" | null>(null);
+  const [pendingCheckoutNotice, setPendingCheckoutNotice] = useState("");
+  const [isCheckingOrder, setIsCheckingOrder] = useState(false);
+  const checkoutCheckInFlight = useRef(false);
   const [availableVouchers, setAvailableVouchers] = useState<any[]>([]);
+  const [loanSessions, setLoanSessions] = useState<any[]>([]);
   const [isLoadingVouchers, setIsLoadingVouchers] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodType[]>([]);
   const [isLoadingPaymentMethods, setIsLoadingPaymentMethods] = useState(true);
@@ -113,6 +124,7 @@ export function Checkout() {
     cardExpiryMonth: "",
     cardExpiryYear: "",
     voucherCode: "",
+    loanSessionRrn: "",
   });
 
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
@@ -121,14 +133,16 @@ export function Checkout() {
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [paymentFailed, setPaymentFailed] = useState(false);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [checkoutSessionId, setCheckoutSessionId] = useState("");
   const [verificationError, setVerificationError] = useState("");
   const [verificationType, setVerificationType] = useState<"OTP" | "2FA">("OTP");
+  const [isConverting, setIsConverting] = useState(false);
   const [otherServices, setOtherServices] = useState(false);
-  const [method, setMethod] = useState<PaymentMethod>("momo");
+  const [method, setMethod] = useState<PaymentMethodOrEmpty>("");
 
   // Promo Code State
   const [promoCode, setPromoCode] = useState("");
@@ -201,11 +215,20 @@ export function Checkout() {
           );
           setPaymentMethods(filteredMethods);
           // Set default payment method to first available (preferably CASH for prepaid)
-          const cashMethod = filteredMethods.find((pm: PaymentMethodType) => pm.name === "CASH");
-          if (cashMethod) {
-            setSelectedPaymentMethodId(cashMethod.id);
-          } else if (filteredMethods.length > 0) {
-            setSelectedPaymentMethodId(filteredMethods[0].id);
+          const methodOrder = ["MOBILE_MONEY", "CASH", "CARD", "VOUCHER"];
+          const defaultMethod = methodOrder.find((name) =>
+            filteredMethods.some((pm: PaymentMethodType) => pm.name === name)
+          );
+          if (defaultMethod) {
+            const methodMap: Record<string, PaymentMethod> = {
+              MOBILE_MONEY: "momo",
+              CASH: "prepaid",
+              CARD: "card",
+              VOUCHER: "voucher",
+            };
+            setMethod(methodMap[defaultMethod]);
+            const pm = filteredMethods.find((p: PaymentMethodType) => p.name === defaultMethod);
+            if (pm) setSelectedPaymentMethodId(pm.id);
           }
         }
       } catch (error) {
@@ -278,29 +301,15 @@ export function Checkout() {
 
   // Update selected payment method ID when payment method changes
   useEffect(() => {
-    if (paymentMethods.length > 0) {
-      let targetPaymentMethod;
-
-      switch (method) {
-        case "prepaid":
-          targetPaymentMethod = paymentMethods.find((pm: PaymentMethodType) => pm.name === "CASH");
-          break;
-        case "momo":
-          targetPaymentMethod = paymentMethods.find((pm: PaymentMethodType) => pm.name === "MOBILE_MONEY");
-          break;
-        case "card":
-          targetPaymentMethod = paymentMethods.find((pm: PaymentMethodType) => pm.name === "CARD");
-          break;
-        case "voucher":
-          targetPaymentMethod = paymentMethods.find((pm: PaymentMethodType) => pm.name === "VOUCHER");
-          break;
-        default:
-          targetPaymentMethod = paymentMethods[0];
-      }
-
-      if (targetPaymentMethod) {
-        setSelectedPaymentMethodId(targetPaymentMethod.id);
-      }
+    if (paymentMethods.length > 0 && method) {
+      const nameMap: Record<string, string> = {
+        prepaid: "CASH",
+        momo: "MOBILE_MONEY",
+        card: "CARD",
+        voucher: "VOUCHER",
+      };
+      const target = paymentMethods.find((pm: PaymentMethodType) => pm.name === nameMap[method]);
+      if (target) setSelectedPaymentMethodId(target.id);
     }
   }, [method, paymentMethods]);
 
@@ -318,23 +327,30 @@ export function Checkout() {
         }
       };
       fetchVouchers();
-    } else if (method !== "voucher") {
+
+      // Fetch active loan sessions (PAN-based voucher card) from the new system
+      const fetchLoanSessions = async () => {
+        try {
+          const res: any = await voucherService.getMyLoanSessions();
+          const sessions = Array.isArray(res?.data) ? res.data : [];
+          const usable = sessions.filter((s: any) =>
+            (s.status === "ACTIVE" || s.status === "PARTIALLY_USED") &&
+            s.unlockStatus === "UNLOCKED" &&
+            ((s.approvedAmount ?? 0) - (s.amountUsed ?? 0)) > 0
+          );
+          setLoanSessions(usable);
+        } catch (error) {
+          console.error("Error fetching loan sessions:", error);
+          setLoanSessions([]);
+        }
+      };
+      fetchLoanSessions();
+    } else if (method && method !== "voucher") {
       setAvailableVouchers([]);
+      setLoanSessions([]);
       setIsLoadingVouchers(false);
     }
   }, [method, isAuthenticated, getMyVouchers]);
-
-  useEffect(() => {
-    if (method === "voucher" && myVouchers && myVouchers.length > 0) {
-      const validVouchers = myVouchers.filter((voucher: any) =>
-        voucher.status === "ACTIVE" &&
-        voucher.remainingCredit > 0 &&
-        (!voucher.expiryDate || new Date(voucher.expiryDate) > new Date())
-      );
-      console.log('Valid vouchers found:', validVouchers);
-      setAvailableVouchers(validVouchers);
-    }
-  }, [myVouchers, method]);
 
   // Check subscription benefits
   const cartWithRestaurant = cart as any;
@@ -348,19 +364,22 @@ export function Checkout() {
   const hasFreeDelivery = subscriptionPlan?.freeDelivery || false;
   const hasOtherServices = subscriptionPlan?.otherServices || false;
 
-  // Calculate fees
-  const deliveryFee = 0; // Currently free for all users
+  // Mirror the backend fee rules: delivery is free between 4-9 AM (off-peak) or
+  // when the plan includes free delivery; otherwise it is 5,000 RWF.
+  const currentHour = new Date().getHours();
+  const isOffPeakHours = currentHour >= 4 && currentHour < 9;
+  const deliveryFee = hasFreeDelivery || isOffPeakHours ? 0 : 5000;
   const packagingFee = hasOtherServices ? 0 : (otherServices ? 15000 : 0);
 
   // Calculate totals based on promo response
   let subtotalAmount = totalAmount;
   let promoDiscount = 0;
-  let finalTotal = totalAmount + packagingFee;
+  let finalTotal = totalAmount + deliveryFee + packagingFee;
 
   if (appliedPromo) {
     subtotalAmount = appliedPromo.originalAmount;
     promoDiscount = appliedPromo.discountAmount;
-    finalTotal = appliedPromo.finalAmount + packagingFee;
+    finalTotal = appliedPromo.finalAmount + deliveryFee + packagingFee;
   }
 
   const summaryData = {
@@ -372,6 +391,37 @@ export function Checkout() {
     packagingFee,
     total: finalTotal,
   };
+
+  useEffect(() => {
+    if (method === "voucher" && (myVouchers || loanSessions.length > 0)) { // eslint-disable-line
+      const validVouchers = (myVouchers || []).filter((voucher: any) =>
+        voucher.status === "ACTIVE" &&
+        voucher.remainingCredit > 0 &&
+        (!voucher.expiryDate || new Date(voucher.expiryDate) > new Date())
+      );
+
+      const loanOptions = loanSessions.map((s: any) => ({
+        ...s,
+        id: `loan-${s.id}`,
+        source: "LOAN",
+        voucherCode: s.rrn,
+        remainingCredit: (s.approvedAmount ?? 0) - (s.amountUsed ?? 0),
+        loanLabel: `Loan ${s.rrn}`,
+      }));
+
+      const voucherOptions = validVouchers.map((v: any) => ({
+        ...v,
+        source: "VOUCHER",
+        loanLabel: `Voucher ${v.voucherCode}`,
+      }));
+
+      console.log("Valid vouchers found:", validVouchers);
+      console.log("Usable loan sessions found:", loanSessions);
+      setAvailableVouchers([...loanOptions, ...voucherOptions]);
+    } else if (method === "voucher") {
+      setAvailableVouchers([]);
+    }
+  }, [myVouchers, loanSessions, method]);
 
   const handleInputChange = (field: string, value: string) => {
     if (field === "deliveryAddress" && value.trim()) {
@@ -468,10 +518,10 @@ export function Checkout() {
     }
 
 
-    // Voucher validation
+    // Voucher validation — accepts legacy voucher code OR loan session RRN
     if (method === "voucher") {
-      if (!formData.voucherCode.trim()) {
-        newErrors.voucherCode = "Voucher code is required";
+      if (!formData.voucherCode.trim() && !formData.loanSessionRrn.trim()) {
+        newErrors.voucherCode = "Voucher or loan session is required";
       }
     }
 
@@ -489,6 +539,11 @@ export function Checkout() {
     setIsSubmitting(true);
 
     try {
+      if (!method) {
+        setErrors({ submit: "Please select a payment method." });
+        return;
+      }
+
       const paymentMethodMap = {
         prepaid: "CASH" as const,
         momo: "MOBILE_MONEY" as const,
@@ -499,27 +554,36 @@ export function Checkout() {
       // Validate prepaid balance
       if (method === "prepaid") {
         if (!wallet) {
-          setErrors({ submit: "Prepaid account not found. Please create one first." });
+          setErrors({ submit: "No prepaid wallet found. Please create one first.", submitLink: "/restaurant/wallet" });
           return;
         }
         if (walletBalance < finalTotal) {
-          setErrors({ submit: `Insufficient prepaid balance. Available: ${walletBalance.toLocaleString()} RWF, Required: ${finalTotal.toLocaleString()} RWF` });
+          setErrors({ submit: `Insufficient prepaid balance. Available: ${walletBalance.toLocaleString()} RWF, Required: ${finalTotal.toLocaleString()} RWF. Please top up.`, submitLink: "/restaurant/deposits" });
           return;
         }
       }
 
-      // Use the selected payment method ID (already updated by useEffect)
-      const paymentMethodId = selectedPaymentMethodId;
+      // Use the selected payment method ID (already updated by useEffect),
+        // falling back to a direct lookup so the API always receives an ID
+        const paymentMethodId =
+          selectedPaymentMethodId ||
+          paymentMethods.find(
+            (pm: PaymentMethodType) => pm.name === paymentMethodMap[method as PaymentMethod]
+          )?.id ||
+          paymentMethods[0]?.id;
 
-      if (!paymentMethodId) {
-        setErrors({ submit: "Please select a valid payment method." });
-        return;
-      }
+        if (!paymentMethodId) {
+          setErrors({
+            submit:
+              "No active payment method found. Please contact the administrator.",
+          });
+          return;
+        }
 
       const checkoutPayload: CheckoutRequest = {
         cartId: cart!.id,
         paymentMethodId: paymentMethodId,
-        paymentMethod: paymentMethodMap[method],
+        paymentMethod: paymentMethodMap[method as PaymentMethod],
         billingName: formData.fullName,
         billingEmail: method === "card" ? user?.email || "" : undefined,
         billingPhone:
@@ -538,7 +602,11 @@ export function Checkout() {
 
 
       if (method === "voucher") {
-        checkoutPayload.voucherCode = formData.voucherCode;
+        if (formData.loanSessionRrn.trim()) {
+          checkoutPayload.loanSessionRrn = formData.loanSessionRrn;
+        } else {
+          checkoutPayload.voucherCode = formData.voucherCode;
+        }
       }
 
       if (appliedPromo) {
@@ -548,7 +616,7 @@ export function Checkout() {
       const response = await checkoutService.createCheckout(checkoutPayload);
 
       if (response.success) {
-        localStorage.setItem("selectedPaymentMethod", paymentMethodMap[method]);
+        localStorage.setItem("selectedPaymentMethod", paymentMethodMap[method as PaymentMethod]);
 
         // Handle voucher verification requirement
         if (method === "voucher" && response.requiresVerification) {
@@ -563,14 +631,27 @@ export function Checkout() {
         const requiresRedirect = responseData?.requiresRedirect;
         const redirectUrl = responseData?.redirectUrl;
         const paymentProvider = responseData?.checkout?.paymentProvider;
+        const orderId = responseData?.checkout?.id || "";
 
         if (requiresRedirect && redirectUrl && paymentProvider === "FLUTTERWAVE") {
-          // Flutterwave requires redirect - show modal
+          // Flutterwave requires redirect - show modal, then track the order
+          // to confirmation so we can leave the payment page automatically.
+          setPendingCheckoutOrderId(orderId);
           setFlutterwaveRedirectUrl(redirectUrl);
           setShowFlutterwaveInfo(true);
         } else if (paymentProvider === "PAYPACK") {
-          // Paypack sends USSD to phone - redirect to orders
-          window.location.href = "/restaurant";
+          // Paypack sends a USSD request to the phone - keep this page and
+          // track the order until payment is confirmed.
+          if (orderId) {
+            setPendingCheckoutOrderId(orderId);
+            setPendingCheckoutNotice(
+              `A PayPack payment request has been sent to ${formData.momoPhoneNumber}. Please approve it on your phone. Your order is placed the moment payment is confirmed.`
+            );
+            setCheckoutStage("pending");
+            setShowPendingCheckoutModal(true);
+          } else {
+            window.location.href = "/restaurant";
+          }
         } else {
           window.location.href = "/restaurant";
         }
@@ -578,6 +659,7 @@ export function Checkout() {
         setErrors({
           submit: response.message || "Checkout failed. Please try again.",
         });
+        setPaymentFailed(true);
       }
     } catch (error) {
       console.error("Checkout error:", error);
@@ -588,10 +670,111 @@ export function Checkout() {
   };
 
   const handleFlutterwaveRedirect = () => {
-    if (flutterwaveRedirectUrl) {
+    if (!flutterwaveRedirectUrl) return;
+    if (pendingCheckoutOrderId) {
+      try {
+        localStorage.setItem(
+          "fb_pending_checkout",
+          JSON.stringify({
+            orderId: pendingCheckoutOrderId,
+            redirectUrl: flutterwaveRedirectUrl,
+          })
+        );
+      } catch (e) {
+        console.warn(e);
+      }
+      // Redirect the user to Flutterwave's hosted payment page. Once payment is
+      // confirmed there, the order is placed automatically.
       window.location.href = flutterwaveRedirectUrl;
+      return;
     }
+    // No order id to track — fall back to the original redirect behavior.
+    window.location.href = flutterwaveRedirectUrl;
   };
+
+  // If the user was redirected to Flutterwave and comes back to this page,
+  // resume tracking the payment until the order is confirmed.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("fb_pending_checkout");
+      if (!raw) return;
+      const pending = JSON.parse(raw);
+      if (pending?.orderId && !pendingCheckoutOrderId && !showPendingCheckoutModal) {
+        setPendingCheckoutOrderId(pending.orderId);
+        setPendingCheckoutNotice(
+          "Resuming your card payment. Complete it on Flutterwave's page — your order is placed once payment is confirmed."
+        );
+        setCheckoutStage("pending");
+        setShowPendingCheckoutModal(true);
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+  }, [pendingCheckoutOrderId, showPendingCheckoutModal]);
+
+  const performCheckoutCheck = useCallback(
+    async (options?: { silent?: boolean }) => {
+      if (!pendingCheckoutOrderId) return;
+      if (checkoutCheckInFlight.current) return;
+      checkoutCheckInFlight.current = true;
+      const { silent = false } = options || {};
+      if (!silent) setIsCheckingOrder(true);
+      try {
+        const res = await checkoutService.getCheckoutStatus(pendingCheckoutOrderId);
+        const data = res?.data || {};
+        if (data.paymentStatus === "COMPLETED") {
+          try {
+            localStorage.removeItem("fb_pending_checkout");
+          } catch (e) {
+            console.warn(e);
+          }
+          toast.success("Payment confirmed! Your order has been placed.");
+          window.location.href = "/restaurant";
+          return;
+        }
+        if (!silent && (data.paymentStatus === "FAILED" || data.paymentStatus === "CANCELLED")) {
+          setPendingCheckoutNotice(
+            "Payment was not completed. If you were charged, your order is safe and we will confirm it shortly."
+          );
+          toast.error("Payment not completed. Please check with support if you were charged.");
+        } else if (!silent) {
+          setPendingCheckoutNotice(
+            data.message ||
+              "Payment not confirmed yet. Please complete it on your phone or in the payment tab."
+          );
+        }
+      } catch (err: any) {
+        if (!silent) {
+          const msg =
+            err?.response?.data?.message ||
+            "Could not check payment status. Please try again.";
+          setPendingCheckoutNotice(msg);
+          toast.error(msg);
+        }
+      } finally {
+        checkoutCheckInFlight.current = false;
+        if (!silent) setIsCheckingOrder(false);
+      }
+    },
+    [pendingCheckoutOrderId]
+  );
+
+  // Auto-poll the order status while the user completes the payment.
+  useEffect(() => {
+    if (!showPendingCheckoutModal || checkoutStage !== "pending" || !pendingCheckoutOrderId) return;
+
+    let attempts = 0;
+    const intervalId = setInterval(() => {
+      attempts += 1;
+      if (attempts > 36) {
+        clearInterval(intervalId);
+        return;
+      }
+      performCheckoutCheck({ silent: true });
+    }, 5000);
+
+    return () => clearInterval(intervalId);
+  }, [showPendingCheckoutModal, checkoutStage, pendingCheckoutOrderId, performCheckoutCheck]);
 
   const handleVerification = async (code: string, type: "OTP" | "2FA") => {
     if (!code.trim()) {
@@ -620,6 +803,59 @@ export function Checkout() {
       throw error;
     } finally {
       setIsVerifying(false);
+    }
+  };
+
+  // Convert a selected loan session's remaining credit into the prepaid wallet.
+  // The voucher is consumed (used once) and the wallet balance increases so the
+  // order can be paid from the wallet instead. Falls back to the prepaid method.
+  const handleConvertLoanToWallet = async (rrn: string) => {
+    if (!rrn.trim()) return;
+    setIsConverting(true);
+    setVerificationError("");
+    try {
+      const res: any = await voucherService.convertLoanToWallet(rrn);
+      toast.success(
+        res?.message || "Voucher amount added to your prepaid wallet"
+      );
+
+      try {
+        await getMyWallet();
+      } catch {
+        // wallet refresh is best-effort
+      }
+
+      // Clear the consumed loan; switch to prepaid so the user pays from wallet.
+      handleInputChange("loanSessionRrn", "");
+      handleInputChange("voucherCode", "");
+      if (paymentMethods.some((pm: PaymentMethodType) => pm.name === "CASH")) {
+        setMethod("prepaid");
+      }
+
+      // Refresh the loan session list (the consumed session is now FULLY_USED).
+      try {
+        const sessionsRes: any = await voucherService.getMyLoanSessions();
+        const sessions = Array.isArray(sessionsRes?.data)
+          ? sessionsRes.data
+          : [];
+        setLoanSessions(
+          sessions.filter(
+            (s: any) =>
+              (s.status === "ACTIVE" || s.status === "PARTIALLY_USED") &&
+              s.unlockStatus === "UNLOCKED" &&
+              ((s.approvedAmount ?? 0) - (s.amountUsed ?? 0)) > 0
+          )
+        );
+      } catch {
+        // ignore — the list refreshes next time the voucher method is selected
+      }
+    } catch (error: any) {
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to move voucher amount to wallet"
+      );
+    } finally {
+      setIsConverting(false);
     }
   };
 
@@ -658,6 +894,13 @@ export function Checkout() {
               <div className="flex justify-between text-gray-900">
                 <span>Other services</span>
                 <span>Rwf {packagingFee.toLocaleString()}</span>
+              </div>
+            )}
+
+            {deliveryFee > 0 && (
+              <div className="flex justify-between text-gray-900">
+                <span>Delivery</span>
+                <span>Rwf {deliveryFee.toLocaleString()}</span>
               </div>
             )}
 
@@ -764,7 +1007,24 @@ export function Checkout() {
         <div className="w-full lg:w-2/3 p-6 lg:p-8">
           {errors.submit && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm mb-4">
-              {errors.submit}
+              <p className="font-medium">{errors.submit}</p>
+              {errors.submitLink && (
+                <Link
+                  href={errors.submitLink}
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+                >
+                  {errors.submitLink === "/restaurant/wallet" ? "Create Wallet" : "Top Up Balance"}
+                </Link>
+              )}
+              {paymentFailed && (
+                <button
+                  type="button"
+                  onClick={() => { window.location.href = "/restaurant/orders"; }}
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
+                >
+                  View Order & Retry Payment
+                </button>
+              )}
             </div>
           )}
 
@@ -893,14 +1153,12 @@ export function Checkout() {
                           Add other services: +15,000F
                         </label>
                       </div>
-                      {otherServices && (
-                        <div className="ml-6 text-xs text-gray-600">
-                          <div>- Packaging per item</div>
-                          <div>- Labeling stickers</div>
-                          <div>- Cutting (meat preparation)</div>
-                          <div>- Extra cleaning</div>
-                        </div>
-                      )}
+                      <div className="ml-6 text-xs text-gray-600">
+                        <div>- Packaging per item</div>
+                        <div>- Labeling stickers</div>
+                        <div>- Cutting (meat preparation)</div>
+                        <div>- Extra cleaning</div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -911,42 +1169,60 @@ export function Checkout() {
                     <label className="text-[14px] font-medium text-gray-900 mb-2 block">
                       Payment Method
                     </label>
-                    <Select
-                      value={method}
-                      onValueChange={(value: PaymentMethod) => setMethod(value)}
-                      disabled={isSubmitting}
-                    >
-                      <SelectTrigger className={`w-full h-10 ${
-                        method === "prepaid" ? "text-blue-600" :
-                        method === "momo" ? "text-green-600" :
-                        method === "card" ? "text-purple-600" :
-                        method === "voucher" ? "text-orange-600" : ""
-                      }`}>
-                        <SelectValue placeholder="Select payment method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="prepaid" disabled={!wallet || walletBalance < finalTotal}>
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            Prepaid
-                          </span>
-                        </SelectItem>
-                        <SelectItem value="momo">
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            MoMo
-                          </span>
-                        </SelectItem>
-                        <SelectItem value="card">
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                            Card
-                          </span>
-                        </SelectItem>
-                        <SelectItem value="voucher">
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                            Voucher
-                          </span>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {isLoadingPaymentMethods ? (
+                      <div className="h-10 flex items-center">
+                        <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                      </div>
+                    ) : paymentMethods.length === 0 ? (
+                      <p className="text-xs text-red-600 border border-red-200 bg-red-50 rounded px-3 py-2">
+                        Something went wrong.
+                      </p>
+                    ) : (
+                      <Select
+                        value={method}
+                        onValueChange={(value: string) => setMethod(value as PaymentMethod)}
+                        disabled={isSubmitting}
+                      >
+                        <SelectTrigger className={`w-full h-10 ${
+                          method === "prepaid" ? "text-blue-600" :
+                          method === "momo" ? "text-green-600" :
+                          method === "card" ? "text-purple-600" :
+                          method === "voucher" ? "text-orange-600" : ""
+                        }`}>
+                          <SelectValue placeholder="Select payment method" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {paymentMethods.some((pm) => pm.name === "CASH") && (
+                            <SelectItem value="prepaid">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                Prepaid
+                              </span>
+                            </SelectItem>
+                          )}
+                          {paymentMethods.some((pm) => pm.name === "MOBILE_MONEY") && (
+                            <SelectItem value="momo">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                MoMo
+                              </span>
+                            </SelectItem>
+                          )}
+                          {paymentMethods.some((pm) => pm.name === "CARD") && (
+                            <SelectItem value="card">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                Card
+                              </span>
+                            </SelectItem>
+                          )}
+                          {paymentMethods.some((pm) => pm.name === "VOUCHER") && (
+                            <SelectItem value="voucher">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                Voucher
+                              </span>
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
                 </div>
               </div>
@@ -954,21 +1230,42 @@ export function Checkout() {
               {/* Prepaid Balance Display */}
               {method === "prepaid" && (
                 <div className="mt-3 p-3 bg-gray-50 rounded border">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-700">Available Balance:</span>
-                    <span className="font-medium text-green-600">
-                      {walletBalance.toLocaleString()} RWF
-                    </span>
-                  </div>
-                  {walletBalance < finalTotal && (
-                    <p className="text-xs text-red-600 mt-1">
-                      Insufficient balance. Need {(finalTotal - walletBalance).toLocaleString()} RWF more.
-                    </p>
-                  )}
-                  {!wallet && (
-                    <p className="text-xs text-red-600 mt-1">
-                      No prepaid account found. Please create one first.
-                    </p>
+                  {!wallet ? (
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-medium text-gray-800">No prepaid wallet found</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Create a wallet to use prepaid payments.</p>
+                      </div>
+                      <Link
+                        href="/restaurant/wallet"
+                        className="shrink-0 inline-flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors"
+                      >
+                        Create Wallet
+                      </Link>
+                    </div>
+                  ) : walletBalance < finalTotal ? (
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-gray-700">Balance:</span>
+                          <span className="text-xs font-medium text-gray-900 ml-2">{walletBalance.toLocaleString()} RWF</span>
+                        </div>
+                        <p className="text-xs text-red-600 mt-0.5">
+                          Need {(finalTotal - walletBalance).toLocaleString()} RWF more to proceed.
+                        </p>
+                      </div>
+                      <Link
+                        href="/restaurant/deposits"
+                        className="shrink-0 inline-flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors"
+                      >
+                        Top Up
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-700">Available Balance:</span>
+                      <span className="text-xs font-medium text-green-600">{walletBalance.toLocaleString()} RWF</span>
+                    </div>
                   )}
                 </div>
               )}
@@ -1047,13 +1344,24 @@ export function Checkout() {
                   ) : availableVouchers.length > 0 ? (
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-gray-700">
-                        Select Voucher
+                        Select Voucher / Loan
                       </label>
                       <Select
-                        value={formData.voucherCode}
-                        onValueChange={(value) =>
-                          handleInputChange("voucherCode", value)
+                        value={
+                          formData.loanSessionRrn || formData.voucherCode
                         }
+                        onValueChange={(value) => {
+                          const selected = availableVouchers.find(
+                            (v) => v.voucherCode === value
+                          );
+                          if (selected?.source === "LOAN") {
+                            handleInputChange("voucherCode", "");
+                            handleInputChange("loanSessionRrn", value);
+                          } else {
+                            handleInputChange("loanSessionRrn", "");
+                            handleInputChange("voucherCode", value);
+                          }
+                        }}
                         disabled={isSubmitting}
                       >
                         <SelectTrigger
@@ -1062,7 +1370,7 @@ export function Checkout() {
                             : "border-gray-300"
                             }`}
                         >
-                          <SelectValue placeholder="Select a voucher" />
+                          <SelectValue placeholder="Select a voucher or loan" />
                         </SelectTrigger>
                         <SelectContent>
                           {availableVouchers.map((voucher) => (
@@ -1071,10 +1379,16 @@ export function Checkout() {
                               value={voucher.voucherCode}
                             >
                               <span className="block sm:hidden">
-                                {voucher.voucherCode} - {voucher.remainingCredit.toLocaleString()} RWF
+                                {voucher.source === "LOAN"
+                                  ? `Loan ${voucher.voucherCode}`
+                                  : voucher.voucherCode}{" "}
+                                - {voucher.remainingCredit.toLocaleString()} RWF
                               </span>
                               <span className="hidden sm:block">
-                                {voucher.voucherCode} - {voucher.remainingCredit.toLocaleString()} RWF available
+                                {voucher.source === "LOAN"
+                                  ? `Loan ${voucher.voucherCode}`
+                                  : voucher.voucherCode}{" "}
+                                - {voucher.remainingCredit.toLocaleString()} RWF available
                               </span>
                             </SelectItem>
                           ))}
@@ -1085,11 +1399,81 @@ export function Checkout() {
                           {errors.voucherCode}
                         </p>
                       )}
+                      {(() => {
+                        const selected = formData.loanSessionRrn || formData.voucherCode
+                          ? availableVouchers.find(
+                              (v) =>
+                                v.voucherCode ===
+                                (formData.loanSessionRrn || formData.voucherCode)
+                            )
+                          : null;
+                        // A voucher/loan can never cover PART of an order. When
+                        // the selected item's credit is below the order total:
+                        //  - a LOAN can be converted: its remaining value is
+                        //    moved into the prepaid wallet (voucher consumed) so
+                        //    the order can be paid from the wallet instead.
+                        //  - a regular VOUCHER must simply not be used for this
+                        //    order.
+                        if (selected && selected.remainingCredit < finalTotal) {
+                          if (selected.source === "LOAN") {
+                            return (
+                              <div className="rounded-md border border-blue-200 bg-blue-50 p-3 space-y-2">
+                                <p className="text-xs text-blue-800 flex items-start gap-1">
+                                  <Info className="h-3 w-3 mt-0.5 shrink-0" />
+                                  This loan has{" "}
+                                  {selected.remainingCredit.toLocaleString()} RWF but your order
+                                  total is {finalTotal.toLocaleString()} RWF. A voucher can&rsquo;t
+                                  pay for part of an order. Move this loan credit to your prepaid
+                                  wallet to consume the voucher loan, then top up the wallet if
+                                  needed and return here to complete your order payment.
+                                </p>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleConvertLoanToWallet(selected.voucherCode)
+                                  }
+                                  disabled={isConverting}
+                                  className="w-full h-9 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded transition-colors flex items-center justify-center gap-2"
+                                >
+                                  {isConverting ? (
+                                    <>
+                                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                      Moving to wallet...
+                                    </>
+                                  ) : (
+                                    <>
+                                      Move {selected.remainingCredit.toLocaleString()} RWF to
+                                      prepaid wallet (uses this voucher)
+                                    </>
+                                  )}
+                                </button>
+                                <p className="text-[10px] text-blue-500">
+                                  After moving, pay for this order from your prepaid wallet (top up
+                                  the wallet first if it&rsquo;s still short).
+                                </p>
+                              </div>
+                            );
+                          }
+                          return (
+                            <div className="rounded-md border border-red-200 bg-red-50 p-3">
+                              <p className="text-xs text-red-700 flex items-start gap-1">
+                                <Info className="h-3 w-3 mt-0.5 shrink-0" />
+                                This voucher has{" "}
+                                {selected.remainingCredit.toLocaleString()} RWF, which is less than
+                                the order total of {finalTotal.toLocaleString()} RWF. A voucher
+                                can&rsquo;t pay for part of an order — please choose another
+                                payment method.
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                   ) : (
                     <div className="text-center py-4 border border-gray-200 rounded-lg bg-gray-50">
                       <p className="text-xs text-gray-600 mb-3">
-                        You don&rsquo;t have any active vouchers
+                        You don&rsquo;t have any active vouchers or approved loans
                       </p>
                       <Link
                         href="/restaurant/vouchers"
@@ -1195,9 +1579,31 @@ export function Checkout() {
 
             <div className="p-4 space-y-4">
               <p className="text-xs text-gray-700">
-                You will be redirected to complete your payment. Choose your
-                preferred payment method:
+                Here is how the card payment works:
               </p>
+              <ol className="text-xs text-gray-700 space-y-2 list-decimal list-inside">
+                <li>Click <span className="font-medium">Continue</span> below.</li>
+                <li>
+                  You'll be taken to <span className="font-medium">Flutterwave's secure page</span>{" "}
+                  to enter your card details and complete the payment.
+                </li>
+                <li>
+                  As soon as payment is confirmed, your order is placed
+                  automatically.
+                </li>
+              </ol>
+
+              {flutterwaveRedirectUrl && (
+                <div className="rounded bg-gray-50 border border-gray-200 p-2">
+                  <p className="text-[11px] uppercase tracking-wide text-gray-500 mb-1">
+                    Payment page link
+                  </p>
+                  <p className="text-xs text-gray-700 break-all font-mono">
+                    {flutterwaveRedirectUrl}
+                  </p>
+                </div>
+              )}
+
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowFlutterwaveInfo(false)}
@@ -1213,6 +1619,81 @@ export function Checkout() {
                   Continue
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Tracking Modal — shown while the payment is being confirmed */}
+      {showPendingCheckoutModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-md w-full max-w-md flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 className="text-[16px] font-medium text-gray-900 flex items-center gap-2">
+                <Smartphone className="h-4 w-4 text-green-500" />
+                Confirming Payment
+              </h3>
+              <button
+                onClick={() => {
+                  try {
+                    localStorage.removeItem("fb_pending_checkout");
+                  } catch (e) {
+                    console.warn(e);
+                  }
+                  setShowPendingCheckoutModal(false);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <Smartphone className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+                  <p className="text-xs text-green-800">{pendingCheckoutNotice}</p>
+                </div>
+                {checkoutStage === "pending" && (
+                  <p className="flex items-center gap-1.5 mt-2 text-xs text-green-700">
+                    <RefreshCcw className="h-3 w-3 animate-spin" />
+                    Checking automatically every 5 seconds. You'll be taken to your orders page the
+                    moment payment is confirmed.
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowPendingCheckoutModal(false);
+                    setCheckoutStage(null);
+                  }}
+                  disabled={isCheckingOrder}
+                  className="flex-1 h-10 border border-gray-300 hover:border-gray-400 text-gray-900 text-[14px] font-medium cursor-pointer disabled:opacity-50"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => performCheckoutCheck({ silent: false })}
+                  disabled={isCheckingOrder}
+                  className="flex-1 h-10 bg-green-600 hover:bg-green-700 text-white text-[14px] font-medium cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isCheckingOrder ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4" />
+                  )}
+                  {isCheckingOrder ? "Checking..." : "I've Paid — Check Status"}
+                </button>
+              </div>
+
+              <a
+                href="/restaurant/orders"
+                className="block text-center text-xs text-blue-600 hover:text-blue-700"
+              >
+                View my orders
+              </a>
             </div>
           </div>
         </div>

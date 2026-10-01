@@ -7,7 +7,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, Copy, Check, RefreshCw, Download, MoreHorizontal, RotateCcw, Share2, Link2 } from "lucide-react";
+import { Eye, Copy, Check, RefreshCw, Download, MoreHorizontal, RotateCcw, Share2, Link2, Pencil } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -375,9 +375,21 @@ export const ordersColumns = (
   onView: (order: Order) => void,
   onDownload: (order: Order) => void,
   onReorder: (order: Order) => void,
-  onShare?: (order: Order) => void,
-  onSharePaymentLink?: (order: Order) => void
-): ColumnDef<Order>[] => [
+  actions?: {
+    onShare?: (order: Order) => void;
+    onSharePaymentLink?: (order: Order) => void;
+    onRetryPayment?: (order: Order) => void;
+    onEdit?: (order: Order) => void;
+  }
+): ColumnDef<Order>[] => {
+  const {
+    onShare,
+    onSharePaymentLink,
+    onRetryPayment,
+    onEdit,
+  } = actions ?? {};
+
+  return [
   {
     id: "select",
     header: ({ table }) => (
@@ -523,10 +535,22 @@ export const ordersColumns = (
     header: "Payment Status",
     cell: ({ row }) => {
       const paymentStatus = row.original.paymentStatus;
+      const paymentMethod = row.original.originalData?.paymentMethod;
       return (
-        <Badge className={getPaymentStatusColor(paymentStatus)}>
-          {getPaymentStatusLabel(paymentStatus)}
-        </Badge>
+        <div className="flex flex-col gap-1">
+          <Badge className={getPaymentStatusColor(paymentStatus)}>
+            {getPaymentStatusLabel(paymentStatus)}
+          </Badge>
+          {onRetryPayment && paymentStatus === "FAILED" && paymentMethod !== "VOUCHER" && (
+            <button
+              onClick={() => onRetryPayment(row.original)}
+              className="text-xs text-green-700 hover:text-green-800 hover:underline flex items-center gap-1 cursor-pointer font-medium"
+            >
+              <RefreshCw className="h-3 w-3" />
+              Retry Payment
+            </button>
+          )}
+        </div>
       );
     },
   },
@@ -535,6 +559,13 @@ export const ordersColumns = (
     header: "Actions",
     cell: ({ row }) => {
       const order = row.original;
+      const ebmReference = order.originalData?.ebmReference;
+
+      const handleDownload = () => {
+        if (ebmReference) {
+          window.open(ebmReference, "_blank");
+        }
+      };
 
       return (
         <DropdownMenu>
@@ -552,6 +583,12 @@ export const ordersColumns = (
               <Eye className="h-4 w-4 mr-2" />
               View Order
             </DropdownMenuItem>
+            {onEdit && ["PENDING", "CONFIRMED"].includes(order.status) && (
+              <DropdownMenuItem onClick={() => onEdit(order)}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit Order
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={() => onReorder(order)}>
               <RotateCcw className="h-4 w-4 mr-2" />
               Reorder
@@ -572,6 +609,18 @@ export const ordersColumns = (
                 Share Payment Link
               </DropdownMenuItem>
             )}
+            {onRetryPayment && order.paymentStatus === "FAILED" && order.originalData?.paymentMethod !== "VOUCHER" && (
+              <DropdownMenuItem onClick={() => onRetryPayment(order)}>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Retry Payment
+              </DropdownMenuItem>
+            )}
+            {ebmReference && (
+              <DropdownMenuItem onClick={handleDownload}>
+                <Download className="h-4 w-4 mr-2" />
+                Download Invoice
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       );
@@ -579,4 +628,5 @@ export const ordersColumns = (
     enableSorting: false,
     enableHiding: false,
   },
-];
+  ];
+};

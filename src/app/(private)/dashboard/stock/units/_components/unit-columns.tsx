@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 
 interface Unit {
   id: string;
-  tableTronicId: number;
   name: string;
   description: string;
   isActive: boolean;
@@ -18,10 +17,6 @@ export const createUnitColumns = (
   onEdit: (unit: Unit) => void,
   onDelete: (unitId: string) => void
 ): ColumnDef<Unit>[] => [
-  {
-    accessorKey: "tableTronicId",
-    header: "Table Tronic ID",
-  },
   {
     accessorKey: "name",
     header: "Name",

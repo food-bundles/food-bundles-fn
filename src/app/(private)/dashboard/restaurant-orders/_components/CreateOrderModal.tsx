@@ -150,6 +150,9 @@ export default function CreateOrderModal({
           quantity: item.quantity,
           unitPrice: item.product.unitPrice,
         })),
+        billingName: selectedRestaurant.name,
+        billingPhone: selectedRestaurant.phone || "",
+        billingAddress: selectedRestaurant.location,
         paymentMethod:
           (selectedPaymentMethod?.name as
             | "CASH"

@@ -218,4 +218,29 @@ export const marketService = {
     const response = await axiosClient.get(`/public/markets/prices/comparison?limit=${limit}`);
     return response.data;
   },
+
+  bulkUpdateMarketStatus: async (ids: string[], isActive: boolean) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch("/markets/bulk-status", {
+      marketIds: ids,
+      isActive,
+    });
+    return response.data;
+  },
+
+  bulkDeleteMarkets: async (ids: string[]) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.delete("/markets/bulk", {
+      data: { marketIds: ids },
+    });
+    return response.data;
+  },
+
+  bulkDeletePriceHistory: async (ids: string[]) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.delete("/markets/prices/bulk", {
+      data: { historyIds: ids },
+    });
+    return response.data;
+  },
 };

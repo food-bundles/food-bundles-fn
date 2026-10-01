@@ -2,186 +2,213 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Ticket, CreditCard, TrendingUp, AlertCircle } from "lucide-react";
 import { voucherService } from "@/app/services/voucherService";
+import { FoodBundlesCard as CardShell } from "@/components/food-bundles-card";
+
+function StatValue({
+  label,
+  value,
+  subValue,
+  loading,
+}: {
+  label: string;
+  value: React.ReactNode;
+  subValue?: string;
+  loading: boolean;
+}) {
+  return (
+    <div className="relative flex-1 flex flex-col justify-center min-h-0">
+      <p className="text-[9px] uppercase tracking-widest text-white/70">{label}</p>
+      {loading ? (
+        <Skeleton className="h-7 w-16 mt-1 bg-white/20" />
+      ) : (
+        <p className="text-2xl font-bold drop-shadow leading-tight">{value}</p>
+      )}
+      {!loading && subValue && (
+        <p className="text-[11px] text-white/70">{subValue}</p>
+      )}
+    </div>
+  );
+}
+
+interface LoanSession {
+  status: string;
+  approvedAmount?: number | null;
+  amountUsed: number;
+  amountRepaid: number;
+  amountTransferredToWallet: number;
+  outstandingAmount: number;
+  dueDate?: string | null;
+}
 
 export default function VoucherStats() {
-  const [stats, setStats] = useState({
+  const [cardStats, setCardStats] = useState({
+    totalCards: 0,
+    activeCards: 0,
+    pendingSessions: 0,
     totalVouchers: 0,
     activeVouchers: 0,
     suspendedVouchers: 0,
-    expiredVouchers: 0,
-    usedVouchers: { count: 0, totalAmount: 0 },
-    maturedVouchers: { count: 0, totalAmount: 0 },
-    settledVouchers: { count: 0, totalAmount: 0 },
-    pendingLoans: 0
   });
+
+  const [creditStats, setCreditStats] = useState({
+    activeCount: 0,
+    totalCreditDelivered: 0,
+    maturedCount: 0,
+    settledCount: 0,
+    settledTotal: 0,
+    pendingCount: 0,
+    pendingTotal: 0,
+  });
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadStats();
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [cardStatsRes, sessionsRes] = await Promise.all([
+          voucherService.getCardStats(),
+          voucherService.getAllLoanSessions({ limit: 200 }),
+        ]);
+
+        const cs = cardStatsRes?.data ?? {};
+        setCardStats({
+          totalCards: cs.totalCards ?? 0,
+          activeCards: cs.activeCards ?? 0,
+          pendingSessions: cs.pendingSessions ?? 0,
+          totalVouchers: cs.totalSessions ?? 0,
+          activeVouchers: 0,
+          suspendedVouchers: 0,
+        });
+
+        const sessions: LoanSession[] = sessionsRes?.data ?? [];
+        const now = new Date();
+
+        const activeSessions = sessions.filter((s) =>
+          ["ACTIVE", "PARTIALLY_USED", "FULLY_USED", "OVERDUE", "SETTLED"].includes(s.status)
+        );
+        const totalCreditDelivered = activeSessions.reduce(
+          (sum, s) => sum + (s.amountUsed ?? 0) + (s.amountTransferredToWallet ?? 0),
+          0
+        );
+
+        const matured = sessions.filter(
+          (s) =>
+            s.dueDate &&
+            new Date(s.dueDate) < now &&
+            s.outstandingAmount > 0 &&
+            s.status !== "SETTLED" &&
+            s.status !== "CLOSED"
+        );
+        const settled = sessions.filter((s) => s.status === "SETTLED");
+        const settledTotal = settled.reduce((sum, s) => sum + (s.amountRepaid ?? 0), 0);
+
+        const pendingRepayment = sessions.filter(
+          (s) =>
+            s.outstandingAmount > 0 &&
+            !["SETTLED", "CLOSED", "REJECTED", "REQUESTED"].includes(s.status)
+        );
+        const pendingTotal = pendingRepayment.reduce(
+          (sum, s) => sum + s.outstandingAmount,
+          0
+        );
+
+        setCreditStats({
+          activeCount: activeSessions.length,
+          totalCreditDelivered,
+          maturedCount: matured.length,
+          settledCount: settled.length,
+          settledTotal,
+          pendingCount: pendingRepayment.length,
+          pendingTotal,
+        });
+      } catch {
+        // keep zeros
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
   }, []);
 
-  const loadStats = async () => {
-    setLoading(true);
-    try {
-      const [vouchersResponse, loansResponse] = await Promise.all([
-        voucherService.getAllVouchers({ page: 1, limit: 1 }), // Get statistics from API
-        voucherService.getAllLoanApplications()
-      ]);
-
-      const voucherStats = vouchersResponse.statistics || {};
-      const loans = loansResponse.data || [];
-
-      setStats({
-        totalVouchers: voucherStats.totalVouchers || 0,
-        activeVouchers: voucherStats.activeVouchers || 0,
-        suspendedVouchers: voucherStats.suspendedVouchers || 0,
-        expiredVouchers: voucherStats.expiredVouchers || 0,
-        usedVouchers: voucherStats.usedVouchers || { count: 0, totalAmount: 0 },
-        maturedVouchers: voucherStats.maturedVouchers || { count: 0, totalAmount: 0 },
-        settledVouchers: voucherStats.settledVouchers || { count: 0, totalAmount: 0 },
-        pendingLoans: loans.filter((l: any) => l.status === "PENDING").length
-      });
-    } catch (error) {
-      console.error("Failed to load stats:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      {/* Row 1: Individual Status Cards */}
-      <Card className="h-34  border-blue-200 shadow-[4px_4px_8px_rgba(0,0,0,0.1)]">
-        <CardContent className="p-4 relative">
-          <Ticket className="h-8 w-8 text-yellow-500 absolute -top-5 right-2" />
-          <div className="text-center">
-            <p className="text-gray-800 text-xs font-bold">
-              Total Vouchers
-            </p>
-            {loading ? (
-              <Skeleton className="h-7 w-12 mx-auto" />
-            ) : (
-              <>
-                <p className="text-xl font-bold  text-green-600">
-                  {stats.totalVouchers}
-                </p>
-                <div>
-                  <div className="flex items-center justify-center  gap-2">
-                    <p className="text-xs font-medium ">
-                      Act:{" "}
-                      <span className="text-green-500 text-xs">
-                        {stats.activeVouchers}
-                      </span>
-                    </p>
-                    <p className="text-xs font-medium ">
-                      Susp:{" "}
-                      <span className=" text-xs ">
-                        {stats.suspendedVouchers}
-                      </span>
-                    </p>
-                    <p className=" text-xs font-medium ">
-                      Exp:{" "}
-                      <span className="text-red-600 text-xs ">
-                        {stats.expiredVouchers}
-                      </span>
-                    </p>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Row 2: Amount-based Cards */}
-      <Card className="h-34 border-blue-200 shadow-[4px_4px_8px_rgba(0,0,0,0.1)]">
-        <CardContent className="p-4 relative">
-          <TrendingUp className="h-8 w-8 text-blue-600 absolute -top-5 right-2" />
-          <div className="text-center">
-            <p className=" text-xs font-semibold">Used Vouchers</p>
-            {loading ? (
-              <Skeleton className="h-7 w-12 mx-auto" />
-            ) : (
-              <>
-                <p className="text-xl font-bold ">
-                  {stats.usedVouchers.count}
-                </p>
-                <p className="text-xs ">
-                  {stats.usedVouchers.totalAmount.toLocaleString()} RWF
-                </p>
-              </>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card className="h-34 border-gray-200 shadow-[4px_4px_8px_rgba(0,0,0,0.1)]">
-        <CardContent className="relative ">
-          <CreditCard className="h-8 w-8 text-green-600 absolute -top-5 right-2" />
-          <div className="flex gap-2">
-            <div className="text-center">
-
-              <p className="text-xs font-semibold">
-                Matured Vouchers
-              </p>
-
+      <CardShell gradient="from-emerald-600 to-green-800">
+        <StatValue label="Total Vouchers" value={cardStats.totalCards} loading={loading} />
+        <div className="relative flex justify-between items-end gap-2">
+          {[
+            { label: "Active", value: cardStats.activeCards },
+            { label: "Pending", value: cardStats.pendingSessions },
+          ].map((r) => (
+            <div key={r.label} className="text-center">
+              <p className="text-[8px] uppercase tracking-wider text-white/60 leading-none">{r.label}</p>
               {loading ? (
-                <Skeleton className="h-7 w-16 mx-auto mt-2" />
+                <Skeleton className="h-3 w-8 mx-auto mt-1 bg-white/20" />
+              ) : (
+                <p className="text-[11px] font-semibold leading-none mt-1">{r.value}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      </CardShell>
+
+      <CardShell gradient="from-blue-600 to-blue-900">
+        <StatValue label="Active Credits" value={creditStats.activeCount} loading={loading} />
+        <div className="relative flex justify-between items-end">
+          <div>
+            <p className="text-[8px] uppercase tracking-wider text-white/60 leading-none">Total Delivered</p>
+            {loading ? (
+              <Skeleton className="h-3 w-20 mt-1 bg-white/20" />
+            ) : (
+              <p className="text-[11px] font-semibold leading-none mt-1">
+                {creditStats.totalCreditDelivered.toLocaleString()} RWF
+              </p>
+            )}
+          </div>
+        </div>
+      </CardShell>
+
+      <CardShell gradient="from-indigo-600 to-indigo-900">
+        <div className="relative flex-1 flex items-center justify-between gap-3 min-h-0">
+          {[
+            { label: "Matured", count: creditStats.maturedCount, sub: "Past due" },
+            { label: "Settled", count: creditStats.settledCount, sub: `${creditStats.settledTotal.toLocaleString()} RWF` },
+          ].map((c) => (
+            <div key={c.label} className="flex-1">
+              <p className="text-[9px] uppercase tracking-widest text-white/70">{c.label}</p>
+              {loading ? (
+                <>
+                  <Skeleton className="h-7 w-12 mt-1 bg-white/20" />
+                  <Skeleton className="h-3 w-16 mt-1 bg-white/20" />
+                </>
               ) : (
                 <>
-                  <p className="text-xl font-bold text-red-600">
-                    {stats.maturedVouchers.count} 
-                  </p>
-                  <p className="text-xs ">
-                    {stats.maturedVouchers.totalAmount.toLocaleString()} RWF
-                  </p>
+                  <p className="text-2xl font-bold drop-shadow leading-tight">{c.count}</p>
+                  <p className="text-[11px] text-white/70">{c.sub}</p>
                 </>
               )}
             </div>
+          ))}
+        </div>
+      </CardShell>
 
-            {/* Settled Vouchers */}
-            <div className="relative text-center ">
-              <p className=" text-xs font-semibold">
-                Settled Vouchers
-              </p>
-
-              {loading ? (
-                <Skeleton className="h-7 w-16 mx-auto mt-2" />
-              ) : (
-                <>
-                  <p className="text-xl font-bold text-green-600">
-                    {stats.settledVouchers.count}
-                  </p>
-                  <p className="text-xs ">
-                    {stats.settledVouchers.totalAmount.toLocaleString()} RWF
-                  </p>
-                </>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="h-34 border-orange-200 shadow-[4px_4px_8px_rgba(0,0,0,0.1)]">
-        <CardContent className="p-4 relative">
-          <AlertCircle className="h-8 w-8 text-orange-600 absolute -top-5 right-2" />
-          <div className="text-center">
-            <p className="text-orange-600 text-xs font-medium">
-              Pending Loans
-            </p>
+      <CardShell gradient="from-amber-500 to-orange-700">
+        <StatValue label="Pending Credits" value={creditStats.pendingCount} loading={loading} />
+        <div className="relative flex justify-between items-end">
+          <div>
+            <p className="text-[8px] uppercase tracking-wider text-white/60 leading-none">Total Outstanding</p>
             {loading ? (
-              <Skeleton className="h-7 w-12 mx-auto" />
+              <Skeleton className="h-3 w-20 mt-1 bg-white/20" />
             ) : (
-              <p className="text-xl font-bold text-orange-900">
-                {stats.pendingLoans}
+              <p className="text-[11px] font-semibold leading-none mt-1">
+                {creditStats.pendingTotal.toLocaleString()} RWF
               </p>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </CardShell>
     </div>
   );
 }

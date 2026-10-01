@@ -28,7 +28,12 @@ import {
   Settings,
   DollarSign,
   TrendingUp,
+  CreditCard,
   MailOpen,
+  ShieldCheck,
+  Brain,
+  Sprout,
+  FileCheck,
 } from "lucide-react";
 import NotificationsDrawer from "@/app/(private)/restaurant/_components/notificationDrawer";
 import { usePathname } from "next/navigation";
@@ -71,6 +76,16 @@ const menuItems = [
         href: "/dashboard/stock/units",
       },
       {
+        icon: CreditCard,
+        label: "Payment Methods",
+        href: "/dashboard/stock/payment-methods",
+      },
+      {
+        icon: Users,
+        label: "Customer Types",
+        href: "/dashboard/stock/customer-types",
+      },
+      {
         icon: BarChart3,
         label: "Tt Sales Reports",
         href: "/dashboard/stock/fb-reports",
@@ -86,6 +101,33 @@ const menuItems = [
     icon: TrendingUp,
     label: "Market Prices",
     href: "/dashboard/markets",
+  },
+  {
+    icon: Brain,
+    label: "Intelligence",
+    href: "/dashboard/intelligence",
+    subItems: [
+      {
+        icon: Brain,
+        label: "Predictive Intelligence",
+        href: "/dashboard/predictive-intelligence",
+      },
+      {
+        icon: Sprout,
+        label: "Supply Intelligence",
+        href: "/dashboard/supply-intelligence",
+      },
+      {
+        icon: TrendingUp,
+        label: "Market Price Intelligence",
+        href: "/dashboard/market-price-intelligence",
+      },
+    ],
+  },
+  {
+    icon: ShieldCheck,
+    label: "Restaurant KYC",
+    href: "/dashboard/restaurant-kyc",
   },
   {
     icon: Ticket,
@@ -280,7 +322,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                 className="w-7 h-7 md:w-8 md:h-8 rounded-full object-cover"
               />
               <h1 className="text-sm font-bold text-green-100">
-                Food Bundles Ltd
+                Food Bundles
               </h1>
             </div>
           </Link>

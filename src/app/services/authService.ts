@@ -16,7 +16,6 @@ export const authService = {
     if (response.data.success && response.data.token) {
       if (typeof window !== "undefined") {
         setToken(response.data.token);
-        document.cookie = `auth-token=${response.data.token}; path=/; max-age=86400; secure; samesite=strict`;
 
         // Handle both old and new response structures
         const user = response.data.user || response.data.data?.user;
@@ -121,6 +120,26 @@ export const authService = {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.post("/reset-password", {
       token,
+      newPassword,
+    });
+    return response.data;
+  },
+
+  forgotPasswordPhone: async (phone: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/forgot-password-phone", { phone });
+    return response.data;
+  },
+
+  resetPasswordPhone: async (
+    phone: string,
+    otp: string,
+    newPassword: string,
+  ) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/reset-password-phone", {
+      phone,
+      otp,
       newPassword,
     });
     return response.data;

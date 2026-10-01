@@ -13,7 +13,6 @@ import { unitService, UnitFormData } from "@/app/services/unitService";
 
 interface Unit {
   id: string;
-  tableTronicId: number;
   name: string;
   description: string;
   isActive: boolean;

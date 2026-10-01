@@ -16,7 +16,6 @@ import { UnitFormData } from "@/app/services/unitService";
 
 interface Unit {
   id: string;
-  tableTronicId: number;
   name: string;
   description: string;
   isActive: boolean;
@@ -37,7 +36,6 @@ export function UnitModal({
   onSubmit,
 }: UnitModalProps) {
   const [formData, setFormData] = useState<UnitFormData>({
-    tableTronicId: 0,
     name: "",
     description: "",
     isActive: true,
@@ -47,14 +45,12 @@ export function UnitModal({
   useEffect(() => {
     if (unit) {
       setFormData({
-        tableTronicId: unit.tableTronicId,
         name: unit.name,
         description: unit.description || "",
         isActive: unit.isActive ?? true,
       });
     } else {
       setFormData({
-        tableTronicId: 0,
         name: "",
         description: "",
         isActive: true,
@@ -64,7 +60,7 @@ export function UnitModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.tableTronicId) return;
+    if (!formData.name.trim()) return;
 
     try {
       setIsSubmitting(true);
@@ -83,23 +79,6 @@ export function UnitModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="tableTronicId">Table Tronic ID *</Label>
-            <Input
-              id="tableTronicId"
-              type="number"
-              value={formData.tableTronicId}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  tableTronicId: Number(e.target.value) || 0,
-                }))
-              }
-              placeholder="Enter table tronic ID"
-              required
-            />
-          </div>
-
           <div className="space-y-2">
             <Label htmlFor="name">Name *</Label>
             <Input

@@ -10,11 +10,12 @@ import {
   TableFilters,
 } from "../../../../components/filters";
 import { DataTable } from "@/components/data-table";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { orderService } from "@/app/services/orderService";
 import { ViewOrderModal, CancelOrderModal } from "./_components/order-modals";
-import CreateOrderModal from "./_components/CreateOrderModal";
-import { PaymentMethodProvider } from "@/app/contexts/paymentMethodContext";
+import { EditOrderModal } from "./_components/edit-order-modal";
+import { CreateAdminOrderModal } from "./_components/create-admin-order-modal";
 import { useWebSocket } from "@/hooks/useOrderWebSocket";
 import { useAuth } from "@/app/contexts/auth-context";
 import {
@@ -28,8 +29,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ExportButton } from "@/components/ExportButton";
-import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Trash2, PlusCircle } from "lucide-react";
 
 const statusOptions = [
   { label: "All Status", value: "all" },
@@ -73,7 +73,8 @@ export default function AdminOrdersPage() {
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [createOrderOpen, setCreateOrderOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [createOrderModalOpen, setCreateOrderModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   // Filter states
@@ -231,7 +232,7 @@ export default function AdminOrdersPage() {
           <div class="invoice">
             <div class="header">
               <img src="https://res.cloudinary.com/dzxyelclu/image/upload/v1760111270/Food_bundle_logo_cfsnsw.png" alt="Logo" style="width: 50px; height: 50px; margin: 0 auto 8px; border-radius: 50%;">
-              <h1>Food Bundles Ltd</h1>
+              <h1>Food Bundles</h1>
               <p>Order Invoice</p>
             </div>
             <div class="info-section">
@@ -327,6 +328,32 @@ export default function AdminOrdersPage() {
     setDeleteModalOpen(true);
   };
 
+  const handleEditOrder = (order: Order) => {
+    setSelectedOrder(order);
+    setEditModalOpen(true);
+  };
+
+  const handleSendPaymentLink = async (order: Order) => {
+    try {
+      const result = await orderService.sendPaymentLink(order.id);
+      if (result.success) {
+        if (result.data?.requiresRedirect && result.data?.redirectUrl) {
+          // Open payment link in new tab
+          window.open(result.data.redirectUrl, "_blank");
+          toast.success("Payment link opened in a new tab");
+        } else {
+          toast.success(result.message || "Payment link sent successfully");
+        }
+        // Refresh the order list
+        fetchOrders();
+      } else {
+        toast.error(result.message || "Failed to send payment link");
+      }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to send payment link");
+    }
+  };
+
   const confirmDeleteOrder = async () => {
     if (!selectedOrder) return;
     
@@ -404,6 +431,8 @@ export default function AdminOrdersPage() {
     setViewModalOpen(false);
     setCancelModalOpen(false);
     setDeleteModalOpen(false);
+    setEditModalOpen(false);
+    setCreateOrderModalOpen(false);
   };
 
   const handleOrderUpdate = async () => {
@@ -515,6 +544,8 @@ export default function AdminOrdersPage() {
     onDelete: handleDeleteOrder,
     onStatusUpdate: handleStatusUpdate,
     onPaymentStatusUpdate: handlePaymentStatusUpdate,
+    onEdit: handleEditOrder,
+    onSendPaymentLink: handleSendPaymentLink,
   });
 
   const filters = [
@@ -555,7 +586,12 @@ export default function AdminOrdersPage() {
           <h1 className="text-[16px] font-medium">Restaurant Orders</h1>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="green" onClick={() => setCreateOrderOpen(true)}>
+          <Button
+            size="sm"
+            onClick={() => setCreateOrderModalOpen(true)}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            <PlusCircle className="h-4 w-4 mr-1" />
             Create Order
           </Button>
           <ExportButton
@@ -584,18 +620,24 @@ export default function AdminOrdersPage() {
           pagination={pagination}
           onPaginationChange={handlePaginationChange}
           isLoading={loading}
+          getRowClassName={(order) =>
+            new Date(order.createdAt).toDateString() === new Date().toDateString()
+              ? // Cells set their own text colour, so style them from the row
+                "bg-gray-50 [&>td]:text-green-700 [&>td]:text-sm [&>td]:font-bold [&>td_*]:font-bold"
+              : "bg-gray-50"
+          }
+          getRowGroup={(order) => {
+            const created = new Date(order.createdAt).toDateString();
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            if (created === new Date().toDateString()) return "Today";
+            if (created === yesterday.toDateString()) return "Yesterday";
+            return "Earlier orders";
+          }}
         />
       
 
       {/* Modals */}
-      <PaymentMethodProvider>
-        <CreateOrderModal
-          open={createOrderOpen}
-          onOpenChange={setCreateOrderOpen}
-          onSuccess={() => fetchOrders(pagination.page, pagination.limit)}
-        />
-      </PaymentMethodProvider>
-
       <ViewOrderModal
         open={viewModalOpen}
         onClose={handleModalClose}
@@ -607,6 +649,19 @@ export default function AdminOrdersPage() {
         onClose={handleModalClose}
         order={selectedOrder}
         onCancel={handleOrderUpdate}
+      />
+
+      <EditOrderModal
+        open={editModalOpen}
+        onClose={handleModalClose}
+        order={selectedOrder}
+        onSaved={handleOrderUpdate}
+      />
+
+      <CreateAdminOrderModal
+        open={createOrderModalOpen}
+        onClose={handleModalClose}
+        onCreated={handleOrderUpdate}
       />
 
       {/* Delete Confirmation Dialog */}

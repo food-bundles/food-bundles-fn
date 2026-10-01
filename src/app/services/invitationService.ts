@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import createAxiosClient from '@/app/hooks/axiosClient';
 
+export type InvitationRole = 'ADMIN' | 'AGGREGATOR' | 'LOGISTICS' | 'MARKET_PRICES' | 'TRADER';
+
 export interface Invitation {
   id: string;
   email: string;
-  role: 'ADMIN' | 'AGGREGATOR' | 'LOGISTICS' | 'MARKET_PRICES';
+  role: InvitationRole;
   status: 'PENDING' | 'ACCEPTED' | 'EXPIRED';
   isUsed: boolean;
   createdAt: string;
@@ -14,7 +16,7 @@ export interface Invitation {
 
 export interface CreateInvitationData {
   email: string;
-  role: 'ADMIN' | 'AGGREGATOR' | 'LOGISTICS' | 'MARKET_PRICES';
+  role: InvitationRole;
 }
 
 export interface AcceptInvitationData {
@@ -22,6 +24,7 @@ export interface AcceptInvitationData {
   username: string;
   phone: string;
   password: string;
+  loanTermsAndConditions?: string;
 }
 
 const axiosClient = createAxiosClient();
@@ -54,6 +57,11 @@ export const invitationService = {
 
   async acceptInvitation(data: AcceptInvitationData): Promise<{ message: string; data: any }> {
     const response = await axiosClient.post('/invites/accept', data);
+    return response.data;
+  },
+
+  async verifyInviteToken(token: string): Promise<{ message: string; data: { email: string; role: InvitationRole } }> {
+    const response = await axiosClient.get(`/invites/verify/${token}`);
     return response.data;
   }
 };

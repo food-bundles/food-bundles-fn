@@ -13,6 +13,7 @@ interface ValidationErrors {
   username?: string;
   phone?: string;
   password?: string;
+  loanTermsAndConditions?: string;
 }
 
 function AcceptInvitationForm() {
@@ -21,13 +22,15 @@ function AcceptInvitationForm() {
     phone: "",
     password: "",
     confirmPassword: "",
+    loanTermsAndConditions: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [token, setToken] = useState("");
-  
+  const [inviteRole, setInviteRole] = useState<string | null>(null);
+
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -35,6 +38,10 @@ function AcceptInvitationForm() {
     const tokenParam = searchParams?.get("token");
     if (tokenParam) {
       setToken(tokenParam);
+      invitationService
+        .verifyInviteToken(tokenParam)
+        .then((res) => setInviteRole(res?.data?.role ?? null))
+        .catch(() => setInviteRole(null));
     } else {
       toast.error("Invalid invitation link");
       router.push("/login");
@@ -66,6 +73,14 @@ function AcceptInvitationForm() {
       newErrors.password = "Passwords do not match";
     }
 
+    if (
+      inviteRole === "TRADER" &&
+      !formData.loanTermsAndConditions.trim()
+    ) {
+      newErrors.loanTermsAndConditions =
+        "Loan terms & conditions are required (restaurants will sign them when requesting a loan)";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -87,6 +102,9 @@ function AcceptInvitationForm() {
         username: formData.username.trim(),
         phone: formData.phone.trim(),
         password: formData.password,
+        ...(inviteRole === "TRADER"
+          ? { loanTermsAndConditions: formData.loanTermsAndConditions.trim() }
+          : {}),
       };
 
       await invitationService.acceptInvitation(acceptData);
@@ -158,6 +176,32 @@ function AcceptInvitationForm() {
               <p className="text-red-600 text-xs mt-1">{errors.phone}</p>
             )}
           </div>
+
+          {inviteRole === "TRADER" && (
+            <div>
+              <textarea
+                value={formData.loanTermsAndConditions}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    loanTermsAndConditions: e.target.value,
+                  }))
+                }
+                placeholder="Loan Terms & Conditions — these rules will be shown to restaurants and signed when they request a loan from you. (e.g. interest rate, repayment period, penalties)"
+                className={`w-full p-3 text-[13px] border focus:border-green-500 focus:ring-green-500 rounded-none text-gray-900 min-h-[120px] resize-y ${
+                  errors.loanTermsAndConditions
+                    ? "border-red-500"
+                    : "border-gray-300"
+                }`}
+                disabled={isLoading}
+              />
+              {errors.loanTermsAndConditions && (
+                <p className="text-red-600 text-xs mt-1">
+                  {errors.loanTermsAndConditions}
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="relative">
             <Input

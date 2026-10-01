@@ -145,7 +145,7 @@ export function FoodBundlesConnect() {
               </Link>
             </div>
             <p className="text-[12px] lg:text-[14px] text-[#0A3B1B] leading-relaxed max-w-lg">
-              Food Bundles Ltd connects restaurants with local farms to deliver fresh
+              Food Bundles connects restaurants with local farms to deliver fresh
               ingredients efficiently. It offers real-time order tracking,
               simple inventory management, and promotes sustainability in the
               food supply chain.

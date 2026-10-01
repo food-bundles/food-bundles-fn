@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -166,11 +166,44 @@ function CartItem({
   const [inputValue, setInputValue] = useState(item.quantity.toString());
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const autoUpdateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isUpdatingRef = useRef(false);
 
+  // Keep local quantity in sync with the cart on every context change, unless a
+  // parts of the update round-trip is in flight. Without this, the drawer and the
+  // product card hold independent stale values and fight each other (shaking totals).
   useEffect(() => {
+    if (isUpdatingRef.current) return;
     setQuantity(item.quantity);
     setInputValue(item.quantity.toString());
   }, [item.quantity]);
+
+  const onQuantityUpdateRef = useRef(onQuantityUpdate);
+  useEffect(() => { onQuantityUpdateRef.current = onQuantityUpdate; });
+
+  useEffect(() => {
+    if (isUpdatingRef.current) return;
+    if (quantity === item.quantity) return;
+
+    if (autoUpdateTimerRef.current) {
+      clearTimeout(autoUpdateTimerRef.current);
+    }
+
+    autoUpdateTimerRef.current = setTimeout(() => {
+      isUpdatingRef.current = true;
+      setIsUpdating(true);
+      onQuantityUpdateRef.current(item.id, quantity).finally(() => {
+        isUpdatingRef.current = false;
+        setIsUpdating(false);
+      });
+    }, 400);
+
+    return () => {
+      if (autoUpdateTimerRef.current) {
+        clearTimeout(autoUpdateTimerRef.current);
+      }
+    };
+  }, [quantity, item.quantity, item.id]);
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -194,7 +227,7 @@ function CartItem({
     setIsDeleting(false);
   };
 
-  const totalAmount = item.subtotal || item.unitPrice * quantity;
+  const totalAmount = item.unitPrice * quantity;
 
   return (
     <Card className="border-0 shadow-none hover:shadow-none border-b rounded-none">
@@ -281,17 +314,7 @@ function CartItem({
                   </button>
                 </div>
 
-                {/* Update Button */}
-                <Button
-                  onClick={handleQuantityUpdate}
-                  disabled={
-                    isUpdating || Number.parseFloat(inputValue) === item.quantity
-                  }
-                  size="sm"
-                  className="w-12 h-6 text-xs bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 flex items-center justify-center rounded-full cursor-pointer"
-                >
-                  🗸
-                </Button>
+                {/* Update Button removed — auto-update handles saves */}
               </div>
             </div>
 

@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
-import { X, ShoppingCart, Loader2, ExternalLink } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, ShoppingCart, Loader2, ExternalLink, CreditCard, Smartphone, Banknote, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { orderService } from "@/app/services/orderService";
-import { toast } from "react-toastify";
+import { paymentMethodService } from "@/app/services/paymentMethodService";
+import { toast } from "sonner";
 
 interface ReorderDrawerProps {
   isOpen: boolean;
@@ -13,16 +14,94 @@ interface ReorderDrawerProps {
   order: any;
 }
 
+interface PaymentMethodOption {
+  id: string;
+  name: string;
+  description?: string;
+}
+
+const paymentMethodIcons: Record<string, React.ReactNode> = {
+  MOBILE_MONEY: <Smartphone className="w-4 h-4" />,
+  CARD: <CreditCard className="w-4 h-4" />,
+  BANK_TRANSFER: <Banknote className="w-4 h-4" />,
+  CASH: <Wallet className="w-4 h-4" />,
+  VOUCHER: <Wallet className="w-4 h-4" />,
+};
+
+const paymentMethodLabels: Record<string, string> = {
+  MOBILE_MONEY: "Mobile Money (MoMo)",
+  CARD: "Card Payment",
+  BANK_TRANSFER: "Bank Transfer",
+  CASH: "Prepaid (Wallet)",
+  VOUCHER: "Voucher",
+};
+
+const paymentMethodDescriptions: Record<string, string> = {
+  MOBILE_MONEY: "Pay via MTN or Airtel Money",
+  CARD: "Pay with credit or debit card",
+  BANK_TRANSFER: "Transfer directly from your bank",
+  CASH: "Deduct from your prepaid wallet balance",
+  VOUCHER: "Use a voucher code to pay",
+};
+
 export function ReorderDrawer({ isOpen, onClose, order }: ReorderDrawerProps) {
   const [isReordering, setIsReordering] = useState(false);
   const [showFlutterwaveInfo, setShowFlutterwaveInfo] = useState(false);
   const [flutterwaveRedirectUrl, setFlutterwaveRedirectUrl] = useState("");
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodOption[]>([]);
+  const [selectedPaymentMethodId, setSelectedPaymentMethodId] = useState<string>("");
+  const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchPaymentMethods();
+    }
+  }, [isOpen]);
+
+  const fetchPaymentMethods = async () => {
+    try {
+      setLoadingPaymentMethods(true);
+      const response = await paymentMethodService.getActivePaymentMethods();
+      if (response.data) {
+        // Filter out VOUCHER - it requires OTP verification and a fresh voucher code
+        const availableMethods = response.data.filter(
+          (m: PaymentMethodOption) => m.name.toUpperCase() !== "VOUCHER"
+        );
+        setPaymentMethods(availableMethods);
+        // Default selection: prefer the original order's payment method
+        const originalMethod = order?.originalData?.paymentMethod;
+        if (originalMethod && originalMethod.toUpperCase() !== "VOUCHER") {
+          const match = availableMethods.find(
+            (m: PaymentMethodOption) => m.name.toUpperCase() === originalMethod.toUpperCase()
+          );
+          if (match) {
+            setSelectedPaymentMethodId(match.id);
+            return;
+          }
+        }
+        // Fallback to first option
+        if (availableMethods.length > 0) {
+          setSelectedPaymentMethodId(availableMethods[0].id);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch payment methods:", error);
+      toast.error("Failed to load payment methods");
+    } finally {
+      setLoadingPaymentMethods(false);
+    }
+  };
 
   const handleReorder = async () => {
+    if (!selectedPaymentMethodId) {
+      toast.error("Please select a payment method");
+      return;
+    }
+
     try {
       setIsReordering(true);
 
-      const response = await orderService.reorderOrder(order.id);
+      const response = await orderService.reorderOrder(order.id, selectedPaymentMethodId);
 
       if (response.success) {
         const responseData = response.data as any;
@@ -31,11 +110,9 @@ export function ReorderDrawer({ isOpen, onClose, order }: ReorderDrawerProps) {
         const paymentProvider = responseData?.paymentProvider;
 
         if (requiresRedirect && redirectUrl && paymentProvider === "FLUTTERWAVE") {
-          // Flutterwave requires redirect - show modal
           setFlutterwaveRedirectUrl(redirectUrl);
           setShowFlutterwaveInfo(true);
         } else if (paymentProvider === "PAYPACK") {
-          // Paypack sends USSD to phone
           toast.success("USSD code sent to your phone. Please complete the payment.");
           onClose();
         } else {
@@ -43,11 +120,13 @@ export function ReorderDrawer({ isOpen, onClose, order }: ReorderDrawerProps) {
           onClose();
         }
       } else {
-        toast.error( "========= Reorder failed. Please try again.");
+        toast.error(
+          (response as any)?.error || response.message || "Reorder failed. Please try again."
+        );
       }
     } catch (error: any) {
       console.error("Reorder error:", error);
-      toast.error("-------------Failed to reorder");
+      toast.error(error?.response?.data?.message || "Failed to reorder");
     } finally {
       setIsReordering(false);
     }
@@ -139,17 +218,69 @@ export function ReorderDrawer({ isOpen, onClose, order }: ReorderDrawerProps) {
             </div>
           </div>
 
-          {/* Payment Info */}
+          {/* Payment Method Selection */}
           <div className="bg-white p-4 rounded-lg border">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">
-              Payment Method
+              Select Payment Method
             </h3>
-            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-              <p className="text-sm text-blue-800 font-medium">Mobile Money (MoMo)</p>
-              <p className="text-xs text-blue-600 mt-1">
-                Payment will be processed via USSD
-              </p>
-            </div>
+            {loadingPaymentMethods ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-5 w-5 animate-spin text-green-600 mr-2" />
+                <span className="text-sm text-gray-500">Loading payment methods...</span>
+              </div>
+            ) : paymentMethods.length === 0 ? (
+              <div className="text-sm text-gray-500 py-4 text-center">
+                No payment methods available
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {paymentMethods.map((method) => (
+                  <label
+                    key={method.id}
+                    className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                      selectedPaymentMethodId === method.id
+                        ? "border-green-500 bg-green-50 ring-1 ring-green-200"
+                        : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value={method.id}
+                      checked={selectedPaymentMethodId === method.id}
+                      onChange={() => setSelectedPaymentMethodId(method.id)}
+                      className="mt-0.5 h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300"
+                    />
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div className={`p-1.5 rounded ${
+                        selectedPaymentMethodId === method.id
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-100 text-gray-500"
+                      }`}>
+                        {paymentMethodIcons[method.name.toUpperCase()] || <CreditCard className="w-4 h-4" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900">
+                          {paymentMethodLabels[method.name.toUpperCase()] || method.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {paymentMethodDescriptions[method.name.toUpperCase()] || method.description || ""}
+                        </p>
+                      </div>
+                    </div>
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center mt-0.5 ${
+                      selectedPaymentMethodId === method.id
+                        ? "border-green-600"
+                        : "border-gray-300"
+                    }`}>
+                      {selectedPaymentMethodId === method.id && (
+                        <div className="w-2 h-2 rounded-full bg-green-600" />
+                      )}
+                    </div>
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Total */}
@@ -175,7 +306,7 @@ export function ReorderDrawer({ isOpen, onClose, order }: ReorderDrawerProps) {
             </Button>
             <Button
               onClick={handleReorder}
-              disabled={isReordering}
+              disabled={isReordering || !selectedPaymentMethodId || loadingPaymentMethods}
               className="flex-1 bg-green-600 hover:bg-green-700"
             >
               {isReordering && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
