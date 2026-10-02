@@ -16,7 +16,9 @@ export interface Invitation {
 
 export interface CreateInvitationData {
   email: string;
-  role: InvitationRole;
+  role?: InvitationRole;
+  // Dashboard role (super admins only); the account is created as STAFF
+  adminRoleId?: string;
 }
 
 export interface AcceptInvitationData {

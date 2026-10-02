@@ -34,6 +34,7 @@ import {
   Brain,
   Sprout,
   FileCheck,
+  KeyRound,
 } from "lucide-react";
 import NotificationsDrawer from "@/app/(private)/restaurant/_components/notificationDrawer";
 import { usePathname } from "next/navigation";
@@ -42,6 +43,7 @@ import { useState, useEffect } from "react";
 import { authService } from "@/app/services/authService";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { MdSystemSecurityUpdate } from "react-icons/md";
+import { canOpenPage } from "@/lib/admin-permissions";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -179,6 +181,11 @@ const menuItems = [
         label: "Administration",
         href: "/dashboard/users/administration",
       },
+      {
+        icon: KeyRound,
+        label: "Roles & Permissions",
+        href: "/dashboard/users/roles",
+      },
     ],
   },
   {
@@ -222,10 +229,19 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [userData, setUserData] = useState<any>(null);
 
-  // Filter menu items based on user role
-  const filteredMenuItems = userData?.role === "MARKET_PRICES"
-    ? menuItems.filter(item => item.href === "/dashboard" || item.href === "/dashboard/markets")
-    : menuItems;
+  // Show only what the user's role permits. Until /me loads, show just the
+  // Dashboard link so restricted items never flash on screen.
+  const filteredMenuItems = !userData
+    ? menuItems.filter((item) => item.href === "/dashboard")
+    : menuItems
+        .map((item) =>
+          item.subItems
+            ? { ...item, subItems: item.subItems.filter((sub) => canOpenPage(userData, sub.href)) }
+            : item
+        )
+        .filter((item) =>
+          item.subItems ? item.subItems.length > 0 : canOpenPage(userData, item.href)
+        );
 
   const toggleExpanded = (index: number) => {
     const newExpanded = new Set(expandedItems);
@@ -432,7 +448,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                     {userData?.name || userData?.username}
                   </div>
                   <div className="text-[10px] text-green-400 truncate">
-                    {userData?.role || "Role"}
+                    {userData?.role === "SUPERUSER" ? "Super Admin" : userData?.adminRole?.name || userData?.role || "Role"}
                   </div>
                 </div>
                 <ChevronDown
@@ -447,7 +463,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                 <div className="absolute top-full left-0 right-0 mt-1  bg-green-800 border border-green-600 rounded-md shadow-lg z-50">
                   <div className="p-3 border-b border-green-600">
                     <div className="text-[10px] text-green-400 truncate mt-1">
-                      {userData?.role || "Role"}
+                      {userData?.role === "SUPERUSER" ? "Super Admin" : userData?.adminRole?.name || userData?.role || "Role"}
                     </div>
                     {userData?.email && (
                       <div className="flex items-center mt-2 text-[10px] text-green-300">

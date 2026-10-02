@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import jwt from "jsonwebtoken";
 import { ROLE_ROUTES, sanitizeRedirect } from "@/lib/navigations";
+import { canOpenPage } from "@/lib/admin-permissions";
 
 // Send to login, remembering the page (with its query) to return to afterwards
 const redirectToLogin = (req: NextRequest, reason?: string) => {
@@ -148,9 +149,12 @@ export async function middleware(req: NextRequest) {
         return NextResponse.redirect(new URL("/unauthorized", req.url));
       }
 
-      // Restrict MARKET_PRICES to only /dashboard/markets route
-      if (userRole === "MARKET_PRICES" && !pathname.startsWith("/dashboard/markets")) {
-        return NextResponse.redirect(new URL("/dashboard/markets", req.url));
+      // Dashboard pages are gated by the user's role permissions (from /me).
+      // If /me failed we can't tell, so let the page load — the API still
+      // enforces permissions on every request.
+      const meUser = userData?.user || userData?.data?.user;
+      if (pathname.startsWith("/dashboard") && meUser && !canOpenPage(meUser, pathname)) {
+        return NextResponse.redirect(new URL("/unauthorized", req.url));
       }
 
       if (userRole === "TRADER" && pathname.startsWith("/traders")) {

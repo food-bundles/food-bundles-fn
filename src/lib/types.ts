@@ -95,6 +95,7 @@ export enum UserRole {
   AFFILIATOR = "AFFILIATOR",
   SUPERUSER = "SUPERUSER",
   MARKET_PRICES = "MARKET_PRICES",
+  STAFF = "STAFF",
 }
 
 export interface IUser {
