@@ -295,28 +295,22 @@ export default function WfpMarketAnalytics({
           </p>
         </div>
 
-        <div className="z-10 flex flex-wrap items-center gap-3 shrink-0">
-          <button
-            onClick={onOpenUpload}
-            className="px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs transition flex items-center gap-2 shadow-sm"
-          >
-            <UploadCloud className="w-4 h-4" />
-            Upload Dataset (CSV)
-          </button>
+        <div className="z-10 flex flex-wrap items-center gap-2 shrink-0">
           <button
             onClick={() => {
               loadOptions();
               loadAnalytics();
               loadPrices(1);
             }}
-            className="p-3 rounded-2xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 transition shadow-sm"
+            className="px-3.5 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 transition shadow-sm flex items-center gap-2 text-xs font-semibold"
             title="Refresh analytics"
           >
             <RefreshCw
-              className={`w-4 h-4 ${
-                loadingAnalytics ? "animate-spin text-emerald-600" : ""
+              className={`w-3.5 h-3.5 ${
+                loadingAnalytics ? "animate-spin text-green-600" : "text-gray-500"
               }`}
             />
+            <span>Refresh</span>
           </button>
         </div>
       </div>
@@ -812,28 +806,28 @@ export default function WfpMarketAnalytics({
           {activeViewTab === "map" && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Interactive Rwanda Map Canvas */}
-              <div className="lg:col-span-2 p-6 rounded-3xl bg-slate-950 text-white shadow-xl relative overflow-hidden flex flex-col justify-between min-h-[500px]">
+              <div className="lg:col-span-2 p-6 rounded-3xl bg-white border border-gray-200 text-gray-900 shadow-sm relative overflow-hidden flex flex-col justify-between min-h-[500px]">
                 {/* Header info */}
-                <div className="flex items-center justify-between z-10">
+                <div className="flex items-center justify-between z-10 flex-wrap gap-2">
                   <div className="space-y-1">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-bold border border-emerald-500/30">
-                      <Compass className="w-3.5 h-3.5" />
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200">
+                      <Compass className="w-3.5 h-3.5 text-emerald-600" />
                       Rwanda National Market Spatial Map
                     </div>
-                    <h3 className="text-lg font-black text-white">
+                    <h3 className="text-lg font-black text-gray-900">
                       {selectedCommodity} Prices Across {mapMarkets.length} GPS
                       Locations
                     </h3>
                   </div>
 
                   {/* Province Legend */}
-                  <div className="hidden sm:flex flex-wrap items-center gap-2 text-[10px] font-bold">
+                  <div className="hidden sm:flex flex-wrap items-center gap-1.5 text-[10px] font-bold">
                     {Object.entries(PROVINCE_COLORS)
                       .filter(([p]) => p !== "Other")
                       .map(([prov, color]) => (
                         <span
                           key={prov}
-                          className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/10"
+                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-50 border border-gray-200 text-gray-700"
                         >
                           <span
                             className="w-2 h-2 rounded-full"
@@ -846,24 +840,24 @@ export default function WfpMarketAnalytics({
                 </div>
 
                 {/* Map Pins Overlay on Stylized Rwanda Canvas */}
-                <div className="relative w-full h-96 my-4 bg-slate-900/60 rounded-2xl border border-slate-800/80 overflow-hidden">
+                <div className="relative w-full h-96 my-4 bg-gray-50/70 rounded-2xl border border-gray-200 overflow-hidden">
                   {/* Geographic Grid Lines */}
-                  <div className="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:16px_16px] opacity-40 pointer-events-none" />
+                  <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px] opacity-70 pointer-events-none" />
 
                   {/* Rwanda Province Regions Indicator */}
-                  <div className="absolute top-4 left-6 text-[10px] font-mono text-slate-500 uppercase">
+                  <div className="absolute top-4 left-6 text-[10px] font-mono text-gray-400 font-semibold uppercase">
                     NORTHERN PROVINCE (-1.6°)
                   </div>
-                  <div className="absolute top-1/2 left-6 text-[10px] font-mono text-slate-500 uppercase">
+                  <div className="absolute top-1/2 left-6 text-[10px] font-mono text-gray-400 font-semibold uppercase">
                     WESTERN PROVINCE (29.3°E)
                   </div>
-                  <div className="absolute top-1/2 right-6 text-[10px] font-mono text-slate-500 uppercase">
+                  <div className="absolute top-1/2 right-6 text-[10px] font-mono text-gray-400 font-semibold uppercase">
                     EASTERN PROVINCE (30.8°E)
                   </div>
-                  <div className="absolute bottom-4 left-1/3 text-[10px] font-mono text-slate-500 uppercase">
+                  <div className="absolute bottom-4 left-1/3 text-[10px] font-mono text-gray-400 font-semibold uppercase">
                     SOUTHERN PROVINCE (-2.6°)
                   </div>
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-mono text-emerald-500/40 font-bold uppercase pointer-events-none">
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[10px] font-mono text-emerald-600/50 font-bold uppercase pointer-events-none">
                     KIGALI CITY
                   </div>
 
@@ -888,9 +882,9 @@ export default function WfpMarketAnalytics({
                       >
                         <div className="relative flex items-center justify-center">
                           <span
-                            className={`w-3.5 h-3.5 rounded-full transition-transform duration-200 border-2 border-slate-900 shadow-md ${
+                            className={`w-3.5 h-3.5 rounded-full transition-transform duration-200 border-2 border-white shadow-md ${
                               isSelected || isHovered
-                                ? "scale-150 ring-4 ring-emerald-400/40"
+                                ? "scale-150 ring-4 ring-emerald-500/40"
                                 : "scale-100 hover:scale-125"
                             }`}
                             style={{ backgroundColor: pinColor }}
@@ -905,42 +899,42 @@ export default function WfpMarketAnalytics({
                     <motion.div
                       initial={{ opacity: 0, y: 5 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="absolute bottom-4 right-4 z-30 p-4 rounded-2xl bg-slate-900/95 border border-emerald-500/40 backdrop-blur-md shadow-2xl max-w-xs text-xs space-y-2 text-white"
+                      className="absolute bottom-4 right-4 z-30 p-4 rounded-2xl bg-white/95 border border-emerald-500/30 backdrop-blur-md shadow-xl max-w-xs text-xs space-y-2 text-gray-900"
                     >
                       {(() => {
                         const target = hoveredMarket || selectedMapMarket;
                         return (
                           <>
-                            <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-2">
-                              <span className="font-black text-emerald-400 text-sm">
+                            <div className="flex items-center justify-between gap-2 border-b border-gray-100 pb-2">
+                              <span className="font-black text-emerald-700 text-sm">
                                 {target.market}
                               </span>
-                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold">
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
                                 {target.province}
                               </span>
                             </div>
                             <div className="grid grid-cols-2 gap-2 text-[11px]">
                               <div>
-                                <span className="text-gray-400">District:</span>
-                                <p className="font-bold text-gray-200">
+                                <span className="text-gray-500">District:</span>
+                                <p className="font-bold text-gray-800">
                                   {target.district || "N/A"}
                                 </p>
                               </div>
                               <div>
-                                <span className="text-gray-400">
+                                <span className="text-gray-500">
                                   Coordinates:
                                 </span>
-                                <p className="font-mono text-[10px] text-gray-300">
+                                <p className="font-mono text-[10px] text-gray-700">
                                   {target.latitude?.toFixed(2)},{" "}
                                   {target.longitude?.toFixed(2)}
                                 </p>
                               </div>
                             </div>
-                            <div className="p-2 rounded-xl bg-slate-800/80 flex items-center justify-between">
-                              <span className="text-gray-400 text-[11px]">
+                            <div className="p-2 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-between">
+                              <span className="text-gray-500 text-[11px]">
                                 {selectedCommodity} Avg:
                               </span>
-                              <span className="font-black text-emerald-400 text-sm">
+                              <span className="font-black text-emerald-700 text-sm">
                                 {fmtRwf(target.avgPrice)}
                               </span>
                             </div>
@@ -951,11 +945,11 @@ export default function WfpMarketAnalytics({
                   )}
                 </div>
 
-                <div className="flex items-center justify-between text-xs text-gray-400 z-10 pt-2 border-t border-slate-900">
+                <div className="flex items-center justify-between text-xs text-gray-500 z-10 pt-2 border-t border-gray-100">
                   <span>
                     Showing {mapMarkets.length} geo-mapped markets across Rwanda
                   </span>
-                  <span className="text-emerald-400 font-bold flex items-center gap-1">
+                  <span className="text-emerald-700 font-bold flex items-center gap-1">
                     <Navigation className="w-3.5 h-3.5" /> Click any pin to
                     inspect market details
                   </span>

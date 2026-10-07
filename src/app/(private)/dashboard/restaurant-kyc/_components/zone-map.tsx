@@ -13,7 +13,7 @@ L.Icon.Default.mergeOptions({
 });
 
 interface ZoneRestaurant {
-  id: number;
+  id: number | string;
   restaurant: string;
   zone: string;
   lat: number;
@@ -27,8 +27,8 @@ interface ZoneRestaurant {
 
 interface ZoneMapProps {
   restaurants: ZoneRestaurant[];
-  selectedId: number | null;
-  onSelect: (id: number) => void;
+  selectedId: number | string | null;
+  onSelect: (id: number | string) => void;
 }
 
 function createIcon(color: string) {

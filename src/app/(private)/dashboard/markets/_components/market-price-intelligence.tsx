@@ -71,25 +71,25 @@ export default function MarketPriceIntelligence() {
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="bg-white border border-gray-200 text-gray-900 p-6 md:p-8 rounded-3xl shadow-sm relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-2 z-10 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200">
+      <div className="bg-white border border-gray-200 text-gray-900 p-6 rounded-2xl shadow-sm relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-1.5 z-10 max-w-2xl">
+          <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-xs font-semibold border border-emerald-200">
             <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
             Market Price Intelligence & 30% Margin Analytics
           </div>
-          <h2 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">Market Trends, Regional Benchmarks & Profit Margins</h2>
-          <p className="text-xs md:text-sm text-gray-600 leading-relaxed">
+          <h2 className="text-xl font-bold text-gray-900">Market Trends, Regional Benchmarks & Profit Margins</h2>
+          <p className="text-xs text-gray-500 leading-relaxed">
             Compare farmer acquisition costs against our 30% standard selling price and live regional reference markets (Kimironko, Nyabugogo, Musanze, Mahoko, Huye, Rwamagana).
           </p>
         </div>
 
         {/* Global Reference Market Selector */}
-        <div className="z-10 bg-gray-50 p-3.5 rounded-2xl border border-gray-200 space-y-1 shrink-0">
+        <div className="z-10 bg-gray-50 p-2.5 rounded-xl border border-gray-200 space-y-1 shrink-0">
           <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Active Reference Market:</p>
           <select
             value={selectedReferenceMarket}
             onChange={(e) => setSelectedReferenceMarket(e.target.value)}
-            className="w-full p-2 text-xs font-bold rounded-xl border border-gray-200 bg-white text-gray-900 outline-none cursor-pointer shadow-xs focus:ring-2 focus:ring-emerald-500"
+            className="w-full p-1.5 text-xs font-bold rounded-lg border border-gray-200 bg-white text-gray-900 outline-none cursor-pointer shadow-xs focus:ring-2 focus:ring-emerald-500"
           >
             {REFERENCE_MARKETS.map((m) => (
               <option key={m.id} value={m.id}>
@@ -105,7 +105,7 @@ export default function MarketPriceIntelligence() {
         <CardHeader className="border-b border-gray-100 pb-3 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <CardTitle className="text-sm font-extrabold text-gray-900 flex items-center gap-2">
+              <CardTitle className="text-sm font-bold text-gray-900 flex items-center gap-2">
                 <LineChartIcon className="w-4 h-4 text-emerald-600" />
                 Price Trends Across Regional Markets vs Our 30% Selling Price
               </CardTitle>
@@ -185,7 +185,7 @@ export default function MarketPriceIntelligence() {
       <Card className="border-gray-200 shadow-sm bg-white overflow-hidden">
         <CardHeader className="border-b border-gray-100 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <CardTitle className="text-base font-extrabold text-gray-900 flex items-center gap-2">
+            <CardTitle className="text-sm font-bold text-gray-900 flex items-center gap-2">
               <TableIcon className="w-4 h-4 text-emerald-600" />
               Item Pricing, Purchase Cost, 30% Profit Margin & Market Benchmarks
             </CardTitle>
@@ -227,16 +227,16 @@ export default function MarketPriceIntelligence() {
         <CardContent className="p-0 overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-900 text-white font-bold uppercase tracking-wider text-[10px]">
-                <th className="py-4 px-4">Nbr</th>
-                <th className="py-4 px-4">Item / Crop Name</th>
-                <th className="py-4 px-4">Category</th>
-                <th className="py-4 px-4 text-slate-300">Farmer Purchase Price</th>
-                <th className="py-4 px-4 text-emerald-400">30% Profit Margin</th>
-                <th className="py-4 px-4 text-amber-300">Our Selling Price (30%)</th>
-                <th className="py-4 px-4">{selectedReferenceMarket} Market Price</th>
-                <th className="py-4 px-4">Price Difference</th>
-                <th className="py-4 px-4">Intelligence Recommendation</th>
+              <tr className="bg-gray-50 border-b border-gray-200 text-gray-500 font-bold uppercase tracking-wider text-[10px]">
+                <th className="py-3 px-4">Nbr</th>
+                <th className="py-3 px-4">Item / Crop Name</th>
+                <th className="py-3 px-4">Category</th>
+                <th className="py-3 px-4">Farmer Purchase Price</th>
+                <th className="py-3 px-4">30% Profit Margin</th>
+                <th className="py-3 px-4">Our Selling Price (30%)</th>
+                <th className="py-3 px-4">{selectedReferenceMarket} Market Price</th>
+                <th className="py-3 px-4">Price Difference</th>
+                <th className="py-3 px-4">Intelligence Recommendation</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 font-medium text-gray-800">
@@ -256,38 +256,38 @@ export default function MarketPriceIntelligence() {
                       isOverpriced ? "bg-rose-50/30" : isSignificantlyCheaper ? "bg-emerald-50/20" : ""
                     }`}
                   >
-                    <td className="py-4 px-4 text-gray-400 font-bold">{idx + 1}</td>
-                    <td className="py-4 px-4 font-extrabold text-gray-900">
+                    <td className="py-3.5 px-4 text-gray-400 font-bold">{idx + 1}</td>
+                    <td className="py-3.5 px-4 font-bold text-gray-900">
                       {item.productName}
                       <span className="block text-[10px] font-normal text-gray-500">Per {item.unit}</span>
                     </td>
-                    <td className="py-4 px-4">
+                    <td className="py-3.5 px-4">
                       <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-[10px] font-semibold">
                         {item.category}
                       </span>
                     </td>
-                    <td className="py-4 px-4 font-bold text-gray-700">
+                    <td className="py-3.5 px-4 font-bold text-gray-700">
                       {fmtRwf(item.farmerPurchasePrice)}
                     </td>
-                    <td className="py-4 px-4 font-bold text-emerald-700">
+                    <td className="py-3.5 px-4 font-bold text-emerald-700">
                       +{fmtRwf(marginProfit)}
                       <span className="block text-[10px] text-emerald-600 font-bold">(30.0%)</span>
                     </td>
-                    <td className="py-4 px-4 font-black text-emerald-950 text-sm bg-emerald-50/50">
+                    <td className="py-3.5 px-4 font-bold text-gray-900 text-sm bg-emerald-50/50">
                       {fmtRwf(ourSellingPrice)}
                     </td>
-                    <td className="py-4 px-4 font-bold text-gray-800">
+                    <td className="py-3.5 px-4 font-bold text-gray-800">
                       {fmtRwf(refMarketPrice)}
                       <span className="block text-[10px] text-gray-400 font-normal">{selectedReferenceMarket}</span>
                     </td>
-                    <td className="py-4 px-4">
+                    <td className="py-3.5 px-4">
                       {priceDiff < 0 ? (
-                        <span className="font-extrabold text-emerald-700 flex items-center gap-1">
+                        <span className="font-bold text-emerald-700 flex items-center gap-1">
                           <TrendingDown className="w-3.5 h-3.5" />
                           {fmtRwf(Math.abs(priceDiff))} cheaper ({Math.abs(priceDiffPct)}%)
                         </span>
                       ) : priceDiff > 0 ? (
-                        <span className="font-extrabold text-rose-700 flex items-center gap-1">
+                        <span className="font-bold text-rose-700 flex items-center gap-1">
                           <TrendingUp className="w-3.5 h-3.5" />
                           +{fmtRwf(priceDiff)} higher (+{priceDiffPct}%)
                         </span>
@@ -295,7 +295,7 @@ export default function MarketPriceIntelligence() {
                         <span className="font-bold text-gray-600">Equal (0%)</span>
                       )}
                     </td>
-                    <td className="py-4 px-4">
+                    <td className="py-3.5 px-4">
                       {isOverpriced ? (
                         <div className="space-y-1 max-w-[220px]">
                           <Badge className="bg-rose-100 text-rose-900 border-rose-300 font-bold text-[10px]">
@@ -336,7 +336,7 @@ export default function MarketPriceIntelligence() {
       {/* Multi-Market Regional Price Matrix */}
       <Card className="border-gray-200 shadow-sm bg-white overflow-hidden">
         <CardHeader className="border-b border-gray-100 pb-3">
-          <CardTitle className="text-sm font-extrabold text-gray-900">
+          <CardTitle className="text-sm font-bold text-gray-900">
             Multi-Market Regional Price Matrix (All Markets Comparison)
           </CardTitle>
           <p className="text-xs text-gray-500">
@@ -363,7 +363,7 @@ export default function MarketPriceIntelligence() {
                 return (
                   <tr key={item.id} className="hover:bg-gray-50/70 transition">
                     <td className="py-3 px-4 font-bold text-gray-900">{item.productName}</td>
-                    <td className="py-3 px-4 font-black text-emerald-800 bg-emerald-50/60">{fmtRwf(ourPrice)}</td>
+                    <td className="py-3 px-4 font-bold text-emerald-700 bg-emerald-50/60">{fmtRwf(ourPrice)}</td>
                     <td className="py-3 px-4">{fmtRwf(item.marketPrices.Kimironko)}</td>
                     <td className="py-3 px-4">{fmtRwf(item.marketPrices.Nyabugogo)}</td>
                     <td className="py-3 px-4">{fmtRwf(item.marketPrices.Musanze)}</td>
