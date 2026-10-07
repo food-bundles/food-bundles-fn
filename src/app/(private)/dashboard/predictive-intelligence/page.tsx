@@ -109,140 +109,158 @@ export default function PredictiveIntelligencePage() {
   const latestFinancialPoint = financialsData[financialsData.length - 1];
 
   return (
-    <div className="min-h-screen bg-gray-50/50 p-4 md:p-8 space-y-6">
-      {/* Top Banner */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white border border-gray-200 text-gray-900 p-6 md:p-8 rounded-3xl shadow-sm relative overflow-hidden">
-        <div className="space-y-2 z-10 max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
-            <Brain className="w-3.5 h-3.5 text-emerald-600" />
-            AI Predictive Operations & Market Intelligence Engine
-          </div>
-          <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-gray-900 tracking-tight">
-            Predictive Market & Operations Intelligence
-          </h1>
-          <p className="text-gray-600 text-sm leading-relaxed">
-            Multi-horizon order volume forecasting from requested vouchers and buyer onboardings, crop price trajectory models from real-time farmer submissions, and revenue margin simulations.
-          </p>
-        </div>
-
-        {/* Global Time Horizon Selector */}
-        <div className="z-10 flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-gray-50 p-2 rounded-2xl border border-gray-200 shadow-inner">
-          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider pl-2 flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5 text-emerald-600" /> Range:
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* breadcrumb */}
+        <nav
+          aria-label="Breadcrumb"
+          className="flex items-center gap-1.5 text-xs text-gray-400 mb-6"
+        >
+          <span className="flex items-center gap-1.5">
+            <a
+              href="/dashboard"
+              className="hover:text-gray-700 transition-colors font-medium"
+            >
+              Dashboard
+            </a>
+            <span className="text-gray-300">›</span>
           </span>
-          <div className="grid grid-cols-4 gap-1 w-full sm:w-auto">
-            {(["weekly", "monthly", "seasonal", "yearly"] as TimeHorizon[]).map((hz) => (
-              <button
-                key={hz}
-                onClick={() => setTimeHorizon(hz)}
-                className={`px-3 py-2 text-xs font-bold rounded-xl transition capitalize text-center ${
-                  timeHorizon === hz
-                    ? "bg-white text-gray-900 shadow-sm font-black border border-gray-200"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
-                }`}
-              >
-                {hz}
-              </button>
-            ))}
+          <span className="text-gray-700 font-semibold">Predictive Intelligence</span>
+        </nav>
+
+        {/* Top Banner */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white border border-gray-200 text-gray-900 p-6 rounded-2xl shadow-sm relative overflow-hidden">
+          <div className="space-y-1.5 z-10 max-w-3xl">
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
+              <Brain className="w-3.5 h-3.5 text-emerald-600" />
+              AI Predictive Operations & Market Intelligence Engine
+            </div>
+            <h1 className="text-xl font-bold text-gray-900">
+              Predictive Market & Operations Intelligence
+            </h1>
+            <p className="text-gray-500 text-xs leading-relaxed">
+              Multi-horizon order volume forecasting from requested vouchers and buyer onboardings, crop price trajectory models from real-time farmer submissions, and revenue margin simulations.
+            </p>
+          </div>
+
+          {/* Global Time Horizon Selector */}
+          <div className="z-10 flex flex-col sm:flex-row items-start sm:items-center gap-2 bg-gray-50 p-1.5 rounded-xl border border-gray-200">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider pl-2 flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-emerald-600" /> Range:
+            </span>
+            <div className="grid grid-cols-4 gap-1 w-full sm:w-auto">
+              {(["weekly", "monthly", "seasonal", "yearly"] as TimeHorizon[]).map((hz) => (
+                <button
+                  key={hz}
+                  onClick={() => setTimeHorizon(hz)}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition capitalize text-center ${
+                    timeHorizon === hz
+                      ? "bg-white text-gray-900 shadow-sm font-bold border border-gray-200"
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  }`}
+                >
+                  {hz}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Main KPI Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="py-4 shadow-xs border-gray-200 bg-white">
-          <CardContent className="px-5 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Predicted Orders ({timeHorizon})</p>
-              <p className="text-2xl font-black text-gray-900 mt-1">{fmtNum(totalPredictedOrders)}</p>
-              <div className="flex items-center gap-1.5 mt-1 text-xs text-emerald-600 font-bold">
-                <TrendingUp className="w-3.5 h-3.5" /> +24.8% Projected Growth
+        {/* Main KPI Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="py-4 shadow-xs border-gray-200 bg-white">
+            <CardContent className="px-5 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Predicted Orders ({timeHorizon})</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{fmtNum(totalPredictedOrders)}</p>
+                <div className="flex items-center gap-1.5 mt-1 text-xs text-emerald-600 font-semibold">
+                  <TrendingUp className="w-3.5 h-3.5" /> +24.8% Projected Growth
+                </div>
               </div>
-            </div>
-            <div className="w-12 h-12 bg-emerald-50 text-emerald-700 rounded-2xl flex items-center justify-center border border-emerald-100">
-              <Package className="w-6 h-6" />
-            </div>
-          </CardContent>
-        </Card>
+              <div className="w-10 h-10 bg-emerald-50 text-emerald-700 rounded-xl flex items-center justify-center border border-emerald-100">
+                <Package className="w-5 h-5" />
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="py-4 shadow-xs border-gray-200 bg-white">
-          <CardContent className="px-5 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Requested Vouchers</p>
-              <p className="text-2xl font-black text-purple-700 mt-1">{fmtNum(totalVouchersRequested)}</p>
-              <p className="text-xs text-gray-500 mt-1">91.4% Avg Conversion to Orders</p>
-            </div>
-            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center border border-purple-100">
-              <Ticket className="w-6 h-6" />
-            </div>
-          </CardContent>
-        </Card>
+          <Card className="py-4 shadow-xs border-gray-200 bg-white">
+            <CardContent className="px-5 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Requested Vouchers</p>
+                <p className="text-2xl font-bold text-purple-700 mt-1">{fmtNum(totalVouchersRequested)}</p>
+                <p className="text-xs text-gray-500 mt-1">91.4% Avg Conversion to Orders</p>
+              </div>
+              <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center border border-purple-100">
+                <Ticket className="w-5 h-5" />
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="py-4 shadow-xs border-gray-200 bg-white">
-          <CardContent className="px-5 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">New Platform Buyers</p>
-              <p className="text-2xl font-black text-blue-700 mt-1">+{totalNewUsers}</p>
-              <p className="text-xs text-blue-600 mt-1 font-semibold">Restaurants & Hotels Joining</p>
-            </div>
-            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center border border-blue-100">
-              <Users className="w-6 h-6" />
-            </div>
-          </CardContent>
-        </Card>
+          <Card className="py-4 shadow-xs border-gray-200 bg-white">
+            <CardContent className="px-5 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">New Platform Buyers</p>
+                <p className="text-2xl font-bold text-blue-700 mt-1">+{totalNewUsers}</p>
+                <p className="text-xs text-blue-600 mt-1 font-semibold">Restaurants & Hotels Joining</p>
+              </div>
+              <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center border border-blue-100">
+                <Users className="w-5 h-5" />
+              </div>
+            </CardContent>
+          </Card>
 
-        <Card className="py-4 shadow-xs border-gray-200 bg-white">
-          <CardContent className="px-5 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Projected Revenue ({timeHorizon})</p>
-              <p className="text-2xl font-black text-green-800 mt-1">{fmtRwf(latestFinancialPoint?.predictedRevenue || 0)}</p>
-              <p className="text-xs text-emerald-700 mt-1 font-bold">30% Standard Platform Margin</p>
-            </div>
-            <div className="w-12 h-12 bg-green-50 text-green-700 rounded-2xl flex items-center justify-center border border-green-100">
-              <DollarSign className="w-6 h-6" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          <Card className="py-4 shadow-xs border-gray-200 bg-white">
+            <CardContent className="px-5 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider">Projected Revenue ({timeHorizon})</p>
+                <p className="text-2xl font-bold text-green-700 mt-1">{fmtRwf(latestFinancialPoint?.predictedRevenue || 0)}</p>
+                <p className="text-xs text-emerald-700 mt-1 font-semibold">30% Standard Platform Margin</p>
+              </div>
+              <div className="w-10 h-10 bg-green-50 text-green-700 rounded-xl flex items-center justify-center border border-green-100">
+                <DollarSign className="w-5 h-5" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-      {/* Main Tabs Navigation */}
-      <div className="flex border-b border-gray-200 overflow-x-auto gap-2 bg-white px-4 pt-3 rounded-t-2xl shadow-xs">
-        <button
-          onClick={() => setActiveTab("orders")}
-          className={`flex items-center gap-2 px-5 py-3.5 text-xs font-bold border-b-2 transition whitespace-nowrap ${
-            activeTab === "orders"
-              ? "border-green-700 text-green-800 bg-green-50/50 rounded-t-xl"
-              : "border-transparent text-gray-500 hover:text-gray-900"
-          }`}
-        >
-          <BarChart3 className="w-4 h-4" />
-          1. Predictive Orders & Vouchers Growth
-        </button>
+        {/* Main Tabs Navigation */}
+        <div className="flex border-b border-gray-200 overflow-x-auto gap-2 bg-white px-4 pt-3 rounded-t-2xl shadow-xs">
+          <button
+            onClick={() => setActiveTab("orders")}
+            className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition whitespace-nowrap ${
+              activeTab === "orders"
+                ? "border-green-600 text-green-700 bg-green-50/50 rounded-t-xl"
+                : "border-transparent text-gray-500 hover:text-gray-900"
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            1. Predictive Orders & Vouchers Growth
+          </button>
 
-        <button
-          onClick={() => setActiveTab("prices")}
-          className={`flex items-center gap-2 px-5 py-3.5 text-xs font-bold border-b-2 transition whitespace-nowrap ${
-            activeTab === "prices"
-              ? "border-green-700 text-green-800 bg-green-50/50 rounded-t-xl"
-              : "border-transparent text-gray-500 hover:text-gray-900"
-          }`}
-        >
-          <TrendingUp className="w-4 h-4" />
-          2. Predictive Prices (Farmer Inflow Driven)
-        </button>
+          <button
+            onClick={() => setActiveTab("prices")}
+            className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition whitespace-nowrap ${
+              activeTab === "prices"
+                ? "border-green-600 text-green-700 bg-green-50/50 rounded-t-xl"
+                : "border-transparent text-gray-500 hover:text-gray-900"
+            }`}
+          >
+            <TrendingUp className="w-4 h-4" />
+            2. Predictive Prices (Farmer Inflow Driven)
+          </button>
 
-        <button
-          onClick={() => setActiveTab("revenue")}
-          className={`flex items-center gap-2 px-5 py-3.5 text-xs font-bold border-b-2 transition whitespace-nowrap ${
-            activeTab === "revenue"
-              ? "border-green-700 text-green-800 bg-green-50/50 rounded-t-xl"
-              : "border-transparent text-gray-500 hover:text-gray-900"
-          }`}
-        >
-          <DollarSign className="w-4 h-4" />
-          3. Revenue & Predictive Sales Simulation
-        </button>
-      </div>
+          <button
+            onClick={() => setActiveTab("revenue")}
+            className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition whitespace-nowrap ${
+              activeTab === "revenue"
+                ? "border-green-600 text-green-700 bg-green-50/50 rounded-t-xl"
+                : "border-transparent text-gray-500 hover:text-gray-900"
+            }`}
+          >
+            <DollarSign className="w-4 h-4" />
+            3. Revenue & Predictive Sales Simulation
+          </button>
+        </div>
 
       {/* ========================================================================= */}
       {/* TAB 1: PREDICTIVE ORDERS (VOUCHERS & USER GROWTH DRIVEN) */}
@@ -286,7 +304,7 @@ export default function PredictiveIntelligencePage() {
             <CardHeader className="border-b border-gray-100 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <CardTitle className="text-base font-extrabold text-gray-900">
+                  <CardTitle className="text-base font-bold text-gray-900">
                     Reality vs Predictions: Order Volume & Driver Correlation
                   </CardTitle>
                   <Badge className="bg-green-100 text-green-800 border-green-200 capitalize font-bold text-[10px]">
@@ -481,7 +499,7 @@ export default function PredictiveIntelligencePage() {
                     Simulated Output Impact:
                   </p>
                   <p className="text-emerald-800">
-                    Simulated Orders: <span className="font-extrabold text-sm">{fmtNum(totalPredictedOrders)}</span>
+                    Simulated Orders: <span className="font-bold text-sm">{fmtNum(totalPredictedOrders)}</span>
                   </p>
                   <p className="text-[11px] text-emerald-700">
                     Estimated Additional Revenue: <span className="font-bold">{fmtRwf(totalPredictedOrders * 12500)}</span>
@@ -636,7 +654,7 @@ export default function PredictiveIntelligencePage() {
                       <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider bg-gray-100 px-2 py-0.5 rounded">
                         {crop.category}
                       </span>
-                      <h4 className="text-base font-extrabold text-gray-900 mt-1">{crop.productName}</h4>
+                      <h4 className="text-base font-bold text-gray-900 mt-1">{crop.productName}</h4>
                     </div>
 
                     <Badge
@@ -671,7 +689,7 @@ export default function PredictiveIntelligencePage() {
                   <div className="grid grid-cols-2 gap-2 text-xs">
                     <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-100">
                       <p className="text-[11px] text-gray-500">Current Inflow Price</p>
-                      <p className="text-base font-black text-gray-900 mt-0.5">{fmtRwf(crop.currentFarmerSubmissionPrice)}</p>
+                      <p className="text-base font-bold text-gray-900 mt-0.5">{fmtRwf(crop.currentFarmerSubmissionPrice)}</p>
                       <p className="text-[10px] text-gray-400">/{crop.unit} farmer quote</p>
                     </div>
 
@@ -684,7 +702,7 @@ export default function PredictiveIntelligencePage() {
                     >
                       <p className="text-[11px] font-semibold text-gray-600">AI Predicted Price</p>
                       <p
-                        className={`text-base font-black mt-0.5 ${
+                        className={`text-base font-bold mt-0.5 ${
                           crop.priceTrend === "DECREASING" ? "text-emerald-900" : "text-rose-900"
                         }`}
                       >
@@ -716,7 +734,7 @@ export default function PredictiveIntelligencePage() {
             <CardHeader className="border-b border-gray-100 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <CardTitle className="text-base font-extrabold text-gray-900">
+                  <CardTitle className="text-base font-bold text-gray-900">
                     {selectedCrop.productName}: Price Reality vs Predicted Trajectory
                   </CardTitle>
                   <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 text-[10px] font-bold">
@@ -829,7 +847,7 @@ export default function PredictiveIntelligencePage() {
             <Card className="border-gray-200 shadow-sm bg-white">
               <CardHeader className="border-b border-gray-100 pb-3 flex justify-between items-center">
                 <div>
-                  <CardTitle className="text-sm font-extrabold text-gray-900">
+                  <CardTitle className="text-sm font-bold text-gray-900">
                     Gross Revenue: Reality vs Prediction ({timeHorizon})
                   </CardTitle>
                   <p className="text-xs text-gray-500">Total transaction value in RWF</p>
@@ -914,7 +932,7 @@ export default function PredictiveIntelligencePage() {
             <Card className="border-gray-200 shadow-sm bg-white">
               <CardHeader className="border-b border-gray-100 pb-3 flex justify-between items-center">
                 <div>
-                  <CardTitle className="text-sm font-extrabold text-gray-900">
+                  <CardTitle className="text-sm font-bold text-gray-900">
                     Predictive Sales Volume: Reality vs Demand ({timeHorizon})
                   </CardTitle>
                   <p className="text-xs text-gray-500">Aggregated product quantity in Kilograms</p>
@@ -966,6 +984,7 @@ export default function PredictiveIntelligencePage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

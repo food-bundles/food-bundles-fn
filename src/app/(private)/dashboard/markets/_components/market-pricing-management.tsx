@@ -290,14 +290,14 @@ export default function MarketPricingManagement() {
               <>
                 <button
                   onClick={() => setUploadWfpModalOpen(true)}
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-black shadow-sm hover:bg-emerald-700 transition"
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-green-600 text-white text-xs font-bold shadow-sm hover:bg-green-700 transition"
                 >
                   <UploadCloud className="w-3.5 h-3.5" />
                   Upload WFP CSV Dataset
                 </button>
                 <button
                   onClick={() => setWfpRefreshTrigger((p) => p + 1)}
-                  className="w-9 h-9 rounded-xl border border-gray-200 bg-white flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors shadow-sm"
+                  className="w-8 h-8 rounded-xl border border-gray-200 bg-white flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors shadow-sm"
                   title="Refresh WFP Surveillance Analytics"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />

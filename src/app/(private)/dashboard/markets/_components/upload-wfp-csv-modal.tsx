@@ -118,50 +118,64 @@ export default function UploadWfpCsvModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        {/* Backdrop */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 10 }}
+          className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={handleClose}
+        />
+
+        {/* Modal Card */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 10 }}
-          className="bg-white rounded-3xl shadow-2xl border border-gray-100 max-w-xl w-full overflow-hidden flex flex-col"
+          exit={{ opacity: 0, scale: 0.95, y: 12 }}
+          transition={{ type: "spring", stiffness: 380, damping: 32 }}
+          className="relative bg-white rounded-3xl shadow-2xl border border-gray-200 max-w-xl w-full overflow-hidden flex flex-col z-10"
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 p-6 text-white relative">
-            <button
-              onClick={handleClose}
-              disabled={uploading}
-              className="absolute top-5 right-5 p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white transition disabled:opacity-50"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2.5 rounded-2xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                <FileSpreadsheet className="w-6 h-6" />
+          <div className="flex items-start justify-between px-6 py-5 border-b border-gray-100 bg-gray-50">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-green-600 flex items-center justify-center text-white shadow-sm flex-shrink-0">
+                <FileSpreadsheet className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-xl font-black">Upload WFP Market Prices CSV</h3>
-                <p className="text-xs text-gray-300">
+                <h2 className="text-sm font-black text-gray-900">
+                  Upload WFP Market Prices CSV
+                </h2>
+                <p className="text-[11px] text-gray-500 mt-0.5">
                   Isolated WFP Rwanda historical food security dataset ingestion
                 </p>
               </div>
             </div>
+            <button
+              onClick={handleClose}
+              disabled={uploading}
+              aria-label="Close modal"
+              className="w-7 h-7 rounded-xl border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-all disabled:opacity-50 mt-0.5"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
 
           {/* Body */}
-          <div className="p-6 space-y-5">
+          <div className="p-6 space-y-4">
             {/* Isolation Guarantee Notice */}
-            <div className="p-3 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 text-emerald-900 text-xs flex items-start gap-2.5">
-              <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-              <p className="leading-relaxed">
-                <strong className="font-black">Isolated External Data:</strong> This ingestion pipeline stores records strictly in the external WFP surveillance repository. It does not overwrite, mutate, or merge into FoodBundles internal product catalog or local benchmark markets.
+            <div className="p-3.5 rounded-xl bg-green-50 border border-green-200 text-xs flex items-start gap-2.5">
+              <Sparkles className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+              <p className="leading-relaxed text-green-800">
+                <strong className="font-bold text-green-900">Isolated External Data:</strong> This ingestion pipeline stores records strictly in the external WFP surveillance repository. It does not overwrite, mutate, or merge into FoodBundles internal product catalog or local benchmark markets.
               </p>
             </div>
 
             {error && (
               <motion.div
-                initial={{ opacity: 0, y: -5 }}
+                initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2.5"
+                className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-start gap-2"
               >
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span className="font-medium">{error}</span>
@@ -170,81 +184,81 @@ export default function UploadWfpCsvModal({
 
             {uploadResult ? (
               <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.96 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="space-y-4 py-2"
+                className="space-y-4 py-1"
               >
-                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center gap-3">
-                  <CheckCircle2 className="w-8 h-8 text-emerald-600 shrink-0" />
+                <div className="p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 flex items-center gap-3">
+                  <CheckCircle2 className="w-6 h-6 text-green-600 shrink-0" />
                   <div>
-                    <h4 className="font-bold text-sm">
+                    <h4 className="font-bold text-sm text-green-900">
                       WFP Dataset Successfully Ingested!
                     </h4>
-                    <p className="text-xs text-emerald-700">
+                    <p className="text-xs text-green-700 mt-0.5">
                       Surveillance records have been saved into the isolated external database store.
                     </p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
-                    <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                  <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
                       Processed Records
                     </p>
-                    <p className="text-xl font-black text-slate-900 mt-1">
+                    <p className="text-xl font-bold text-gray-900 mt-1">
                       {uploadResult.insertedCount.toLocaleString()}
                     </p>
-                    <p className="text-[10px] text-gray-400">
+                    <p className="text-[11px] text-gray-500 mt-0.5">
                       out of {uploadResult.totalRows.toLocaleString()} rows
                     </p>
                   </div>
 
-                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100">
-                    <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                  <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
                       Markets Surveillance
                     </p>
-                    <p className="text-xl font-black text-slate-900 mt-1">
+                    <p className="text-xl font-bold text-gray-900 mt-1">
                       {uploadResult.marketsDiscovered}
                     </p>
-                    <p className="text-[10px] text-emerald-600 font-medium">
+                    <p className="text-[11px] text-green-600 font-medium mt-0.5">
                       Indexed in WFP store
                     </p>
                   </div>
 
-                  <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 col-span-2 flex items-center justify-between">
+                  <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200 col-span-2 flex items-center justify-between">
                     <div>
-                      <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
                         Ingestion Speed
                       </p>
-                      <p className="text-sm font-bold text-slate-800 mt-0.5">
+                      <p className="text-xs font-semibold text-gray-800 mt-0.5">
                         Completed in {uploadResult.durationSeconds} seconds
                       </p>
                     </div>
-                    <Sparkles className="w-5 h-5 text-amber-500" />
+                    <Sparkles className="w-4 h-4 text-green-600" />
                   </div>
                 </div>
 
                 <div className="pt-2 flex justify-end">
                   <button
                     onClick={handleClose}
-                    className="px-6 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition flex items-center gap-2"
+                    className="px-5 py-2.5 rounded-xl bg-green-600 text-white font-bold text-xs hover:bg-green-700 transition flex items-center gap-1.5 shadow-sm"
                   >
-                    View Visualizations <ArrowRight className="w-4 h-4" />
+                    View Visualizations <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </motion.div>
             ) : (
               <>
                 {/* Import Mode Tabs */}
-                <div className="grid grid-cols-2 p-1 bg-gray-100 rounded-2xl gap-1">
+                <div className="grid grid-cols-2 p-1 bg-gray-100 rounded-xl gap-1">
                   <button
                     type="button"
                     onClick={() => setImportMode("file")}
                     disabled={uploading}
-                    className={`py-2 px-3 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 ${
+                    className={`py-2 px-3 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-2 ${
                       importMode === "file"
-                        ? "bg-white text-slate-900 shadow-sm"
-                        : "text-gray-500 hover:text-slate-900"
+                        ? "bg-white text-gray-900 shadow-sm font-bold"
+                        : "text-gray-500 hover:text-gray-900"
                     }`}
                   >
                     <UploadCloud className="w-3.5 h-3.5" />
@@ -254,10 +268,10 @@ export default function UploadWfpCsvModal({
                     type="button"
                     onClick={() => setImportMode("server")}
                     disabled={uploading}
-                    className={`py-2 px-3 text-xs font-bold rounded-xl transition flex items-center justify-center gap-2 ${
+                    className={`py-2 px-3 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-2 ${
                       importMode === "server"
-                        ? "bg-white text-slate-900 shadow-sm"
-                        : "text-gray-500 hover:text-slate-900"
+                        ? "bg-white text-gray-900 shadow-sm font-bold"
+                        : "text-gray-500 hover:text-gray-900"
                     }`}
                   >
                     <Server className="w-3.5 h-3.5" />
@@ -274,12 +288,12 @@ export default function UploadWfpCsvModal({
                     onDragLeave={() => setIsDragging(false)}
                     onDrop={handleDrop}
                     onClick={() => fileInputRef.current?.click()}
-                    className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition flex flex-col items-center justify-center gap-2 ${
+                    className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition flex flex-col items-center justify-center gap-2 ${
                       isDragging
-                        ? "border-emerald-500 bg-emerald-50/50"
+                        ? "border-green-500 bg-green-50/50"
                         : file
-                        ? "border-emerald-400 bg-slate-50"
-                        : "border-gray-200 hover:border-gray-300 bg-gray-50/50"
+                        ? "border-green-400 bg-green-50/20"
+                        : "border-gray-200 hover:border-green-400 bg-gray-50/50"
                     }`}
                   >
                     <input
@@ -289,40 +303,39 @@ export default function UploadWfpCsvModal({
                       onChange={handleFileChange}
                       className="hidden"
                     />
-                    <div className="p-3.5 rounded-full bg-emerald-100 text-emerald-700">
-                      <UploadCloud className="w-7 h-7" />
+                    <div className="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center">
+                      <UploadCloud className="w-5 h-5" />
                     </div>
                     {file ? (
-                      <div className="space-y-1">
-                        <p className="font-bold text-sm text-slate-900">
+                      <div className="space-y-0.5">
+                        <p className="font-bold text-xs text-gray-900">
                           {file.name}
                         </p>
-                        <p className="text-xs text-gray-500">
-                          {(file.size / (1024 * 1024)).toFixed(2)} MB • Ready to
-                          import
+                        <p className="text-[11px] text-gray-500">
+                          {(file.size / (1024 * 1024)).toFixed(2)} MB • Ready to import
                         </p>
                       </div>
                     ) : (
-                      <div className="space-y-1">
-                        <p className="font-bold text-sm text-slate-800">
+                      <div className="space-y-0.5">
+                        <p className="font-semibold text-xs text-gray-800">
                           Click to browse or drag & drop CSV here
                         </p>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-[11px] text-gray-400">
                           Format: wfp_food_prices_rwa.csv (up to 100MB)
                         </p>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-                    <div className="flex items-center gap-2 text-slate-800 text-xs font-bold">
-                      <Database className="w-4 h-4 text-emerald-600" />
+                  <div className="p-4 rounded-xl bg-gray-50 border border-gray-200 space-y-2">
+                    <div className="flex items-center gap-2 text-gray-900 text-xs font-bold">
+                      <Database className="w-4 h-4 text-green-600" />
                       Direct Server Import
                     </div>
-                    <p className="text-xs text-gray-500 leading-relaxed">
+                    <p className="text-xs text-gray-600 leading-relaxed">
                       Imports directly from the local file path:
                       <br />
-                      <code className="text-[11px] font-mono bg-white px-2 py-1 rounded border border-gray-200 mt-1 inline-block text-slate-700">
+                      <code className="text-[11px] font-mono bg-white px-2 py-1 rounded border border-gray-200 mt-1 inline-block text-gray-800 break-all">
                         C:\Users\muvunyi\Documents\FOODBUNDLES\wfp_food_prices_rwa.csv
                       </code>
                     </p>
@@ -331,17 +344,17 @@ export default function UploadWfpCsvModal({
 
                 {/* Progress Bar */}
                 {uploading && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                  <div className="space-y-2 pt-1">
+                    <div className="flex items-center justify-between text-xs font-semibold text-gray-700">
                       <span className="flex items-center gap-2">
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-green-600" />
                         Processing & Indexing Database...
                       </span>
-                      <span>{progress}%</span>
+                      <span className="font-bold text-green-700">{progress}%</span>
                     </div>
                     <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
                       <motion.div
-                        className="h-full bg-emerald-600 rounded-full"
+                        className="h-full bg-green-600 rounded-full"
                         initial={{ width: 0 }}
                         animate={{ width: `${progress || 100}%` }}
                         transition={{ ease: "easeInOut" }}
@@ -356,7 +369,7 @@ export default function UploadWfpCsvModal({
                     type="button"
                     onClick={handleClose}
                     disabled={uploading}
-                    className="px-4 py-2 text-xs font-bold text-gray-600 hover:text-slate-900 transition disabled:opacity-50"
+                    className="px-4 py-2 text-xs font-semibold text-gray-600 hover:text-gray-900 rounded-xl border border-gray-200 hover:bg-gray-50 transition disabled:opacity-50"
                   >
                     Cancel
                   </button>
@@ -364,16 +377,16 @@ export default function UploadWfpCsvModal({
                     type="button"
                     onClick={handleUpload}
                     disabled={uploading || (importMode === "file" && !file)}
-                    className="px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                    className="px-5 py-2.5 rounded-xl bg-green-600 text-white font-bold text-xs hover:bg-green-700 transition flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                   >
                     {uploading ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         Importing Dataset...
                       </>
                     ) : (
                       <>
-                        <UploadCloud className="w-4 h-4" />
+                        <UploadCloud className="w-3.5 h-3.5" />
                         Start Ingestion
                       </>
                     )}
