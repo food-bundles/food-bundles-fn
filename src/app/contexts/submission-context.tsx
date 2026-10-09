@@ -44,6 +44,31 @@ export interface FarmerSubmission {
   cell: string;
   village: string;
   farmer: FarmerInfo;
+  payouts?: SubmissionPayout[];
+}
+
+export interface SubmissionPayout {
+  id: string;
+  submissionId: string;
+  amount: number;
+  phoneNumber: string;
+  paypackRef: string | null;
+  paypackStatus: string | null;
+  status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | "CANCELLED" | "REFUNDED" | "VOUCHER_CREDIT";
+  initiatedBy: string;
+  confirmedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SubmissionStatusHistoryEntry {
+  id: string;
+  submissionId: string;
+  fromStatus: string;
+  toStatus: string;
+  reason: string | null;
+  changedBy: string;
+  createdAt: string;
 }
 
 export interface SubmissionResponse {

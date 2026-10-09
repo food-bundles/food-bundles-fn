@@ -10,6 +10,8 @@ import {
   CheckCircle,
   MoreHorizontal,
   CheckIcon,
+  Undo2,
+  Wallet,
 } from "lucide-react";
 import { CiEdit } from "react-icons/ci";
 import { FarmerSubmission } from "@/app/contexts/submission-context";
@@ -67,7 +69,12 @@ export function getAdminSubmissionColumns(
     submission: FarmerSubmission,
     mode: "view" | "verify" | "edit"
   ) => void,
-  onApproveSubmission: (submissionId: string) => void
+  onApproveSubmission: (submissionId: string) => void,
+  onReject: (submission: FarmerSubmission) => void,
+  onDelete: (submission: FarmerSubmission) => void,
+  onForceComplete: (submission: FarmerSubmission) => void,
+  onPayout: (submission: FarmerSubmission) => void,
+  onReverseStatus: (submission: FarmerSubmission) => void
 ): ColumnDef<FarmerSubmission>[] {
   return [
     // Selection column
@@ -185,6 +192,28 @@ export function getAdminSubmissionColumns(
             </div>
           )}
         </div>
+      ),
+    },
+
+    // Farmer Counter Offer
+    {
+      accessorKey: "farmerCounterOffer",
+      header: "Counter Offer (RWF/kg)",
+      cell: ({ row }) => (
+        <span className="text-sm font-medium">
+          {formatCurrency(row.original.farmerCounterOffer)}
+        </span>
+      ),
+    },
+
+    // Farmer Counter Quantity
+    {
+      accessorKey: "farmerCounterQty",
+      header: "Counter Qty (kg)",
+      cell: ({ row }) => (
+        <span className="text-sm font-medium">
+          {row.original.farmerCounterQty ?? "-"}
+        </span>
       ),
     },
 
@@ -358,6 +387,12 @@ export function getAdminSubmissionColumns(
       header: "Actions",
       cell: ({ row }) => {
         const submission = row.original;
+        const isLocked =
+          submission.status === "APPROVED" || submission.status === "PAID";
+
+        const hasActivePayout = (submission.payouts || []).some((p) =>
+          ["PENDING", "PROCESSING", "COMPLETED"].includes(p.status)
+        );
 
         return (
           <div className="flex items-center space-x-1">
@@ -368,9 +403,7 @@ export function getAdminSubmissionColumns(
               className="h-8 w-8 p-0 text-green-600 hover:text-green-800 hover:bg-blue-50"
               onClick={() => onApproveSubmission(submission.id)}
               title="Approve submission"
-              disabled={
-                submission.status === "APPROVED" || submission.status === "PAID"
-              }
+              disabled={isLocked}
             >
               <CheckIcon className="h-6 w-6 text-green-600" />
             </Button>
@@ -400,6 +433,7 @@ export function getAdminSubmissionColumns(
                   variant="ghost"
                   size="sm"
                   className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  onClick={() => onReject(submission)}
                   title="Reject submission"
                 >
                   <XCircle className="h-4 w-4" />
@@ -407,11 +441,51 @@ export function getAdminSubmissionColumns(
               </>
             )}
 
+            {submission.status === "VERIFIED" && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                onClick={() => onForceComplete(submission)}
+                title="Force complete submission"
+              >
+                <CheckCircle className="h-4 w-4" />
+              </Button>
+            )}
+
+            {submission.status === "APPROVED" && !hasActivePayout && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                onClick={() => onPayout(submission)}
+                title="Pay via PayPack"
+              >
+                <Wallet className="h-4 w-4" />
+              </Button>
+            )}
+
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-              title="Delete submission"
+              className="h-8 w-8 p-0 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+              onClick={() => onReverseStatus(submission)}
+              title="Reverse status"
+            >
+              <Undo2 className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-30"
+              onClick={() => onDelete(submission)}
+              title={
+                isLocked
+                  ? "Cannot delete an approved or paid submission"
+                  : "Delete submission"
+              }
+              disabled={isLocked}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
