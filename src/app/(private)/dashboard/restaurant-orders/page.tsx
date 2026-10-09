@@ -18,6 +18,7 @@ import { EditOrderModal } from "./_components/edit-order-modal";
 import { CreateAdminOrderModal } from "./_components/create-admin-order-modal";
 import { useWebSocket } from "@/hooks/useOrderWebSocket";
 import { useAuth } from "@/app/contexts/auth-context";
+import { useAdminAccess } from "@/app/hooks/useAdminAccess";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -62,6 +63,7 @@ export default function AdminOrdersPage() {
     totalPages: 0,
   });
   const { user } = useAuth();
+  const { can } = useAdminAccess();
 
   // WebSocket integration for real-time updates
   const { isConnected, orderUpdates } = useWebSocket(
@@ -509,7 +511,9 @@ export default function AdminOrdersPage() {
       // Revert on error
       setOrders(previousOrders);
       console.error("Failed to update order status:", error);
-      toast.error("Failed to update order status");
+      toast.error(
+        error?.response?.data?.message || "Failed to update order status"
+      );
     }
   };
 
@@ -533,7 +537,9 @@ export default function AdminOrdersPage() {
       // Revert on error
       setOrders(previousOrders);
       console.error("Failed to update payment status:", error);
-      toast.error("Failed to update payment status");
+      toast.error(
+        error?.response?.data?.message || "Failed to update payment status"
+      );
     }
   };
 
@@ -546,6 +552,7 @@ export default function AdminOrdersPage() {
     onPaymentStatusUpdate: handlePaymentStatusUpdate,
     onEdit: handleEditOrder,
     onSendPaymentLink: handleSendPaymentLink,
+    canManage: can("orders", "manage"),
   });
 
   const filters = [
