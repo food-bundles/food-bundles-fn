@@ -145,4 +145,79 @@ export const submissionService = {
     );
     return response.data;
   },
+
+  // --- Admin overrides, payouts, and reversal ---
+  rejectSubmission: async (submissionId: string, reason?: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(
+      `/submissions/${submissionId}/reject`,
+      { reason }
+    );
+    return response.data;
+  },
+
+  deleteSubmission: async (submissionId: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.delete(`/submissions/${submissionId}`);
+    return response.data;
+  },
+
+  forceCompleteSubmission: async (submissionId: string, reason?: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(
+      `/submissions/${submissionId}/force-complete`,
+      { reason }
+    );
+    return response.data;
+  },
+
+  reverseSubmissionStatus: async (
+    submissionId: string,
+    payload: { toStatus: "PENDING" | "VERIFIED" | "APPROVED" | "PAID"; reason?: string }
+  ) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(
+      `/submissions/${submissionId}/reverse-status`,
+      payload
+    );
+    return response.data;
+  },
+
+  getSubmissionStatusHistory: async (submissionId: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get(
+      `/submissions/${submissionId}/status-history`
+    );
+    return response.data;
+  },
+
+  initiateSubmissionPayout: async (submissionId: string, phoneNumber: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(
+      `/submissions/${submissionId}/payout`,
+      { phoneNumber }
+    );
+    return response.data;
+  },
+
+  confirmSubmissionPayout: async (
+    submissionId: string,
+    payoutId: string,
+    outcome: "COMPLETED" | "FAILED"
+  ) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(
+      `/submissions/${submissionId}/payout/${payoutId}/confirm`,
+      { outcome }
+    );
+    return response.data;
+  },
+
+  getSubmissionPayouts: async (submissionId: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get(
+      `/submissions/${submissionId}/payouts`
+    );
+    return response.data;
+  },
 };
