@@ -167,9 +167,25 @@ const STATUS_LABELS: Record<string, string> = {
 const getStatusLabel = (status: string) => STATUS_LABELS[status] || status;
 
 // Status Stepper Component: [back] badge [next], each step confirmed via dialog
-function StatusStepper({ currentStatus, flow, orderId, restaurantName, kind, getColor, onUpdate }: {
+// Payment statuses outside the normal flow that an admin can still correct:
+// e.g. the gateway reported FAILED/CANCELLED but the restaurant did pay.
+// Next marks it paid; Back returns it to Pending so payment can be retried.
+const PAYMENT_STATUS_RECOVERY: Record<string, { prev: string; next: string }> = {
+  FAILED: { prev: "PENDING", next: "COMPLETED" },
+  CANCELLED: { prev: "PENDING", next: "COMPLETED" },
+};
+
+// A cancelled order can be reactivated: Next moves it back into the flow
+// (Confirmed), Back returns it to Pending. Not offered when payment FAILED.
+const ORDER_STATUS_RECOVERY: Record<string, { prev: string; next: string }> = {
+  CANCELLED: { prev: "PENDING", next: "CONFIRMED" },
+};
+
+function StatusStepper({ currentStatus, flow, recovery, canManage = true, orderId, restaurantName, kind, getColor, onUpdate }: {
   currentStatus: string;
   flow: string[];
+  recovery?: Record<string, { prev: string; next: string }>;
+  canManage?: boolean;
   orderId: string;
   restaurantName: string;
   kind: "order" | "payment";
@@ -178,10 +194,24 @@ function StatusStepper({ currentStatus, flow, orderId, restaurantName, kind, get
 }) {
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
 
-  // Statuses outside the flow (e.g. CANCELLED, FAILED) have no next/previous step
+  // Statuses outside the flow have no next/previous step, unless a recovery
+  // path is defined for them. Users who cannot manage orders get no arrows.
   const index = flow.indexOf(currentStatus);
-  const prevStatus = index > 0 ? flow[index - 1] : null;
-  const nextStatus = index >= 0 && index < flow.length - 1 ? flow[index + 1] : null;
+  const recoverable = recovery?.[currentStatus];
+  const prevStatus = !canManage
+    ? null
+    : recoverable
+      ? recoverable.prev
+      : index > 0
+        ? flow[index - 1]
+        : null;
+  const nextStatus = !canManage
+    ? null
+    : recoverable
+      ? recoverable.next
+      : index >= 0 && index < flow.length - 1
+        ? flow[index + 1]
+        : null;
   const isBackward = pendingStatus !== null && pendingStatus === prevStatus;
   const title = kind === "order" ? "Order Status" : "Payment Status";
 
@@ -289,6 +319,8 @@ export const createOrdersColumns = (actions: {
   onPaymentStatusUpdate: (orderId: string, paymentStatus: string) => void;
   onEdit?: (order: Order) => void;
   onSendPaymentLink?: (order: Order) => void;
+  // False hides the status arrows (users without the Orders "manage" permission)
+  canManage?: boolean;
 }): ColumnDef<Order>[] => [
   {
     accessorKey: "#",
@@ -367,6 +399,10 @@ export const createOrdersColumns = (actions: {
         <StatusStepper
           currentStatus={order.status}
           flow={ORDER_STATUS_FLOW}
+          recovery={
+            order.paymentStatus === "FAILED" ? undefined : ORDER_STATUS_RECOVERY
+          }
+          canManage={actions.canManage}
           kind="order"
           getColor={getOrderStatusColor}
           orderId={order.id}
@@ -385,6 +421,8 @@ export const createOrdersColumns = (actions: {
         <StatusStepper
           currentStatus={order.paymentStatus}
           flow={PAYMENT_STATUS_FLOW}
+          recovery={PAYMENT_STATUS_RECOVERY}
+          canManage={actions.canManage}
           kind="payment"
           getColor={getPaymentStatusColor}
           orderId={order.id}

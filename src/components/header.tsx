@@ -4,7 +4,7 @@
 
 import { Button } from "@/components/ui/button";
 import { OptimizedImage } from "@/components/OptimizedImage";
-import { Menu, X, UserPlus, User, ShoppingCart } from "lucide-react";
+import { Menu, X, UserPlus, User, ShoppingCart, LayoutGrid, LogOut } from "lucide-react";
 import { useState, useCallback, useRef, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/auth-context";
@@ -77,7 +77,6 @@ export function Header() {
   const [isPriceDropdownOpen, setIsPriceDropdownOpen] = useState(false);
   const [isMobilePriceOpen, setIsMobilePriceOpen] = useState(false);
   const [isAuthTransitioning, setIsAuthTransitioning] = useState(false);
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
 
@@ -213,11 +212,13 @@ export function Header() {
     try {
       setIsAuthTransitioning(true);
       await logout();
-      setTimeout(() => {
-        setIsAuthTransitioning(false);
-      }, 500);
     } catch (error) {
       console.error("Logout error:", error);
+    } finally {
+      // Full reload, not a client-side state change: it clears Next.js's
+      // router cache (which may hold a "/login → /" redirect prefetched while
+      // signed in) and every context still holding the previous user's data.
+      window.location.href = "/";
     }
   };
 
@@ -253,23 +254,10 @@ export function Header() {
     if (typeof window !== "undefined") {
       window.addEventListener("scroll", handleScroll, { passive: true });
 
-      // Close user menu when clicking outside
-      const handleClickOutside = (event: MouseEvent) => {
-        const target = event.target as Element;
-        if (!target.closest('.user-menu-container')) {
-          setIsUserMenuOpen(false);
-        }
-      };
-      
-      if (isUserMenuOpen) {
-        document.addEventListener('click', handleClickOutside);
-      }
-
       detectActiveSection();
 
       return () => {
         window.removeEventListener("scroll", handleScroll);
-        document.removeEventListener('click', handleClickOutside);
         if (scrollTimeout.current) {
           clearTimeout(scrollTimeout.current);
         }
@@ -278,7 +266,7 @@ export function Header() {
         }
       };
     }
-  }, [handleScroll, detectActiveSection, isUserMenuOpen]);
+  }, [handleScroll, detectActiveSection]);
 
   // Get user profile data
   const profileImage = isAuthenticated ? getUserProfileImage() : null;
@@ -324,7 +312,7 @@ export function Header() {
                       >
                         <Link
                           href={item.href}
-                          className="hover:border-b hover:border-orange-400 py-1 text-[14px] text-white cursor-pointer flex items-center gap-1"
+                          className="hover:border-b hover:border-orange-400 py-1 text-[13px] uppercase tracking-wide text-white cursor-pointer flex items-center gap-1"
                         >
                           {item.label}
                         </Link>
@@ -349,7 +337,7 @@ export function Header() {
                     <Link
                       key={item.id}
                       href={item.href}
-                      className="hover:border-b hover:border-orange-400 py-1 text-[14px] text-white cursor-pointer flex items-center gap-1"
+                      className="hover:border-b hover:border-orange-400 py-1 text-[13px] uppercase tracking-wide text-white cursor-pointer flex items-center gap-1"
                     >
                       {item.label}
                     </Link>
@@ -358,7 +346,7 @@ export function Header() {
                       key={item.id}
                       href={item.href}
                       onClick={(e) => handleNavClick(e, item.id)}
-                      className="hover:border-b hover:border-orange-400 py-1 text-[14px] text-white cursor-pointer flex items-center gap-1"
+                      className="hover:border-b hover:border-orange-400 py-1 text-[13px] uppercase tracking-wide text-white cursor-pointer flex items-center gap-1"
                     >
                       {item.label}
                     </a>
@@ -379,7 +367,7 @@ export function Header() {
                     }}
                     suppressHydrationWarning
                   >
-                    <span className="relative z-20">Shop Now</span>
+                    <span className="relative z-20 uppercase tracking-wide">Shop Now</span>
                   </button>
 
                   {/* Enhanced Dropdown */}
@@ -397,7 +385,7 @@ export function Header() {
                       </p>
                     </div>
                     <div className="pb-0">
-                      <Link href="/login">
+                      <Link href="/login" prefetch={false}>
                         <button
                           onClick={() => {
                             window.dispatchEvent(
@@ -441,7 +429,7 @@ export function Header() {
                     }}
                     suppressHydrationWarning
                   >
-                    <span className="relative z-10">Shop Now</span>
+                    <span className="relative z-10 uppercase tracking-wide">Shop Now</span>
                   </button>
 
                   {/* Mobile Subscribe Dropdown - Positioned appropriately */}
@@ -457,7 +445,7 @@ export function Header() {
                       </p>
                     </div>
                     <div className="py-0">
-                      <Link href="/login">
+                      <Link href="/login" prefetch={false}>
                         <button
                           onClick={() => {
                             window.dispatchEvent(
@@ -495,76 +483,77 @@ export function Header() {
 
               {/* Right actions */}
               <div className="flex items-center gap-2">
-                {/* Desktop User Menu - Inline Links */}
+                {/* Desktop account menu */}
                 <div className="hidden md:block">
                   {isAuthenticated && isMounted ? (
-                    <div className="flex items-center gap-2">
-                      {/* Show My Account and Logout links when user menu is open */}
-                      {isUserMenuOpen && (
-                        <div className="flex items-center gap-2 mr-2">
-                          <button
-                            onClick={() => {
-                              handleDashboardNavigation();
-                              setIsUserMenuOpen(false);
-                            }}
-                            className="text-xs text-green-200 hover:text-white transition-colors cursor-pointer"
-                          >
-                            My Account
-                          </button>
-                          <span className="text-green-400">|</span>
-                          <button
-                            onClick={() => {
-                              handleLogout();
-                              setIsUserMenuOpen(false);
-                            }}
-                            className="text-xs text-green-200 hover:text-red-400 transition-colors cursor-pointer"
-                          >
-                            Logout
-                          </button>
-                        </div>
-                      )}
-                      
-                      {/* Username and Avatar */}
-                      <button 
-                        onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                        className="flex items-center gap-2 hover:bg-transparent py-2 px-3 cursor-pointer text-primary-foreground"
-                      >
-                        <span className="font-medium text-sm max-w-32 truncate">
-                          {userName.slice(0, 8)}
-                        </span>
-                        <div className="rounded-full flex items-center justify-center">
+                    // modal={false}: keep page scroll (and the scrollbar) while open, so the layout does not shift
+                    <DropdownMenu modal={false}>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          aria-label="Account menu"
+                          className="flex items-center justify-center rounded-full ring-2 ring-green-50/80 hover:ring-white transition-shadow cursor-pointer focus:outline-none focus-visible:ring-orange-300"
+                        >
                           {profileImage ? (
                             <OptimizedImage
                               src={profileImage}
                               alt={`${userName}'s profile`}
-                              width={24}
-                              height={24}
-                              className="rounded-full object-cover"
+                              width={32}
+                              height={32}
+                              className="rounded-full object-cover w-8 h-8"
                               transformation={[
                                 {
-                                  width: 48,
-                                  height: 48,
+                                  width: 64,
+                                  height: 64,
                                   crop: "fill",
                                   quality: "80",
                                 },
                               ]}
                             />
                           ) : (
-                            <div className="rounded-full bg-green-600 text-white flex items-center justify-center w-6 h-6 text-xs font-bold">
-                              {userName.substring(0, 2).toUpperCase()}
+                            <div className="rounded-full bg-green-50 text-green-800 flex items-center justify-center w-8 h-8 text-sm font-bold">
+                              {userName.charAt(0).toUpperCase()}
                             </div>
                           )}
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        sideOffset={10}
+                        className="w-64 rounded-2xl border-green-100 p-0 shadow-xl overflow-hidden"
+                      >
+                        <div className="px-4 py-3">
+                          <p className="text-sm font-semibold text-gray-900 truncate">
+                            {userName}
+                          </p>
+                          <p className="text-xs text-gray-600 truncate">
+                            {user?.email || user?.phone}
+                          </p>
                         </div>
-                      </button>
-                    </div>
+                        <DropdownMenuSeparator className="my-0" />
+                        <DropdownMenuItem
+                          onClick={handleDashboardNavigation}
+                          className="gap-3 rounded-none px-4 py-3 text-sm text-gray-900 cursor-pointer focus:bg-green-50"
+                        >
+                          <LayoutGrid className="w-4 h-4 text-green-700" />
+                          My account
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={handleLogout}
+                          className="gap-3 rounded-none px-4 py-3 text-sm text-gray-900 cursor-pointer focus:bg-green-50"
+                        >
+                          <LogOut className="w-4 h-4 text-gray-600" />
+                          Sign out
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   ) : (isAuthTransitioning || isLoading || !isMounted) ? (
                     <div className="flex items-center gap-2 px-3">
                       <Skeleton className="h-6 w-20 rounded bg-green-600/60" />
                       <Skeleton className="h-6 w-6 rounded-full bg-green-600/60" />
                     </div>
                   ) : (
-                    <Link href="/login">
-                      <button className="bg-green-50 text-sm text-black hover:bg-green-100 px-3 sm:px-4 rounded-full py-1 flex items-center gap-1 cursor-pointer">
+                    <Link href="/login" prefetch={false}>
+                      <button className="bg-green-50 text-[13px] uppercase tracking-wide text-black hover:bg-green-100 px-3 sm:px-4 rounded-full py-1 flex items-center gap-1 cursor-pointer">
                         <User className="w-4 h-4" />
                         Login
                       </button>
@@ -596,7 +585,7 @@ export function Header() {
                         {item.id === "price" ? (
                           <button
                             onClick={() => setIsMobilePriceOpen(!isMobilePriceOpen)}
-                            className={`w-full text-left hover:text-secondary transition-colors cursor-pointer px-2 py-1 rounded flex items-center justify-between ${
+                            className={`w-full text-left text-[13px] uppercase tracking-wide hover:text-secondary transition-colors cursor-pointer px-2 py-1 rounded flex items-center justify-between ${
                               activeSection === item.id ? "text-yellow-300 bg-green-800/50" : "text-primary-foreground"
                             }`}
                           >
@@ -607,7 +596,7 @@ export function Header() {
                           <Link
                             href={item.href}
                             onClick={() => setIsMenuOpen(false)}
-                            className={`block hover:text-secondary transition-colors cursor-pointer px-2 py-1 rounded ${
+                            className={`block text-[13px] uppercase tracking-wide hover:text-secondary transition-colors cursor-pointer px-2 py-1 rounded ${
                               activeSection === item.id ? "text-yellow-300 bg-green-800/50" : "text-primary-foreground"
                             }`}
                           >
@@ -620,7 +609,7 @@ export function Header() {
                         key={item.id}
                         href={item.href}
                         onClick={(e) => handleNavClick(e, item.id)}
-                        className={`hover:text-secondary transition-colors cursor-pointer px-2 py-1 rounded flex items-center justify-between ${activeSection === item.id
+                        className={`text-[13px] uppercase tracking-wide hover:text-secondary transition-colors cursor-pointer px-2 py-1 rounded flex items-center justify-between ${activeSection === item.id
                           ? "text-yellow-300 bg-green-800/50"
                           : "text-primary-foreground"
                         }`}
@@ -696,12 +685,12 @@ export function Header() {
                     </>
                   ) : (
                     <>
-                      <Link href="/login">
+                      <Link href="/login" prefetch={false}>
                         <Button
                           variant="secondary"
                           onClick={() => setIsMenuOpen(!isMenuOpen)}
                           size="sm"
-                          className="w-fit bg-green-50 text-black hover:bg-green-100 mt-2"
+                          className="w-fit bg-green-50 text-black uppercase tracking-wide hover:bg-green-100 mt-2"
                         >
                           Login
                         </Button>

@@ -38,6 +38,7 @@ import {
   LoanProvider,
 } from "@/app/services/subscriptionService";
 import { toast } from "sonner";
+import { RejectReasonPicker } from "./RejectReasonPicker";
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: "bg-yellow-100 text-yellow-700",
@@ -392,7 +393,7 @@ export default function LoanAccessAdminTable() {
 
       {/* Reject modal */}
       <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
-        <DialogContent className="sm:max-w-sm bg-white">
+        <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <XCircle className="w-4 h-4 text-red-500" />
@@ -400,19 +401,15 @@ export default function LoanAccessAdminTable() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Reason (optional)</label>
-              <Input
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="e.g. Restaurant does not qualify yet"
-                className="h-10 text-sm"
-              />
-            </div>
+            <RejectReasonPicker
+              key={`${selected?.id}-${rejectOpen}`}
+              onChange={setRejectReason}
+              disabled={submitting}
+            />
             <div className="flex gap-2">
               <Button
                 onClick={handleReject}
-                disabled={submitting}
+                disabled={submitting || !rejectReason}
                 className="flex-1 bg-red-600 hover:bg-red-700"
               >
                 {submitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}

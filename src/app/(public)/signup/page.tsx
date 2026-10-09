@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Eye,
@@ -18,8 +18,17 @@ import {
   UserRoundCheck,
   ChevronDown,
   ArrowLeft,
+  ArrowRight,
+  Briefcase,
 } from "lucide-react";
 import { OTPInput } from "@/components/ui/otp-input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { GoogleLogin } from "@react-oauth/google";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -31,6 +40,7 @@ import {
 } from "@/lib/types";
 import { authService } from "@/app/services/authService";
 import { locationService } from "@/app/services/locationService";
+import { customerTypeService, CustomerType } from "@/app/services/customerTypeService";
 import { getRedirectPath } from "@/lib/navigations";
 
 interface ValidationErrors {
@@ -40,6 +50,7 @@ interface ValidationErrors {
   location?: string;
   password?: string;
   tin?: string;
+  businessType?: string;
 }
 
 interface LocationState {
@@ -1004,7 +1015,67 @@ function renderLegalDoc(doc: LegalDoc) {
 function SignupForm() {
   const [selectedRole, setSelectedRole] = useState(UserRole.RESTAURANT);
   const [activeDoc, setActiveDoc] = useState<LegalDoc | null>(null);
-  const [selectedBusinessType, setSelectedBusinessType] = useState<"RESTAURANT" | "HOTEL">("RESTAURANT");
+  // Business types a customer can sign up as: the active customer types the
+  // admin manages (Restaurant, Hotel, School…). New types appear automatically.
+  const [customerTypes, setCustomerTypes] = useState<CustomerType[]>([]);
+  const [selectedCustomerTypeId, setSelectedCustomerTypeId] = useState("");
+  const selectedCustomerType = customerTypes.find((ct) => ct.id === selectedCustomerTypeId);
+  // "RESTAURANT" → "Restaurant"; names the admin typed in mixed case stay as typed
+  const formatTypeName = (name: string) =>
+    name === name.toUpperCase() ? name.charAt(0) + name.slice(1).toLowerCase() : name;
+  const businessLabel = selectedCustomerType
+    ? formatTypeName(selectedCustomerType.name)
+    : "Business";
+
+  useEffect(() => {
+    let cancelled = false;
+    customerTypeService
+      .getAllCustomerTypes()
+      .then((res) => {
+        if (cancelled) return;
+        const list: CustomerType[] = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+        setCustomerTypes(list.filter((ct) => ct.isActive));
+      })
+      // If the list cannot be loaded the picker is hidden; signup still works
+      .catch(() => !cancelled && setCustomerTypes([]));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Customer signup is split into steps. Every field stays mounted in the one
+  // form (hidden steps use the "hidden" class) so FormData still has them all.
+  const CUSTOMER_STEPS = [
+    { title: "Business details", fields: ["businessType", "name", "tin"] },
+    { title: "Contact details", fields: ["email", "phone", "location"] },
+    { title: "Secure your account", fields: ["password"] },
+  ] as const;
+  const [step, setStep] = useState(1);
+  const formRef = useRef<HTMLFormElement>(null);
+  const isCustomer = selectedRole === UserRole.RESTAURANT;
+  const isLastStep = !isCustomer || step === CUSTOMER_STEPS.length;
+  // Class for a field that belongs to customer step `n` (farmers see everything)
+  const onStep = (n: number) => (isCustomer && step !== n ? "hidden" : "");
+
+  useEffect(() => {
+    setStep(1);
+  }, [selectedRole]);
+
+  // Validate only the current step's fields, then move forward
+  const handleNext = () => {
+    if (!formRef.current) return;
+    const allErrors = validateForm(new FormData(formRef.current));
+    const stepFields = CUSTOMER_STEPS[step - 1].fields as readonly string[];
+    const stepErrors = Object.fromEntries(
+      Object.entries(allErrors).filter(([field]) => stepFields.includes(field))
+    ) as ValidationErrors;
+
+    setValidationErrors(stepErrors);
+    if (Object.keys(stepErrors).length === 0) {
+      setError("");
+      setStep((current) => Math.min(current + 1, CUSTOMER_STEPS.length));
+    }
+  };
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -1110,13 +1181,13 @@ function SignupForm() {
   }
 
   function validateRestaurantName(name: string): string | null {
-    if (!name.trim()) return "Restaurant name is required";
+    if (!name.trim()) return "Business name is required";
     if (name.trim().length < 2)
-      return "Restaurant name must be at least 2 characters";
+      return "Business name must be at least 2 characters";
     if (name.trim().length > 100)
-      return "Restaurant name is too long (max 100 characters)";
+      return "Business name is too long (max 100 characters)";
     if (!/^[a-zA-Z0-9\s\-'&.]+$/.test(name.trim())) {
-      return "Restaurant name contains invalid characters";
+      return "Business name contains invalid characters";
     }
     return null;
   }
@@ -1150,6 +1221,9 @@ function SignupForm() {
     if (selectedRole === UserRole.RESTAURANT) {
       const nameError = validateRestaurantName(name);
       if (nameError) errors.name = nameError;
+      if (customerTypes.length > 0 && !selectedCustomerTypeId) {
+        errors.businessType = "Please choose your business type";
+      }
     }
 
     if (selectedRole === UserRole.RESTAURANT || (email && email.trim())) {
@@ -1191,6 +1265,11 @@ function SignupForm() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    // Pressing Enter before the last customer step moves to the next step
+    if (isCustomer && step < CUSTOMER_STEPS.length) {
+      handleNext();
+      return;
+    }
     setIsLoading(true);
     setError("");
     setSuccess("");
@@ -1209,6 +1288,13 @@ function SignupForm() {
 
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
+      // Show the first step that has a problem
+      if (isCustomer) {
+        const firstBad = CUSTOMER_STEPS.findIndex((customerStep) =>
+          (customerStep.fields as readonly string[]).some((field) => field in errors)
+        );
+        if (firstBad >= 0) setStep(firstBad + 1);
+      }
       setIsLoading(false);
       return;
     }
@@ -1244,7 +1330,10 @@ function SignupForm() {
           tin: (formData.get("tin") as string) || "",
           location: locationToSave,
           phone,
-          role: selectedBusinessType,
+          // Every customer is created with role RESTAURANT; the business
+          // type they picked goes in customerTypeId
+          role: "RESTAURANT",
+          customerTypeId: selectedCustomerTypeId || undefined,
           agreed,
         };
         const response = await authService.registerRestaurant(restaurantData);
@@ -1468,7 +1557,7 @@ function SignupForm() {
                 disabled={!isBackendAvailable}
               >
                 <h3 className="text-left text-gray-900">
-                  I'm a Restaurant/Hotel
+                  I'm a Customer
                 </h3>
                 {selectedRole === UserRole.RESTAURANT && (
                   <UserRoundCheck className="absolute top-3 right-3 h-5 w-5 text-green-600" />
@@ -1522,16 +1611,74 @@ function SignupForm() {
         <div>
           <div className="mt-6 lg:mt-20"></div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
+            {isCustomer && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium text-gray-900">
+                    {CUSTOMER_STEPS[step - 1].title}
+                  </span>
+                  <span className="text-gray-500">
+                    Step {step} of {CUSTOMER_STEPS.length}
+                  </span>
+                </div>
+                <div className="flex gap-1.5">
+                  {CUSTOMER_STEPS.map((customerStep, index) => (
+                    <span
+                      key={customerStep.title}
+                      className={`h-1 flex-1 rounded-full ${
+                        index < step ? "bg-green-600" : "bg-gray-200"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
             {selectedRole === UserRole.RESTAURANT && (
               <>
-                <div className="relative">
-                  <Building2 className="absolute left-3 top-3 h-4 w-4 text-gray-900" />
+                {/* Business type = customer type (saved in customerTypeId, not in role).
+                    Shown only when the admin has active customer types. */}
+                {customerTypes.length > 0 && (
+                  <div className={`relative ${onStep(1)}`}>
+                    <Select
+                      value={selectedCustomerTypeId}
+                      onValueChange={(value) => {
+                        setSelectedCustomerTypeId(value);
+                        handleInputChange("businessType");
+                      }}
+                      disabled={!isBackendAvailable || isLoading}
+                    >
+                      <SelectTrigger
+                        aria-label="Business type"
+                        className={`w-full h-10! rounded-none shadow-none border-gray-300 text-sm text-gray-900 focus:border-green-500 focus:ring-green-500 ${
+                          validationErrors.businessType ? "border-red-500" : ""
+                        }`}
+                      >
+                        <SelectValue placeholder="Select business type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {customerTypes.map((type) => (
+                          <SelectItem key={type.id} value={type.id}>
+                            {formatTypeName(type.name)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {validationErrors.businessType && (
+                      <p className="text-red-600 text-xs mt-1">
+                        {validationErrors.businessType}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <div className={`relative ${onStep(1)}`}>
                   <Input
                     type="text"
                     name="name"
-                    placeholder={`${selectedBusinessType === "RESTAURANT" ? "Restaurant" : "Hotel"} Name`}
-                    className={`pl-10 h-10 border-gray-300 text-gray-900 focus:border-green-500 focus:ring-green-500 rounded-none ${
+                    placeholder={`${businessLabel} Name`}
+                    className={` h-10 border-gray-300 text-gray-900 focus:border-green-500 focus:ring-green-500 rounded-none ${
                       validationErrors.name
                         ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                         : ""
@@ -1546,49 +1693,17 @@ function SignupForm() {
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block text-xs text-gray-700">
-                    Business Type
-                  </label>
-                  <div className="flex gap-4">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedBusinessType("RESTAURANT")}
-                      className={`flex-1 h-10 border rounded text-sm font-medium transition-colors ${
-                        selectedBusinessType === "RESTAURANT"
-                          ? "border-green-500 bg-green-50 text-green-700"
-                          : "border-gray-300 text-gray-700 hover:border-green-300"
-                      }`}
-                      disabled={!isBackendAvailable || isLoading}
-                    >
-                      Restaurant
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedBusinessType("HOTEL")}
-                      className={`flex-1 h-10 border rounded text-sm font-medium transition-colors ${
-                        selectedBusinessType === "HOTEL"
-                          ? "border-green-500 bg-green-50 text-green-700"
-                          : "border-gray-300 text-gray-700 hover:border-green-300"
-                      }`}
-                      disabled={!isBackendAvailable || isLoading}
-                    >
-                      Hotel
-                    </button>
-                  </div>
-                </div>
               </>
             )}
 
-            <div className="relative">
-              <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-900" />
+            <div className={`relative ${onStep(2)}`}>
               <Input
                 type="email"
                 name="email"
                 placeholder={
                   selectedRole === UserRole.FARMER ? "Email" : "Email Address"
                 }
-                className={`pl-10 h-10 border-gray-300 text-gray-900 focus:border-green-500 focus:ring-green-500 rounded-none ${
+                className={` h-10 border-gray-300 text-gray-900 focus:border-green-500 focus:ring-green-500 rounded-none ${
                   validationErrors.email
                     ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                     : ""
@@ -1604,13 +1719,12 @@ function SignupForm() {
             </div>
 
             {selectedRole === UserRole.RESTAURANT && (
-              <div className="relative">
-                <Building2 className="absolute left-3 top-3 h-4 w-4 text-gray-900" />
+              <div className={`relative ${onStep(1)}`}>
                 <Input
                   type="text"
                   name="tin"
                   placeholder="TIN Number"
-                  className={`pl-10 h-10 border-gray-300 text-gray-900 focus:border-green-500 focus:ring-green-500 rounded-none ${
+                  className={` h-10 border-gray-300 text-gray-900 focus:border-green-500 focus:ring-green-500 rounded-none ${
                     validationErrors.tin
                       ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                       : ""
@@ -1626,13 +1740,12 @@ function SignupForm() {
               </div>
             )}
 
-            <div className="relative">
-              <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-900" />
+            <div className={`relative ${onStep(2)}`}>
               <Input
                 type="tel"
                 name="phone"
                 placeholder="Phone Number"
-                className={`pl-10 h-10 border-gray-300 text-gray-900 focus:border-green-500 focus:ring-green-500 rounded-none ${
+                className={` h-10 border-gray-300 text-gray-900 focus:border-green-500 focus:ring-green-500 rounded-none ${
                   validationErrors.phone
                     ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                     : ""
@@ -1651,14 +1764,13 @@ function SignupForm() {
             {selectedRole === UserRole.FARMER ? (
               <div>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-900" />
                   <Input
                     type="text"
                     value={locationData.textAddress}
                     readOnly
                     onClick={() => setIsLocationModalOpen(true)}
                     placeholder="Click to select location"
-                    className={`pl-10 h-10 border-gray-300 text-gray-900 cursor-pointer rounded-none ${
+                    className={`h-10 border-gray-300 text-gray-900 cursor-pointer rounded-none ${
                       validationErrors.location
                         ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                         : ""
@@ -1681,8 +1793,7 @@ function SignupForm() {
                 />
               </div>
             ) : (
-              <div className="relative">
-                <MapPin className="absolute left-3 top-3 h-4 w-4 text-gray-900" />
+              <div className={`relative ${onStep(2)}`}>
                 <Input
                   type="text"
                   name="location"
@@ -1694,7 +1805,7 @@ function SignupForm() {
                       textAddress: e.target.value,
                     })
                   }
-                  className={`pl-10 h-10 border-gray-300 text-gray-900 focus:border-green-500 focus:ring-green-500 rounded-none ${
+                  className={`h-10 border-gray-300 text-gray-900 focus:border-green-500 focus:ring-green-500 rounded-none ${
                     validationErrors.location
                       ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                       : ""
@@ -1709,13 +1820,12 @@ function SignupForm() {
               </div>
             )}
 
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-900" />
+            <div className={`relative ${onStep(3)}`}>
               <Input
                 type={showPassword ? "text" : "password"}
                 name="password"
                 placeholder="Password"
-                className={`pl-10 h-10 border-gray-300 text-gray-900 focus:border-green-500 focus:ring-green-500 rounded-none ${
+                className={`h-10 border-gray-300 text-gray-900 focus:border-green-500 focus:ring-green-500 rounded-none ${
                   validationErrors.password
                     ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                     : ""
@@ -1741,7 +1851,7 @@ function SignupForm() {
               )}
             </div>
 
-            <label className="flex items-start gap-2 cursor-pointer">
+            <label className={`flex items-start gap-2 cursor-pointer ${onStep(3)}`}>
               <input
                 type="checkbox"
                 checked={agreed}
@@ -1757,13 +1867,38 @@ function SignupForm() {
                 Policy, and Refund Policy.
               </span>
             </label>
-            {termsError && (
+            {termsError && isLastStep && (
               <p className="text-red-600 text-xs mt-1">{termsError}</p>
             )}
 
+            <div className="flex gap-2">
+              {isCustomer && step > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setStep((current) => current - 1)}
+                  className="h-10 px-4 border border-gray-300 text-gray-800 text-[14px] font-medium hover:bg-gray-50 cursor-pointer flex items-center gap-1"
+                  disabled={isLoading}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back
+                </button>
+              )}
+              {!isLastStep && (
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="flex-1 h-10 bg-green-700 hover:bg-green-800 text-white text-[14px] font-medium cursor-pointer flex items-center justify-center gap-1"
+                  disabled={!isBackendAvailable}
+                >
+                  Next
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              )}
             <button
               type="submit"
-              className="w-full h-10 bg-green-700 hover:bg-green-800 text-white text-[14px] font-medium cursor-pointer"
+              className={`flex-1 h-10 bg-green-700 hover:bg-green-800 text-white text-[14px] font-medium cursor-pointer ${
+                isLastStep ? "" : "hidden"
+              }`}
               disabled={isLoading || !isBackendAvailable || !agreed}
             >
               {isLoading ? (
@@ -1775,8 +1910,10 @@ function SignupForm() {
                 "Create Account"
               )}
             </button>
+            </div>
 
-            <div className="relative my-6">
+            {/* Google signup and the legal note sit on the first step only */}
+            <div className={`relative my-6 ${onStep(1)}`}>
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300"></div>
               </div>
@@ -1787,7 +1924,7 @@ function SignupForm() {
               </div>
             </div>
 
-            <div className="flex justify-center">
+            <div className={`flex justify-center ${onStep(1)}`}>
               <div
                 className={
                   isLoading || !isBackendAvailable
@@ -1806,7 +1943,7 @@ function SignupForm() {
               </div>
             </div>
 
-            <div className="mt-4 text-center">
+            <div className={`mt-4 text-center ${onStep(1)}`}>
               <p className="text-xs text-gray-500 leading-relaxed">
                 By creating an account, you agree to our{" "}
                 <button
