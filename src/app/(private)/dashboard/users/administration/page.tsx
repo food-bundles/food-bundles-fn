@@ -110,7 +110,7 @@ export default function AdministrationPage() {
           <ExportButton module="aggregators" label="Export Aggregators" variant="outline" />
         </div>
       </div>
-      <DataTable 
+      <DataTable
         columns={adminColumns}
         data={admins}
         title="Administration Management"

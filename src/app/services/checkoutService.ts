@@ -16,6 +16,7 @@ export interface CheckoutRequest {
   narration?: string;
   currency?: string;
   voucherCode?: string;
+  loanSessionRrn?: string;
   promoCode?: string;
   cardDetails?: {
     cardNumber: string;
@@ -142,6 +143,26 @@ class CheckoutService {
     }
   }
 
+  // Get checkout payment status for tracking (lightweight polling endpoint)
+  async getCheckoutStatus(orderId: string): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.axiosClient.get(
+        `/checkouts/${orderId}/status`
+      );
+      return {
+        success: true,
+        message: "Fetched payment status successfully",
+        data: response.data.data,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || "Failed to fetch payment status",
+      };
+    }
+  }
+
   // Update checkout (before payment completion)
   async updateCheckout(
     checkoutId: string,
@@ -228,6 +249,92 @@ class CheckoutService {
       return {
         success: false,
         message: error.response?.data?.message || "Failed to verify OTP",
+      };
+    }
+  }
+
+  // Create order on behalf of a restaurant (Admin/Logistics only)
+  async createAdminOrder(
+    payload: {
+      restaurantId: string;
+      products: Array<{
+        productId: string;
+        quantity: number;
+      }>;
+      paymentMethod: string;
+      phoneNumber?: string;
+      notes?: string;
+      voucherCode?: string;
+      loanSessionRrn?: string;
+      promoCode?: string;
+      deliveryDate?: string;
+      otp?: string;
+    }
+  ): Promise<ApiResponse<any>> {
+    try {
+      const response = await this.axiosClient.post(
+        "/checkouts/admin-order",
+        payload
+      );
+      return {
+        success: true,
+        message: response.data.message || "Order created successfully",
+        data: response.data.data,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Failed to create order",
+      };
+    }
+  }
+
+  // Usable loan sessions (vouchers) a restaurant can pay an admin order with
+  async getAdminOrderLoanSessions(restaurantId: string): Promise<ApiResponse<any[]>> {
+    try {
+      const response = await this.axiosClient.get(
+        `/checkouts/admin-order/loan-sessions/${restaurantId}`
+      );
+      return {
+        success: true,
+        message: response.data.message,
+        data: response.data.data,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Failed to load vouchers",
+      };
+    }
+  }
+
+  // Send OTP to restaurant before a voucher/prepaid order placed on its behalf
+  async requestAdminOrderOTP(
+    payload: {
+      restaurantId: string;
+      products: Array<{
+        productId: string;
+        quantity: number;
+      }>;
+      paymentMethod: string;
+      voucherCode?: string;
+      loanSessionRrn?: string;
+    }
+  ): Promise<ApiResponse<{ phone?: string; amount: number }>> {
+    try {
+      const response = await this.axiosClient.post(
+        "/checkouts/admin-order/request-otp",
+        payload
+      );
+      return {
+        success: true,
+        message: response.data.message || "OTP sent",
+        data: response.data.data,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Failed to send OTP",
       };
     }
   }

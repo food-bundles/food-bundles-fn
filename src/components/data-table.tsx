@@ -21,6 +21,7 @@ import {
   Plus,
 } from "lucide-react";
 
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -97,8 +98,8 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
 
   // Header configuration
-  title?: string;
-  description?: string;
+  title?: React.ReactNode;
+  description?: React.ReactNode;
   showExport?: boolean;
   onExport?: (selectedRows: TData[], format: "excel" | "csv" | "pdf") => void;
   isExporting?: boolean;
@@ -136,6 +137,13 @@ interface DataTableProps<TData, TValue> {
   // Row click handler
   onRowClick?: (row: TData) => void;
 
+  // Row class name callback
+  getRowClassName?: (row: TData) => string;
+
+  // Section heading shown above a run of rows (e.g. "Today's orders").
+  // A heading row is inserted whenever the label changes from the previous row.
+  getRowGroup?: (row: TData) => string;
+
   // Selection change callback
   onSelectionChange?: (selectedRows: TData[]) => void;
 }
@@ -161,6 +169,8 @@ export function DataTable<TData, TValue>({
   onPageSizeChange,
   isLoading = false,
   onRowClick,
+  getRowClassName,
+  getRowGroup,
   onSelectionChange,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -295,27 +305,27 @@ export function DataTable<TData, TValue>({
                       <Download className="h-3 w-3" />
                     )}
                     <span>
-                      {isExporting 
-                        ? "Exporting..." 
-                        : table.getFilteredSelectedRowModel().rows.length > 0 
-                          ? `Export Selected (${table.getFilteredSelectedRowModel().rows.length})` 
+                      {isExporting
+                        ? "Exporting..."
+                        : table.getFilteredSelectedRowModel().rows.length > 0
+                          ? `Export Selected (${table.getFilteredSelectedRowModel().rows.length})`
                           : "Export"}
                     </span>
                     <ChevronDown className="h-3 w-3 opacity-70" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => onExport && onExport(table.getFilteredSelectedRowModel().rows.map(r => r.original), "excel")}
                   >
                     Export as Excel
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => onExport && onExport(table.getFilteredSelectedRowModel().rows.map(r => r.original), "csv")}
                   >
                     Export as CSV
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => onExport && onExport(table.getFilteredSelectedRowModel().rows.map(r => r.original), "pdf")}
                   >
                     Export as PDF
@@ -410,26 +420,47 @@ export function DataTable<TData, TValue>({
                   </TableRow>
                 ))
               : table.getRowModel().rows?.length
-              ? table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    className="hover:bg-green-50 text-[13px] cursor-pointer"
-                    onClick={() => onRowClick && onRowClick(row.original)}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell
-                        key={cell.id}
-                        className="text-xs text-gray-800 whitespace-nowrap"
-                      >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
+              ? table.getRowModel().rows.map((row, index, rows) => {
+                  const group = getRowGroup?.(row.original);
+                  const showGroupHeading =
+                    !!group &&
+                    (index === 0 || getRowGroup!(rows[index - 1].original) !== group);
+
+                  return (
+                    <React.Fragment key={row.id}>
+                      {showGroupHeading && (
+                        <TableRow className="bg-gray-200 hover:bg-gray-200 ">
+                          <TableCell
+                            colSpan={row.getVisibleCells().length}
+                            className="py-1.5 text-center text-xs font-semibold text-black"
+                          >
+                            {group}
+                          </TableCell>
+                        </TableRow>
+                      )}
+                      <TableRow
+                        data-state={row.getIsSelected() && "selected"}
+                        className={cn(
+                          "hover:bg-green-50 text-[13px] cursor-pointer",
+                          getRowClassName?.(row.original)
                         )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
+                        onClick={() => onRowClick && onRowClick(row.original)}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell
+                            key={cell.id}
+                            className="text-xs text-gray-800 whitespace-nowrap"
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    </React.Fragment>
+                  );
+                })
               : (
                   <TableRow>
                     <TableCell

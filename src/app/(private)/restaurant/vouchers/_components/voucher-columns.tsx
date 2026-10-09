@@ -8,11 +8,13 @@ import { IVoucher } from "@/lib/types";
 interface VoucherColumnsProps {
   onPayment: (voucherId: string) => void;
   payingVoucherId: string | null;
+  onTopUp?: (voucherId: string) => void;
 }
 
 export const createVoucherColumns = ({
   onPayment,
   payingVoucherId,
+  onTopUp,
 }: VoucherColumnsProps): ColumnDef<IVoucher>[] => [
     {
       accessorKey: "#",
@@ -253,6 +255,7 @@ export const createVoucherColumns = ({
         const needsPayment =
           voucher.usedCredit > 0 && voucher.status !== "SETTLED";
         const paymentOverdue = isOverdue();
+        const canTopUp = voucher.status === "ACTIVE";
 
         return (
           <div className="flex items-center justify-start gap-2">
@@ -268,6 +271,14 @@ export const createVoucherColumns = ({
                   }`}
               >
                 {payingVoucherId === voucher.id ? "Processing..." : "Pay"}
+              </button>
+            )}
+            {canTopUp && onTopUp && (
+              <button
+                onClick={() => onTopUp(voucher.id)}
+                className="px-3 py-1.5 text-xs font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              >
+                Top Up
               </button>
             )}
           </div>

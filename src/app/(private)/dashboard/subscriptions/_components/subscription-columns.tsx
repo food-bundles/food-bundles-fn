@@ -22,6 +22,13 @@ export type SubscriptionPlan = {
   receiveEBM: boolean;
   advertisingAccess: boolean;
   otherServices: boolean;
+  loanAccess?: boolean;
+  loanProviderId?: string;
+  loanProvider?: {
+    id: string;
+    name: string;
+    isActive: boolean;
+  } | null;
   features?: any;
   isActive: boolean;
   createdAt: string;
@@ -272,6 +279,35 @@ export const createSubscriptionPlansColumns = (
         >
           {isActive ? "Active" : "Inactive"}
         </Badge>
+      );
+    },
+  },
+  {
+    accessorKey: "loanAccess",
+    header: "Loan Access",
+    cell: ({ row }) => {
+      const plan = row.original;
+      if (!plan.loanAccess) {
+        return (
+          <Badge className="bg-gray-100 text-gray-600 hover:bg-gray-200">
+            No
+          </Badge>
+        );
+      }
+      return (
+        <div>
+          <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">
+            Included
+          </Badge>
+          {plan.loanProvider && (
+            <div className="text-xs text-gray-500 mt-0.5">
+              {plan.loanProvider.name}
+              {!plan.loanProvider.isActive && (
+                <span className="text-red-500"> (inactive)</span>
+              )}
+            </div>
+          )}
+        </div>
       );
     },
   },

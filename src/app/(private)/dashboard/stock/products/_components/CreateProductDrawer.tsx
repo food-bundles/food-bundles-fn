@@ -8,11 +8,11 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { productService } from "@/app/services/productService";
 import { unitService } from "@/app/services/unitService";
-import { tableTronicService } from "@/app/services/tableTronicService";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -21,27 +21,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { CalendarIcon, X, Package, Check, ChevronsUpDown } from "lucide-react";
+import { CalendarIcon, X, Package, ChevronDown, Check } from "lucide-react";
 import { useCategory } from "@/app/contexts/category-context";
+import { useCustomerTypes } from "@/app/contexts/customer-type-context";
 
 export interface ProductFormData {
   productName: string;
   description: string;
   unitPrice: number;
-  restaurantPrice?: number;
-  hotelPrice?: number;
   purchasePrice: number;
   categoryId: string;
   bonus: number;
@@ -50,12 +42,7 @@ export interface ProductFormData {
   images: File[];
   expiryDate: Date | undefined;
   unit: string;
-  taxId: number;
-  ebmProductType: string;
-  ebmCountryOfOrigin: string;
-  ebmPackagingUnit: string;
-  ebmQuantityUnit: string;
-  ebmItemClassCode: { label: string; value: string };
+  customerTypePrices?: { customerTypeId: string; price: number; purchasePrice: number }[];
 }
 
 interface CreateProductDrawerProps {
@@ -73,8 +60,6 @@ export function CreateProductDrawer({
     productName: "",
     description: "",
     unitPrice: 0,
-    restaurantPrice: undefined,
-    hotelPrice: undefined,
     purchasePrice: 0,
     categoryId: "",
     bonus: 0,
@@ -83,28 +68,15 @@ export function CreateProductDrawer({
     images: [],
     expiryDate: undefined,
     unit: "",
-    taxId: 0,
-    ebmProductType: "3", // Default to Service
-    ebmCountryOfOrigin: "RW", // Default to Rwanda
-    ebmPackagingUnit: "",
-    ebmQuantityUnit: "",
-    ebmItemClassCode: { label: "", value: "" },
+    customerTypePrices: [],
   });
 
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [units, setUnits] = useState<any[]>([]);
   const [isUnitsLoading, setIsUnitsLoading] = useState(false);
-  const [taxes, setTaxes] = useState<any[]>([]);
-  const [productTypes, setProductTypes] = useState<any[]>([]);
-  const [countries, setCountries] = useState<any[]>([]);
-  const [packagingUnits, setPackagingUnits] = useState<any[]>([]);
-  const [quantityUnits, setQuantityUnits] = useState<any[]>([]);
-  const [itemClassCodes, setItemClassCodes] = useState<any[]>([]);
-  const [itemClassSearchTerm, setItemClassSearchTerm] = useState("");
-  const [isLoadingItemClass, setIsLoadingItemClass] = useState(false);
-  const [countrySearchOpen, setCountrySearchOpen] = useState(false);
-  const [itemClassSearchOpen, setItemClassSearchOpen] = useState(false);
+  const [selectedCustomerTypeIds, setSelectedCustomerTypeIds] = useState<string[]>([]);
+  const [isCustomerTypesOpen, setIsCustomerTypesOpen] = useState(false);
 
   const {
     activeCategories,
@@ -112,84 +84,28 @@ export function CreateProductDrawer({
     refreshActiveCategories,
   } = useCategory();
 
+  const { customerTypes, isLoading: isCustomerTypesLoading } = useCustomerTypes();
+
   useEffect(() => {
     if (isOpen) {
       refreshActiveCategories();
       fetchUnits();
-      fetchTableTronicData();
     }
   }, [isOpen, refreshActiveCategories]);
 
-  const fetchTableTronicData = async () => {
-    try {
-      const [taxesRes, productTypesRes, countriesRes, packagingRes, quantityRes] = await Promise.all([
-        tableTronicService.getTaxes(),
-        tableTronicService.getEbmProductTypes(),
-        tableTronicService.getEbmCountries(),
-        tableTronicService.getEbmPackagingUnits(),
-        tableTronicService.getEbmQuantityUnits()
-      ]);
-      
-      setTaxes(taxesRes.results || []);
-      setProductTypes(productTypesRes || []);
-      setCountries(countriesRes || []);
-      setPackagingUnits(packagingRes || []);
-      setQuantityUnits(quantityRes || []);
-      
-      // Load initial agriculture-related item class codes
-      await searchItemClassCodes("agriculture");
-    } catch (error) {
-      console.error("Error fetching Table Tronic data:", error);
-      toast.error("Failed to load some form data");
-    }
-  };
-
-  const searchItemClassCodes = async (searchTerm: string) => {
-    if (!searchTerm || searchTerm.length < 2) {
-      setItemClassCodes([]);
-      return;
-    }
-
-    try {
-      setIsLoadingItemClass(true);
-      const response = await tableTronicService.getEbmItemClassCodes({ page: 1, limit: 100 });
-      
-      if (response.itemClassCodes) {
-        // Filter for agriculture, food, animal, vegetable, fruit related items
-        const agricultureKeywords = [
-          'agriculture', 'agricultural', 'farm', 'food', 'fruit', 'vegetable', 
-          'animal', 'livestock', 'crop', 'grain', 'meat', 'dairy', 'fish',
-          'beverage', 'drink', 'organic', 'fresh', 'produce', 'harvest'
-        ];
-        
-        const filtered = response.itemClassCodes.filter((item: any) => {
-          const itemName = item.itemClsNm.toLowerCase();
-          const searchLower = searchTerm.toLowerCase();
-          
-          // Check if search term matches item name or if item contains agriculture keywords
-          return itemName.includes(searchLower) || 
-                 agricultureKeywords.some(keyword => itemName.includes(keyword));
-        });
-        
-        setItemClassCodes(filtered);
-      }
-    } catch (error) {
-      console.error("Error searching item class codes:", error);
-    } finally {
-      setIsLoadingItemClass(false);
-    }
-  };
-
-  // Debounced search for item class codes
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (itemClassSearchTerm) {
-        searchItemClassCodes(itemClassSearchTerm);
-      }
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [itemClassSearchTerm]);
+    if (isOpen && customerTypes.length > 0) {
+      setFormData((prev) => ({
+        ...prev,
+        customerTypePrices: customerTypes.map((ct) => ({
+          customerTypeId: ct.id,
+          price: 0,
+          purchasePrice: 0,
+        })),
+      }));
+      setSelectedCustomerTypeIds([]);
+    }
+  }, [isOpen, customerTypes]);
 
   const fetchUnits = async () => {
     try {
@@ -224,6 +140,40 @@ export function CreateProductDrawer({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleCustomerTypePriceChange = (customerTypeId: string, price: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      customerTypePrices: (prev.customerTypePrices || []).map((ctp) =>
+        ctp.customerTypeId === customerTypeId ? { ...ctp, price } : ctp
+      ),
+    }));
+  };
+
+  const handleCustomerTypePurchasePriceChange = (customerTypeId: string, purchasePrice: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      customerTypePrices: (prev.customerTypePrices || []).map((ctp) =>
+        ctp.customerTypeId === customerTypeId ? { ...ctp, purchasePrice } : ctp
+      ),
+    }));
+  };
+
+  const toggleCustomerType = (customerTypeId: string) => {
+    setSelectedCustomerTypeIds((prev) =>
+      prev.includes(customerTypeId)
+        ? prev.filter((id) => id !== customerTypeId)
+        : [...prev, customerTypeId]
+    );
+  };
+
+  const selectAllCustomerTypes = () => {
+    setSelectedCustomerTypeIds(customerTypes.map((ct) => ct.id));
+  };
+
+  const clearAllCustomerTypes = () => {
+    setSelectedCustomerTypeIds([]);
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
@@ -256,7 +206,7 @@ export function CreateProductDrawer({
       !formData.unit ||
       formData.quantity <= 0 ||
       formData.unitPrice <= 0 ||
-      formData.purchasePrice <= 0
+      (selectedCustomerTypeIds.length === 0 && formData.purchasePrice <= 0)
     ) {
       const missingFields = [];
       if (!formData.productName) missingFields.push('Product Name');
@@ -265,7 +215,7 @@ export function CreateProductDrawer({
       if (!formData.unit) missingFields.push('Unit');
       if (formData.quantity <= 0) missingFields.push('Quantity (must be > 0)');
       if (formData.unitPrice <= 0) missingFields.push('Unit Price (must be > 0)');
-      if (formData.purchasePrice <= 0) missingFields.push('Purchase Price (must be > 0)');
+      if (selectedCustomerTypeIds.length === 0 && formData.purchasePrice <= 0) missingFields.push('Purchase Price (must be > 0)');
       
       console.log('Missing required fields:', missingFields);
       toast.error(`Please fill in all required fields: ${missingFields.join(', ')}`);
@@ -276,79 +226,27 @@ export function CreateProductDrawer({
       setIsSubmitting(true);
       
       const selectedUnit = units.find(u => u.name === formData.unit);
-      const selectedCategory = activeCategories.find(c => c.id === formData.categoryId);
       
-      if (!selectedUnit || !selectedCategory) {
-        toast.error("Invalid unit or category selected");
+      if (!selectedUnit) {
+        toast.error("Invalid unit selected");
         return;
       }
 
-      let tableTronicProductId: number | null = null;
-
-      // Only try Table Tronic if all required fields are filled
-      const hasTableTronicData = formData.taxId && 
-        formData.ebmPackagingUnit && 
-        formData.ebmQuantityUnit && 
-        formData.ebmItemClassCode.value;
-
-      if (hasTableTronicData) {
-        try {
-        const categoryId = selectedCategory.tableTronicId || 1;
-        const unitId = crypto.randomUUID();
-        
-        const tableTronicData = {
-          name: formData.productName,
-          description: formData.description || formData.productName,
-          photo: "",
-          itemCode: formData.sku,
-          categoryId: categoryId,
-          taxId: formData.taxId,
-          units: [{
-            id: unitId,
-            unitId: selectedUnit.tableTronicId?.toString() || "1",
-            cost: formData.purchasePrice,
-            price: formData.unitPrice
-          }],
-          baseUnitId: unitId,
-          ebmProductType: formData.ebmProductType,
-          ebmCountryOfOrigin: formData.ebmCountryOfOrigin,
-          ebmPackagingUnit: formData.ebmPackagingUnit,
-          ebmQuantityUnit: formData.ebmQuantityUnit,
-          ebmItemClassCode: formData.ebmItemClassCode,
-          ebmOpeningStock: formData.quantity.toString()
-        };
-
-        console.log('Creating product in Table Tronic with data:', tableTronicData);
-        const tableTronicResponse = await tableTronicService.createProduct(tableTronicData);
-        
-        if (tableTronicResponse?.id) {
-          tableTronicProductId = tableTronicResponse.id;
-          console.log("Successfully created Table Tronic product with ID:", tableTronicProductId);
-        }
-      } catch (tableTronicError: any) {
-        console.error("Table Tronic API failed:", tableTronicError);
-        toast.warning("Table Tronic is unavailable. Product created in Fb");
-      }
-    } else {
-      console.log('Skipping Table Tronic - missing required fields');
-    }
-
-      // Create product in Food Bundles (with or without Table Tronic ID)
+      // Create product in Food Bundles - only send selected customer type prices
+      const selectedCustomerTypePrices = (formData.customerTypePrices || []).filter(
+        (ctp) => selectedCustomerTypeIds.includes(ctp.customerTypeId)
+      );
       const foodBundlesData = {
         ...formData,
-        tableTronicProductId: tableTronicProductId,
-        unitId: selectedUnit.id
+        unitId: selectedUnit.id,
+        customerTypePrices: selectedCustomerTypePrices,
       };
 
       const response = await productService.createProduct(foodBundlesData);
       
       if (response.success) {
         onSubmit?.(formData);
-        if (tableTronicProductId) {
-          toast.success("Product created successfully in both systems!");
-        } else {
-          toast.success("Product created in FB! (Table Tronic unavailable)");
-        }
+        toast.success("Product created successfully");
         resetForm();
         onClose();
       } else {
@@ -367,8 +265,6 @@ export function CreateProductDrawer({
       productName: "",
       description: "",
       unitPrice: 0,
-      restaurantPrice: undefined,
-      hotelPrice: undefined,
       purchasePrice: 0,
       categoryId: "",
       bonus: 0,
@@ -377,13 +273,13 @@ export function CreateProductDrawer({
       images: [],
       expiryDate: undefined,
       unit: "",
-      taxId: 0,
-      ebmProductType: "3",
-      ebmCountryOfOrigin: "RW",
-      ebmPackagingUnit: "",
-      ebmQuantityUnit: "",
-      ebmItemClassCode: { label: "", value: "" },
+      customerTypePrices: customerTypes.map((ct) => ({
+        customerTypeId: ct.id,
+        price: 0,
+        purchasePrice: 0,
+      })),
     });
+    setSelectedCustomerTypeIds([]);
     setImagePreviews([]);
   };
 
@@ -504,26 +400,6 @@ export function CreateProductDrawer({
                 {/* Right Side */}
                 <div className="flex-1 space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-xs font-medium">Tax *</Label>
-                    <Select
-                      value={formData.taxId.toString()}
-                      onValueChange={(value) =>
-                        handleInputChange("taxId", parseInt(value))
-                      }
-                    >
-                      <SelectTrigger className="focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                        <SelectValue placeholder="Select tax" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {taxes.map((tax) => (
-                          <SelectItem key={tax.id} value={tax.id.toString()}>
-                            {tax.name} ({tax.rate}%)
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
                     {/* <Label className="text-xs font-medium">Category *</Label> */}
                     {isCategoriesLoading ? (
                       <div className="flex items-center justify-center py-3 border rounded-md">
@@ -600,46 +476,125 @@ export function CreateProductDrawer({
                       required
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="restaurantPrice" className="text-xs font-medium">
-                      Restaurant Price
-                    </Label>
-                    <Input
-                      id="restaurantPrice"
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={formData.restaurantPrice || ""}
-                      onChange={(e) =>
-                        handleInputChange(
-                          "restaurantPrice",
-                          e.target.value ? Number.parseFloat(e.target.value) : undefined,
-                        )
-                      }
-                      placeholder="Optional - defaults to unit price"
-                      className="focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="hotelPrice" className="text-xs font-medium">
-                      Hotel Price
-                    </Label>
-                    <Input
-                      id="hotelPrice"
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={formData.hotelPrice || ""}
-                      onChange={(e) =>
-                        handleInputChange(
-                          "hotelPrice",
-                          e.target.value ? Number.parseFloat(e.target.value) : undefined,
-                        )
-                      }
-                      placeholder="Optional - defaults to unit price"
-                      className="focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                    />
-                  </div>
+                  {isCustomerTypesLoading ? (
+                    <div className="text-xs text-gray-500">Loading customer types...</div>
+                  ) : (
+                    <>
+                      <div className="space-y-2">
+                        <Label className="text-xs font-medium">Customer Types</Label>
+                        <Popover open={isCustomerTypesOpen} onOpenChange={setIsCustomerTypesOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="w-full justify-between text-left font-normal focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            >
+                              <span className="text-xs">
+                                {selectedCustomerTypeIds.length === 0
+                                  ? "Select customer types to price"
+                                  : `${selectedCustomerTypeIds.length} customer type(s) selected`}
+                              </span>
+                              <ChevronDown className="h-4 w-4 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-2" align="start">
+                            <div className="flex items-center justify-between border-b pb-2 mb-2">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs h-7"
+                                onClick={selectAllCustomerTypes}
+                              >
+                                Select All
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs h-7"
+                                onClick={clearAllCustomerTypes}
+                              >
+                                Clear All
+                              </Button>
+                            </div>
+                            <div className="space-y-1 max-h-48 overflow-y-auto">
+                              {customerTypes.map((ct) => (
+                                <label
+                                  key={ct.id}
+                                  className="flex items-center gap-2 rounded-sm px-2 py-1.5 text-xs hover:bg-gray-100 cursor-pointer"
+                                >
+                                  <Checkbox
+                                    checked={selectedCustomerTypeIds.includes(ct.id)}
+                                    onCheckedChange={() => toggleCustomerType(ct.id)}
+                                  />
+                                  <span>{ct.name}</span>
+                                  {selectedCustomerTypeIds.includes(ct.id) && (
+                                    <Check className="ml-auto h-3 w-3 text-green-600" />
+                                  )}
+                                </label>
+                              ))}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      {(formData.customerTypePrices || [])
+                        .filter((ctp) => selectedCustomerTypeIds.includes(ctp.customerTypeId))
+                        .map((ctp) => {
+                          const ct = customerTypes.find((c) => c.id === ctp.customerTypeId);
+                          if (!ct) return null;
+                          return (
+                            <div key={ctp.customerTypeId} className="space-y-2">
+                              <Label className="text-xs font-medium">
+                                {ct.name}
+                              </Label>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-1">
+                                  <Label htmlFor={`ct-${ctp.customerTypeId}`} className="text-xs text-gray-500">
+                                    Price
+                                  </Label>
+                                  <Input
+                                    id={`ct-${ctp.customerTypeId}`}
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    value={ctp.price || ""}
+                                    onChange={(e) =>
+                                      handleCustomerTypePriceChange(
+                                        ctp.customerTypeId,
+                                        e.target.value ? Number.parseFloat(e.target.value) : 0,
+                                      )
+                                    }
+                                    placeholder="Selling price"
+                                    className="focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <Label htmlFor={`ct-purchase-${ctp.customerTypeId}`} className="text-xs text-gray-500">
+                                    Purchase Price
+                                  </Label>
+                                  <Input
+                                    id={`ct-purchase-${ctp.customerTypeId}`}
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    value={ctp.purchasePrice || ""}
+                                    onChange={(e) =>
+                                      handleCustomerTypePurchasePriceChange(
+                                        ctp.customerTypeId,
+                                        e.target.value ? Number.parseFloat(e.target.value) : 0,
+                                      )
+                                    }
+                                    placeholder="Cost price"
+                                    className="focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </>
+                  )}
                   <div className="space-y-2">
                     <Label className="text-xs font-medium">Unit *</Label>
                     {isUnitsLoading ? (
@@ -699,30 +654,32 @@ export function CreateProductDrawer({
 
                 {/* Right Side */}
                 <div className="flex-1 space-y-4">
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="purchasePrice"
-                      className="text-xs font-medium"
-                    >
-                      Purchase Price *
-                    </Label>
-                    <Input
-                      id="purchasePrice"
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={formData.purchasePrice || ""}
-                      onChange={(e) =>
-                        handleInputChange(
-                          "purchasePrice",
-                          Number.parseFloat(e.target.value) || 0,
-                        )
-                      }
-                      placeholder="0"
-                      className="focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      required
-                    />
-                  </div>
+                  {selectedCustomerTypeIds.length === 0 && (
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="purchasePrice"
+                        className="text-xs font-medium"
+                      >
+                        Purchase Price *
+                      </Label>
+                      <Input
+                        id="purchasePrice"
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={formData.purchasePrice || ""}
+                        onChange={(e) =>
+                          handleInputChange(
+                            "purchasePrice",
+                            Number.parseFloat(e.target.value) || 0,
+                          )
+                        }
+                        placeholder="0"
+                        className="focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        required
+                      />
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <Label htmlFor="quantity" className="text-xs font-medium">
                       Quantity *
@@ -771,250 +728,6 @@ export function CreateProductDrawer({
                           }
                           initialFocus
                         />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Tax & Compliance */}
-            <div className="bg-white p-4 rounded-lg border space-y-4">
-              <h3 className="text-xs font-semibold text-gray-700 border-b pb-2">
-                Tax & Compliance
-              </h3>
-
-              <div className="flex gap-6">
-                {/* Left Side */}
-                <div className="flex-1 space-y-4">
-                  <div className="space-y-2">
-                    <Label
-                      htmlFor="purchasePrice"
-                      className="text-xs font-medium"
-                    >
-                      Purchase Price *
-                    </Label>
-                    <Input
-                      id="purchasePrice"
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={formData.purchasePrice || ""}
-                      onChange={(e) =>
-                        handleInputChange(
-                          "purchasePrice",
-                          Number.parseFloat(e.target.value) || 0,
-                        )
-                      }
-                      placeholder="0"
-                      className="focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-xs font-medium">
-                      Country of Origin *
-                    </Label>
-                    <Popover
-                      open={countrySearchOpen}
-                      onOpenChange={setCountrySearchOpen}
-                    >
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={countrySearchOpen}
-                          className="w-full justify-between focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                        >
-                          {formData.ebmCountryOfOrigin
-                            ? countries.find(
-                                (country) =>
-                                  country.code === formData.ebmCountryOfOrigin,
-                              )?.name
-                            : "Select country..."}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-full p-0">
-                        <Command>
-                          <CommandInput placeholder="Search country..." />
-                          <CommandEmpty>No country found.</CommandEmpty>
-                          <CommandGroup>
-                            {countries.map((country) => (
-                              <CommandItem
-                                key={country.code}
-                                value={country.name}
-                                onSelect={() => {
-                                  handleInputChange(
-                                    "ebmCountryOfOrigin",
-                                    country.code,
-                                  );
-                                  setCountrySearchOpen(false);
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    formData.ebmCountryOfOrigin === country.code
-                                      ? "opacity-100"
-                                      : "opacity-0",
-                                  )}
-                                />
-                                {country.name}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-medium">
-                      Quantity Unit *
-                    </Label>
-                    <Select
-                      value={formData.ebmQuantityUnit}
-                      onValueChange={(value) =>
-                        handleInputChange("ebmQuantityUnit", value)
-                      }
-                    >
-                      <SelectTrigger className="focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                        <SelectValue placeholder="Select quantity unit" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {quantityUnits.map((unit) => (
-                          <SelectItem key={unit.code} value={unit.code}>
-                            {unit.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Right Side */}
-                <div className="flex-1 space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-xs font-medium">
-                      Product Type *
-                    </Label>
-                    <Select
-                      value={formData.ebmProductType}
-                      onValueChange={(value) =>
-                        handleInputChange("ebmProductType", value)
-                      }
-                    >
-                      <SelectTrigger className="focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                        <SelectValue placeholder="Select product type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {productTypes.map((type) => (
-                          <SelectItem key={type.code} value={type.code}>
-                            {type.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-medium">
-                      Packaging Unit *
-                    </Label>
-                    <Select
-                      value={formData.ebmPackagingUnit}
-                      onValueChange={(value) =>
-                        handleInputChange("ebmPackagingUnit", value)
-                      }
-                    >
-                      <SelectTrigger className="focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                        <SelectValue placeholder="Select packaging unit" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {packagingUnits.map((unit) => (
-                          <SelectItem key={unit.code} value={unit.code}>
-                            {unit.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-medium">
-                      Item Class Code *
-                    </Label>
-                    <Popover
-                      open={itemClassSearchOpen}
-                      onOpenChange={setItemClassSearchOpen}
-                    >
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={itemClassSearchOpen}
-                          className="w-full justify-between focus:ring-2 text-gray-500 hover:text-gray-600  focus:ring-green-500 focus:border-green-500"
-                        >
-                          {formData.ebmItemClassCode.value
-                            ? `${formData.ebmItemClassCode.value} - ${formData.ebmItemClassCode.label}`
-                            : "Item class code"}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-full p-0">
-                        <Command>
-                          <CommandInput
-                            placeholder="item class code"
-                            value={itemClassSearchTerm}
-                            onValueChange={setItemClassSearchTerm}
-                            className="placeholder:text-gray-500 text-sm"
-                          />
-                          {isLoadingItemClass ? (
-                            <div className="p-4 text-center text-xs text-gray-500">
-                              Searching...
-                            </div>
-                          ) : itemClassCodes.length === 0 ? (
-                            <CommandEmpty>
-                              {itemClassSearchTerm
-                                ? "No matching items found."
-                                : "Type to search for agriculture-related items..."}
-                            </CommandEmpty>
-                          ) : (
-                            <CommandGroup className="max-h-64 overflow-y-auto">
-                              {itemClassCodes.map((item) => (
-                                <CommandItem
-                                  key={item.itemClsCd}
-                                  value={`${item.itemClsCd}-${item.itemClsNm}`}
-                                  onSelect={() => {
-                                    handleInputChange("ebmItemClassCode", {
-                                      label: item.itemClsNm,
-                                      value: item.itemClsCd,
-                                    });
-                                    setItemClassSearchOpen(false);
-                                    setItemClassSearchTerm("");
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      formData.ebmItemClassCode.value ===
-                                        item.itemClsCd
-                                        ? "opacity-100"
-                                        : "opacity-0",
-                                    )}
-                                  />
-                                  <div className="flex flex-col">
-                                    <span className="font-medium">
-                                      {item.itemClsCd}
-                                    </span>
-                                    <span className="text-xs text-gray-600">
-                                      {item.itemClsNm}
-                                    </span>
-                                  </div>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          )}
-                        </Command>
                       </PopoverContent>
                     </Popover>
                   </div>

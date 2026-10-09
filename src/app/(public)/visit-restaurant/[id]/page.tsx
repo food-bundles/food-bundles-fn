@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { use, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -86,13 +86,14 @@ const mockRestaurantDetails = {
 export default function VisitedRestaurantPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = use(params);
   const [activeTab, setActiveTab] = useState<"posts" | "menu" | "about">(
     "posts"
   );
   const restaurant =
-    mockRestaurantDetails[params.id as keyof typeof mockRestaurantDetails];
+    mockRestaurantDetails[id as keyof typeof mockRestaurantDetails];
 
   if (!restaurant) {
     return (
@@ -174,7 +175,7 @@ export default function VisitedRestaurantPage({
       {/* Content */}
       <div className="container mx-auto px-4 py-6 max-w-4xl">
         {/* Promo Codes Section */}
-        <RestaurantPromos restaurantId={params.id} />
+        <RestaurantPromos restaurantId={id} />
 
         {/* Quick info cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

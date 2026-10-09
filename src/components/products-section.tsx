@@ -4,7 +4,7 @@
 "use client";
 
 import type React from "react";
-import { useState, useCallback, useMemo, useEffect, memo } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef, memo } from "react";
 import { Card } from "@/components/ui/card";
 import CartDrawer from "@/components/cartDrawer";
 import { useCartSummary } from "@/app/contexts/cart-context";
@@ -48,13 +48,29 @@ import RestaurantAvailablePromos from "@/app/(private)/restaurant/_components/Re
 // import { ChristmasAnimation } from "@/components/ChristmasAnimation";
 import Link from "next/link";
 
-// Helper function to get role-based price
-const getRoleBasedPrice = (product: any, userRole: string) => {
-  if (userRole === "HOTEL" && product.hotelPrice !== null && product.hotelPrice !== undefined) {
-    return product.hotelPrice;
+// Helper function to get role-based price from customerTypePrices
+const getRoleBasedPrice = (product: any, userRole: string, customerTypeId?: string | null) => {
+  const customerTypePrices = product.customerTypePrices || [];
+  // An explicitly assigned customer type wins over the role-based default
+  if (customerTypeId) {
+    const assigned = customerTypePrices.find(
+      (ctp: any) => ctp.customerType?.id === customerTypeId
+    );
+    return assigned ? assigned.price : product.unitPrice || 0;
   }
-  if ((userRole === "RESTAURANT" || userRole === "AFFILIATOR") && product.restaurantPrice !== null && product.restaurantPrice !== undefined) {
-    return product.restaurantPrice;
+  if (customerTypePrices.length > 0) {
+    const roleToCustomerType: Record<string, string> = {
+      HOTEL: "Hotel",
+      RESTAURANT: "Restaurant",
+      AFFILIATOR: "Restaurant",
+    };
+    const targetName = roleToCustomerType[userRole];
+    if (targetName) {
+      const match = customerTypePrices.find(
+        (ctp: any) => ctp.customerType?.name?.toLowerCase() === targetName.toLowerCase()
+      );
+      if (match) return match.price;
+    }
   }
   return product.unitPrice || 0;
 };
@@ -71,6 +87,7 @@ interface ProductCardProps {
   category?: string;
   productData?: Product;
   userRole?: string;
+  customerTypeId?: string | null;
 }
 
 const ProductCard = memo(function ProductCard({
@@ -83,6 +100,7 @@ const ProductCard = memo(function ProductCard({
   unit,
   productData,
   userRole,
+  customerTypeId,
 }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
@@ -97,7 +115,7 @@ const ProductCard = memo(function ProductCard({
   const isUpdateDisabled = isInCart && quantity === cartQuantity;
 
   // Get role-based price with fallback
-  const displayPrice = productData ? getRoleBasedPrice(productData, userRole || 'RESTAURANT') : (price || 0);
+  const displayPrice = productData ? getRoleBasedPrice(productData, userRole || 'RESTAURANT', customerTypeId) : (price || 0);
   const safeDisplayPrice = typeof displayPrice === 'number' && displayPrice > 0 ? displayPrice : (price || 0);
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,6 +135,56 @@ const ProductCard = memo(function ProductCard({
     setQuantity(finalValue);
     setInputValue(finalValue.toString());
   };
+
+  // Auto-sync cart when quantity changes:
+  // - if item is already in cart, update its quantity automatically
+  // - if item is not in cart yet, auto-add it once quantity is increased past 1
+  //   (default qty 1 still waits for the cart icon click)
+  const autoUpdateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isUpdatingRef = useRef(false);
+
+  // Reconcile local quantity from the cart on every change, unless an update is
+  // in flight. This prevents the card and the drawer from pushing stale values
+  // back and forth (the "shaking" total), and survives page refreshes.
+  useEffect(() => {
+    if (isUpdatingRef.current || isAddingToCart) return;
+    if (cartQuantity > 0) {
+      setQuantity(cartQuantity);
+      setInputValue(cartQuantity.toString());
+    }
+  }, [cartQuantity]);
+
+  useEffect(() => {
+    if (isAddingToCart || isUpdatingRef.current) return;
+
+    if (isInCart && cartItem) {
+      if (quantity === cartQuantity) return;
+
+      if (autoUpdateTimerRef.current) clearTimeout(autoUpdateTimerRef.current);
+
+      autoUpdateTimerRef.current = setTimeout(() => {
+        isUpdatingRef.current = true;
+        updateCartItem(cartItem.id, quantity).finally(() => {
+          isUpdatingRef.current = false;
+        });
+      }, 400);
+    } else {
+      if (quantity <= 1) return;
+
+      if (autoUpdateTimerRef.current) clearTimeout(autoUpdateTimerRef.current);
+
+      autoUpdateTimerRef.current = setTimeout(() => {
+        isUpdatingRef.current = true;
+        addToCart(id, quantity).finally(() => {
+          isUpdatingRef.current = false;
+        });
+      }, 400);
+    }
+
+    return () => {
+      if (autoUpdateTimerRef.current) clearTimeout(autoUpdateTimerRef.current);
+    };
+  }, [quantity, isInCart, cartItem, cartQuantity, updateCartItem, addToCart, isAddingToCart, id]);
 
   const handleCartAction = useCallback(async () => {
     setIsAddingToCart(true);
@@ -658,7 +726,7 @@ export function ProductsSection({
                             const data = await productService.getDiscountedProducts();
                             console.log('Discounted products response:', data);
                             const transformedProducts = data.data.map((product: any) => {
-                              const roleBasedPrice = getRoleBasedPrice(product, user?.role || 'RESTAURANT');
+                              const roleBasedPrice = getRoleBasedPrice(product, user?.role || 'RESTAURANT', user?.customerTypeId);
                               return {
                                 id: product.id,
                                 name: product.productName,
@@ -777,6 +845,7 @@ export function ProductsSection({
                         unit={product.unit}
                         productData={product}
                         userRole={user?.role}
+                        customerTypeId={user?.customerTypeId}
                       />
                     ))}
                   </div>

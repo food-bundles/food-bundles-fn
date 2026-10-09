@@ -1,0 +1,787 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
+
+import { useEffect, useState } from "react";
+import { ColumnDef } from "@tanstack/react-table";
+import { DataTable } from "@/components/data-table";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  CheckCircle,
+  XCircle,
+  MoreHorizontal,
+  Loader2,
+  Lock,
+  Unlock,
+  Check,
+} from "lucide-react";
+import { voucherService } from "@/app/services/voucherService";
+import { toast } from "sonner";
+import ApproveLoanSessionModal from "./ApproveLoanSessionModal";
+import { RejectReasonPicker } from "./RejectReasonPicker";
+
+interface LoanSession {
+  id: string;
+  rrn: string;
+  restaurantId: string;
+  requestedAmount: number;
+  approvedAmount?: number;
+  approvalPercentage?: number;
+  unlockFee?: number;
+  unlockFeePercentage?: number;
+  effectiveUnlockFeeEnabled?: boolean;
+  effectiveUnlockFeePercentage?: number;
+  unlockStatus: string;
+  amountUsed: number;
+  amountRepaid: number;
+  amountTransferredToWallet: number;
+  outstandingAmount: number;
+  status: string;
+  purpose?: string;
+  notes?: string;
+  repaymentDays?: number;
+  dueDate?: string;
+  approvedAt?: string;
+  unlockedAt?: string;
+  requestedAt: string;
+  loanProviderType?: "TRADER" | "FOOD_BUNDLES" | string | null;
+  restaurant: { id: string; name: string; phone?: string };
+  approver?: { id: string; username: string };
+  fundingTrader?: { id: string; username: string; phone?: string };
+  card?: { id: string; pan: string };
+  unlockPayments?: { id: string; status: string; amount: number; paymentMethod: string; confirmedAt?: string }[];
+}
+
+interface LoanTrader {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  availableBalance: number;
+  canTradeOnBehalf: boolean;
+  delegationStatus: string;
+  unlockFeeEnabled?: boolean;
+  unlockFeePercentage?: number | null;
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  REQUESTED: "bg-yellow-100 text-yellow-700",
+  APPROVED_LOCKED: "bg-blue-100 text-blue-700",
+  UNLOCK_FEE_PENDING: "bg-orange-100 text-orange-700",
+  ACTIVE: "bg-green-100 text-green-700",
+  PARTIALLY_USED: "bg-teal-100 text-teal-700",
+  FULLY_USED: "bg-indigo-100 text-indigo-700",
+  CLOSED: "bg-gray-100 text-gray-600",
+  SETTLED: "bg-green-100 text-green-800",
+  REJECTED: "bg-red-100 text-red-700",
+  OVERDUE: "bg-red-200 text-red-800",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  REQUESTED: "Pending",
+  APPROVED_LOCKED: "Approved (Locked)",
+  UNLOCK_FEE_PENDING: "Unlock Fee Due",
+  ACTIVE: "Active",
+  PARTIALLY_USED: "Used",
+  FULLY_USED: "Used",
+  CLOSED: "Closed",
+  SETTLED: "Settled",
+  REJECTED: "Rejected",
+  OVERDUE: "Overdue",
+};
+
+export default function LoanSessionsAdminTable() {
+  const [sessions, setSessions] = useState<LoanSession[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<LoanSession | null>(null);
+  const [acceptOpen, setAcceptOpen] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [approvedAmount, setApprovedAmount] = useState("");
+  const [approvalPct, setApprovalPct] = useState("100");
+  const [repaymentDays, setRepaymentDays] = useState("30");
+  const [rejectReason, setRejectReason] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [traders, setTraders] = useState<LoanTrader[]>([]);
+  const [selectedTraderId, setSelectedTraderId] = useState("");
+  const [approveOpen, setApproveOpen] = useState(false);
+  const [isLoadingTraders, setIsLoadingTraders] = useState(false);
+  const [traderCapacity, setTraderCapacity] = useState<{
+    traderId: string;
+    name: string;
+    email?: string;
+    availableBalance: number;
+    requiredAmount: number | null;
+    canFund: boolean;
+    shortfall: number;
+  } | null>(null);
+  const [checkingBalance, setCheckingBalance] = useState(false);
+
+  const load = () => {
+    setLoading(true);
+    voucherService
+      .getAllLoanSessions()
+      .then((res) => setSessions(res?.data ?? []))
+      .catch(() => setSessions([]))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const loadTraders = async () => {
+    setIsLoadingTraders(true);
+    try {
+      const res = await voucherService.getLoanTraders();
+      setTraders(res?.data ?? []);
+    } catch {
+      setTraders([]);
+    } finally {
+      setIsLoadingTraders(false);
+    }
+  };
+
+  // Sync amount when percentage changes (amount is always derived from the requested amount)
+  const handlePctChange = (val: string) => {
+    setApprovalPct(val);
+    if (selected) {
+      const pct = parseFloat(val) || 0;
+      setApprovedAmount(String(Math.round((selected.requestedAmount * pct) / 100)));
+    }
+  };
+
+  const openReject = (session: LoanSession) => {
+    setSelected(session);
+    setRejectReason("");
+    setRejectOpen(true);
+  };
+
+  const openAccept = async (session: LoanSession) => {
+    setSelected(session);
+    setSelectedTraderId(session.fundingTrader?.id ?? "");
+    setApprovedAmount(session.requestedAmount.toString());
+    setApprovalPct("100");
+    setRepaymentDays(session.repaymentDays?.toString() ?? "30");
+    setTraderCapacity(null);
+    setAcceptOpen(true);
+    await loadTraders();
+  };
+
+  const openApprove = (session: LoanSession) => {
+    setSelected(session);
+    setApproveOpen(true);
+  };
+
+  const handleAccept = async () => {
+    if (!selected) return;
+    setSubmitting(true);
+    try {
+      // Prefer the trader the restaurant picked; otherwise the admin-selected trader.
+      const traderId = selected.fundingTrader?.id || selectedTraderId || undefined;
+      const approvedAmountValue =
+        parseInt(approvedAmount) ||
+        Math.round(
+          selected.requestedAmount *
+            ((parseFloat(approvalPct) || 100) / 100),
+        );
+      await voucherService.acceptLoanSession(selected.id, {
+        fundingTraderId: traderId,
+        approvalPercentage: parseFloat(approvalPct),
+        approvedAmount: approvedAmountValue,
+        repaymentDays: parseInt(repaymentDays),
+      });
+      toast.success(
+        traderId
+          ? "Loan accepted and sent to the trader for approval"
+          : "Loan accepted — trader can now approve it",
+      );
+      setAcceptOpen(false);
+      load();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message ?? "Failed to accept");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!selected) return;
+    setSubmitting(true);
+    try {
+      await voucherService.rejectLoanSession(selected.id, rejectReason || "Rejected by admin");
+      toast.success("Loan request rejected");
+      setRejectOpen(false);
+      load();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message ?? "Failed to reject");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Live trader-capacity check: whenever a trader is selected in the Accept
+  // dialog, ask the backend if that trader can fund the amount.
+  const activeCapacityTraderId = acceptOpen ? selectedTraderId : "";
+
+  useEffect(() => {
+    if (!activeCapacityTraderId || !selected) {
+      setTraderCapacity(null);
+      setCheckingBalance(false);
+      return;
+    }
+    let cancelled = false;
+    setCheckingBalance(true);
+    const amount = parseFloat(approvedAmount) || selected.requestedAmount;
+    voucherService
+      .checkTraderLoanCapacity(activeCapacityTraderId, amount)
+      .then((res) => {
+        if (!cancelled) setTraderCapacity(res?.data ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setTraderCapacity(null);
+      })
+      .finally(() => {
+        if (!cancelled) setCheckingBalance(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [acceptOpen, activeCapacityTraderId, approvedAmount, selected]);
+
+  // Derived values for the accept dialog
+  const parsedAmount = parseFloat(approvedAmount) || 0;
+  const extraAmount = selected && parsedAmount > 0 ? Math.max(0, selected.requestedAmount - parsedAmount) : 0;
+
+  const columns: ColumnDef<LoanSession>[] = [
+    {
+      id: "index",
+      header: "#",
+      cell: ({ row }) => <span className="text-xs text-gray-500">{row.index + 1}</span>,
+    },
+    {
+      id: "rrn",
+      header: "RRN",
+      cell: ({ row }) => (
+        <span className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded">
+          {row.original.rrn}
+        </span>
+      ),
+    },
+    {
+      id: "restaurant",
+      header: "Restaurant",
+      cell: ({ row }) => (
+        <div>
+          <p className="text-sm font-medium text-gray-800">{row.original.restaurant.name}</p>
+          {row.original.restaurant.phone && (
+            <p className="text-xs text-gray-400">{row.original.restaurant.phone}</p>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: "provider",
+      header: "Trader",
+      cell: ({ row }) => {
+        const s = row.original;
+        if (s.loanProviderType === "FOOD_BUNDLES") {
+          return (
+            <div>
+              <p className="text-sm font-medium text-gray-800">Food Bundles</p>
+              <p className="text-xs text-gray-400">Platform lender</p>
+            </div>
+          );
+        }
+        const t = s.fundingTrader;
+        return t ? (
+          <div>
+            <p className="text-sm font-medium text-gray-800">{t.username}</p>
+            {t.phone && <p className="text-xs text-gray-400">{t.phone}</p>}
+          </div>
+        ) : (
+          <span className="text-xs text-gray-400">
+            {s.status === "REQUESTED" ? "Not assigned" : "—"}
+          </span>
+        );
+      },
+    },
+    {
+      id: "pan",
+      header: "Days / Due",
+      cell: ({ row }) => {
+        const s = row.original;
+        if (!s.repaymentDays || !s.approvedAt) {
+          return <span className="text-xs text-gray-400">—</span>;
+        }
+        const dueDate = s.dueDate ? new Date(s.dueDate) : null;
+        const now = new Date();
+        const daysRemaining = dueDate
+          ? Math.ceil((dueDate.getTime() - now.getTime()) / 86400000)
+          : null;
+        const hasDebt = s.outstandingAmount > 0;
+        const isOverdue = daysRemaining !== null && daysRemaining < 0 && hasDebt;
+        return (
+          <div className="text-xs space-y-0.5">
+            <p className="text-xs text-gray-500">{s.repaymentDays}/{daysRemaining !== null ? daysRemaining : "—"}</p>
+           
+          </div>
+        );
+      },
+    },
+    {
+      id: "amounts",
+      header: "Requested / Approved",
+      cell: ({ row }) => {
+        const s = row.original;
+        return (
+          <div className="text-xs">
+            <p className="text-xs font-semibold text-gray-800">{s.requestedAmount.toLocaleString()} RWF</p>
+            {s.approvedAmount && (
+              <p className="text-xs text-green-600">
+                → {s.approvedAmount.toLocaleString()} RWF
+                {s.approvalPercentage && s.approvalPercentage < 100 && (
+                  <span className="text-xs text-gray-400 ml-1">({s.approvalPercentage}%)</span>
+                )}
+              </p>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      id: "paid",
+      header: "Paid",
+      cell: ({ row }) => {
+        const paid = row.original.amountRepaid ?? 0;
+        return (
+          <p className={`text-xs font-medium ${paid > 0 ? "text-green-600" : "text-gray-400"}`}>
+            {paid.toLocaleString()} RWF
+          </p>
+        );
+      },
+    },
+    {
+      id: "outstanding",
+      header: "Outstanding",
+      cell: ({ row }) => {
+        const s = row.original;
+        return (
+          <p className={`text-xs font-medium ${s.outstandingAmount > 0 ? "text-red-600" : "text-gray-400"}`}>
+            {s.outstandingAmount.toLocaleString()} RWF
+          </p>
+        );
+      },
+    },
+    {
+      id: "unlockFee",
+      header: "Unlock Fee",
+      cell: ({ row }) => {
+        const s = row.original;
+        const paidPayment = s.unlockPayments?.find((p) => p.status === "COMPLETED");
+
+        if (s.status === "REQUESTED") {
+          if (s.effectiveUnlockFeeEnabled && (s.effectiveUnlockFeePercentage ?? 0) > 0) {
+            return (
+              <div className="text-xs">
+                <p className="text-gray-400">
+                  {(s.requestedAmount * ((s.effectiveUnlockFeePercentage ?? 0) / 100)).toLocaleString()} RWF
+                </p>
+              </div>
+            );
+          }
+          return <span className="text-xs text-gray-400">None</span>;
+        }
+        if (!s.unlockFee) return <span className="text-xs text-gray-400">None</span>;
+        return (
+          <div className="text-xs space-y-0.5 flex items-center gap-1">
+            <p className="text-xs text-orange-600 font-medium">{s.unlockFee.toLocaleString()} RWF</p>
+            {paidPayment ? (
+              <span className="inline-flex items-center gap-1 text-green-700 bg-transparent rounded px-1.5 py-0.5 text-[10px] font-medium">
+                <Check className="w-3 h-3" />
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-orange-600 bg-orange-50 border border-orange-200 rounded px-1.5 py-0.5 text-[10px]">
+                <Lock className="w-3 h-3" /> Unpaid
+              </span>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      id: "lock",
+      header: "Lock",
+      cell: ({ row }) =>
+        row.original.unlockStatus === "UNLOCKED" ? (
+          <Unlock className="w-4 h-4 text-green-500" />
+        ) : (
+          <Lock className="w-4 h-4 text-gray-300" />
+        ),
+    },
+    {
+      id: "status",
+      header: "Status",
+      cell: ({ row }) => {
+        const s = row.original.status;
+        return (
+          <Badge className={`text-xs rounded ${STATUS_COLORS[s] ?? "bg-gray-100 text-gray-600"}`}>
+            {STATUS_LABELS[s] ?? s}
+          </Badge>
+        );
+      },
+    },
+    {
+      id: "requestedAt",
+      header: "Date",
+      cell: ({ row }) => (
+        <span className="text-xs text-gray-500">
+          {new Date(row.original.requestedAt).toLocaleDateString()}
+        </span>
+      ),
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        const s = row.original;
+        const isPending = s.status === "REQUESTED";
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                disabled={!isPending}
+                onClick={() => openApprove(s)}
+              >
+                <CheckCircle className="mr-2 h-4 w-4 text-green-600" />
+                Approve
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={!isPending || s.loanProviderType === "FOOD_BUNDLES"}
+                onClick={() => openAccept(s)}
+              >
+                <CheckCircle className="mr-2 h-4 w-4 text-blue-600" />
+                Accept (send to trader)
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                disabled={!isPending}
+                className="text-red-600"
+                onClick={() => openReject(s)}
+              >
+                <XCircle className="mr-2 h-4 w-4" />
+                Reject
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* All sessions */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <h3 className="text-sm font-semibold text-gray-800">All Loan Sessions</h3>
+        </div>
+        <DataTable
+          columns={columns}
+          data={sessions}
+          title=""
+          description=""
+          showPagination
+          showColumnVisibility
+          isLoading={loading}
+        />
+      </div>
+
+      {/* Approve loan modal (shared with the pending activities feed) */}
+      <ApproveLoanSessionModal
+        open={approveOpen}
+        session={
+          selected
+            ? {
+                id: selected.id,
+                rrn: selected.rrn,
+                restaurantName: selected.restaurant.name,
+                requestedAmount: selected.requestedAmount,
+                purpose: selected.purpose,
+                repaymentDays: selected.repaymentDays,
+                loanProviderType: selected.loanProviderType,
+                fundingTraderId: selected.fundingTrader?.id ?? null,
+                effectiveUnlockFeeEnabled: selected.effectiveUnlockFeeEnabled,
+                effectiveUnlockFeePercentage: selected.effectiveUnlockFeePercentage,
+              }
+            : null
+        }
+        onClose={() => setApproveOpen(false)}
+        onSuccess={() => {
+          setApproveOpen(false);
+          load();
+        }}
+      />
+
+      {/* Accept dialog — send to trader */}
+      <Dialog open={acceptOpen} onOpenChange={setAcceptOpen}>
+        <DialogContent className="bg-white max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-blue-600" />
+              Accept &amp; Send to Trader — {selected?.restaurant.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-gray-50 rounded-lg p-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-500">Requested</span>
+                <span className="font-semibold">
+                  {selected?.requestedAmount.toLocaleString()} RWF
+                </span>
+              </div>
+              {selected?.purpose && (
+                <div className="flex justify-between mt-1">
+                  <span className="text-gray-500">Purpose</span>
+                  <span className="text-gray-700">{selected.purpose}</span>
+                </div>
+              )}
+              <div className="flex justify-between mt-1">
+                <span className="text-gray-500">RRN</span>
+                <span className="font-mono text-xs">{selected?.rrn}</span>
+              </div>
+              <div className="flex justify-between mt-1">
+                <span className="text-gray-500">Provider</span>
+                <span className="text-gray-700">
+                  {selected?.fundingTrader?.username ?? (
+                    <span className="text-amber-600">None selected yet</span>
+                  )}
+                </span>
+              </div>
+            </div>
+
+            {/* Amount — same as approve flow */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Approval % (credit given on the requested amount)
+                </label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={approvalPct}
+                  onChange={(e) => handlePctChange(e.target.value)}
+                  className="h-10 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Repayment Days
+                </label>
+                <Input
+                  type="number"
+                  value={repaymentDays}
+                  onChange={(e) => setRepaymentDays(e.target.value)}
+                  className="h-10 text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded-lg p-3 text-sm space-y-1">
+              <div className="flex justify-between">
+                <span className="text-gray-500">Requested</span>
+                <span className="font-semibold">
+                  {selected?.requestedAmount.toLocaleString()} RWF
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Approved ({approvalPct}%)</span>
+                <span className="font-semibold text-green-600">
+                  {parsedAmount.toLocaleString()} RWF
+                </span>
+              </div>
+              {extraAmount > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Extra the client pays at checkout</span>
+                  <span className="font-semibold text-orange-600">
+                    {extraAmount.toLocaleString()} RWF
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                {selected?.fundingTrader
+                  ? "Confirm or change the trader"
+                  : "Select a trader to approve this loan"}
+              </label>
+              {isLoadingTraders ? (
+                <div className="flex items-center gap-2 text-xs text-gray-500 py-2">
+                  <Loader2 className="w-4 h-4 animate-spin" /> Loading traders...
+                </div>
+              ) : traders.length === 0 ? (
+                <p className="text-xs text-gray-500 py-2">
+                  No active traders with wallets found. The loan can still be
+                  accepted, but no trader will be notified.
+                </p>
+              ) : (
+                <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
+                  {traders.map((t) => (
+                    <label
+                      key={t.id}
+                      className={`flex items-start gap-2 border rounded-lg p-3 cursor-pointer text-sm ${
+                        selectedTraderId === t.id
+                          ? "border-blue-500 bg-blue-50"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="trader"
+                        checked={selectedTraderId === t.id}
+                        onChange={() => setSelectedTraderId(t.id)}
+                        className="w-4 h-4 mt-0.5 accent-blue-600"
+                      />
+                      <span className="flex-1">
+                        <span className="block font-medium text-gray-800">
+                          {t.name}
+                        </span>
+                        <span className="block text-xs text-gray-500">
+                          {t.availableBalance.toLocaleString()} RWF available
+                          {t.canTradeOnBehalf &&
+                            t.delegationStatus === "APPROVED" &&
+                            " · Can trade on behalf"}
+                        </span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+
+              {selectedTraderId && !isLoadingTraders && (
+                <div className="text-xs mt-2 space-y-1">
+                  {checkingBalance && (
+                    <p className="text-gray-400 flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin" /> Checking trader balance...
+                    </p>
+                  )}
+                  {!checkingBalance && traderCapacity && traderCapacity.canFund && (
+                    <p className="text-green-600 bg-green-50 border border-green-200 rounded-lg p-2">
+                      Sufficient balance — {traderCapacity.name} can fund{" "}
+                      {traderCapacity.requiredAmount?.toLocaleString() ?? parsedAmount.toLocaleString()} RWF
+                      ({traderCapacity.availableBalance.toLocaleString()} RWF available).
+                    </p>
+                  )}
+                  {!checkingBalance && traderCapacity && !traderCapacity.canFund && (
+                    <p className="text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">
+                      Insufficient balance — {traderCapacity.name} has{" "}
+                      {traderCapacity.availableBalance.toLocaleString()} RWF available but{" "}
+                      {traderCapacity.requiredAmount?.toLocaleString() ?? parsedAmount.toLocaleString()} RWF
+                      is required (short {traderCapacity.shortfall.toLocaleString()} RWF). Choose
+                      another trader or lower the approval %.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {selectedTraderId &&
+                (() => {
+                  const t = traders.find((x) => x.id === selectedTraderId);
+                  if (!t) return null;
+                  const feeApplies =
+                    t.unlockFeeEnabled && (t.unlockFeePercentage ?? 0) > 0;
+                  return feeApplies ? (
+                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 mt-2">
+                      Unlock fee applies — {t.unlockFeePercentage}% will be applied
+                      automatically when this trader&apos;s loan is approved.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-2 mt-2">
+                      No unlock fee — this trader&apos;s loan activates without a fee.
+                    </p>
+                  );
+                })()}
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <Button
+                onClick={handleAccept}
+                disabled={
+                  submitting ||
+                  (!!selectedTraderId &&
+                    !!traderCapacity &&
+                    !traderCapacity.canFund)
+                }
+                className="flex-1 bg-blue-600 hover:bg-blue-700"
+              >
+                {submitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                {submitting ? "Accepting..." : "Accept & Send to Trader"}
+              </Button>
+              <Button variant="outline" onClick={() => setAcceptOpen(false)} disabled={submitting}>
+                Cancel
+              </Button>
+            </div>
+            {(selected?.fundingTrader || selectedTraderId) && (
+              <p className="text-xs text-gray-400">
+                The selected trader will be notified and must approve the loan
+                in their app.
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject modal */}
+      <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
+        <DialogContent className="sm:max-w-md bg-white">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <XCircle className="w-4 h-4 text-red-500" />
+              Reject Loan — {selected?.restaurant.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <RejectReasonPicker
+              key={`${selected?.id}-${rejectOpen}`}
+              onChange={setRejectReason}
+              disabled={submitting}
+            />
+            <div className="flex gap-2">
+              <Button
+                onClick={handleReject}
+                disabled={submitting || !rejectReason}
+                className="flex-1 bg-red-600 hover:bg-red-700"
+              >
+                {submitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                {submitting ? "Rejecting..." : "Reject"}
+              </Button>
+              <Button variant="outline" onClick={() => setRejectOpen(false)} disabled={submitting}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

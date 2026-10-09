@@ -44,14 +44,13 @@ export default function InventoryPage() {
           id: product.id,
           productName: product.productName,
           unitPrice: product.unitPrice,
-          restaurantPrice: product.restaurantPrice,
-          hotelPrice: product.hotelPrice,
           purchasePrice: product.purchasePrice,
           category: {
             id: product.category?.id || "",
             name: product.category?.name,
             description: product.category?.description || undefined,
           },
+          customerTypePrices: product.customerTypePrices || [],
           sku: product.sku,
           quantity: product.quantity,
           images: product.images || [],
@@ -120,7 +119,7 @@ export default function InventoryPage() {
         </div>
         <ExportButton module="products" label="Export Products" />
       </div>
-      <InventoryManagement 
+      <InventoryManagement
         products={products} 
         onRefresh={() => fetchProducts(pagination.page, pagination.limit, filters)}
         pagination={pagination}

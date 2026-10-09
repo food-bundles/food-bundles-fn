@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,6 +17,8 @@ import AnalysisPanel from "./analysis-panel";
 import ProductPriceCard from "./product-price-card";
 import PriceTrendCarousel from "./price-trend-carousel";
 import MarketPricingTable from "./market-pricing-table";
+import WfpMarketAnalytics from "./wfp-market-analytics";
+import UploadWfpCsvModal from "./upload-wfp-csv-modal";
 import { daysAgo } from "./utils";
 import {
   ErrorBanner,
@@ -36,9 +38,18 @@ import {
   Building2,
   LayoutGrid,
   Table2,
+  UploadCloud,
+  Sparkles,
+  TrendingUp,
+  Search,
 } from "lucide-react";
 
 export default function MarketPricingManagement() {
+  // ── main tab: wfp dataset vs internal tracking ─────────────────────────────
+  const [activeMainTab, setActiveMainTab] = useState<"wfp" | "internal">("wfp");
+  const [uploadWfpModalOpen, setUploadWfpModalOpen] = useState(false);
+  const [wfpRefreshTrigger, setWfpRefreshTrigger] = useState(0);
+
   // ── data ──────────────────────────────────────────────────────────────────
   const [groups, setGroups] = useState<ProductGroup[]>([]);
   const [markets, setMarkets] = useState<Market[]>([]);
@@ -51,10 +62,10 @@ export default function MarketPricingManagement() {
   // ── filters ───────────────────────────────────────────────────────────────
   const [search, setSearch] = useState("");
   const [dataFilter, setDataFilter] = useState<"ALL" | "WITH_DATA" | "NO_DATA">(
-    "ALL",
+    "ALL"
   );
   const [dateRange, setDateRange] = useState<"30d" | "60d" | "90d" | "all">(
-    "30d",
+    "30d"
   );
 
   // ── analysis ──────────────────────────────────────────────────────────────
@@ -66,16 +77,15 @@ export default function MarketPricingManagement() {
   // ── modals ────────────────────────────────────────────────────────────────
   const [createMarketOpen, setCreateMarketOpen] = useState(false);
   const [editMarketTarget, setEditMarketTarget] = useState<Market | null>(null);
-  const [deleteMarketTarget, setDeleteMarketTarget] = useState<Market | null>(
-    null,
-  );
+  const [deleteMarketTarget, setDeleteMarketTarget] =
+    useState<Market | null>(null);
   const [manageMarketsOpen, setManageMarketsOpen] = useState(false);
   const [recordPriceOpen, setRecordPriceOpen] = useState(false);
   const [recordPriceDefaultProduct, setRecordPriceDefaultProduct] = useState<
     string | undefined
   >();
   const [editRecordTarget, setEditRecordTarget] = useState<PriceRecord | null>(
-    null,
+    null
   );
   const [deleteRecordTarget, setDeleteRecordTarget] =
     useState<PriceRecord | null>(null);
@@ -83,7 +93,7 @@ export default function MarketPricingManagement() {
   // ── toasts ────────────────────────────────────────────────────────────────
   const { toasts, add: toast } = useToast();
 
-  // ── fetch ─────────────────────────────────────────────────────────────────
+  // ── fetch internal market data (only when internal tab is active) ──────────
   const load = useCallback(async () => {
     try {
       setLoading(true);
@@ -92,10 +102,10 @@ export default function MarketPricingManagement() {
         dateRange === "30d"
           ? 30
           : dateRange === "60d"
-            ? 60
-            : dateRange === "90d"
-              ? 90
-              : null;
+          ? 60
+          : dateRange === "90d"
+          ? 90
+          : null;
       const params = days
         ? {
             startDate: daysAgo(days),
@@ -120,8 +130,10 @@ export default function MarketPricingManagement() {
   }, [dateRange]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (activeMainTab === "internal") {
+      load();
+    }
+  }, [load, activeMainTab]);
 
   // ── filtered ──────────────────────────────────────────────────────────────
   const filtered = useMemo(
@@ -135,7 +147,7 @@ export default function MarketPricingManagement() {
             : g.records.length === 0);
         return ms && md;
       }),
-    [groups, search, dataFilter],
+    [groups, search, dataFilter]
   );
 
   const cutoff = new Date();
@@ -152,44 +164,35 @@ export default function MarketPricingManagement() {
   const handleMarketUpdated = (m: Market) => {
     setMarkets((p) => p.map((x) => (x.id === m.id ? m : x)));
     toast(`Market "${m.name}" updated`);
-    setEditMarketTarget(null);
   };
   const handleMarketDeleted = (id: string) => {
-    setMarkets((p) => p.filter((m) => m.id !== id));
-    toast("Market deleted", "error");
-    setDeleteMarketTarget(null);
-    load();
+    setMarkets((p) => p.filter((x) => x.id !== id));
+    toast("Market deleted");
   };
-  const handlePriceRecorded = (_: PriceRecord) => {
-    toast("Price recorded successfully");
+
+  const handlePriceRecorded = () => {
     load();
+    toast("Price recorded");
   };
-  const handleRecordUpdated = (updated: PriceRecord) => {
-    setGroups((prev) =>
-      prev.map((g) =>
-        g.productId === updated.product.id
-          ? {
-              ...g,
-              records: g.records.map((r) =>
-                r.id === updated.id ? updated : r,
-              ),
-            }
-          : g,
-      ),
+  const handleRecordUpdated = (r: PriceRecord) => {
+    setGroups((p) =>
+      p.map((g) => ({
+        ...g,
+        records: g.records.map((x) => (x.id === r.id ? r : x)),
+      }))
     );
     toast("Price record updated");
-    setEditRecordTarget(null);
   };
   const handleRecordDeleted = (id: string) => {
-    setGroups((prev) =>
-      prev.map((g) => ({
+    setGroups((p) =>
+      p.map((g) => ({
         ...g,
-        records: g.records.filter((r) => r.id !== id),
-      })),
+        records: g.records.filter((x) => x.id !== id),
+      }))
     );
-    toast("Price record deleted", "error");
-    setDeleteRecordTarget(null);
+    toast("Price record removed");
   };
+
   const openRecordForProduct = (productId: string) => {
     setRecordPriceDefaultProduct(productId);
     setRecordPriceOpen(true);
@@ -227,9 +230,9 @@ export default function MarketPricingManagement() {
         {/* breadcrumb */}
         <nav
           aria-label="Breadcrumb"
-          className="flex items-center gap-1.5 text-xs text-gray-400 mb-7"
+          className="flex items-center gap-1.5 text-xs text-gray-400 mb-6"
         >
-          {[{ l: "Dashboard", h: "/dashboard" }, { l: "Market Pricing" }].map(
+          {[{ l: "Dashboard", h: "/dashboard" }, { l: "Market Prices" }].map(
             (item, i) => (
               <span key={i} className="flex items-center gap-1.5">
                 {i > 0 && <span className="text-gray-300">›</span>}
@@ -244,334 +247,398 @@ export default function MarketPricingManagement() {
                   <span className="text-gray-700 font-semibold">{item.l}</span>
                 )}
               </span>
-            ),
+            )
           )}
         </nav>
 
-        {/* page header */}
-        <div className="flex flex-col sm:flex-row justify-between gap-4 mb-8">
-          <div>
-            <div className="flex items-center gap-2.5 mb-1">
-              <div className="w-8 h-8 rounded-xl bg-green-600 flex items-center justify-center text-white shadow-sm">
-                <BarChart2 className="w-4 h-4" />
-              </div>
-              <h1 className="text-2xl font-black text-gray-900">
-                Market Pricing
-              </h1>
-            </div>
-            <p className="text-sm text-gray-500 ml-10">
-              Compare product prices across all registered markets
-            </p>
+        {/* Main Navigation Switcher Tabs */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-7 border-b border-gray-100 pb-4">
+          <div className="flex items-center p-1.5 bg-gray-100/80 rounded-2xl gap-1.5 border border-gray-200/60 shadow-inner">
+            <button
+              onClick={() => setActiveMainTab("wfp")}
+              className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
+                activeMainTab === "wfp"
+                  ? "bg-white text-slate-900 shadow-sm ring-1 ring-black/5"
+                  : "text-gray-500 hover:text-slate-900"
+              }`}
+            >
+              <TrendingUp className="w-4 h-4 text-emerald-600" />
+              <span>WFP Rwanda Food Prices & Visualizations</span>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                External
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveMainTab("internal")}
+              className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
+                activeMainTab === "internal"
+                  ? "bg-white text-slate-900 shadow-sm ring-1 ring-black/5"
+                  : "text-gray-500 hover:text-slate-900"
+              }`}
+            >
+              <BarChart2 className="w-4 h-4 text-green-600" />
+              <span>Internal Market Benchmark & Tracking</span>
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-green-50 text-green-700 border border-green-200">
+                FoodBundles
+              </span>
+            </button>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            {!loading && (
-              <div className="flex items-center gap-1.5 text-xs text-gray-500 bg-white border border-gray-200 px-3 py-1.5 rounded-xl">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                Live · {groups.length} products
+            {activeMainTab === "wfp" ? (
+              <>
+                <button
+                  onClick={() => setUploadWfpModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-green-600 text-white text-xs font-bold shadow-sm hover:bg-green-700 transition"
+                >
+                  <UploadCloud className="w-3.5 h-3.5" />
+                  Upload WFP CSV Dataset
+                </button>
+                <button
+                  onClick={() => setWfpRefreshTrigger((p) => p + 1)}
+                  className="w-8 h-8 rounded-xl border border-gray-200 bg-white flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors shadow-sm"
+                  title="Refresh WFP Surveillance Analytics"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => setManageMarketsOpen(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+                >
+                  <Building2 className="w-3.5 h-3.5" />
+                  Manage Markets
+                </button>
+
+                <button
+                  onClick={() => setCreateMarketOpen(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+                >
+                  <MapPin className="w-3.5 h-3.5" />
+                  Add Market
+                </button>
+
+                <button
+                  onClick={() => {
+                    setRecordPriceDefaultProduct(undefined);
+                    setRecordPriceOpen(true);
+                  }}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-green-600 text-white text-xs font-black shadow-sm hover:bg-green-700 transition-all"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Record Price
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* ── TAB 1: WFP Food Prices & Visualization ────────────────────────── */}
+        {activeMainTab === "wfp" && (
+          <WfpMarketAnalytics
+            onOpenUpload={() => setUploadWfpModalOpen(true)}
+            refreshTrigger={wfpRefreshTrigger}
+          />
+        )}
+
+        {/* ── TAB 2: Internal FoodBundles Market Tracking ───────────────────── */}
+        {activeMainTab === "internal" && (
+          <div>
+            {/* page header */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-800 text-[10px] font-black tracking-wider uppercase border border-green-200">
+                    FoodBundles Internal Benchmark
+                  </span>
+                  <span className="text-[10px] text-gray-400 font-medium">
+                    (Isolated from external WFP data)
+                  </span>
+                </div>
+                <h2 className="text-xl font-black text-gray-900">
+                  Internal Market Pricing & Comparison
+                </h2>
+                <p className="text-xs text-gray-500">
+                  Compare product prices recorded by field agents against FoodBundles purchase & retail rates
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* View mode toggle */}
+                <div className="flex gap-0.5 bg-gray-100 rounded-xl p-0.5">
+                  <button
+                    onClick={() => setViewMode("cards")}
+                    aria-pressed={viewMode === "cards"}
+                    title="Card view"
+                    className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 ${
+                      viewMode === "cards"
+                        ? "bg-white shadow-sm text-gray-900"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    <LayoutGrid className="w-3 h-3" />
+                    Cards
+                  </button>
+                  <button
+                    onClick={() => setViewMode("table")}
+                    aria-pressed={viewMode === "table"}
+                    title="Table view"
+                    className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 ${
+                      viewMode === "table"
+                        ? "bg-white shadow-sm text-gray-900"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    <Table2 className="w-3 h-3" />
+                    Table
+                  </button>
+                </div>
+
+                <button
+                  onClick={load}
+                  disabled={loading}
+                  aria-label="Refresh"
+                  className="w-9 h-9 rounded-xl border border-gray-200 bg-white flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+                >
+                  <RefreshCw
+                    className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            <AnimatePresence>
+              {error && <ErrorBanner message={error} onRetry={load} />}
+            </AnimatePresence>
+
+            {/* summary cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+              {summaryCards.map((s, i) => (
+                <motion.div
+                  key={s.label}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.06 }}
+                  className="bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-4 flex items-center gap-3"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-green-600 flex items-center justify-center flex-shrink-0">
+                    <s.Icon className="w-5 h-5 text-white" />
+                  </div>
+                  {loading ? (
+                    <div className="space-y-1.5 flex-1">
+                      <Skel cls="h-5 w-10" />
+                      <Skel cls="h-3 w-20" />
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-xl font-black text-gray-900">
+                        {s.value}
+                      </p>
+                      <p className="text-[11px] text-gray-500">{s.label}</p>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Table view */}
+            {viewMode === "table" && (
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                <MarketPricingTable />
               </div>
             )}
 
-            {/* View mode toggle */}
-            <div className="flex gap-0.5 bg-gray-100 rounded-xl p-0.5">
-              <button
-                onClick={() => setViewMode("cards")}
-                aria-pressed={viewMode === "cards"}
-                title="Card view"
-                className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 ${
-                  viewMode === "cards"
-                    ? "bg-white shadow-sm text-gray-900"
-                    : "text-gray-500"
-                }`}
-              >
-                <LayoutGrid className="w-3 h-3" />
-                Cards
-              </button>
-              <button
-                onClick={() => setViewMode("table")}
-                aria-pressed={viewMode === "table"}
-                title="Table view"
-                className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 ${
-                  viewMode === "table"
-                    ? "bg-white shadow-sm text-gray-900"
-                    : "text-gray-500"
-                }`}
-              >
-                <Table2 className="w-3 h-3" />
-                Table
-              </button>
-            </div>
-
-            <button
-              onClick={() => setManageMarketsOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
-            >
-              <Building2 className="w-3.5 h-3.5" />
-              Manage Markets
-            </button>
-
-            <button
-              onClick={() => setCreateMarketOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 bg-white text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
-            >
-              <MapPin className="w-3.5 h-3.5" />
-              Add Market
-            </button>
-
-            <button
-              onClick={() => {
-                setRecordPriceDefaultProduct(undefined);
-                setRecordPriceOpen(true);
-              }}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-green-600 text-white text-xs font-black shadow-sm hover:bg-green-700 transition-all"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Record Price
-            </button>
-
-            <button
-              onClick={load}
-              disabled={loading}
-              aria-label="Refresh"
-              className="w-9 h-9 rounded-xl border border-gray-200 bg-white flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
-            >
-              <RefreshCw
-                className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
-              />
-            </button>
-          </div>
-        </div>
-
-        <AnimatePresence>
-          {error && <ErrorBanner message={error} onRetry={load} />}
-        </AnimatePresence>
-
-        {/* summary cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-          {summaryCards.map((s, i) => (
-            <motion.div
-              key={s.label}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.06 }}
-              className="bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-4 flex items-center gap-3"
-            >
-              <div className="w-10 h-10 rounded-xl bg-green-600 flex items-center justify-center flex-shrink-0">
-                <s.Icon className="w-5 h-5 text-white" />
-              </div>
-              {loading ? (
-                <div className="space-y-1.5 flex-1">
-                  <Skel cls="h-5 w-10" />
-                  <Skel cls="h-3 w-20" />
-                </div>
-              ) : (
-                <div>
-                  <p className="text-xl font-black text-gray-900">{s.value}</p>
-                  <p className="text-[11px] text-gray-500">{s.label}</p>
-                </div>
-              )}
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Table view */}
-        {viewMode === "table" && (
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <MarketPricingTable />
-          </div>
-        )}
-
-        {/* Card view */}
-        {viewMode === "cards" && (
-          <div className="grid grid-cols-1 gap-5">
-            {/* LEFT — filter bar + product cards */}
-            <div className="min-w-0 w-full">
-              {/* filter bar */}
-              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-3.5 mb-5 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-                <div className="relative flex-1">
-                  <svg
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                  <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search products…"
-                    aria-label="Search products"
-                    className="w-full pl-8 pr-4 py-2 rounded-xl border border-gray-200 text-xs bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-400"
-                  />
-                </div>
-
-                <div className="flex gap-0.5 bg-gray-100 rounded-xl p-0.5">
-                  {(["30d", "60d", "90d", "all"] as const).map((v) => (
-                    <button
-                      key={v}
-                      onClick={() => setDateRange(v)}
-                      aria-pressed={dateRange === v}
-                      className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
-                        dateRange === v
-                          ? "bg-white shadow-sm text-gray-900"
-                          : "text-gray-500"
-                      }`}
-                    >
-                      {v === "all" ? "All" : v}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="flex gap-0.5 bg-gray-100 rounded-xl p-0.5">
-                  {(
-                    [
-                      ["ALL", "All"],
-                      ["WITH_DATA", "Has Prices"],
-                      ["NO_DATA", "No Data"],
-                    ] as const
-                  ).map(([v, l]) => (
-                    <button
-                      key={v}
-                      onClick={() => setDataFilter(v)}
-                      aria-pressed={dataFilter === v}
-                      className={`px-3 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all ${
-                        dataFilter === v
-                          ? "bg-white shadow-sm text-gray-900"
-                          : "text-gray-500"
-                      }`}
-                    >
-                      {l}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* product cards + carousel side-by-side on lg */}
-              <div className="flex flex-col lg:flex-row gap-5">
-                {/* cards column */}
-                <div className="flex-1 min-w-0">
-                  {loading ? (
-                    <div className="space-y-4">
-                      {[1, 2, 3].map((i) => (
-                        <div
-                          key={i}
-                          className="bg-white rounded-2xl border border-gray-200 p-5 space-y-3"
-                        >
-                          <div className="flex gap-3">
-                            <Skel cls="w-9 h-9 rounded-xl" />
-                            <div className="space-y-1.5 flex-1">
-                              <Skel cls="h-4 w-36" />
-                              <Skel cls="h-3 w-24" />
-                            </div>
-                          </div>
-                          {[1, 2, 3].map((j) => (
-                            <Skel key={j} cls="h-10 w-full" />
-                          ))}
-                        </div>
-                      ))}
-                    </div>
-                  ) : filtered.length === 0 ? (
-                    <div className="bg-white rounded-2xl border border-gray-200">
-                      <EmptyState
-                        title={
-                          search ? "No products match" : "No market price data"
-                        }
-                        message={
-                          search
-                            ? "Adjust your search."
-                            : "No prices recorded yet."
-                        }
+            {/* Card view */}
+            {viewMode === "cards" && (
+              <div className="grid grid-cols-1 gap-5">
+                <div className="min-w-0 w-full">
+                  {/* filter bar */}
+                  <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-3.5 mb-5 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                      <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search products…"
+                        aria-label="Search products"
+                        className="w-full pl-8 pr-4 py-2 rounded-xl border border-gray-200 text-xs bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-400"
                       />
                     </div>
-                  ) : (
-                    <>
-                      <div className="space-y-4">
-                        <AnimatePresence mode="popLayout">
-                          {filtered.map((g) => (
-                            <ProductPriceCard
-                              key={g.productId}
-                              group={g}
-                              onAnalyze={(id, name) =>
-                                setAnalyzeTarget((p) =>
-                                  p?.id === id ? null : { id, name },
-                                )
-                              }
-                              isAnalyzing={analyzeTarget?.id === g.productId}
-                              onRecordPrice={openRecordForProduct}
-                              onEditRecord={setEditRecordTarget}
-                              onDeleteRecord={setDeleteRecordTarget}
-                            />
+
+                    <div className="flex gap-0.5 bg-gray-100 rounded-xl p-0.5">
+                      {(["30d", "60d", "90d", "all"] as const).map((v) => (
+                        <button
+                          key={v}
+                          onClick={() => setDateRange(v)}
+                          aria-pressed={dateRange === v}
+                          className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
+                            dateRange === v
+                              ? "bg-white shadow-sm text-gray-900"
+                              : "text-gray-500"
+                          }`}
+                        >
+                          {v === "all" ? "All" : v}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex gap-0.5 bg-gray-100 rounded-xl p-0.5">
+                      {(
+                        [
+                          ["ALL", "All"],
+                          ["WITH_DATA", "Has Prices"],
+                          ["NO_DATA", "No Data"],
+                        ] as const
+                      ).map(([v, l]) => (
+                        <button
+                          key={v}
+                          onClick={() => setDataFilter(v)}
+                          aria-pressed={dataFilter === v}
+                          className={`px-3 py-1.5 rounded-lg text-[11px] font-bold whitespace-nowrap transition-all ${
+                            dataFilter === v
+                              ? "bg-white shadow-sm text-gray-900"
+                              : "text-gray-500"
+                          }`}
+                        >
+                          {l}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* product cards + carousel */}
+                  <div className="flex flex-col lg:flex-row gap-5">
+                    <div className="flex-1 min-w-0">
+                      {loading ? (
+                        <div className="space-y-4">
+                          {[1, 2, 3].map((i) => (
+                            <div
+                              key={i}
+                              className="bg-white rounded-2xl border border-gray-200 p-5 space-y-3"
+                            >
+                              <div className="flex gap-3">
+                                <Skel cls="w-9 h-9 rounded-xl" />
+                                <div className="space-y-1.5 flex-1">
+                                  <Skel cls="h-4 w-36" />
+                                  <Skel cls="h-3 w-24" />
+                                </div>
+                              </div>
+                              {[1, 2, 3].map((j) => (
+                                <Skel key={j} cls="h-10 w-full" />
+                              ))}
+                            </div>
                           ))}
+                        </div>
+                      ) : filtered.length === 0 ? (
+                        <div className="bg-white rounded-2xl border border-gray-200">
+                          <EmptyState
+                            title={
+                              search
+                                ? "No products match"
+                                : "No market price data"
+                            }
+                            message={
+                              search
+                                ? "Adjust your search."
+                                : "No prices recorded yet."
+                            }
+                          />
+                        </div>
+                      ) : (
+                        <>
+                          <div className="space-y-4">
+                            <AnimatePresence mode="popLayout">
+                              {filtered.map((g) => (
+                                <ProductPriceCard
+                                  key={g.productId}
+                                  group={g}
+                                  onAnalyze={(id, name) =>
+                                    setAnalyzeTarget((p) =>
+                                      p?.id === id ? null : { id, name }
+                                    )
+                                  }
+                                  isAnalyzing={analyzeTarget?.id === g.productId}
+                                  onRecordPrice={openRecordForProduct}
+                                  onEditRecord={setEditRecordTarget}
+                                  onDeleteRecord={setDeleteRecordTarget}
+                                />
+                              ))}
+                            </AnimatePresence>
+                          </div>
+                          {!loading && filtered.length > 0 && (
+                            <p className="text-center text-[11px] text-gray-400 mt-6">
+                              Showing {filtered.length} of {groups.length}{" "}
+                              products · Active = last 30 days · Recent = last 7
+                              days
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    <div className="lg:w-[280px] flex-shrink-0">
+                      <div className="lg:sticky lg:top-6 flex flex-col gap-4">
+                        {loading ? (
+                          <div
+                            className="rounded-2xl border border-gray-200 bg-white overflow-hidden"
+                            style={{ height: 272 }}
+                          >
+                            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100">
+                              <Skel cls="w-2 h-2 rounded-full" />
+                              <Skel cls="h-2 w-20" />
+                            </div>
+                            <div className="p-4 space-y-2.5">
+                              <div className="grid grid-cols-2 gap-1.5">
+                                <Skel cls="h-14 rounded-lg" />
+                                <Skel cls="h-14 rounded-lg" />
+                              </div>
+                              <Skel cls="h-24 rounded-lg" />
+                            </div>
+                          </div>
+                        ) : (
+                          <PriceTrendCarousel groups={groups} interval={3200} />
+                        )}
+
+                        <AnimatePresence>
+                          {analyzeTarget && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: 10 }}
+                            >
+                              <AnalysisPanel
+                                key={analyzeTarget.id}
+                                productId={analyzeTarget.id}
+                                productName={analyzeTarget.name}
+                                onClose={() => setAnalyzeTarget(null)}
+                              />
+                            </motion.div>
+                          )}
                         </AnimatePresence>
                       </div>
-                      {!loading && filtered.length > 0 && (
-                        <p className="text-center text-[11px] text-gray-400 mt-6">
-                          Showing {filtered.length} of {groups.length} products
-                          · Active = last 30 days · Recent = last 7 days
-                        </p>
-                      )}
-                    </>
-                  )}
-                </div>
-
-                {/* Carousel — same level as product cards on lg */}
-                <div className="lg:w-[280px] flex-shrink-0">
-                  <div className="lg:sticky lg:top-6 flex flex-col gap-4">
-                    {loading ? (
-                      <div
-                        className="rounded-2xl border border-gray-200 bg-white overflow-hidden"
-                        style={{ height: 272 }}
-                      >
-                        <div className="flex items-center gap-2 px-4 py-2.5 border-b border-gray-100">
-                          <Skel cls="w-2 h-2 rounded-full" />
-                          <Skel cls="h-2 w-20" />
-                        </div>
-                        <div className="p-4 space-y-2.5">
-                          <div className="grid grid-cols-2 gap-1.5">
-                            <Skel cls="h-14 rounded-lg" />
-                            <Skel cls="h-14 rounded-lg" />
-                          </div>
-                          <Skel cls="h-24 rounded-lg" />
-                        </div>
-                      </div>
-                    ) : (
-                      <PriceTrendCarousel groups={groups} interval={3200} />
-                    )}
-
-                    <AnimatePresence>
-                      {analyzeTarget && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 10 }}
-                        >
-                          <AnalysisPanel
-                            key={analyzeTarget.id}
-                            productId={analyzeTarget.id}
-                            productName={analyzeTarget.name}
-                            onClose={() => setAnalyzeTarget(null)}
-                          />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* RIGHT — analysis panel only (when analysis is open, carousel moved inline) */}
+            )}
           </div>
         )}
       </div>
 
       {/* ── modals ─────────────────────────────────────────────────────── */}
+      <UploadWfpCsvModal
+        open={uploadWfpModalOpen}
+        onClose={() => setUploadWfpModalOpen(false)}
+        onSuccess={() => {
+          setWfpRefreshTrigger((p) => p + 1);
+          toast("WFP dataset imported successfully!");
+        }}
+      />
+
       <CreateMarketModal
         open={createMarketOpen}
         onClose={() => setCreateMarketOpen(false)}

@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { RejectReasonPicker } from "./RejectReasonPicker";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ILoanApplication } from "@/lib/types";
 import { AlertTriangle } from "lucide-react";
@@ -62,16 +62,11 @@ export default function RejectLoanModal({ isOpen, onClose, selectedApp, onReject
             </div>
           )}
 
-          <div>
-            <label className="text-sm font-medium text-gray-700">Reason for rejection *</label>
-            <Textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Please provide a reason for rejecting this loan application..."
-              className="mt-1"
-              rows={3}
-            />
-          </div>
+          <RejectReasonPicker
+            key={`${selectedApp?.id}-${isOpen}`}
+            onChange={setReason}
+            disabled={isLoading}
+          />
 
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={handleClose} disabled={isLoading}>

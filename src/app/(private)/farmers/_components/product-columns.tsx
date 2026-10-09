@@ -63,11 +63,11 @@ export const productColumns = (
     header: "Price",
   },
   {
-    accessorKey: "status",
+    accessorKey: "displayStatus",
     header: "Status",
     cell: ({ row }) => (
       <Badge className={`${row.original.statusColor} border-0 text-xs`}>
-        {row.original.status}
+        {row.original.displayStatus}
       </Badge>
     ),
   },
@@ -76,24 +76,15 @@ export const productColumns = (
     header: "Actions",
     cell: ({ row }) => (
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-1 sm:gap-2">
-    <Button
-  variant="outline"
-  size="sm"
-  onMouseEnter={() => {
-  handleViewDetails(row.original);
-  }}
-  onMouseLeave={() => {
-   
-      setTimeout(() => handleViewDetails(null), 100);
- 
-  }}
-  onClick={() => handleViewDetails(row.original)} // lock modal open
-  className="flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 text-xs px-2 py-1"
->
-  <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
-  <span className="hidden sm:inline">View</span>
-</Button>
-
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleViewDetails(row.original)}
+          className="flex items-center gap-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 text-xs px-2 py-1"
+        >
+          <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+          <span className="hidden sm:inline">View</span>
+        </Button>
       </div>
     ),
   },

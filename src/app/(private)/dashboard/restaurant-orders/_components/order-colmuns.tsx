@@ -2,7 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { Eye, MoreHorizontal, Trash2, FileText } from "lucide-react";
+import { Eye, MoreHorizontal, Trash2, FileText, Edit3, Send, ChevronLeft, ChevronRight } from "lucide-react";
 
 // Helper function to get payment method colors
 const getPaymentMethodColor = (method: string) => {
@@ -78,14 +78,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useState, useEffect } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -140,163 +133,160 @@ export interface Order {
   };
 }
 
-// Status Dropdown Component
-function StatusDropdown({ currentStatus, orderId, restaurantName, onUpdate }: {
+// Status progression flows — the stepper moves one step forward/back along these
+const ORDER_STATUS_FLOW: Order["status"][] = [
+  "PENDING",
+  "CONFIRMED",
+  "PREPARING",
+  "READY",
+  "IN_TRANSIT",
+  "DELIVERED",
+];
+
+const PAYMENT_STATUS_FLOW: Order["paymentStatus"][] = [
+  "PENDING",
+  "PROCESSING",
+  "COMPLETED",
+];
+
+const STATUS_LABELS: Record<string, string> = {
+  PENDING: "Pending",
+  CONFIRMED: "Confirmed",
+  PREPARING: "Preparing",
+  READY: "Ready",
+  IN_TRANSIT: "In Transit",
+  DELIVERED: "Delivered",
+  CANCELLED: "Cancelled",
+  REFUNDED: "Refunded",
+  PROCESSING: "Processing",
+  COMPLETED: "Completed",
+  VOUCHER_CREDIT: "V Credit",
+  FAILED: "Failed",
+};
+
+const getStatusLabel = (status: string) => STATUS_LABELS[status] || status;
+
+// Status Stepper Component: [back] badge [next], each step confirmed via dialog
+// Payment statuses outside the normal flow that an admin can still correct:
+// e.g. the gateway reported FAILED/CANCELLED but the restaurant did pay.
+// Next marks it paid; Back returns it to Pending so payment can be retried.
+const PAYMENT_STATUS_RECOVERY: Record<string, { prev: string; next: string }> = {
+  FAILED: { prev: "PENDING", next: "COMPLETED" },
+  CANCELLED: { prev: "PENDING", next: "COMPLETED" },
+};
+
+// A cancelled order can be reactivated: Next moves it back into the flow
+// (Confirmed), Back returns it to Pending. Not offered when payment FAILED.
+const ORDER_STATUS_RECOVERY: Record<string, { prev: string; next: string }> = {
+  CANCELLED: { prev: "PENDING", next: "CONFIRMED" },
+};
+
+function StatusStepper({ currentStatus, flow, recovery, canManage = true, orderId, restaurantName, kind, getColor, onUpdate }: {
   currentStatus: string;
+  flow: string[];
+  recovery?: Record<string, { prev: string; next: string }>;
+  canManage?: boolean;
   orderId: string;
   restaurantName: string;
+  kind: "order" | "payment";
+  getColor: (status: string) => string;
   onUpdate: (orderId: string, status: string) => void;
 }) {
-  const [selectedStatus, setSelectedStatus] = useState(currentStatus);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<string | null>(null);
 
-  // Sync with current status when it changes
-  useEffect(() => {
-    setSelectedStatus(currentStatus);
-  }, [currentStatus]);
+  // Statuses outside the flow have no next/previous step, unless a recovery
+  // path is defined for them. Users who cannot manage orders get no arrows.
+  const index = flow.indexOf(currentStatus);
+  const recoverable = recovery?.[currentStatus];
+  const prevStatus = !canManage
+    ? null
+    : recoverable
+      ? recoverable.prev
+      : index > 0
+        ? flow[index - 1]
+        : null;
+  const nextStatus = !canManage
+    ? null
+    : recoverable
+      ? recoverable.next
+      : index >= 0 && index < flow.length - 1
+        ? flow[index + 1]
+        : null;
+  const isBackward = pendingStatus !== null && pendingStatus === prevStatus;
+  const title = kind === "order" ? "Order Status" : "Payment Status";
 
-  const handleStatusChange = (newStatus: string) => {
-    setSelectedStatus(newStatus);
-    if (newStatus !== currentStatus) {
-      setShowConfirm(true);
-    }
+  const requestChange = (e: React.MouseEvent, status: string) => {
+    e.stopPropagation();
+    setPendingStatus(status);
   };
 
   const confirmUpdate = () => {
-    onUpdate(orderId, selectedStatus);
-    setShowConfirm(false);
+    if (pendingStatus) onUpdate(orderId, pendingStatus);
+    setPendingStatus(null);
   };
 
-  const handleCancel = () => {
-    setSelectedStatus(currentStatus);
-    setShowConfirm(false);
-  };
+  const stepButtonClass =
+    "h-5 w-5 flex items-center justify-center rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-green-600 hover:border-green-600 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer";
 
   return (
     <>
-      <Select value={selectedStatus} onValueChange={handleStatusChange}>
-        <SelectTrigger className={`w-32 h-4 ${getOrderStatusColor(selectedStatus)}`}>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="PENDING">Pending</SelectItem>
-          <SelectItem value="CONFIRMED">Confirmed</SelectItem>
-          <SelectItem value="PREPARING">Preparing</SelectItem>
-          <SelectItem value="READY">Ready</SelectItem>
-          <SelectItem value="IN_TRANSIT">In Transit</SelectItem>
-          <SelectItem value="DELIVERED">Delivered</SelectItem>
-          <SelectItem value="CANCELLED">Cancelled</SelectItem>
-          <SelectItem value="REFUNDED">Refunded</SelectItem>
-        </SelectContent>
-      </Select>
-      
-      <AlertDialog open={showConfirm} onOpenChange={() => {}}>
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          title={prevStatus ? `Back to ${getStatusLabel(prevStatus)}` : undefined}
+          disabled={!prevStatus}
+          onClick={(e) => prevStatus && requestChange(e, prevStatus)}
+          className={stepButtonClass}
+        >
+          <ChevronLeft className="h-3 w-3" />
+        </button>
+        <span
+          className={`w-24 text-center text-[12px] rounded-full border px-2 py-0.5 ${getColor(currentStatus)}`}
+        >
+          {getStatusLabel(currentStatus)}
+        </span>
+        <button
+          type="button"
+          title={nextStatus ? `Move to ${getStatusLabel(nextStatus)}` : undefined}
+          disabled={!nextStatus}
+          onClick={(e) => nextStatus && requestChange(e, nextStatus)}
+          className={stepButtonClass}
+        >
+          <ChevronRight className="h-3 w-3" />
+        </button>
+      </div>
+
+      <AlertDialog open={pendingStatus !== null} onOpenChange={() => {}}>
         <AlertDialogContent className="sm:max-w-md border-2 border-green-500">
           <AlertDialogHeader className="text-center pb-4">
             <AlertDialogTitle className="text-center font-semibold text-gray-900">
-              Confirm Status Update
+              {isBackward ? `Revert ${title}` : `Advance ${title}`}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-gray-600 mt-3 text-center">
-              Are you sure you want to update the order status for{" "}
-              <span className="font-semibold text-gray-900">&quot;{restaurantName}&quot;</span> to{" "}
-              <span className="font-semibold text-green-700">&quot;{selectedStatus}&quot;</span>?
-              <br />
+              Are you sure you want to {isBackward ? "move back" : "move"} the{" "}
+              {title.toLowerCase()} for{" "}
+              <span className="font-semibold text-gray-900">&quot;{restaurantName}&quot;</span> from{" "}
+              <span className="font-semibold text-gray-900">&quot;{getStatusLabel(currentStatus)}&quot;</span> to{" "}
+              <span className={`font-semibold ${isBackward ? "text-orange-600" : "text-green-700"}`}>
+                &quot;{pendingStatus && getStatusLabel(pendingStatus)}&quot;
+              </span>
+              ?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex gap-3 pt-4">
-            <AlertDialogCancel 
-              onClick={handleCancel}
+            <AlertDialogCancel
+              onClick={() => setPendingStatus(null)}
               className="flex-1 h-10 border-gray-300 hover:bg-gray-50"
             >
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={confirmUpdate}
-              className="flex-1 h-10 bg-green-600 hover:bg-green-700 text-white"
+              className={`flex-1 h-10 text-white ${
+                isBackward ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"
+              }`}
             >
-              Update Status
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
-  );
-}
-
-// Payment Status Dropdown Component
-function PaymentStatusDropdown({ currentStatus, orderId, restaurantName, onUpdate }: {
-  currentStatus: string;
-  orderId: string;
-  restaurantName: string;
-  onUpdate: (orderId: string, paymentStatus: string) => void;
-}) {
-  const [selectedStatus, setSelectedStatus] = useState(currentStatus);
-  const [showConfirm, setShowConfirm] = useState(false);
-
-  // Sync with current status when it changes
-  useEffect(() => {
-    setSelectedStatus(currentStatus);
-  }, [currentStatus]);
-
-  const handleStatusChange = (newStatus: string) => {
-    setSelectedStatus(newStatus);
-    if (newStatus !== currentStatus) {
-      setShowConfirm(true);
-    }
-  };
-
-  const confirmUpdate = () => {
-    onUpdate(orderId, selectedStatus);
-    setShowConfirm(false);
-  };
-
-  const handleCancel = () => {
-    setSelectedStatus(currentStatus);
-    setShowConfirm(false);
-  };
-
-  return (
-    <>
-      <Select value={selectedStatus} onValueChange={handleStatusChange}>
-        <SelectTrigger className={`w-32 h-4 ${getPaymentStatusColor(selectedStatus)}`}>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="PENDING">Pending</SelectItem>
-          <SelectItem value="PROCESSING">Processing</SelectItem>
-          <SelectItem value="COMPLETED">Completed</SelectItem>
-          <SelectItem value="VOUCHER_CREDIT">V Credit</SelectItem>
-          <SelectItem value="FAILED">Failed</SelectItem>
-          <SelectItem value="CANCELLED">Cancelled</SelectItem>
-          <SelectItem value="REFUNDED">Refunded</SelectItem>
-        </SelectContent>
-      </Select>
-      
-      <AlertDialog open={showConfirm} onOpenChange={() => {}}>
-        <AlertDialogContent className="sm:max-w-md border-2 border-green-500">
-          <AlertDialogHeader className="text-center pb-4">
-            <AlertDialogTitle className=" font-bold text-center text-gray-900">
-              Confirm Payment Status Update
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-800 mt-3 text-center">
-              Are you sure you want to update the payment status for{" "}
-              <span className="font-semibold text-gray-900">&quot;{restaurantName}&quot;</span> to{" "}
-              <span className="font-semibold text-green-700">&quot;{selectedStatus}&quot;</span>?
-              <br />
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex gap-3 pt-4">
-            <AlertDialogCancel 
-              onClick={handleCancel}
-              className="flex-1 h-10 border-gray-300 hover:bg-gray-50"
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmUpdate}
-              className="flex-1 h-10 bg-green-600 hover:bg-green-700 text-white"
-            >
-              Update Payment Status
+              {isBackward ? "Move Back" : "Move Forward"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -327,6 +317,10 @@ export const createOrdersColumns = (actions: {
   onDelete: (order: Order) => void;
   onStatusUpdate: (orderId: string, status: string) => void;
   onPaymentStatusUpdate: (orderId: string, paymentStatus: string) => void;
+  onEdit?: (order: Order) => void;
+  onSendPaymentLink?: (order: Order) => void;
+  // False hides the status arrows (users without the Orders "manage" permission)
+  canManage?: boolean;
 }): ColumnDef<Order>[] => [
   {
     accessorKey: "#",
@@ -402,8 +396,15 @@ export const createOrdersColumns = (actions: {
     cell: ({ row }) => {
       const order = row.original;
       return (
-        <StatusDropdown
+        <StatusStepper
           currentStatus={order.status}
+          flow={ORDER_STATUS_FLOW}
+          recovery={
+            order.paymentStatus === "FAILED" ? undefined : ORDER_STATUS_RECOVERY
+          }
+          canManage={actions.canManage}
+          kind="order"
+          getColor={getOrderStatusColor}
           orderId={order.id}
           restaurantName={order.restaurant.name}
           onUpdate={actions.onStatusUpdate}
@@ -417,8 +418,13 @@ export const createOrdersColumns = (actions: {
     cell: ({ row }) => {
       const order = row.original;
       return (
-        <PaymentStatusDropdown
+        <StatusStepper
           currentStatus={order.paymentStatus}
+          flow={PAYMENT_STATUS_FLOW}
+          recovery={PAYMENT_STATUS_RECOVERY}
+          canManage={actions.canManage}
+          kind="payment"
+          getColor={getPaymentStatusColor}
           orderId={order.id}
           restaurantName={order.restaurant.name}
           onUpdate={actions.onPaymentStatusUpdate}
@@ -465,6 +471,18 @@ export const createOrdersColumns = (actions: {
                 <FileText className="mr-2 h-4 w-4" />
                 Print Order
               </DropdownMenuItem>
+              {actions.onEdit && ["PENDING", "CONFIRMED"].includes(order.status) && (
+                <DropdownMenuItem onClick={() => actions.onEdit!(order)}>
+                  <Edit3 className="mr-2 h-4 w-4" />
+                  Edit Order
+                </DropdownMenuItem>
+              )}
+              {actions.onSendPaymentLink && order.paymentStatus === "FAILED" && (
+                <DropdownMenuItem onClick={() => actions.onSendPaymentLink!(order)}>
+                  <Send className="mr-2 h-4 w-4" />
+                  Send Payment Link
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-red-600"

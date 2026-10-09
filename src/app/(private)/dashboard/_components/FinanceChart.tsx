@@ -1,254 +1,151 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState, useEffect } from "react";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { TrendingUp, TrendingDown } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
+import { Skeleton } from "@/components/ui/skeleton";
 import { DashboardStats, statisticsService, StatsFilters } from "@/app/services/statisticsService";
+import {
+  AreaGradient,
+  buildSeries,
+  chartCardClass,
+  ChartPeriodFilter,
+  formatCompact,
+  periodDescription,
+} from "./ChartShared";
 
 interface FinanceChartProps {
   loading?: boolean;
-  data?: DashboardStats['finance'];
+  data?: DashboardStats["finance"];
 }
 
+const chartConfig = {
+  revenue: { label: "Revenue", color: "#16a34a" },
+  expenses: { label: "Expenses", color: "#dc2626" },
+} satisfies ChartConfig;
+
+const SERIES = ["revenue", "expenses"] as const;
+
+// Finance overview — shadcn "Area Chart - Interactive"
 export function FinanceChart({ loading = false, data }: FinanceChartProps) {
-  const [localFilters, setLocalFilters] = useState<StatsFilters>({});
-  const [localData, setLocalData] = useState<DashboardStats['finance'] | null>(null);
+  const [filters, setFilters] = useState<StatsFilters>({ year: new Date().getFullYear() });
+  const [localData, setLocalData] = useState<DashboardStats["finance"] | null>(null);
   const [localLoading, setLocalLoading] = useState(false);
 
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 3 }, (_, i) => currentYear - i);
-  const months = [
-    { value: 1, label: "Jan" }, { value: 2, label: "Feb" }, { value: 3, label: "Mar" },
-    { value: 4, label: "Apr" }, { value: 5, label: "May" }, { value: 6, label: "Jun" },
-    { value: 7, label: "Jul" }, { value: 8, label: "Aug" }, { value: 9, label: "Sep" },
-    { value: 10, label: "Oct" }, { value: 11, label: "Nov" }, { value: 12, label: "Dec" }
-  ];
-
-
-
-
-  const fetchLocalData = async (filters: StatsFilters) => {
+  const fetchLocalData = async (next: StatsFilters) => {
     setLocalLoading(true);
     try {
-      const response = await statisticsService.getFinanceStats(filters);
+      const response = await statisticsService.getFinanceStats(next);
       setLocalData(response.data);
     } catch (error) {
-      console.error('Error fetching local finance data:', error);
+      console.error("Error fetching finance data:", error);
     } finally {
       setLocalLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchLocalData(filters);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initial load only; filter changes fetch explicitly
+  }, []);
+
   const activeData = localData || data;
   const isLoading = loading || localLoading;
+  const chartData = buildSeries(activeData?.timeBreakdown, filters, SERIES);
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-4 w-48" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-64 w-full" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const transformTimeBreakdown = () => {
-    if (!activeData?.timeBreakdown) return [];
-    
-    const data: Array<{ date: string; revenue: number; expenses: number; profit: number }> = [];
-    
-    // If no year filter is selected (showing "All"), group by years
-    if (!localFilters?.year) {
-      Object.values(activeData.timeBreakdown).forEach((yearData: any) => {
-        data.push({
-          date: yearData.year.toString(),
-          revenue: yearData.revenue || 0,
-          expenses: yearData.expenses || 0,
-          profit: yearData.profit || 0
-        });
-      });
-    } else {
-      // If year is selected, show months for that year
-      Object.values(activeData.timeBreakdown).forEach((yearData: any) => {
-        if (yearData.months) {
-          Object.values(yearData.months).forEach((monthData: any) => {
-            data.push({
-              date: `${yearData.year}-${monthData.monthName}`,
-              revenue: monthData.revenue || 0,
-              expenses: monthData.expenses || 0,
-              profit: monthData.profit || 0
-            });
-          });
-        }
-      });
-    }
-    
-    // Sort by date
-    return data.sort((a, b) => a.date.localeCompare(b.date));
-  };
-
-  const chartData = transformTimeBreakdown();
-
-  const isProfit = (activeData?.netProfit || 0) >= 0;
+  const netProfit = activeData?.netProfit || 0;
+  const isProfit = netProfit >= 0;
   const profitMargin = activeData?.profitMargin || 0;
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <CardTitle className="text-sm font-semibold">Finance Overview</CardTitle>
-            </div>
-            <div className={`flex items-center gap-1 text-xs ${isProfit ? 'text-green-600' : 'text-red-600'}`}>
-              {isProfit ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-              <span>{profitMargin.toFixed(1)}% Margin</span>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Select
-              value={localFilters?.year?.toString() || "all"}
-              onValueChange={(value) => {
-                const newFilters = { 
-                  year: value === "all" ? undefined : parseInt(value),
-                  month: undefined // Always reset month when year changes
-                };
-                setLocalFilters(newFilters);
-                fetchLocalData(newFilters);
-              }}
-            >
-              <SelectTrigger className="h-7 text-xs w-20">
-                <SelectValue placeholder="Year" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all" className="text-xs">All</SelectItem>
-                {years.map(year => (
-                  <SelectItem key={year} value={year.toString()} className="text-xs">{year}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <Select
-              value={localFilters?.month?.toString() || 'all'}
-              onValueChange={(value) => {
-                const newFilters = { 
-                  ...localFilters, 
-                  month: value === 'all' ? undefined : parseInt(value) 
-                };
-                setLocalFilters(newFilters);
-                fetchLocalData(newFilters);
-              }}
-              disabled={!localFilters?.year} // Disable when no year selected or "all" years
-            >
-              <SelectTrigger className="h-7 text-xs w-16">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all" className="text-xs">All</SelectItem>
-                {months.map(month => (
-                  <SelectItem key={month.value} value={month.value.toString()} className="text-xs">{month.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+    <Card className={chartCardClass}>
+      <CardHeader className="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-100/80 px-6 py-5">
+        <div className="grid gap-1">
+          <CardTitle className="text-sm font-semibold">Finance Overview</CardTitle>
+          <CardDescription className="text-xs">
+            Revenue vs expenses · {periodDescription(filters)}
+          </CardDescription>
         </div>
+        <ChartPeriodFilter
+          filters={filters}
+          onChange={(next) => {
+            setFilters(next);
+            fetchLocalData(next);
+          }}
+        />
       </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={200}>
-          <LineChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis 
-              dataKey="date" 
-              tick={{ fontSize: 10 }}
-              stroke="#666"
-            />
-            <YAxis 
-              tick={{ fontSize: 10 }}
-              stroke="#666"
-              tickFormatter={(value) => `${(value / 1000000).toFixed(1)}M`}
-            />
-            <Tooltip 
-              contentStyle={{
-                backgroundColor: 'white',
-                border: '1px solid #e5e7eb',
-                borderRadius: '6px',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                fontSize: '12px'
-              }}
-              labelStyle={{
-                fontSize: '12px',
-                marginBottom: '4px',
-                fontWeight: 'bold'
-              }}
-              itemStyle={{
-                fontSize: '12px',
-                padding: '2px 0'
-              }}
-              formatter={(value: number | undefined, name: string | undefined) => [
-                `${(value || 0).toLocaleString()} RWF`,
-                name === 'revenue' ? 'Revenue' : name === 'expenses' ? 'Expenses' : 'Profit'
-              ]}
-            />
-            <Line 
-              type="monotone" 
-              dataKey="revenue" 
-              stroke="#10B981" 
-              strokeWidth={2}
-              name="revenue"
-              dot={{ fill: '#10B981', strokeWidth: 1, r: 3 }}
-              isAnimationActive={false}
-            />
-            <Line 
-              type="monotone" 
-              dataKey="expenses" 
-              stroke="#EF4444" 
-              strokeWidth={2}
-              name="expenses"
-              dot={{ fill: '#EF4444', strokeWidth: 1, r: 3 }}
-              isAnimationActive={false}
-            />
-            <Line 
-              type="monotone" 
-              dataKey="profit" 
-              stroke="#3B82F6" 
-              strokeWidth={2}
-              name="profit"
-              dot={{ fill: '#3B82F6', strokeWidth: 1, r: 3 }}
-              isAnimationActive={false}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-        
-        {/* Summary Stats */}
-        <div className="grid grid-cols-3 gap-4 border-gray-100">
-          <div className="text-center">
-            <p className="text-xs text-gray-500">Total Revenue</p>
-            <p className="text-xs font-semibold text-green-600">
-              {(activeData?.totalRevenue || 0).toLocaleString()} RWF
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="text-xs text-gray-500">Total Expenses</p>
-            <p className="text-xs font-semibold text-red-600">
-              {(activeData?.totalExpenses || 0).toLocaleString()} RWF
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="text-xs text-gray-500">Net Profit</p>
-            <p className={`text-xs font-semibold ${isProfit ? 'text-green-600' : 'text-red-600'}`}>
-              {(activeData?.netProfit || 0).toLocaleString()} RWF
-            </p>
-          </div>
-        </div>
+      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+        {isLoading ? (
+          <Skeleton className="h-[250px] w-full" />
+        ) : (
+          <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
+            <AreaChart data={chartData} margin={{ left: 4, right: 12 }}>
+              <defs>
+                <AreaGradient id="fillRevenue" color="var(--color-revenue)" />
+                <AreaGradient id="fillExpenses" color="var(--color-expenses)" top={0.4} />
+              </defs>
+              <CartesianGrid vertical={false} strokeDasharray="3 3" />
+              <XAxis
+                dataKey="label"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                minTickGap={16}
+              />
+              <YAxis tickLine={false} axisLine={false} width={40} tickFormatter={formatCompact} />
+              <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
+              {/* Overlapping, not stacked: expenses are compared against revenue */}
+              <Area
+                dataKey="revenue"
+                type="monotone"
+                fill="url(#fillRevenue)"
+                stroke="var(--color-revenue)"
+                strokeWidth={2.5}
+                dot={{ r: 3, strokeWidth: 2, fill: "white" }}
+                activeDot={{ r: 5 }}
+              />
+              <Area
+                dataKey="expenses"
+                type="monotone"
+                fill="url(#fillExpenses)"
+                stroke="var(--color-expenses)"
+                strokeWidth={2.5}
+                dot={{ r: 3, strokeWidth: 2, fill: "white" }}
+                activeDot={{ r: 5 }}
+              />
+              <ChartLegend content={<ChartLegendContent />} />
+            </AreaChart>
+          </ChartContainer>
+        )}
       </CardContent>
+      <CardFooter className="flex-col items-start gap-1 border-t border-emerald-100/80 px-6 py-4 text-xs">
+        <div
+          className={`flex items-center gap-1.5 font-medium ${isProfit ? "text-green-600" : "text-red-600"}`}
+        >
+          Net {isProfit ? "profit" : "loss"} {Math.abs(netProfit).toLocaleString()} RWF
+          {isProfit ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />}
+        </div>
+        <div className="text-muted-foreground">
+          {profitMargin.toFixed(1)}% margin · Revenue {(activeData?.totalRevenue || 0).toLocaleString()} RWF ·
+          Expenses {(activeData?.totalExpenses || 0).toLocaleString()} RWF
+        </div>
+      </CardFooter>
     </Card>
   );
 }
