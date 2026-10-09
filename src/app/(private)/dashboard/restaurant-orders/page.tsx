@@ -645,14 +645,6 @@ export default function AdminOrdersPage() {
       
 
       {/* Modals */}
-      <PaymentMethodProvider>
-        <CreateOrderModal
-          open={createOrderOpen}
-          onOpenChange={setCreateOrderOpen}
-          onSuccess={() => fetchOrders(pagination.page, pagination.limit)}
-        />
-      </PaymentMethodProvider>
-
       <ViewOrderModal
         open={viewModalOpen}
         onClose={handleModalClose}

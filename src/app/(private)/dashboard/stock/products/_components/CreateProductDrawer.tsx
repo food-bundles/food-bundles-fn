@@ -42,7 +42,7 @@ export interface ProductFormData {
   images: File[];
   expiryDate: Date | undefined;
   unit: string;
-  customerTypePrices?: { customerTypeId: string; price: number }[];
+  customerTypePrices?: { customerTypeId: string; price: number; purchasePrice: number }[];
 }
 
 interface CreateProductDrawerProps {
@@ -100,6 +100,7 @@ export function CreateProductDrawer({
         customerTypePrices: customerTypes.map((ct) => ({
           customerTypeId: ct.id,
           price: 0,
+          purchasePrice: 0,
         })),
       }));
       setSelectedCustomerTypeIds([]);
@@ -144,6 +145,15 @@ export function CreateProductDrawer({
       ...prev,
       customerTypePrices: (prev.customerTypePrices || []).map((ctp) =>
         ctp.customerTypeId === customerTypeId ? { ...ctp, price } : ctp
+      ),
+    }));
+  };
+
+  const handleCustomerTypePurchasePriceChange = (customerTypeId: string, purchasePrice: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      customerTypePrices: (prev.customerTypePrices || []).map((ctp) =>
+        ctp.customerTypeId === customerTypeId ? { ...ctp, purchasePrice } : ctp
       ),
     }));
   };
@@ -266,6 +276,7 @@ export function CreateProductDrawer({
       customerTypePrices: customerTypes.map((ct) => ({
         customerTypeId: ct.id,
         price: 0,
+        purchasePrice: 0,
       })),
     });
     setSelectedCustomerTypeIds([]);
@@ -534,24 +545,51 @@ export function CreateProductDrawer({
                           if (!ct) return null;
                           return (
                             <div key={ctp.customerTypeId} className="space-y-2">
-                              <Label htmlFor={`ct-${ctp.customerTypeId}`} className="text-xs font-medium">
-                                {ct.name} Price
+                              <Label className="text-xs font-medium">
+                                {ct.name}
                               </Label>
-                              <Input
-                                id={`ct-${ctp.customerTypeId}`}
-                                type="number"
-                                min="0"
-                                step="1"
-                                value={ctp.price || ""}
-                                onChange={(e) =>
-                                  handleCustomerTypePriceChange(
-                                    ctp.customerTypeId,
-                                    e.target.value ? Number.parseFloat(e.target.value) : 0,
-                                  )
-                                }
-                                placeholder="Enter price"
-                                className="focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                              />
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-1">
+                                  <Label htmlFor={`ct-${ctp.customerTypeId}`} className="text-xs text-gray-500">
+                                    Price
+                                  </Label>
+                                  <Input
+                                    id={`ct-${ctp.customerTypeId}`}
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    value={ctp.price || ""}
+                                    onChange={(e) =>
+                                      handleCustomerTypePriceChange(
+                                        ctp.customerTypeId,
+                                        e.target.value ? Number.parseFloat(e.target.value) : 0,
+                                      )
+                                    }
+                                    placeholder="Selling price"
+                                    className="focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <Label htmlFor={`ct-purchase-${ctp.customerTypeId}`} className="text-xs text-gray-500">
+                                    Purchase Price
+                                  </Label>
+                                  <Input
+                                    id={`ct-purchase-${ctp.customerTypeId}`}
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    value={ctp.purchasePrice || ""}
+                                    onChange={(e) =>
+                                      handleCustomerTypePurchasePriceChange(
+                                        ctp.customerTypeId,
+                                        e.target.value ? Number.parseFloat(e.target.value) : 0,
+                                      )
+                                    }
+                                    placeholder="Cost price"
+                                    className="focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                  />
+                                </div>
+                              </div>
                             </div>
                           );
                         })}

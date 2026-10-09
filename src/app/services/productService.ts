@@ -14,7 +14,7 @@ export interface CreateProductData {
   quantity: number;
   unit: string;
   expiryDate?: string;
-  customerTypePrices?: { customerTypeId: string; price: number }[];
+  customerTypePrices?: { customerTypeId: string; price: number; purchasePrice: number }[];
 }
 
 export const productService = {

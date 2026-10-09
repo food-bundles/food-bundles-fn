@@ -11,8 +11,15 @@ import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import { useAuth } from "@/app/contexts/auth-context";
 
 // Helper function to get role-based price from customerTypePrices
-const getRoleBasedPrice = (product: any, userRole: string) => {
+const getRoleBasedPrice = (product: any, userRole: string, customerTypeId?: string | null) => {
   const customerTypePrices = product.customerTypePrices || [];
+  // An explicitly assigned customer type wins over the role-based default
+  if (customerTypeId) {
+    const assigned = customerTypePrices.find(
+      (ctp: any) => ctp.customerType?.id === customerTypeId
+    );
+    return assigned ? assigned.price : product.unitPrice || 0;
+  }
   if (customerTypePrices.length > 0) {
     const roleToCustomerType: Record<string, string> = {
       HOTEL: "Hotel",
