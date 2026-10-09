@@ -4,7 +4,6 @@ import { useState } from "react";
 import { VoucherProvider } from "@/app/contexts/VoucherContext";
 import { RestaurantProvider } from "@/app/contexts/RestaurantContext";
 import VoucherStats from "./_components/VoucherStats";
-import LoanApplicationsTable from "./_components/LoanApplicationsTable";
 import LoanSessionsAdminTable from "./_components/LoanSessionsAdminTable";
 import LoanAccessAdminTable from "./_components/LoanAccessAdminTable";
 import LoanProvidersManagement from "./_components/LoanProvidersManagement";
@@ -12,7 +11,7 @@ import VoucherCardsTable from "./_components/VoucherCardsTable";
 import RecentActivitiesFeed from "./_components/RecentActivitiesFeed";
 import { ExportButton } from "@/components/ExportButton";
 
-type ActiveTab = "loan-sessions" | "loan-access" | "loans" | "cards";
+type ActiveTab = "loan-sessions" | "loan-access" | "cards";
 
 export default function VoucherManagementPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("loan-sessions");
@@ -21,7 +20,6 @@ export default function VoucherManagementPage() {
   const tabs: { key: ActiveTab; label: string }[] = [
     { key: "loan-sessions", label: "Loan Requests" },
     { key: "loan-access", label: "Loan Access" },
-    { key: "loans", label: "Old Loan Applications" },
     { key: "cards", label: "Voucher Cards" },
   ];
 
@@ -78,7 +76,6 @@ export default function VoucherManagementPage() {
                 <LoanProvidersManagement />
               </div>
             )}
-            {activeTab === "loans" && <LoanApplicationsTable />}
             {activeTab === "cards" && <VoucherCardsTable key={refreshTrigger} />}
           </div>
         </div>

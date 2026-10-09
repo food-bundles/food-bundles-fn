@@ -32,6 +32,7 @@ import {
 import { voucherService } from "@/app/services/voucherService";
 import { toast } from "sonner";
 import ApproveLoanSessionModal from "./ApproveLoanSessionModal";
+import { RejectReasonPicker } from "./RejectReasonPicker";
 
 interface LoanSession {
   id: string;
@@ -752,7 +753,7 @@ export default function LoanSessionsAdminTable() {
 
       {/* Reject modal */}
       <Dialog open={rejectOpen} onOpenChange={setRejectOpen}>
-        <DialogContent className="sm:max-w-sm bg-white">
+        <DialogContent className="sm:max-w-md bg-white">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <XCircle className="w-4 h-4 text-red-500" />
@@ -760,19 +761,15 @@ export default function LoanSessionsAdminTable() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Reason (optional)</label>
-              <Input
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="e.g. Insufficient order history"
-                className="h-10 text-sm"
-              />
-            </div>
+            <RejectReasonPicker
+              key={`${selected?.id}-${rejectOpen}`}
+              onChange={setRejectReason}
+              disabled={submitting}
+            />
             <div className="flex gap-2">
               <Button
                 onClick={handleReject}
-                disabled={submitting}
+                disabled={submitting || !rejectReason}
                 className="flex-1 bg-red-600 hover:bg-red-700"
               >
                 {submitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}

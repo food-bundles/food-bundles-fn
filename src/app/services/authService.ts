@@ -98,8 +98,15 @@ export const authService = {
     if (typeof window !== "undefined") {
       document.cookie = "user-role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       document.cookie = "user-type=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      localStorage.removeItem("user");
-      localStorage.removeItem("restaurantId");
+      // Everything tied to the signed-in account (saved "remember me"
+      // credentials are a separate, deliberate choice and stay)
+      [
+        "user",
+        "restaurantId",
+        "selectedPaymentMethod",
+        "pendingCartProduct",
+        "returnUrl",
+      ].forEach((key) => localStorage.removeItem(key));
     }
     return { success: true, message: "Logged out successfully" };
   },

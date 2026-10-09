@@ -39,29 +39,43 @@ export default function LoanRequestForm({ onSuccess }: LoanRequestFormProps) {
   const [providerType, setProviderType] = useState<"TRADER" | "FOOD_BUNDLES" | "">("");
   const [traders, setTraders] = useState<Trader[]>([]);
   const [selectedTraderId, setSelectedTraderId] = useState("");
-  const [loadingTraders, setLoadingTraders] = useState(false);
+  const [loadingTraders, setLoadingTraders] = useState(true);
   const [termsData, setTermsData] = useState<{ terms: string; alreadyAccepted: boolean; providerId: string; providerName: string } | null>(null);
   const [loadingTerms, setLoadingTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [subscriptionRequired, setSubscriptionRequired] = useState(false);
 
-  // Load traders when TRADER provider type is selected
+  // Load traders up front: the Trader option only shows when at least one
+  // trader can finance loans. With none, Food Bundles is the only provider.
+  useEffect(() => {
+    let cancelled = false;
+    voucherService
+      .getLoanTraders()
+      .then((res) => {
+        if (cancelled) return;
+        const list: Trader[] = res?.data ?? [];
+        setTraders(list);
+        if (list.length === 0) setProviderType("FOOD_BUNDLES");
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setTraders([]);
+        setProviderType("FOOD_BUNDLES");
+      })
+      .finally(() => !cancelled && setLoadingTraders(false));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   useEffect(() => {
     setSubscriptionRequired(false);
     setError(null);
-    if (providerType === "TRADER") {
-      setLoadingTraders(true);
-      voucherService
-        .getLoanTraders()
-        .then((res) => setTraders(res?.data ?? []))
-        .catch(() => setTraders([]))
-        .finally(() => setLoadingTraders(false));
-    } else {
-      setTraders([]);
-      setSelectedTraderId("");
-    }
+    if (providerType !== "TRADER") setSelectedTraderId("");
   }, [providerType]);
+
+  const hasTraders = traders.length > 0;
 
   const selectedTrader = traders.find((t) => t.id === selectedTraderId);
 
@@ -151,7 +165,7 @@ export default function LoanRequestForm({ onSuccess }: LoanRequestFormProps) {
       });
       toast.success("Loan request submitted successfully");
       setRequestedAmount("");
-      setProviderType("");
+      setProviderType(hasTraders ? "" : "FOOD_BUNDLES");
       setSelectedTraderId("");
       setStep("form");
       setTermsData(null);
@@ -208,24 +222,31 @@ export default function LoanRequestForm({ onSuccess }: LoanRequestFormProps) {
                     )}
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setProviderType("TRADER")}
-                    className={`w-full flex items-center gap-3 p-3 border rounded-lg text-left transition-all ${
-                      providerType === "TRADER"
-                        ? "border-green-600 bg-green-50"
-                        : "border-gray-200 hover:border-green-300"
-                    }`}
-                  >
-                    <User className="h-4 w-4 text-green-600 shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium">Trader</p>
-                      <p className="text-xs text-gray-400">Financed by a trader</p>
-                    </div>
-                    {providerType === "TRADER" && (
-                      <CheckCircle className="h-4 w-4 text-green-600 ml-auto" />
-                    )}
-                  </button>
+                  {/* Trader option only when a trader is available to finance */}
+                  {loadingTraders ? (
+                    <div className="h-[58px] rounded-lg border border-gray-200 bg-gray-50 animate-pulse" />
+                  ) : (
+                    hasTraders && (
+                      <button
+                        type="button"
+                        onClick={() => setProviderType("TRADER")}
+                        className={`w-full flex items-center gap-3 p-3 border rounded-lg text-left transition-all ${
+                          providerType === "TRADER"
+                            ? "border-green-600 bg-green-50"
+                            : "border-gray-200 hover:border-green-300"
+                        }`}
+                      >
+                        <User className="h-4 w-4 text-green-600 shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium">Trader</p>
+                          <p className="text-xs text-gray-400">Financed by a trader</p>
+                        </div>
+                        {providerType === "TRADER" && (
+                          <CheckCircle className="h-4 w-4 text-green-600 ml-auto" />
+                        )}
+                      </button>
+                    )
+                  )}
                 </div>
               </div>
 
@@ -233,43 +254,35 @@ export default function LoanRequestForm({ onSuccess }: LoanRequestFormProps) {
               {providerType === "TRADER" && (
                 <div>
                   <label className="block text-sm text-gray-900 mb-2">Select Trader *</label>
-                  {loadingTraders ? (
-                    <div className="flex justify-center py-4">
-                      <Loader2 className="h-5 w-5 animate-spin text-green-600" />
-                    </div>
-                  ) : traders.length === 0 ? (
-                    <p className="text-xs text-gray-400 text-center py-3">No traders available</p>
-                  ) : (
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
-                      {traders.map((trader) => (
-                        <button
-                          key={trader.id}
-                          type="button"
-                          onClick={() => setSelectedTraderId(trader.id)}
-                          className={`w-full flex items-center gap-3 p-2.5 border rounded-lg text-left transition-all ${
-                            selectedTraderId === trader.id
-                              ? "border-green-600 bg-green-50"
-                              : "border-gray-200 hover:border-green-300"
-                          }`}
-                        >
-                          <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-                            <User className="h-3.5 w-3.5 text-green-600" />
-                          </div>
-                          <span className="text-sm font-medium">
-                            {trader.name}
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {traders.map((trader) => (
+                      <button
+                        key={trader.id}
+                        type="button"
+                        onClick={() => setSelectedTraderId(trader.id)}
+                        className={`w-full flex items-center gap-3 p-2.5 border rounded-lg text-left transition-all ${
+                          selectedTraderId === trader.id
+                            ? "border-green-600 bg-green-50"
+                            : "border-gray-200 hover:border-green-300"
+                        }`}
+                      >
+                        <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                          <User className="h-3.5 w-3.5 text-green-600" />
+                        </div>
+                        <span className="text-sm font-medium">
+                          {trader.name}
+                        </span>
+                        {trader.requiresSubscription && (
+                          <span className="text-[10px] font-semibold text-white bg-amber-500 px-1.5 py-0.5 rounded-full">
+                            Requires subscription
                           </span>
-                          {trader.requiresSubscription && (
-                            <span className="text-[10px] font-semibold text-white bg-amber-500 px-1.5 py-0.5 rounded-full">
-                              Requires subscription
-                            </span>
-                          )}
-                          {selectedTraderId === trader.id && (
-                            <CheckCircle className="h-4 w-4 text-green-600 ml-auto" />
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                        )}
+                        {selectedTraderId === trader.id && (
+                          <CheckCircle className="h-4 w-4 text-green-600 ml-auto" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
 
