@@ -1,18 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, LayoutGrid, Table2, List as ListIcon, AlertCircle } from "lucide-react";
+import { Plus, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProductSubmissionModal from "./product-submission-modal";
-import { productColumns } from "./product-columns";
-import { DataTable } from "@/components/data-table";
 import { Product } from "./product-context";
-import { SubmissionCardGrid } from "./submission-card-grid";
-import { SubmissionList } from "./submission-list";
 import { SubmissionDetailsModal } from "./submission-details-modal";
-import { ViewModeToggle } from "@/components/view-mode-toggle";
+import { SubmissionsTable } from "./SubmissionsTable";
 import { DashboardStatGrid } from "./dashboard/dashboard-stat-grid";
 import { SubmissionsTrendChart } from "./dashboard/submissions-trend-chart";
 import { TopProductsChart } from "./dashboard/top-products-chart";
@@ -30,43 +25,8 @@ import type {
   TopProduct,
   RecentActivityItem,
 } from "@/app/types/farmer-dashboard";
-import {
-  TableFilters,
-  FilterConfig,
-  createCommonFilters,
-} from "@/components/filters";
 import { showToast } from "@/lib/toast";
-
-type ViewMode = "cards" | "table" | "list";
-
-// Status color mapping function
-const getStatusColor = (status: string): string => {
-  switch (status) {
-    case "APPROVED":
-    case "PAID":
-    case "Approved":
-      return "bg-green-100 text-green-800";
-    case "PENDING":
-    case "Pending":
-      return "bg-yellow-100 text-yellow-800";
-    case "VERIFIED":
-    case "Verified":
-      return "bg-blue-100 text-blue-800";
-    case "REJECTED":
-    case "Rejected":
-      return "bg-red-100 text-red-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-};
-
-/** The submission's real DB status never becomes "REJECTED" — a farmer's rejection of a
- * verified offer lives on farmerFeedbackStatus while status itself stays VERIFIED. This
- * derives the label the farmer should actually see, without touching the real status. */
-export const deriveDisplayStatus = (
-  status: string,
-  farmerFeedbackStatus: string | null,
-): string => (farmerFeedbackStatus === "REJECTED" ? "REJECTED" : status);
+import { getStatusColor, deriveDisplayStatus } from "./status-helpers";
 
 // Transform database submission to Product format
 const transformSubmissionToProduct = (submission: Submission): Product => {
@@ -102,23 +62,13 @@ const transformSubmissionToProduct = (submission: Submission): Product => {
   };
 };
 
-const VIEW_MODE_OPTIONS = [
-  { value: "table" as const, label: "Table", icon: Table2 },
-  { value: "cards" as const, label: "Cards", icon: LayoutGrid },
-  { value: "list" as const, label: "List", icon: ListIcon },
-];
-
 export default function ProductManagement() {
   const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedStatus, setSelectedStatus] = useState<string>("All");
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
-  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined);
-  const [searchTerm, setSearchTerm] = useState("");
   const [viewProduct, setViewProduct] = useState<Product | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>("table");
 
   // Dashboard analytics state
   const [earnings, setEarnings] = useState<EarningsSummary | null>(null);
@@ -126,15 +76,6 @@ export default function ProductManagement() {
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [activity, setActivity] = useState<RecentActivityItem[]>([]);
   const [analyticsLoading, setAnalyticsLoading] = useState(true);
-
-  const statusOptions = [
-    { label: "All", value: "All" },
-    { label: "PENDING", value: "PENDING" },
-    { label: "VERIFIED", value: "VERIFIED" },
-    { label: "APPROVED", value: "APPROVED" },
-    { label: "REJECTED", value: "REJECTED" },
-    { label: "PAID", value: "PAID" },
-  ];
 
   const fetchSubmissions = async () => {
     try {
@@ -173,21 +114,6 @@ export default function ProductManagement() {
     fetchAnalytics();
   }, []);
 
-  const filteredProducts = products.filter((product) => {
-    const matchesStatus =
-      selectedStatus === "All" || product.status === selectedStatus;
-    const matchesDate =
-      !dateFilter ||
-      product.submittedDate.includes(dateFilter.toLocaleDateString());
-    const matchesSearch =
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (typeof product.category === "string" ? product.category : product.category.name)
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      product.location.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesStatus && matchesDate && matchesSearch;
-  });
-
   const handleProductSubmit = async () => {
     // ProductSubmissionModal already performs the actual submitProduct() call
     // and shows its own success toast before invoking onSubmit — this handler
@@ -205,23 +131,6 @@ export default function ProductManagement() {
   const handleViewDetails = (product: Product | null) => {
     setViewProduct(product);
   };
-
-  const handleClearFilters = () => {
-    setSearchTerm("");
-    setSelectedStatus("All");
-    setDateFilter(undefined);
-  };
-
-  // Create filter configurations
-  const filters: FilterConfig[] = [
-    createCommonFilters.search(
-      searchTerm,
-      setSearchTerm,
-      "Search products, categories, or locations..."
-    ),
-    createCommonFilters.status(selectedStatus, setSelectedStatus, statusOptions),
-    createCommonFilters.date(dateFilter, setDateFilter, "Date Filter"),
-  ];
 
   const firstName = user?.name?.split(" ")[0];
 
@@ -255,80 +164,23 @@ export default function ProductManagement() {
           </Alert>
         )}
 
-        <Tabs defaultValue="overview" className="gap-6">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="products">Products</TabsTrigger>
-          </TabsList>
+        <DashboardStatGrid products={products} earnings={earnings} loading={loading} />
 
-          <TabsContent value="overview" className="space-y-6">
-            <DashboardStatGrid products={products} earnings={earnings} loading={loading} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <SubmissionsTrendChart data={trends} metric="submissions" loading={analyticsLoading} />
+          <SubmissionsTrendChart data={trends} metric="earnings" loading={analyticsLoading} />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <TopProductsChart data={topProducts} loading={analyticsLoading} />
+          <StatusBreakdownChart products={products} loading={loading} />
+        </div>
+        <RecentActivityFeed items={activity} loading={analyticsLoading} />
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <SubmissionsTrendChart data={trends} metric="submissions" loading={analyticsLoading} />
-              <SubmissionsTrendChart data={trends} metric="earnings" loading={analyticsLoading} />
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <TopProductsChart data={topProducts} loading={analyticsLoading} />
-              <StatusBreakdownChart products={products} loading={loading} />
-            </div>
-            <RecentActivityFeed items={activity} loading={analyticsLoading} />
-          </TabsContent>
-
-          <TabsContent value="products" className="space-y-4">
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-gray-900">Your submissions</h2>
-                <ViewModeToggle value={viewMode} onChange={setViewMode} options={VIEW_MODE_OPTIONS} />
-              </div>
-
-              <div>
-                <TableFilters
-                  filters={filters}
-                  className="flex-col sm:flex-row items-stretch sm:items-center"
-                />
-                {(searchTerm || selectedStatus !== "All" || dateFilter) && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleClearFilters}
-                    className="mt-4 text-red-600 hover:text-red-700 w-full sm:w-auto"
-                  >
-                    Clear Filters
-                  </Button>
-                )}
-              </div>
-
-              {viewMode === "table" && (
-                <DataTable
-                  columns={productColumns(handleViewDetails)}
-                  data={filteredProducts}
-                  title=""
-                  showExport={false}
-                  showSearch={false}
-                  showColumnVisibility={true}
-                  showPagination={true}
-                  showRowSelection={false}
-                />
-              )}
-              {viewMode === "cards" && (
-                <SubmissionCardGrid products={filteredProducts} onViewDetails={handleViewDetails} />
-              )}
-              {viewMode === "list" && (
-                <SubmissionList products={filteredProducts} onViewDetails={handleViewDetails} />
-              )}
-
-              {filteredProducts.length === 0 && !loading && (
-                <div className="text-center py-8">
-                  <p className="text-gray-600">No products found.</p>
-                  <Button onClick={handleClearFilters} variant="outline" className="mt-4">
-                    Clear Filters
-                  </Button>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
+        <SubmissionsTable
+          products={products}
+          loading={loading}
+          onViewDetails={handleViewDetails}
+        />
       </main>
 
       {/* Product Submission Modal */}
