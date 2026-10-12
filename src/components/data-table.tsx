@@ -181,6 +181,10 @@ export function DataTable<TData, TValue>({
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
 
+  // Controlled internal pagination state (only used when no server-side `pagination` prop is passed)
+  const [internalPageIndex, setInternalPageIndex] = React.useState(0);
+  const [internalPageSize, setInternalPageSize] = React.useState(5);
+
   const table = useReactTable({
     data,
     columns,
@@ -189,17 +193,17 @@ export function DataTable<TData, TValue>({
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     ...(pagination ? {} : { getPaginationRowModel: getPaginationRowModel() }),
-    ...(!pagination && {
-      initialState: {
-        pagination: {
-          pageIndex: 0,
-          pageSize: 5,
-        },
-      },
-    }),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
+    ...(!pagination && {
+      onPaginationChange: (updater) => {
+        const prev = { pageIndex: internalPageIndex, pageSize: internalPageSize };
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        setInternalPageIndex(next.pageIndex);
+        setInternalPageSize(next.pageSize);
+      },
+    }),
     onRowSelectionChange: (updater) => {
       setRowSelection(updater);
       if (onSelectionChange) {
@@ -218,6 +222,12 @@ export function DataTable<TData, TValue>({
       columnFilters,
       columnVisibility,
       rowSelection,
+      ...(!pagination && {
+        pagination: {
+          pageIndex: internalPageIndex,
+          pageSize: internalPageSize,
+        },
+      }),
     },
   });
 

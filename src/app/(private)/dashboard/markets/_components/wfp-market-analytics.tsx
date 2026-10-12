@@ -92,6 +92,7 @@ export default function WfpMarketAnalytics({
   );
   const [analytics, setAnalytics] = useState<WfpAnalyticsData | null>(null);
   const [prices, setPrices] = useState<WfpPriceRecord[]>([]);
+  const [pageLimit, setPageLimit] = useState(15);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 15,
@@ -196,7 +197,7 @@ export default function WfpMarketAnalytics({
         setLoadingPrices(true);
         const res = await wfpMarketService.getPrices({
           page: pageNumber,
-          limit: pagination.limit,
+          limit: pageLimit,
           search: searchQuery.trim() !== "" ? searchQuery : undefined,
           commodity: selectedCommodity !== "ALL" ? selectedCommodity : undefined,
           category: selectedCategory !== "ALL" ? selectedCategory : undefined,
@@ -209,12 +210,12 @@ export default function WfpMarketAnalytics({
           sortOrder: "desc",
         });
         setPrices(res.data);
-        setPagination((prev) => ({
-          ...prev,
+        setPagination({
           page: res.pagination.page,
+          limit: pageLimit,
           total: res.pagination.total,
           totalPages: res.pagination.totalPages,
-        }));
+        });
       } catch (e: any) {
         // ignore
       } finally {
@@ -222,7 +223,7 @@ export default function WfpMarketAnalytics({
       }
     },
     [
-      pagination.limit,
+      pageLimit,
       searchQuery,
       selectedCommodity,
       selectedCategory,
@@ -242,8 +243,14 @@ export default function WfpMarketAnalytics({
   }, [loadAnalytics, refreshTrigger]);
 
   useEffect(() => {
-    loadPrices(pagination.page);
+    loadPrices(1);
   }, [loadPrices, refreshTrigger]);
+
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, limit: pageLimit }));
+    loadPrices(1);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageLimit]);
 
   // Line keys for charts (unique markets in the time series)
   const chartMarketKeys = useMemo(() => {
@@ -529,7 +536,10 @@ export default function WfpMarketAnalytics({
                   Map ({mapMarkets.length})
                 </button>
                 <button
-                  onClick={() => setActiveViewTab("explorer")}
+                  onClick={() => {
+                    setActiveViewTab("explorer");
+                    loadPrices(1);
+                  }}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
                     activeViewTab === "explorer"
                       ? "bg-white text-slate-900 shadow-sm"
@@ -543,7 +553,7 @@ export default function WfpMarketAnalytics({
             </div>
 
             {/* Filter Dropdowns Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3 pt-1">
               {/* Commodity */}
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-gray-400 uppercase">
@@ -595,6 +605,25 @@ export default function WfpMarketAnalytics({
                   {filterOptions?.markets.map((m) => (
                     <option key={m.name} value={m.name}>
                       {m.name} {m.province ? `(${m.province})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Province */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-gray-400 uppercase">
+                  Province
+                </label>
+                <select
+                  value={selectedProvince}
+                  onChange={(e) => setSelectedProvince(e.target.value)}
+                  className="w-full p-2.5 text-xs font-bold rounded-xl border border-gray-200 bg-gray-50 text-slate-800 outline-none focus:border-emerald-500 transition"
+                >
+                  <option value="ALL">All Provinces</option>
+                  {filterOptions?.provinces.map((prov) => (
+                    <option key={prov} value={prov}>
+                      {prov}
                     </option>
                   ))}
                 </select>
@@ -1122,7 +1151,12 @@ export default function WfpMarketAnalytics({
                 showColumnVisibility={false}
                 showRowSelection={false}
                 pagination={pagination}
-                onPaginationChange={(page) => loadPrices(page)}
+                onPaginationChange={(page, limit) => {
+                  if (limit && limit !== pageLimit) {
+                    setPageLimit(limit);
+                  }
+                  loadPrices(page);
+                }}
                 customFilters={
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-3 w-full">
                     <div className="relative w-full sm:w-80">
