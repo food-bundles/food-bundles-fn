@@ -12,8 +12,6 @@ import {
   RefreshCw,
   Database,
   UploadCloud,
-  ChevronLeft,
-  ChevronRight,
   Sparkles,
   MapPin,
   ArrowUpRight,
@@ -27,6 +25,8 @@ import {
   Navigation,
   Info,
 } from "lucide-react";
+import { DataTable } from "@/components/data-table";
+import { type ColumnDef } from "@tanstack/react-table";
 import {
   ResponsiveContainer,
   LineChart,
@@ -92,6 +92,7 @@ export default function WfpMarketAnalytics({
   );
   const [analytics, setAnalytics] = useState<WfpAnalyticsData | null>(null);
   const [prices, setPrices] = useState<WfpPriceRecord[]>([]);
+  const [pageLimit, setPageLimit] = useState(15);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 15,
@@ -196,7 +197,7 @@ export default function WfpMarketAnalytics({
         setLoadingPrices(true);
         const res = await wfpMarketService.getPrices({
           page: pageNumber,
-          limit: pagination.limit,
+          limit: pageLimit,
           search: searchQuery.trim() !== "" ? searchQuery : undefined,
           commodity: selectedCommodity !== "ALL" ? selectedCommodity : undefined,
           category: selectedCategory !== "ALL" ? selectedCategory : undefined,
@@ -209,12 +210,12 @@ export default function WfpMarketAnalytics({
           sortOrder: "desc",
         });
         setPrices(res.data);
-        setPagination((prev) => ({
-          ...prev,
+        setPagination({
           page: res.pagination.page,
+          limit: pageLimit,
           total: res.pagination.total,
           totalPages: res.pagination.totalPages,
-        }));
+        });
       } catch (e: any) {
         // ignore
       } finally {
@@ -222,7 +223,7 @@ export default function WfpMarketAnalytics({
       }
     },
     [
-      pagination.limit,
+      pageLimit,
       searchQuery,
       selectedCommodity,
       selectedCategory,
@@ -242,8 +243,14 @@ export default function WfpMarketAnalytics({
   }, [loadAnalytics, refreshTrigger]);
 
   useEffect(() => {
-    loadPrices(pagination.page);
+    loadPrices(1);
   }, [loadPrices, refreshTrigger]);
+
+  useEffect(() => {
+    setPagination((prev) => ({ ...prev, limit: pageLimit }));
+    loadPrices(1);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageLimit]);
 
   // Line keys for charts (unique markets in the time series)
   const chartMarketKeys = useMemo(() => {
@@ -274,6 +281,101 @@ export default function WfpMarketAnalytics({
   }, [analytics?.marketComparisons]);
 
   const hasData = (analytics?.kpis.totalRecords || 0) > 0;
+
+  const explorerColumns: ColumnDef<WfpPriceRecord>[] = [
+    {
+      id: "nbr",
+      header: "Nbr",
+      cell: ({ row }) => (
+        <span className="text-gray-500">
+          {row.index + 1 + (pagination.page - 1) * pagination.limit}
+        </span>
+      ),
+    },
+    {
+      id: "date",
+      header: "Date",
+      cell: ({ row }) => (
+        <span className="font-bold text-slate-700 whitespace-nowrap">
+          {new Date(row.original.date).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          })}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "commodity",
+      header: "Commodity",
+      cell: ({ row }) => <span className="font-bold text-slate-900">{row.original.commodity}</span>,
+    },
+    {
+      accessorKey: "category",
+      header: "Category",
+      cell: ({ row }) => <span className="text-gray-500 capitalize">{row.original.category}</span>,
+    },
+    {
+      accessorKey: "marketName",
+      header: "Market",
+      cell: ({ row }) => (
+        <span className="inline-flex items-center gap-1 font-bold text-slate-800">
+          <MapPin className="w-3 h-3 text-emerald-600" />
+          {row.original.marketName}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "province",
+      header: "Province",
+      cell: ({ row }) => <span className="text-gray-500">{row.original.province || "-"}</span>,
+    },
+    {
+      id: "gps",
+      header: "GPS Coordinates",
+      cell: ({ row }) => (
+        <span className="text-gray-400 font-mono text-[11px]">
+          {row.original.latitude && row.original.longitude
+            ? `${row.original.latitude.toFixed(2)}, ${row.original.longitude.toFixed(2)}`
+            : "-"}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "unit",
+      header: "Unit",
+      cell: ({ row }) => <span className="font-bold">{row.original.unit}</span>,
+    },
+    {
+      accessorKey: "priceType",
+      header: "Type",
+      cell: ({ row }) => (
+        <span
+          className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+            row.original.priceType === "Wholesale"
+              ? "bg-blue-50 text-blue-700 border border-blue-200"
+              : "bg-amber-50 text-amber-700 border border-amber-200"
+          }`}
+        >
+          {row.original.priceType || "Wholesale"}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "price",
+      header: "Price (RWF)",
+      cell: ({ row }) => <span className="font-black text-emerald-600">{fmtRwf(row.original.price)}</span>,
+    },
+    {
+      accessorKey: "usdPrice",
+      header: "USD Price",
+      cell: ({ row }) => (
+        <span className="text-gray-500">
+          {row.original.usdPrice ? `$${row.original.usdPrice.toFixed(2)}` : "-"}
+        </span>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -434,7 +536,10 @@ export default function WfpMarketAnalytics({
                   Map ({mapMarkets.length})
                 </button>
                 <button
-                  onClick={() => setActiveViewTab("explorer")}
+                  onClick={() => {
+                    setActiveViewTab("explorer");
+                    loadPrices(1);
+                  }}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
                     activeViewTab === "explorer"
                       ? "bg-white text-slate-900 shadow-sm"
@@ -448,7 +553,7 @@ export default function WfpMarketAnalytics({
             </div>
 
             {/* Filter Dropdowns Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3 pt-1">
               {/* Commodity */}
               <div className="space-y-1">
                 <label className="text-[10px] font-bold text-gray-400 uppercase">
@@ -500,6 +605,25 @@ export default function WfpMarketAnalytics({
                   {filterOptions?.markets.map((m) => (
                     <option key={m.name} value={m.name}>
                       {m.name} {m.province ? `(${m.province})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Province */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-gray-400 uppercase">
+                  Province
+                </label>
+                <select
+                  value={selectedProvince}
+                  onChange={(e) => setSelectedProvince(e.target.value)}
+                  className="w-full p-2.5 text-xs font-bold rounded-xl border border-gray-200 bg-gray-50 text-slate-800 outline-none focus:border-emerald-500 transition"
+                >
+                  <option value="ALL">All Provinces</option>
+                  {filterOptions?.provinces.map((prov) => (
+                    <option key={prov} value={prov}>
+                      {prov}
                     </option>
                   ))}
                 </select>
@@ -1019,149 +1143,40 @@ export default function WfpMarketAnalytics({
           {/* ── TAB 3: Data Explorer Table View ─────────────────────────── */}
           {activeViewTab === "explorer" && (
             <div className="p-6 rounded-3xl bg-white border border-gray-100 shadow-sm space-y-4">
-              {/* Search Bar */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div className="relative w-full sm:w-80">
-                  <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search commodity, market, province..."
-                    className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-emerald-500 outline-none transition"
-                  />
-                </div>
-
-                <div className="text-xs text-gray-500 font-medium self-end sm:self-center">
-                  Showing {(pagination.page - 1) * pagination.limit + 1} -{" "}
-                  {Math.min(
-                    pagination.page * pagination.limit,
-                    pagination.total
-                  )}{" "}
-                  of {pagination.total.toLocaleString()} records
-                </div>
-              </div>
-
-              {/* Table */}
-              <div className="overflow-x-auto rounded-2xl border border-gray-100">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-slate-900 text-white font-bold">
-                      <th className="p-3.5">Date</th>
-                      <th className="p-3.5">Commodity</th>
-                      <th className="p-3.5">Category</th>
-                      <th className="p-3.5">Market</th>
-                      <th className="p-3.5">Province</th>
-                      <th className="p-3.5">GPS Coordinates</th>
-                      <th className="p-3.5 text-center">Unit</th>
-                      <th className="p-3.5 text-center">Type</th>
-                      <th className="p-3.5 text-right">Price (RWF)</th>
-                      <th className="p-3.5 text-right">USD Price</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 text-slate-800 font-medium">
-                    {loadingPrices ? (
-                      <tr>
-                        <td
-                          colSpan={10}
-                          className="p-8 text-center text-gray-400"
-                        >
-                          Loading price records...
-                        </td>
-                      </tr>
-                    ) : prices.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={10}
-                          className="p-8 text-center text-gray-400"
-                        >
-                          No records match the active search or filters.
-                        </td>
-                      </tr>
-                    ) : (
-                      prices.map((p) => (
-                        <tr
-                          key={p.id}
-                          className="hover:bg-slate-50/80 transition"
-                        >
-                          <td className="p-3.5 font-bold text-slate-700 whitespace-nowrap">
-                            {new Date(p.date).toLocaleDateString("en-US", {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </td>
-                          <td className="p-3.5 font-bold text-slate-900">
-                            {p.commodity}
-                          </td>
-                          <td className="p-3.5 text-gray-500 capitalize">
-                            {p.category}
-                          </td>
-                          <td className="p-3.5">
-                            <span className="inline-flex items-center gap-1 font-bold text-slate-800">
-                              <MapPin className="w-3 h-3 text-emerald-600" />
-                              {p.marketName}
-                            </span>
-                          </td>
-                          <td className="p-3.5 text-gray-500">
-                            {p.province || "-"}
-                          </td>
-                          <td className="p-3.5 text-gray-400 font-mono text-[11px]">
-                            {p.latitude && p.longitude
-                              ? `${p.latitude.toFixed(2)}, ${p.longitude.toFixed(2)}`
-                              : "-"}
-                          </td>
-                          <td className="p-3.5 text-center font-bold">
-                            {p.unit}
-                          </td>
-                          <td className="p-3.5 text-center">
-                            <span
-                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                                p.priceType === "Wholesale"
-                                  ? "bg-blue-50 text-blue-700 border border-blue-200"
-                                  : "bg-amber-50 text-amber-700 border border-amber-200"
-                              }`}
-                            >
-                              {p.priceType || "Wholesale"}
-                            </span>
-                          </td>
-                          <td className="p-3.5 text-right font-black text-emerald-600">
-                            {fmtRwf(p.price)}
-                          </td>
-                          <td className="p-3.5 text-right text-gray-500">
-                            {p.usdPrice ? `$${p.usdPrice.toFixed(2)}` : "-"}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination */}
-              {pagination.totalPages > 1 && (
-                <div className="flex items-center justify-between pt-2">
-                  <button
-                    onClick={() => loadPrices(pagination.page - 1)}
-                    disabled={pagination.page <= 1}
-                    className="px-3.5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-slate-800 text-xs font-bold transition disabled:opacity-40 flex items-center gap-1.5"
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" /> Previous
-                  </button>
-
-                  <span className="text-xs font-bold text-gray-500">
-                    Page {pagination.page} of {pagination.totalPages}
-                  </span>
-
-                  <button
-                    onClick={() => loadPrices(pagination.page + 1)}
-                    disabled={pagination.page >= pagination.totalPages}
-                    className="px-3.5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-slate-800 text-xs font-bold transition disabled:opacity-40 flex items-center gap-1.5"
-                  >
-                    Next <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              )}
+              <DataTable
+                columns={explorerColumns}
+                data={prices}
+                isLoading={loadingPrices}
+                showSearch={false}
+                showColumnVisibility={false}
+                showRowSelection={false}
+                pagination={pagination}
+                onPaginationChange={(page, limit) => {
+                  if (limit && limit !== pageLimit) {
+                    setPageLimit(limit);
+                  }
+                  loadPrices(page);
+                }}
+                customFilters={
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 w-full">
+                    <div className="relative w-full sm:w-80">
+                      <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search commodity, market, province..."
+                        className="w-full pl-10 pr-4 py-2 text-xs rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-emerald-500 outline-none transition"
+                      />
+                    </div>
+                    <div className="text-xs text-gray-500 font-medium self-end sm:self-center">
+                      Showing {(pagination.page - 1) * pagination.limit + 1} –{" "}
+                      {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}
+                      of {pagination.total.toLocaleString()} records
+                    </div>
+                  </div>
+                }
+              />
             </div>
           )}
         </>
