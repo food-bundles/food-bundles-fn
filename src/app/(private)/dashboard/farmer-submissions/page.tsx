@@ -643,6 +643,7 @@ export default function FarmerSubmissionsPage() {
         onClose={handleCloseModal}
         mode={modalMode}
         onModeChange={handleModeChange}
+        onSuccess={() => fetchSubmissions(pagination.page, pagination.limit)}
       />
     </>
   );
