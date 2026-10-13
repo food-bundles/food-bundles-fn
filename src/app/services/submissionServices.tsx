@@ -10,9 +10,18 @@ export interface FarmerFeedbackPayload {
 
 export const submissionService = {
   // --- GET Routes ---
-  getAllSubmissions: async () => {
+  getAllSubmissions: async (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    feedbackStatus?: string;
+    province?: string;
+    search?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.get("/submissions");
+    const response = await axiosClient.get("/submissions", { params });
     return response.data;
   },
 

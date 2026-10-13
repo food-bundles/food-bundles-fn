@@ -149,9 +149,10 @@ export default function FarmerSubmissionsPage() {
   );
 
   const [pagination, setPagination] = useState({
-    currentPage: 1,
+    page: 1,
+    limit: 10,
+    total: 0,
     totalPages: 1,
-    totalCount: 0,
   });
 
   // State for the new admin override actions (reject / delete / force-complete / reverse-status / payout)
@@ -404,33 +405,75 @@ export default function FarmerSubmissionsPage() {
     setPayoutTarget(null);
   };
 
-  // Fetch submissions on component mount
-  useEffect(() => {
-    const fetchSubmissions = async () => {
-      try {
-        setLoading(true);
-        const response: SubmissionResponse = await getAllSubmissions();
+  // Fetch submissions from the server, applying all current filters/pagination
+  const fetchSubmissions = async (
+    page = pagination.page,
+    limit = pagination.limit
+  ) => {
+    try {
+      setLoading(true);
 
-        if (response.success) {
-          setSubmissions(response.data);
-          setPagination({
-            currentPage: response.pagination.currentPage,
-            totalPages: response.pagination.totalPages,
-            totalCount: response.pagination.totalCount,
-          });
-        } else {
-          toast.error("Failed to fetch submissions");
-        }
-      } catch (error) {
-        console.error("Error fetching submissions:", error);
-        toast.error("Error fetching submissions");
-      } finally {
-        setLoading(false);
+      const params: {
+        page: number;
+        limit: number;
+        status?: string;
+        feedbackStatus?: string;
+        province?: string;
+        search?: string;
+        dateFrom?: string;
+        dateTo?: string;
+      } = { page, limit };
+
+      if (searchValue.trim()) params.search = searchValue.trim();
+      if (selectedStatus !== "all") params.status = selectedStatus;
+      if (selectedFeedbackStatus !== "all")
+        params.feedbackStatus = selectedFeedbackStatus;
+      if (selectedProvince !== "all") params.province = selectedProvince;
+      if (selectedDateRange.from)
+        params.dateFrom = selectedDateRange.from.toISOString().split("T")[0];
+      if (selectedDateRange.to)
+        params.dateTo = selectedDateRange.to.toISOString().split("T")[0];
+
+      const response: SubmissionResponse = await getAllSubmissions(params);
+
+      if (response.success) {
+        setSubmissions(response.data);
+        setPagination({
+          page: response.pagination.currentPage,
+          limit: response.pagination.limit,
+          total: response.pagination.totalCount,
+          totalPages: response.pagination.totalPages,
+        });
+      } else {
+        toast.error("Failed to fetch submissions");
       }
-    };
+    } catch (error) {
+      console.error("Error fetching submissions:", error);
+      toast.error("Error fetching submissions");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchSubmissions();
-  }, [getAllSubmissions]);
+  // Refetch (from page 1) whenever a filter changes, debounced
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchSubmissions(1, pagination.limit);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    searchValue,
+    selectedStatus,
+    selectedFeedbackStatus,
+    selectedProvince,
+    selectedDateRange,
+  ]);
+
+  const handlePaginationChange = (page: number, limit: number) => {
+    fetchSubmissions(page, limit);
+  };
 
   // Get columns for admin view - MODIFIED: Pass the click handler instead
   const columns = useMemo(() => {
@@ -444,90 +487,6 @@ export default function FarmerSubmissionsPage() {
       setReverseStatusTarget
     );
   }, []);
-
-  // Filter data based on user inputs
-  const filteredData = useMemo(() => {
-    if (!submissions.length) return [];
-
-    return submissions.filter((submission) => {
-      // Search filter
-      if (searchValue) {
-        const searchLower = searchValue.toLowerCase();
-        const farmerEmail = submission.farmer.email?.toLowerCase() || "";
-        const farmerPhone = submission.farmer.phone?.toLowerCase() || "";
-        const verifiedByName =
-          submission.aggregator?.username?.toLowerCase() || "";
-        const productName = submission.productName.toLowerCase();
-        const submissionId = submission.id.toLowerCase();
-        const location =
-          `${submission.village} ${submission.cell} ${submission.sector} ${submission.district} ${submission.province}`.toLowerCase();
-
-        if (
-          !farmerEmail.includes(searchLower) &&
-          !farmerPhone.includes(searchLower) &&
-          !productName.includes(searchLower) &&
-          !submissionId.includes(searchLower) &&
-          !location.includes(searchLower) &&
-          !verifiedByName.includes(searchLower)
-        ) {
-          return false;
-        }
-      }
-
-      // Status filter
-      if (selectedStatus !== "all" && submission.status !== selectedStatus) {
-        return false;
-      }
-
-      // Feedback status filter
-      if (
-        selectedFeedbackStatus !== "all" &&
-        submission.farmerFeedbackStatus !== selectedFeedbackStatus
-      ) {
-        return false;
-      }
-
-      // Province filter
-      if (
-        selectedProvince !== "all" &&
-        submission.province !== selectedProvince
-      ) {
-        return false;
-      }
-
-      // Date range filter - focusing on submittedAt date
-      if (selectedDateRange.from || selectedDateRange.to) {
-        const submissionDate = new Date(submission.submittedAt);
-
-        if (selectedDateRange.from) {
-          // Set start of day for 'from' date
-          const startOfDay = new Date(selectedDateRange.from);
-          startOfDay.setHours(0, 0, 0, 0);
-          if (submissionDate < startOfDay) {
-            return false;
-          }
-        }
-
-        if (selectedDateRange.to) {
-          // Set end of day for 'to' date
-          const endOfDay = new Date(selectedDateRange.to);
-          endOfDay.setHours(23, 59, 59, 999);
-          if (submissionDate > endOfDay) {
-            return false;
-          }
-        }
-      }
-
-      return true;
-    });
-  }, [
-    submissions,
-    searchValue,
-    selectedStatus,
-    selectedFeedbackStatus,
-    selectedProvince,
-    selectedDateRange,
-  ]);
 
   // Clear date range filter
   const clearDateRange = () => {
@@ -575,8 +534,7 @@ export default function FarmerSubmissionsPage() {
 
   const handleExport = async () => {
     try {
-
-      toast.success(`Exporting ${filteredData.length} records...`);
+      toast.success(`Exporting ${submissions.length} records...`);
     } catch (error) {
       console.error("Export failed:", error);
       toast.error("Export failed");
@@ -596,7 +554,7 @@ export default function FarmerSubmissionsPage() {
       <div className="p-6">
         <DataTable
           columns={columns}
-          data={filteredData}
+          data={submissions}
           title="All Farmer Submissions"
           showExport={true}
           onExport={handleExport}
@@ -610,6 +568,9 @@ export default function FarmerSubmissionsPage() {
           showSearch={false}
           showColumnVisibility={false}
           showPagination={true}
+          pagination={pagination}
+          onPaginationChange={handlePaginationChange}
+          isLoading={loading}
         />
 
         {/* REMOVED: Old loading overlay */}
