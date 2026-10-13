@@ -91,7 +91,8 @@ export function Header() {
   const navigationItems = [
     { label: "Home", href: "#home", id: "home" },
     { label: "Connect", href: "#connect", id: "connect" },
-    { label: "Price", href: "/dashboard/markets", id: "price", isExternal: true },
+    // Public page — /dashboard/markets is admin-only and sent guests/restaurants to Unauthorized
+    { label: "Price", href: "/price-comparison", id: "price", isExternal: true },
     { label: "Ask help", href: "/support", id: "ask-help", isExternal: true },
   ];
 
@@ -162,9 +163,16 @@ export function Header() {
   const handleNavClick = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement>, sectionId: string) => {
       e.preventDefault();
-      scrollToSection(sectionId);
+      setIsMenuOpen(false);
+      // Sections (Home, Connect…) live on the home page. Scroll if we are
+      // there; from any other page, go to the home page at that section.
+      if (document.getElementById(sectionId)) {
+        scrollToSection(sectionId);
+      } else {
+        router.push(`/#${sectionId}`);
+      }
     },
-    [scrollToSection]
+    [scrollToSection, router]
   );
 
   const handleShopMouseEnter = () => {
@@ -249,6 +257,19 @@ export function Header() {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Arriving from another page via "/#connect": scroll to that section with
+  // the header offset (after the page content has rendered)
+  useEffect(() => {
+    const scrollToHash = () => {
+      const sectionId = window.location.hash.slice(1);
+      if (!sectionId) return;
+      setTimeout(() => scrollToSection(sectionId), 150);
+    };
+    scrollToHash();
+    window.addEventListener("hashchange", scrollToHash);
+    return () => window.removeEventListener("hashchange", scrollToHash);
+  }, [scrollToSection]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {

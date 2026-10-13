@@ -18,7 +18,13 @@ import { useAuth } from "@/app/contexts/auth-context";
 import { getAdminSubmissionColumns } from "./_components/farmer-submissions-columns";
 import { ProductVerificationModal } from "../_components/productVerificationModal";
 import { ConfirmationDialogProps } from "./_components/ApprovalConfirmationDialog";
-import { AlertTriangle, CheckCircle, X } from "lucide-react";
+import { X } from "lucide-react";
+import { submissionService } from "@/app/services/submissionServices";
+import {
+  ReasonConfirmDialog,
+  ReverseStatusDialog,
+} from "./_components/SubmissionActionDialogs";
+import { SubmissionPayoutModal } from "./_components/SubmissionPayoutModal";
 
 // Add the ConfirmationDialog component at the top
 const ConfirmationDialog = ({
@@ -148,6 +154,22 @@ export default function FarmerSubmissionsPage() {
     totalCount: 0,
   });
 
+  // State for the new admin override actions (reject / delete / force-complete / reverse-status / payout)
+  const [rejectTarget, setRejectTarget] = useState<FarmerSubmission | null>(
+    null
+  );
+  const [deleteTarget, setDeleteTarget] = useState<FarmerSubmission | null>(
+    null
+  );
+  const [forceCompleteTarget, setForceCompleteTarget] =
+    useState<FarmerSubmission | null>(null);
+  const [reverseStatusTarget, setReverseStatusTarget] =
+    useState<FarmerSubmission | null>(null);
+  const [payoutTarget, setPayoutTarget] = useState<FarmerSubmission | null>(
+    null
+  );
+  const [isActionProcessing, setIsActionProcessing] = useState(false);
+
   // Contexts
   const { getAllSubmissions, approveSubmission } = useSubmissions();
   const { user } = useAuth();
@@ -227,6 +249,155 @@ export default function FarmerSubmissionsPage() {
     }
   };
 
+  const updateSubmissionInState = (
+    submissionId: string,
+    changes: Partial<FarmerSubmission>
+  ) => {
+    setSubmissions((prev) =>
+      prev.map((submission) =>
+        submission.id === submissionId
+          ? { ...submission, ...changes }
+          : submission
+      )
+    );
+  };
+
+  const handleConfirmReject = async (reason: string) => {
+    if (!rejectTarget) return;
+    try {
+      setIsActionProcessing(true);
+      const response = await submissionService.rejectSubmission(
+        rejectTarget.id,
+        reason || undefined
+      );
+
+      if (response.success) {
+        toast.success("Submission rejected successfully!");
+        updateSubmissionInState(rejectTarget.id, {
+          farmerFeedbackStatus: "REJECTED" as const,
+        });
+        setRejectTarget(null);
+      } else {
+        toast.error(response.message || "Failed to reject submission");
+      }
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.message || "Failed to reject submission"
+      );
+    } finally {
+      setIsActionProcessing(false);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      setIsActionProcessing(true);
+      const response = await submissionService.deleteSubmission(
+        deleteTarget.id
+      );
+
+      if (response.success) {
+        toast.success("Submission deleted successfully!");
+        setSubmissions((prev) =>
+          prev.filter((submission) => submission.id !== deleteTarget.id)
+        );
+        setDeleteTarget(null);
+      } else {
+        toast.error(response.message || "Failed to delete submission");
+      }
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.message || "Failed to delete submission"
+      );
+    } finally {
+      setIsActionProcessing(false);
+    }
+  };
+
+  const handleConfirmForceComplete = async (reason: string) => {
+    if (!forceCompleteTarget) return;
+    try {
+      setIsActionProcessing(true);
+      const response = await submissionService.forceCompleteSubmission(
+        forceCompleteTarget.id,
+        reason || undefined
+      );
+
+      if (response.success) {
+        toast.success("Submission force-completed successfully!");
+        updateSubmissionInState(forceCompleteTarget.id, {
+          status: "APPROVED" as const,
+          approvedAt: new Date().toISOString(),
+        });
+        setForceCompleteTarget(null);
+      } else {
+        toast.error(response.message || "Failed to force-complete submission");
+      }
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.message ||
+          "Failed to force-complete submission"
+      );
+    } finally {
+      setIsActionProcessing(false);
+    }
+  };
+
+  const handleConfirmReverseStatus = async (
+    toStatus: "PENDING" | "VERIFIED" | "APPROVED" | "PAID",
+    reason: string
+  ) => {
+    if (!reverseStatusTarget) return;
+    try {
+      setIsActionProcessing(true);
+      const response = await submissionService.reverseSubmissionStatus(
+        reverseStatusTarget.id,
+        { toStatus, reason: reason || undefined }
+      );
+
+      if (response.success) {
+        toast.success(`Submission status reversed to ${toStatus}!`);
+        updateSubmissionInState(reverseStatusTarget.id, { status: toStatus });
+        setReverseStatusTarget(null);
+      } else {
+        toast.error(response.message || "Failed to reverse status");
+      }
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.message || "Failed to reverse status"
+      );
+    } finally {
+      setIsActionProcessing(false);
+    }
+  };
+
+  const handleConfirmPayout = async (phoneNumber: string) => {
+    if (!payoutTarget) return;
+    try {
+      setIsActionProcessing(true);
+      const response = await submissionService.initiateSubmissionPayout(
+        payoutTarget.id,
+        phoneNumber
+      );
+
+      if (response.success) {
+        toast.success(
+          "Payout initiated. It is pending confirmation once PayPack processes the cashout."
+        );
+        setPayoutTarget(null);
+      } else {
+        toast.error(response.message || "Failed to initiate payout");
+      }
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.message || "Failed to initiate payout"
+      );
+    } finally {
+      setIsActionProcessing(false);
+    }
+  };
+
   // Fetch submissions on component mount
   useEffect(() => {
     const fetchSubmissions = async () => {
@@ -259,7 +430,12 @@ export default function FarmerSubmissionsPage() {
   const columns = useMemo(() => {
     return getAdminSubmissionColumns(
       handleOpenModal,
-      handleApproveSubmissionClick
+      handleApproveSubmissionClick,
+      setRejectTarget,
+      setDeleteTarget,
+      setForceCompleteTarget,
+      setPayoutTarget,
+      setReverseStatusTarget
     );
   }, []);
 
@@ -439,6 +615,58 @@ export default function FarmerSubmissionsPage() {
           submissionId={pendingApprovalId ?? ""}
           isProcessing={!!approving}
         />
+
+        <ReasonConfirmDialog
+          isOpen={!!rejectTarget}
+          title="Reject Submission"
+          description="Are you sure you want to reject this submission? The farmer will be notified."
+          confirmLabel="Reject"
+          isDestructive
+          isProcessing={isActionProcessing}
+          onClose={() => setRejectTarget(null)}
+          onConfirm={handleConfirmReject}
+        />
+
+        <ReasonConfirmDialog
+          isOpen={!!deleteTarget}
+          title="Delete Submission"
+          description="Delete this submission? This cannot be undone."
+          confirmLabel="Delete"
+          isDestructive
+          isProcessing={isActionProcessing}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={handleConfirmDelete}
+        />
+
+        <ReasonConfirmDialog
+          isOpen={!!forceCompleteTarget}
+          title="Force Complete Submission"
+          description="Force-complete this submission without waiting for farmer feedback?"
+          confirmLabel="Force Complete"
+          isProcessing={isActionProcessing}
+          onClose={() => setForceCompleteTarget(null)}
+          onConfirm={handleConfirmForceComplete}
+        />
+
+        {reverseStatusTarget && (
+          <ReverseStatusDialog
+            isOpen={!!reverseStatusTarget}
+            currentStatus={reverseStatusTarget.status}
+            isProcessing={isActionProcessing}
+            onClose={() => setReverseStatusTarget(null)}
+            onConfirm={handleConfirmReverseStatus}
+          />
+        )}
+
+        {payoutTarget && (
+          <SubmissionPayoutModal
+            isOpen={!!payoutTarget}
+            defaultPhone={payoutTarget.farmer.phone}
+            isProcessing={isActionProcessing}
+            onClose={() => setPayoutTarget(null)}
+            onConfirm={handleConfirmPayout}
+          />
+        )}
       </div>
 
       {/* Product Verification Modal */}

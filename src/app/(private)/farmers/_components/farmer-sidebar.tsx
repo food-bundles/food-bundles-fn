@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
+  ClipboardList,
   Wallet,
   User,
   Settings,
@@ -25,6 +26,7 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/farmers" },
+  { icon: ClipboardList, label: "Submissions", href: "/farmers/submissions" },
   { icon: Wallet, label: "Sales", href: "/farmers/sales" },
   { icon: User, label: "Profile", href: "/farmers/profile" },
   { icon: Settings, label: "Settings", href: "/farmers/setting/authenticator" },

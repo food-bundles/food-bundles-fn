@@ -102,7 +102,7 @@ function CircularRestaurantAnimation({
           className="absolute left-1/2 -translate-x-1/2 z-0 pointer-events-none whitespace-nowrap text-center text-sm sm:text-lg font-semibold tracking-wide text-white/90"
           style={{ top: `calc(50% - ${radius}px + 130px)` }}
         >
-          Our Happy <span className="text-green-400">Restaurants</span>
+          Our Happy <span className="text-green-400">Customers</span>
         </p>
       )}
       <div
