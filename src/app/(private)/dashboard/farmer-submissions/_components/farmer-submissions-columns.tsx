@@ -444,15 +444,26 @@ export function getAdminSubmissionColumns(
             )}
 
             {submission.status === "VERIFIED" && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                onClick={() => onForceComplete(submission)}
-                title="Force complete submission"
-              >
-                <CheckCircle className="h-4 w-4" />
-              </Button>
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  onClick={() => onReject(submission)}
+                  title="Reject submission"
+                >
+                  <XCircle className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                  onClick={() => onForceComplete(submission)}
+                  title="Force complete submission"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                </Button>
+              </>
             )}
 
             {submission.status === "APPROVED" && !hasActivePayout && (
