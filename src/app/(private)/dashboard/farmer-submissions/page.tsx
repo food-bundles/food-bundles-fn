@@ -25,6 +25,7 @@ import {
   ReverseStatusDialog,
 } from "./_components/SubmissionActionDialogs";
 import { SubmissionPayoutModal } from "./_components/SubmissionPayoutModal";
+import { SubmissionHistoryModal } from "./_components/SubmissionHistoryModal";
 
 // Add the ConfirmationDialog component at the top
 const ConfirmationDialog = ({
@@ -167,6 +168,9 @@ export default function FarmerSubmissionsPage() {
   const [reverseStatusTarget, setReverseStatusTarget] =
     useState<FarmerSubmission | null>(null);
   const [payoutTarget, setPayoutTarget] = useState<FarmerSubmission | null>(
+    null
+  );
+  const [historyTarget, setHistoryTarget] = useState<FarmerSubmission | null>(
     null
   );
   const [isActionProcessing, setIsActionProcessing] = useState(false);
@@ -403,6 +407,7 @@ export default function FarmerSubmissionsPage() {
       "Payout initiated. It is pending confirmation once PayPack processes the cashout."
     );
     setPayoutTarget(null);
+    fetchSubmissions(pagination.page, pagination.limit);
   };
 
   // Fetch submissions from the server, applying all current filters/pagination
@@ -484,7 +489,8 @@ export default function FarmerSubmissionsPage() {
       setDeleteTarget,
       setForceCompleteTarget,
       setPayoutTarget,
-      setReverseStatusTarget
+      setReverseStatusTarget,
+      setHistoryTarget
     );
   }, []);
 
@@ -634,6 +640,13 @@ export default function FarmerSubmissionsPage() {
             onVerifyOTP={handleVerifyPayoutOTP}
           />
         )}
+
+        <SubmissionHistoryModal
+          isOpen={!!historyTarget}
+          submissionId={historyTarget?.id ?? null}
+          onClose={() => setHistoryTarget(null)}
+          onChanged={() => fetchSubmissions(pagination.page, pagination.limit)}
+        />
       </div>
 
       {/* Product Verification Modal */}

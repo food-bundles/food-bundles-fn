@@ -12,6 +12,7 @@ import {
   CheckIcon,
   Undo2,
   Wallet,
+  History,
 } from "lucide-react";
 import { CiEdit } from "react-icons/ci";
 import { FarmerSubmission } from "@/app/contexts/submission-context";
@@ -74,7 +75,8 @@ export function getAdminSubmissionColumns(
   onDelete: (submission: FarmerSubmission) => void,
   onForceComplete: (submission: FarmerSubmission) => void,
   onPayout: (submission: FarmerSubmission) => void,
-  onReverseStatus: (submission: FarmerSubmission) => void
+  onReverseStatus: (submission: FarmerSubmission) => void,
+  onViewHistory: (submission: FarmerSubmission) => void
 ): ColumnDef<FarmerSubmission>[] {
   return [
     // Selection column
@@ -464,6 +466,16 @@ export function getAdminSubmissionColumns(
                 <Wallet className="h-4 w-4" />
               </Button>
             )}
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+              onClick={() => onViewHistory(submission)}
+              title="View payout and status history"
+            >
+              <History className="h-4 w-4" />
+            </Button>
 
             <Button
               variant="ghost"
