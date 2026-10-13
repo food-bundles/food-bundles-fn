@@ -16,6 +16,9 @@ interface HeroWithRestaurantsProps {
   restaurants: Restaurant[];
 }
 
+// Characters of a restaurant name shown under its circle before hovering
+const SHORT_NAME_LENGTH = 5;
+
 // Enhanced Circular Restaurant Animation Component
 function CircularRestaurantAnimation({
   restaurants,
@@ -91,6 +94,17 @@ function CircularRestaurantAnimation({
 
   return (
     <div className="relative w-130 h-130 mx-auto mt-20">
+      {/* Fixed label inside the ring (does not rotate). The ring's true centre
+          is below the visible hero, so it sits in the middle of the visible
+          arc, just under the top restaurants. */}
+      {radius > 0 && (
+        <p
+          className="absolute left-1/2 -translate-x-1/2 z-0 pointer-events-none whitespace-nowrap text-center text-sm sm:text-lg font-semibold tracking-wide text-white/90"
+          style={{ top: `calc(50% - ${radius}px + 130px)` }}
+        >
+          Our Happy <span className="text-green-400">Restaurants</span>
+        </p>
+      )}
       <div
         className="absolute inset-0 transition-transform duration-75 ease-linear"
         style={{
@@ -106,12 +120,11 @@ function CircularRestaurantAnimation({
           return (
             <div
               key={`${restaurant.name}-${index}`}
-              className="absolute cursor-pointer transition-all duration-200 hover:scale-110 group"
+              className="absolute z-10 hover:z-30 cursor-pointer transition-all duration-200 hover:scale-110 group"
               style={{
                 left: `calc(50% + ${x}px)`,
                 top: `calc(50% + ${y}px)`,
                 transform: `translate(-50%, -50%) rotate(-${rotation}deg)`,
-                zIndex: 10,
               }}
               onClick={() => handleRestaurantClick(restaurant.name)}
               onMouseEnter={handleMouseEnter}
@@ -137,9 +150,17 @@ function CircularRestaurantAnimation({
                     />
                   </div>
                 </div>
-                <div className="absolute top-24 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                {/* Name: first 5 characters always visible, full name on hover */}
+                <div className="absolute top-24 left-1/2 transform -translate-x-1/2">
                   <div className="text-green-400 font-medium text-xs px-2 py-1 rounded whitespace-nowrap bg-[#000000]">
-                    {restaurant.name}
+                    <span className="group-hover:hidden">
+                      {restaurant.name.length > SHORT_NAME_LENGTH
+                        ? `${restaurant.name.slice(0, SHORT_NAME_LENGTH)}…`
+                        : restaurant.name}
+                    </span>
+                    <span className="hidden group-hover:inline">
+                      {restaurant.name}
+                    </span>
                   </div>
                 </div>
               </div>

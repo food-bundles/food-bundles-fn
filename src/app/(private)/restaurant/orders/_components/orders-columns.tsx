@@ -456,7 +456,9 @@ export const ordersColumns = (
       );
     },
     cell: ({ row }) => {
-      const date = row.original.orderedDate;
+      // orderedDate is a date-only text (no time), so formatting a time from it
+      // always gave 12:00 AM. Use the order's real creation timestamp.
+      const date = row.original.originalData?.createdAt ?? row.original.orderedDate;
 
       return (
         <div className="text-sm text-gray-700">
