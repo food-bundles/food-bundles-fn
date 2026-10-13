@@ -372,30 +372,36 @@ export default function FarmerSubmissionsPage() {
     }
   };
 
-  const handleConfirmPayout = async (phoneNumber: string) => {
-    if (!payoutTarget) return;
-    try {
-      setIsActionProcessing(true);
-      const response = await submissionService.initiateSubmissionPayout(
-        payoutTarget.id,
-        phoneNumber
-      );
+  const handleRequestPayoutOTP = async (phoneNumber: string) => {
+    if (!payoutTarget) throw new Error("No submission selected");
+    const response = await submissionService.requestSubmissionPayoutOTP(
+      payoutTarget.id,
+      phoneNumber
+    );
 
-      if (response.success) {
-        toast.success(
-          "Payout initiated. It is pending confirmation once PayPack processes the cashout."
-        );
-        setPayoutTarget(null);
-      } else {
-        toast.error(response.message || "Failed to initiate payout");
-      }
-    } catch (error: any) {
-      toast.error(
-        error?.response?.data?.message || "Failed to initiate payout"
-      );
-    } finally {
-      setIsActionProcessing(false);
+    if (!response.success) {
+      throw new Error(response.message || "Failed to send OTP");
     }
+
+    return response.sessionId as string;
+  };
+
+  const handleVerifyPayoutOTP = async (otp: string, sessionId: string) => {
+    if (!payoutTarget) throw new Error("No submission selected");
+    const response = await submissionService.verifySubmissionPayoutOTP(
+      payoutTarget.id,
+      otp,
+      sessionId
+    );
+
+    if (!response.success) {
+      throw new Error(response.message || "Failed to initiate payout");
+    }
+
+    toast.success(
+      "Payout initiated. It is pending confirmation once PayPack processes the cashout."
+    );
+    setPayoutTarget(null);
   };
 
   // Fetch submissions on component mount
@@ -662,9 +668,9 @@ export default function FarmerSubmissionsPage() {
           <SubmissionPayoutModal
             isOpen={!!payoutTarget}
             defaultPhone={payoutTarget.farmer.phone}
-            isProcessing={isActionProcessing}
             onClose={() => setPayoutTarget(null)}
-            onConfirm={handleConfirmPayout}
+            onRequestOTP={handleRequestPayoutOTP}
+            onVerifyOTP={handleVerifyPayoutOTP}
           />
         )}
       </div>
