@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { OptimizedImage } from "@/components/OptimizedImage";
+import { formatDeliveryTime } from "@/lib/delivery-fee";
 
 interface ViewOrderModalProps {
   open: boolean;
@@ -381,7 +382,7 @@ export function ViewOrderModal({ open, onOpenChange, order }: ViewOrderModalProp
                       Delivery Info
                     </p>
                     <p className="text-xs sm:text-sm text-gray-600">
-                      Requested: {order.originalData?.requestedDelivery ? new Date(order.originalData.requestedDelivery).toLocaleDateString() : "N/A"}
+                      Delivery wanted: {formatDeliveryTime(order.originalData?.requestedDelivery)}
                     </p>
                     {order.originalData?.estimatedDelivery && (
                       <p className="text-xs text-orange-600 mt-1">

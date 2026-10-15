@@ -35,15 +35,54 @@ import {
   Sprout,
   FileCheck,
   KeyRound,
+  Truck,
+  Search,
+  X,
+  CornerDownLeft,
 } from "lucide-react";
 import NotificationsDrawer from "@/app/(private)/restaurant/_components/notificationDrawer";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { authService } from "@/app/services/authService";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { MdSystemSecurityUpdate } from "react-icons/md";
 import { canOpenPage } from "@/lib/admin-permissions";
+import { highlightParts, searchLinks, SearchableLink } from "./sidebar-search";
+
+// Extra words people may type when looking for a page, so search finds related links
+const searchKeywords: Record<string, string[]> = {
+  "/dashboard": ["home", "overview", "analytics", "stats", "summary"],
+  "/dashboard/farmer-submissions": ["farmers", "produce", "harvest", "supply", "verify", "approve"],
+  "/dashboard/restaurant-orders": ["orders", "sales", "purchases", "delivery", "invoice", "receipt", "ebm"],
+  "/dashboard/stock/products": ["items", "inventory", "goods", "catalog", "price"],
+  "/dashboard/stock/categories": ["groups", "types", "classification"],
+  "/dashboard/stock/units": ["kg", "measure", "measurement", "quantity", "weight"],
+  "/dashboard/stock/payment-methods": ["momo", "mobile money", "card", "cash", "pay", "bank"],
+  "/dashboard/stock/customer-types": ["pricing", "hotel", "restaurant", "tiers", "price"],
+  "/dashboard/stock/fb-reports": ["reports", "sales", "tabletronic", "revenue"],
+  "/dashboard/subscriptions": ["plans", "premium", "membership", "billing"],
+  "/dashboard/markets": ["prices", "market", "wfp", "commodity", "trends"],
+  "/dashboard/predictive-intelligence": ["ai", "forecast", "prediction", "analytics"],
+  "/dashboard/supply-intelligence": ["ai", "supply", "farmers", "forecast"],
+  "/dashboard/market-price-intelligence": ["ai", "prices", "market", "trends"],
+  "/dashboard/restaurant-kyc": ["verification", "documents", "identity", "compliance", "location", "zone"],
+  "/dashboard/vouchers": ["loans", "credit", "card", "bnpl", "repayment", "lending"],
+  "/dashboard/deposits": ["wallet", "money", "top up", "balance", "transactions", "payments"],
+  "/dashboard/newsletter": ["email", "subscribers", "campaign", "mail"],
+  "/dashboard/invitations": ["invite", "onboarding", "join", "referral"],
+  "/dashboard/users/lookup": ["find", "search", "user", "account", "phone"],
+  "/dashboard/users/farmers": ["growers", "suppliers"],
+  "/dashboard/users/restaurants": ["clients", "customers", "hotels", "buyers"],
+  "/dashboard/users/affiliators": ["affiliates", "agents", "partners", "referral"],
+  "/dashboard/users/administration": ["admins", "staff", "team", "employees"],
+  "/dashboard/users/roles": ["permissions", "access", "rbac", "privileges", "security"],
+  "/dashboard/contact-submissions": ["messages", "contact", "inbox", "support", "feedback"],
+  "/dashboard/promo-codes": ["discounts", "coupons", "offers", "promotion", "gift"],
+  "/dashboard/settings/notification-recipient": ["sms", "alerts", "notifications", "phone"],
+  "/dashboard/settings/delivery-fees": ["shipping", "transport", "logistics", "distance"],
+  "/dashboard/settings/authenticator": ["2fa", "mfa", "otp", "security", "two factor"],
+};
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -209,6 +248,11 @@ const menuItems = [
         href: "/dashboard/settings/notification-recipient",
       },
       {
+        icon: Truck,
+        label: "Delivery Fees",
+        href: "/dashboard/settings/delivery-fees",
+      },
+      {
         icon: MdSystemSecurityUpdate,
         label: "Authenticator",
         href: "/dashboard/settings/authenticator",
@@ -242,6 +286,75 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         .filter((item) =>
           item.subItems ? item.subItems.length > 0 : canOpenPage(userData, item.href)
         );
+
+  // ─── Search ────────────────────────────────────────────────────────────────
+  const router = useRouter();
+  const searchRef = useRef<HTMLInputElement>(null);
+  const [query, setQuery] = useState("");
+  const [highlighted, setHighlighted] = useState(0);
+
+  // Only links the user may open, flattened so sub-links are searchable too
+  const searchableLinks = useMemo<SearchableLink[]>(
+    () =>
+      filteredMenuItems.flatMap<SearchableLink>((item) =>
+        item.subItems
+          ? item.subItems.map((sub) => ({
+              ...sub,
+              parentLabel: item.label,
+              keywords: searchKeywords[sub.href],
+            }))
+          : [{ ...item, keywords: searchKeywords[item.href] }],
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [userData],
+  );
+
+  const { results: searchResults, isFallback } = useMemo(
+    () => searchLinks(searchableLinks, query),
+    [searchableLinks, query],
+  );
+  const isSearching = query.trim().length > 0;
+
+  useEffect(() => {
+    setHighlighted(0);
+  }, [query]);
+
+  // Ctrl/Cmd + K focuses the search box
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const openLink = (href: string) => {
+    setQuery("");
+    searchRef.current?.blur();
+    onClose();
+    router.push(href);
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Escape") {
+      setQuery("");
+      return;
+    }
+    if (!searchResults.length) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlighted((h) => (h + 1) % searchResults.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlighted((h) => (h - 1 + searchResults.length) % searchResults.length);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      openLink(searchResults[highlighted]?.href ?? searchResults[0].href);
+    }
+  };
 
   const toggleExpanded = (index: number) => {
     const newExpanded = new Set(expandedItems);
@@ -346,8 +459,92 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
           <NotificationsDrawer isOpen={false} onClose={() => {}} />
         </div>
 
+        {/* Search */}
+        <div className="px-2 md:px-3 pt-3 shrink-0 relative z-10">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-green-400" />
+            <input
+              ref={searchRef}
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
+              placeholder="Search menu..."
+              aria-label="Search menu"
+              className="w-full rounded-md bg-green-900/60 border border-green-700 focus:border-green-400 focus:outline-none pl-8 pr-14 py-1.5 text-xs text-green-50 placeholder:text-green-400/80 transition-colors"
+            />
+            {query ? (
+              <button
+                type="button"
+                aria-label="Clear search"
+                onClick={() => {
+                  setQuery("");
+                  searchRef.current?.focus();
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-green-300 hover:text-white hover:bg-green-700"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            ) : (
+              <kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border border-green-700 px-1 text-[9px] text-green-400">
+                Ctrl K
+              </kbd>
+            )}
+          </div>
+        </div>
+
         {/* Navigation */}
         <nav className="flex-1 py-2 md:py-4 mb-10 overflow-auto scrollbar-hide relative z-10">
+          {isSearching ? (
+            <div className="px-2 md:px-3 pb-4">
+              <p className="px-2 pb-2 text-[10px] uppercase tracking-wider text-green-400">
+                {isFallback ? "No exact match — closest links" : `${searchResults.length} result${searchResults.length === 1 ? "" : "s"}`}
+              </p>
+              <ul className="space-y-1">
+                {searchResults.map((link, i) => {
+                  const Icon = link.icon;
+                  const isHighlighted = i === highlighted;
+                  return (
+                    <li key={link.href}>
+                      <button
+                        type="button"
+                        onClick={() => openLink(link.href)}
+                        onMouseEnter={() => setHighlighted(i)}
+                        className={cn(
+                          "w-full flex items-center px-3 py-2 rounded-md text-xs text-left transition-colors",
+                          isHighlighted
+                            ? "bg-green-600 text-white"
+                            : "text-green-200 hover:bg-green-700 hover:text-white",
+                          pathname === link.href && !isHighlighted && "bg-green-700/60",
+                        )}
+                      >
+                        <Icon className={cn("mr-2 md:mr-3 h-4 w-4 shrink-0", isHighlighted ? "text-green-100" : "text-green-500")} />
+                        <span className="flex-1 min-w-0">
+                          <span className="block truncate">
+                            {highlightParts(link.label, isFallback ? "" : query).map((part, p) =>
+                              part.match ? (
+                                <mark key={p} className="bg-yellow-300/30 text-inherit rounded-sm font-semibold">
+                                  {part.text}
+                                </mark>
+                              ) : (
+                                <span key={p}>{part.text}</span>
+                              ),
+                            )}
+                          </span>
+                          {link.parentLabel && (
+                            <span className="block truncate text-[10px] text-green-400">
+                              {link.parentLabel}
+                            </span>
+                          )}
+                        </span>
+                        {isHighlighted && <CornerDownLeft className="ml-2 h-3 w-3 shrink-0 text-green-200" />}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ) : (
           <ul className="space-y-1 px-2 md:px-3 pb-4">
             {filteredMenuItems.map((item, index) => {
               const isActive = isItemActive(item);
@@ -488,6 +685,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
               )}
             </li>
           </ul>
+          )}
         </nav>
       </div>
     </div>

@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { orderService } from "@/app/services/orderService";
 import { toast } from "sonner";
 import { Order } from "./order-colmuns";
+import { formatDeliveryTime } from "@/lib/delivery-fee";
 
 /* =========================
    View Order Modal
@@ -223,9 +224,9 @@ export function ViewOrderModal({ open, onClose, order }: ViewOrderModalProps) {
 
               {order.requestedDelivery && (
                 <div>
-                  <p className="text-xs text-gray-500">Requested</p>
+                  <p className="text-xs text-gray-500">Delivery wanted</p>
                   <p className="text-sm">
-                    {formatDate(order.requestedDelivery)}
+                    {formatDeliveryTime(order.requestedDelivery)}
                   </p>
                 </div>
               )}

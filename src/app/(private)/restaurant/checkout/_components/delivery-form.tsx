@@ -47,6 +47,15 @@ import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import { OTPInput } from "@/components/ui/otp-input";
 import { Button } from "@/components/ui/button";
 import { VerificationModal } from "./verification-modal";
+import { Clock } from "lucide-react";
+import {
+  calculateDeliveryFee,
+  DEFAULT_DELIVERY_SETTINGS,
+  DeliverySettings,
+  deliverySettingsService,
+  freeDeliveryHint,
+  toDateTimeLocal,
+} from "@/lib/delivery-fee";
 
 const MapComponent = dynamic(() => import("./MapComponent"), {
   ssr: false,
@@ -142,6 +151,13 @@ export function Checkout() {
   const [verificationType, setVerificationType] = useState<"OTP" | "2FA">("OTP");
   const [isConverting, setIsConverting] = useState(false);
   const [otherServices, setOtherServices] = useState(false);
+  // When the customer wants the order delivered (date + time); drives the delivery fee
+  const [requestedDelivery, setRequestedDelivery] = useState("");
+  const [deliverySettings, setDeliverySettings] = useState<DeliverySettings>(DEFAULT_DELIVERY_SETTINGS);
+
+  useEffect(() => {
+    deliverySettingsService.get().then(setDeliverySettings);
+  }, []);
   const [method, setMethod] = useState<PaymentMethodOrEmpty>("");
 
   // Promo Code State
@@ -364,11 +380,14 @@ export function Checkout() {
   const hasFreeDelivery = subscriptionPlan?.freeDelivery || false;
   const hasOtherServices = subscriptionPlan?.otherServices || false;
 
-  // Mirror the backend fee rules: delivery is free between 4-9 AM (off-peak) or
-  // when the plan includes free delivery; otherwise it is 5,000 RWF.
-  const currentHour = new Date().getHours();
-  const isOffPeakHours = currentHour >= 4 && currentHour < 9;
-  const deliveryFee = hasFreeDelivery || isOffPeakHours ? 0 : 5000;
+  // Preview of the backend rule (admin settings): the fee applies when the order
+  // is below the free-delivery minimum OR delivery is sooner than allowed
+  const deliveryFee = calculateDeliveryFee({
+    orderAmount: appliedPromo ? appliedPromo.finalAmount : totalAmount,
+    requestedDelivery: requestedDelivery ? new Date(requestedDelivery) : null,
+    hasFreeDeliveryPlan: hasFreeDelivery,
+    settings: deliverySettings,
+  });
   const packagingFee = hasOtherServices ? 0 : (otherServices ? 15000 : 0);
 
   // Calculate totals based on promo response
@@ -517,6 +536,12 @@ export function Checkout() {
         "Please select location on map or enter address";
     }
 
+    if (!requestedDelivery) {
+      newErrors.requestedDelivery = "Choose when you want your order delivered";
+    } else if (new Date(requestedDelivery).getTime() < Date.now() - 60_000) {
+      newErrors.requestedDelivery = "Delivery time cannot be in the past";
+    }
+
 
     // Voucher validation — accepts legacy voucher code OR loan session RRN
     if (method === "voucher") {
@@ -593,7 +618,8 @@ export function Checkout() {
             ? `${formData.location.lat},${formData.location.lng}`
             : formData.deliveryAddress.trim(),
         notes: formData.deliveryInstructions,
-        deliveryDate: new Date().toISOString().split("T")[0],
+        // Wanted delivery date & time (full timestamp, decides the delivery fee)
+        deliveryDate: new Date(requestedDelivery).toISOString(),
         currency: "RWF",
         otherServices,
         verificationType: method === "voucher" ? verificationType : undefined,
@@ -897,11 +923,18 @@ export function Checkout() {
               </div>
             )}
 
-            {deliveryFee > 0 && (
+            {deliveryFee > 0 ? (
               <div className="flex justify-between text-gray-900">
                 <span>Delivery</span>
                 <span>Rwf {deliveryFee.toLocaleString()}</span>
               </div>
+            ) : (
+              requestedDelivery && (
+                <div className="flex justify-between text-green-700">
+                  <span>Delivery</span>
+                  <span className="font-medium">Free</span>
+                </div>
+              )
             )}
 
             {/* Promo Discount Row */}
@@ -1109,6 +1142,40 @@ export function Checkout() {
                   className="w-full pl-10 pt-3 pb-3 border border-gray-300 text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none rounded-none text-[13px] resize-none"
                   disabled={isSubmitting}
                 />
+              </div>
+
+              {/* Wanted delivery date & time — decides the delivery fee */}
+              <div>
+                <label className="block text-[12px] text-gray-700 mb-1">
+                  When do you want it delivered? *
+                </label>
+                <div className="relative">
+                  <Clock className="absolute left-3 top-3 h-4 w-4 text-gray-500 pointer-events-none" />
+                  <input
+                    type="datetime-local"
+                    value={requestedDelivery}
+                    min={toDateTimeLocal(new Date())}
+                    onChange={(e) => {
+                      setRequestedDelivery(e.target.value);
+                      if (errors.requestedDelivery) {
+                        setErrors((prev) => ({ ...prev, requestedDelivery: "" }));
+                      }
+                    }}
+                    className={`w-full h-10 pl-10 pr-3 border text-gray-900 focus:border-green-500 focus:ring-green-500 focus:ring-1 focus:outline-none rounded-none text-[13px] ${
+                      errors.requestedDelivery ? "border-red-500" : "border-gray-300"
+                    }`}
+                    disabled={isSubmitting}
+                  />
+                </div>
+                {errors.requestedDelivery ? (
+                  <p className="text-red-600 text-xs mt-1">{errors.requestedDelivery}</p>
+                ) : (
+                  <p className="text-[11px] text-gray-500 mt-1">
+                    {hasFreeDelivery
+                      ? "Your subscription includes free delivery."
+                      : freeDeliveryHint(deliverySettings)}
+                  </p>
+                )}
               </div>
 
               {/* Other Services and Payment Method Section */}
