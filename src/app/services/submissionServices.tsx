@@ -242,4 +242,23 @@ export const submissionService = {
     );
     return response.data;
   },
+
+  adminCreateSubmission: async (payload: {
+    farmerId: string;
+    productId: string;
+    quantity: number;
+    wishedPrice: number;
+    province?: string;
+    district?: string;
+    sector?: string;
+    cell?: string;
+    village?: string;
+  }) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(
+      "/farmers/admin-create-submission",
+      payload
+    );
+    return response.data;
+  },
 };
