@@ -37,6 +37,7 @@ const PAGE_MODULES: Array<[string, string]> = [
   ["/dashboard/contact-submissions", "messages"],
   ["/dashboard/promo-codes", "promo_codes"],
   ["/dashboard/settings/notification-recipient", "sms_recipients"],
+  ["/dashboard/settings/delivery-fees", "delivery_settings"],
 ];
 
 // Pages only super admins may open

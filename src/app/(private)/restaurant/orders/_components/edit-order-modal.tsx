@@ -3,6 +3,13 @@
 
 import { useState, useEffect } from "react";
 import {
+  calculateDeliveryFee,
+  DEFAULT_DELIVERY_SETTINGS,
+  DeliverySettings,
+  deliverySettingsService,
+  toDateTimeLocal,
+} from "@/lib/delivery-fee";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -56,6 +63,13 @@ export function EditOrderModal({ open, onClose, order, onSaved }: EditOrderModal
   const [billingPhone, setBillingPhone] = useState("");
   const [billingEmail, setBillingEmail] = useState("");
   const [billingAddress, setBillingAddress] = useState("");
+  // Wanted delivery date & time (datetime-local value); changes the delivery fee
+  const [requestedDelivery, setRequestedDelivery] = useState("");
+  const [deliverySettings, setDeliverySettings] = useState<DeliverySettings>(DEFAULT_DELIVERY_SETTINGS);
+
+  useEffect(() => {
+    if (open) deliverySettingsService.get().then(setDeliverySettings);
+  }, [open]);
   const [saving, setSaving] = useState(false);
   const [showProductSearch, setShowProductSearch] = useState(false);
   const [productSearchQuery, setProductSearchQuery] = useState("");
@@ -85,11 +99,21 @@ export function EditOrderModal({ open, onClose, order, onSaved }: EditOrderModal
       setBillingPhone(data.billingPhone || "");
       setBillingEmail(data.billingEmail || "");
       setBillingAddress(data.billingAddress || "");
+      const wanted = (data as any).requestedDelivery;
+      setRequestedDelivery(wanted ? toDateTimeLocal(new Date(wanted)) : "");
     }
   }, [order, open]);
 
   const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
-  const deliveryFee = data.deliveryFee || 0;
+  const isPaid = ["COMPLETED", "VOUCHER_CREDIT"].includes((data as any)?.paymentStatus);
+  const deliveryFee = isPaid
+    ? (data as any)?.deliveryFee || 0
+    : calculateDeliveryFee({
+        orderAmount: subtotal,
+        placedAt: (data as any)?.createdAt ? new Date((data as any).createdAt) : new Date(),
+        requestedDelivery: requestedDelivery ? new Date(requestedDelivery) : null,
+        settings: deliverySettings,
+      });
   const packagingFee = data.packagingFee || 0;
   const discount = (data as any).discount || 0;
   const total = subtotal + deliveryFee + packagingFee - discount;
@@ -191,6 +215,7 @@ export function EditOrderModal({ open, onClose, order, onSaved }: EditOrderModal
         billingPhone,
         billingEmail,
         billingAddress,
+        requestedDelivery: requestedDelivery ? new Date(requestedDelivery).toISOString() : undefined,
       };
 
       await orderService.editOrder(order.id, editData);
@@ -427,6 +452,22 @@ export function EditOrderModal({ open, onClose, order, onSaved }: EditOrderModal
           </div>
 
           <div>
+            <Label className="text-xs mb-1">Delivery date & time</Label>
+            <Input
+              type="datetime-local"
+              value={requestedDelivery}
+              onChange={(e) => setRequestedDelivery(e.target.value)}
+              className="text-sm"
+              disabled={!canEdit}
+            />
+            <p className="mt-1 text-[11px] text-gray-500">
+              {isPaid
+                ? "This order is paid, so its delivery fee stays as charged."
+                : "Changing the delivery day or items can change the delivery fee."}
+            </p>
+          </div>
+
+          <div>
             <Label className="text-xs mb-1">Notes</Label>
             <Textarea
               value={notes}
@@ -442,6 +483,12 @@ export function EditOrderModal({ open, onClose, order, onSaved }: EditOrderModal
               <span className="text-gray-600">Subtotal ({items.length} items)</span>
               <span className="font-medium">{subtotal.toLocaleString()} RWF</span>
             </div>
+            {deliveryFee === 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Delivery Fee</span>
+                <span className="font-medium text-green-700">Free</span>
+              </div>
+            )}
             {deliveryFee > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Delivery Fee</span>

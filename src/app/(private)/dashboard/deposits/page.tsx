@@ -63,6 +63,7 @@ import WalletTransfersAdmin from "./_components/WalletTransfersAdmin";
 import { ExportButton } from "@/components/ExportButton";
 import Image from "next/image";
 import { FoodBundlesCard as CardShell } from "@/components/food-bundles-card";
+import { formatDeliveryTime } from "@/lib/delivery-fee";
 
 
 function CardStat({
@@ -2025,9 +2026,7 @@ export default function DepositsManagementPage() {
                       <div className="flex items-center gap-2">
                         <Calendar className="h-3 w-3 text-gray-500" />
                         <span className="text-xs text-gray-600">
-                          {new Date(
-                            orderDetails.requestedDelivery,
-                          ).toLocaleDateString()}
+                          {formatDeliveryTime(orderDetails.requestedDelivery)}
                         </span>
                       </div>
                     </div>

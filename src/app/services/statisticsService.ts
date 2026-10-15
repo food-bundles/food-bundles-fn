@@ -85,6 +85,7 @@ export interface DashboardStats {
     >;
   };
   subscriptions: {
+    totalPlans?: number; // plans offered, whether or not anyone subscribed
     totalSubscriptions: number;
     activeSubscriptions: number;
     expiredSubscriptions: number;
@@ -99,7 +100,8 @@ export interface DashboardStats {
     };
   };
   vouchers: {
-    totalVouchers: number;
+    totalVouchers: number; // voucher cards issued
+    totalCredits?: number; // credits (loan sessions) taken on those cards
     usedVouchers: number;
     maturedVouchers: number;
     nearMaturityVouchers: number;

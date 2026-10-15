@@ -118,6 +118,7 @@ export function DashboardContent() {
             gradient="from-amber-500 to-orange-700"
             loading={sectionLoading.subscriptions}
             subMetrics={[
+              { label: "Plans", value: stats?.subscriptions?.totalPlans || 0 },
               { label: "Active", value: stats?.subscriptions?.activeSubscriptions || 0 },
               { label: "Expired", value: stats?.subscriptions?.expiredSubscriptions || 0 },
             ]}
@@ -133,6 +134,7 @@ export function DashboardContent() {
             gradient="from-teal-600 to-cyan-900"
             loading={sectionLoading.vouchers}
             subMetrics={[
+              { label: "Credits", value: stats?.vouchers?.totalCredits || 0 },
               { label: "Used", value: stats?.vouchers?.usedVouchers || 0 },
               { label: "Matured", value: stats?.vouchers?.maturedVouchers || 0 },
             ]}
