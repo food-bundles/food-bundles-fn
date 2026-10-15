@@ -104,7 +104,16 @@ export interface PurchaseSubmissionPayload {
 
 interface SubmissionContextType {
   // Submission operations
-  getAllSubmissions: () => Promise<SubmissionResponse>;
+  getAllSubmissions: (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    feedbackStatus?: string;
+    province?: string;
+    search?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }) => Promise<SubmissionResponse>;
   getSubmissionById: (
     submissionId: string
   ) => Promise<{ data: FarmerSubmission }>;
@@ -153,10 +162,21 @@ export function SubmissionProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const getAllSubmissions =
-    useCallback(async (): Promise<SubmissionResponse> => {
-      return await submissionService.getAllSubmissions();
-    }, []);
+  const getAllSubmissions = useCallback(
+    async (params?: {
+      page?: number;
+      limit?: number;
+      status?: string;
+      feedbackStatus?: string;
+      province?: string;
+      search?: string;
+      dateFrom?: string;
+      dateTo?: string;
+    }): Promise<SubmissionResponse> => {
+      return await submissionService.getAllSubmissions(params);
+    },
+    []
+  );
 
   const getSubmissionById = useCallback(async (submissionId: string) => {
     return await submissionService.getSubmissionById(submissionId);

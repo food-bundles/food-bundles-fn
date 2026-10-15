@@ -17,80 +17,16 @@ import {
 import { useAuth } from "@/app/contexts/auth-context";
 import { getAdminSubmissionColumns } from "./_components/farmer-submissions-columns";
 import { ProductVerificationModal } from "../_components/productVerificationModal";
-import { ConfirmationDialogProps } from "./_components/ApprovalConfirmationDialog";
-import { X } from "lucide-react";
+import { ConfirmationDialog } from "./_components/ApprovalConfirmationDialog";
 import { submissionService } from "@/app/services/submissionServices";
 import {
   ReasonConfirmDialog,
   ReverseStatusDialog,
 } from "./_components/SubmissionActionDialogs";
 import { SubmissionPayoutModal } from "./_components/SubmissionPayoutModal";
-
-// Add the ConfirmationDialog component at the top
-const ConfirmationDialog = ({
-  isOpen,
-  onConfirm,
-  onCancel,
-  submissionId,
-  isProcessing = false,
-}: ConfirmationDialogProps) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-transparent bg-opacity-10 flex items-center justify-center z-50">
-      <div className="bg-white  rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <h3 className="text-xl font-semibold text-gray-900">
-              Are you sure you want to approve this submission?
-            </h3>
-          </div>
-          {!isProcessing && (
-            <button
-              onClick={onCancel}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          )}
-        </div>
-
-        <div className="mb-6">
-          <p className="text-xs text-gray-500 mt-3">
-            This action cannot be undone. The farmer will be notified of the
-            approval and quantity in stok will be updated.
-          </p>
-        </div>
-
-        <div className="flex space-x-3">
-          <button
-            onClick={onCancel}
-            disabled={isProcessing}
-            className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={isProcessing}
-            className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-          >
-            {isProcessing ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                <span>Approving...</span>
-              </>
-            ) : (
-              <>
-                <span>Yes</span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
+import { SubmissionHistoryModal } from "./_components/SubmissionHistoryModal";
+import { exportService } from "@/app/services/exportService";
+import { AddSubmissionModal } from "./_components/AddSubmissionModal";
 
 // Filter options
 const statusOptions = [
@@ -149,9 +85,10 @@ export default function FarmerSubmissionsPage() {
   );
 
   const [pagination, setPagination] = useState({
-    currentPage: 1,
+    page: 1,
+    limit: 10,
+    total: 0,
     totalPages: 1,
-    totalCount: 0,
   });
 
   // State for the new admin override actions (reject / delete / force-complete / reverse-status / payout)
@@ -168,7 +105,12 @@ export default function FarmerSubmissionsPage() {
   const [payoutTarget, setPayoutTarget] = useState<FarmerSubmission | null>(
     null
   );
+  const [historyTarget, setHistoryTarget] = useState<FarmerSubmission | null>(
+    null
+  );
   const [isActionProcessing, setIsActionProcessing] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isAddSubmissionOpen, setIsAddSubmissionOpen] = useState(false);
 
   // Contexts
   const { getAllSubmissions, approveSubmission } = useSubmissions();
@@ -372,59 +314,108 @@ export default function FarmerSubmissionsPage() {
     }
   };
 
-  const handleConfirmPayout = async (phoneNumber: string) => {
-    if (!payoutTarget) return;
+  const handleRequestPayoutOTP = async (phoneNumber: string) => {
+    if (!payoutTarget) throw new Error("No submission selected");
+    const response = await submissionService.requestSubmissionPayoutOTP(
+      payoutTarget.id,
+      phoneNumber
+    );
+
+    if (!response.success) {
+      throw new Error(response.message || "Failed to send OTP");
+    }
+
+    return response.sessionId as string;
+  };
+
+  const handleVerifyPayoutOTP = async (otp: string, sessionId: string) => {
+    if (!payoutTarget) throw new Error("No submission selected");
+    const response = await submissionService.verifySubmissionPayoutOTP(
+      payoutTarget.id,
+      otp,
+      sessionId
+    );
+
+    if (!response.success) {
+      throw new Error(response.message || "Failed to initiate payout");
+    }
+
+    toast.success(
+      "Payout initiated. It is pending confirmation once PayPack processes the cashout."
+    );
+    setPayoutTarget(null);
+    fetchSubmissions(pagination.page, pagination.limit);
+  };
+
+  // Fetch submissions from the server, applying all current filters/pagination
+  const fetchSubmissions = async (
+    page = pagination.page,
+    limit = pagination.limit
+  ) => {
     try {
-      setIsActionProcessing(true);
-      const response = await submissionService.initiateSubmissionPayout(
-        payoutTarget.id,
-        phoneNumber
-      );
+      setLoading(true);
+
+      const params: {
+        page: number;
+        limit: number;
+        status?: string;
+        feedbackStatus?: string;
+        province?: string;
+        search?: string;
+        dateFrom?: string;
+        dateTo?: string;
+      } = { page, limit };
+
+      if (searchValue.trim()) params.search = searchValue.trim();
+      if (selectedStatus !== "all") params.status = selectedStatus;
+      if (selectedFeedbackStatus !== "all")
+        params.feedbackStatus = selectedFeedbackStatus;
+      if (selectedProvince !== "all") params.province = selectedProvince;
+      if (selectedDateRange.from)
+        params.dateFrom = selectedDateRange.from.toISOString().split("T")[0];
+      if (selectedDateRange.to)
+        params.dateTo = selectedDateRange.to.toISOString().split("T")[0];
+
+      const response: SubmissionResponse = await getAllSubmissions(params);
 
       if (response.success) {
-        toast.success(
-          "Payout initiated. It is pending confirmation once PayPack processes the cashout."
-        );
-        setPayoutTarget(null);
+        setSubmissions(response.data);
+        setPagination({
+          page: response.pagination.currentPage,
+          limit: response.pagination.limit,
+          total: response.pagination.totalCount,
+          totalPages: response.pagination.totalPages,
+        });
       } else {
-        toast.error(response.message || "Failed to initiate payout");
+        toast.error("Failed to fetch submissions");
       }
-    } catch (error: any) {
-      toast.error(
-        error?.response?.data?.message || "Failed to initiate payout"
-      );
+    } catch (error) {
+      console.error("Error fetching submissions:", error);
+      toast.error("Error fetching submissions");
     } finally {
-      setIsActionProcessing(false);
+      setLoading(false);
     }
   };
 
-  // Fetch submissions on component mount
+  // Refetch (from page 1) whenever a filter changes, debounced
   useEffect(() => {
-    const fetchSubmissions = async () => {
-      try {
-        setLoading(true);
-        const response: SubmissionResponse = await getAllSubmissions();
+    const timeoutId = setTimeout(() => {
+      fetchSubmissions(1, pagination.limit);
+    }, 500);
 
-        if (response.success) {
-          setSubmissions(response.data);
-          setPagination({
-            currentPage: response.pagination.currentPage,
-            totalPages: response.pagination.totalPages,
-            totalCount: response.pagination.totalCount,
-          });
-        } else {
-          toast.error("Failed to fetch submissions");
-        }
-      } catch (error) {
-        console.error("Error fetching submissions:", error);
-        toast.error("Error fetching submissions");
-      } finally {
-        setLoading(false);
-      }
-    };
+    return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    searchValue,
+    selectedStatus,
+    selectedFeedbackStatus,
+    selectedProvince,
+    selectedDateRange,
+  ]);
 
-    fetchSubmissions();
-  }, [getAllSubmissions]);
+  const handlePaginationChange = (page: number, limit: number) => {
+    fetchSubmissions(page, limit);
+  };
 
   // Get columns for admin view - MODIFIED: Pass the click handler instead
   const columns = useMemo(() => {
@@ -435,93 +426,10 @@ export default function FarmerSubmissionsPage() {
       setDeleteTarget,
       setForceCompleteTarget,
       setPayoutTarget,
-      setReverseStatusTarget
+      setReverseStatusTarget,
+      setHistoryTarget
     );
   }, []);
-
-  // Filter data based on user inputs
-  const filteredData = useMemo(() => {
-    if (!submissions.length) return [];
-
-    return submissions.filter((submission) => {
-      // Search filter
-      if (searchValue) {
-        const searchLower = searchValue.toLowerCase();
-        const farmerEmail = submission.farmer.email?.toLowerCase() || "";
-        const farmerPhone = submission.farmer.phone?.toLowerCase() || "";
-        const verifiedByName =
-          submission.aggregator?.username?.toLowerCase() || "";
-        const productName = submission.productName.toLowerCase();
-        const submissionId = submission.id.toLowerCase();
-        const location =
-          `${submission.village} ${submission.cell} ${submission.sector} ${submission.district} ${submission.province}`.toLowerCase();
-
-        if (
-          !farmerEmail.includes(searchLower) &&
-          !farmerPhone.includes(searchLower) &&
-          !productName.includes(searchLower) &&
-          !submissionId.includes(searchLower) &&
-          !location.includes(searchLower) &&
-          !verifiedByName.includes(searchLower)
-        ) {
-          return false;
-        }
-      }
-
-      // Status filter
-      if (selectedStatus !== "all" && submission.status !== selectedStatus) {
-        return false;
-      }
-
-      // Feedback status filter
-      if (
-        selectedFeedbackStatus !== "all" &&
-        submission.farmerFeedbackStatus !== selectedFeedbackStatus
-      ) {
-        return false;
-      }
-
-      // Province filter
-      if (
-        selectedProvince !== "all" &&
-        submission.province !== selectedProvince
-      ) {
-        return false;
-      }
-
-      // Date range filter - focusing on submittedAt date
-      if (selectedDateRange.from || selectedDateRange.to) {
-        const submissionDate = new Date(submission.submittedAt);
-
-        if (selectedDateRange.from) {
-          // Set start of day for 'from' date
-          const startOfDay = new Date(selectedDateRange.from);
-          startOfDay.setHours(0, 0, 0, 0);
-          if (submissionDate < startOfDay) {
-            return false;
-          }
-        }
-
-        if (selectedDateRange.to) {
-          // Set end of day for 'to' date
-          const endOfDay = new Date(selectedDateRange.to);
-          endOfDay.setHours(23, 59, 59, 999);
-          if (submissionDate > endOfDay) {
-            return false;
-          }
-        }
-      }
-
-      return true;
-    });
-  }, [
-    submissions,
-    searchValue,
-    selectedStatus,
-    selectedFeedbackStatus,
-    selectedProvince,
-    selectedDateRange,
-  ]);
 
   // Clear date range filter
   const clearDateRange = () => {
@@ -567,20 +475,38 @@ export default function FarmerSubmissionsPage() {
     },
   ];
 
-  const handleExport = async () => {
+  const handleExport = async (
+    _selectedRows: FarmerSubmission[],
+    format: "excel" | "csv" | "pdf"
+  ) => {
     try {
+      setIsExporting(true);
+      toast.info(`Generating ${format.toUpperCase()} export...`);
 
-      toast.success(`Exporting ${filteredData.length} records...`);
+      await exportService.downloadExport("submissions", format, {
+        search: searchValue.trim() || undefined,
+        status: selectedStatus !== "all" ? selectedStatus : undefined,
+        province: selectedProvince !== "all" ? selectedProvince : undefined,
+        startDate: selectedDateRange.from
+          ? selectedDateRange.from.toISOString().split("T")[0]
+          : undefined,
+        endDate: selectedDateRange.to
+          ? selectedDateRange.to.toISOString().split("T")[0]
+          : undefined,
+      });
+
+      toast.success("Export downloaded successfully!");
     } catch (error) {
       console.error("Export failed:", error);
-      toast.error("Export failed");
+      toast.error("Failed to download export");
+    } finally {
+      setIsExporting(false);
     }
   };
 
   // Handle add submission
   const handleAddSubmission = () => {
-    toast.info("Add submission functionality will be implemented");
-    // TODO: Navigate to add submission page or open modal
+    setIsAddSubmissionOpen(true);
   };
 
  
@@ -590,10 +516,11 @@ export default function FarmerSubmissionsPage() {
       <div className="p-6">
         <DataTable
           columns={columns}
-          data={filteredData}
+          data={submissions}
           title="All Farmer Submissions"
           showExport={true}
           onExport={handleExport}
+          isExporting={isExporting}
           showAddButton={true}
           onAddButton={handleAddSubmission}
           customFilters={
@@ -604,6 +531,9 @@ export default function FarmerSubmissionsPage() {
           showSearch={false}
           showColumnVisibility={false}
           showPagination={true}
+          pagination={pagination}
+          onPaginationChange={handlePaginationChange}
+          isLoading={loading}
         />
 
         {/* REMOVED: Old loading overlay */}
@@ -662,11 +592,24 @@ export default function FarmerSubmissionsPage() {
           <SubmissionPayoutModal
             isOpen={!!payoutTarget}
             defaultPhone={payoutTarget.farmer.phone}
-            isProcessing={isActionProcessing}
             onClose={() => setPayoutTarget(null)}
-            onConfirm={handleConfirmPayout}
+            onRequestOTP={handleRequestPayoutOTP}
+            onVerifyOTP={handleVerifyPayoutOTP}
           />
         )}
+
+        <SubmissionHistoryModal
+          isOpen={!!historyTarget}
+          submissionId={historyTarget?.id ?? null}
+          onClose={() => setHistoryTarget(null)}
+          onChanged={() => fetchSubmissions(pagination.page, pagination.limit)}
+        />
+
+        <AddSubmissionModal
+          isOpen={isAddSubmissionOpen}
+          onClose={() => setIsAddSubmissionOpen(false)}
+          onCreated={() => fetchSubmissions(pagination.page, pagination.limit)}
+        />
       </div>
 
       {/* Product Verification Modal */}
@@ -676,6 +619,7 @@ export default function FarmerSubmissionsPage() {
         onClose={handleCloseModal}
         mode={modalMode}
         onModeChange={handleModeChange}
+        onSuccess={() => fetchSubmissions(pagination.page, pagination.limit)}
       />
     </>
   );

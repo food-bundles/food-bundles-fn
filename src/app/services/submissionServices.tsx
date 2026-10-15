@@ -10,9 +10,18 @@ export interface FarmerFeedbackPayload {
 
 export const submissionService = {
   // --- GET Routes ---
-  getAllSubmissions: async () => {
+  getAllSubmissions: async (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    feedbackStatus?: string;
+    province?: string;
+    search?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.get("/submissions");
+    const response = await axiosClient.get("/submissions", { params });
     return response.data;
   },
 
@@ -191,11 +200,24 @@ export const submissionService = {
     return response.data;
   },
 
-  initiateSubmissionPayout: async (submissionId: string, phoneNumber: string) => {
+  requestSubmissionPayoutOTP: async (submissionId: string, phoneNumber: string) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.post(
-      `/submissions/${submissionId}/payout`,
+      `/submissions/${submissionId}/payout/request-otp`,
       { phoneNumber }
+    );
+    return response.data;
+  },
+
+  verifySubmissionPayoutOTP: async (
+    submissionId: string,
+    otp: string,
+    sessionId: string
+  ) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(
+      `/submissions/${submissionId}/payout/verify-otp`,
+      { otp, sessionId }
     );
     return response.data;
   },
@@ -217,6 +239,25 @@ export const submissionService = {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.get(
       `/submissions/${submissionId}/payouts`
+    );
+    return response.data;
+  },
+
+  adminCreateSubmission: async (payload: {
+    farmerId: string;
+    productId: string;
+    quantity: number;
+    wishedPrice: number;
+    province?: string;
+    district?: string;
+    sector?: string;
+    cell?: string;
+    village?: string;
+  }) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(
+      "/farmers/admin-create-submission",
+      payload
     );
     return response.data;
   },

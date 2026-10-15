@@ -14,7 +14,8 @@ export type ExportModuleType =
   | "wallets"
   | "loans"
   | "deposits"
-  | "transactions";
+  | "transactions"
+  | "submissions";
 
 export interface ExportFilterParams {
   startDate?: string;

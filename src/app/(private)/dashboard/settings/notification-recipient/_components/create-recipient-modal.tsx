@@ -35,6 +35,7 @@ const categoryOptions = [
   { value: "LOW_STOCK", label: "Low Stock" },
   { value: "PAYMENT_ISSUES", label: "Payment Issues" },
   { value: "SYSTEM_ALERTS", label: "System Alerts" },
+  { value: "PRIVATE_RECEIVER", label: "Private Receiver" },
 ];
 
 export function CreateRecipientModal({
@@ -46,12 +47,13 @@ export function CreateRecipientModal({
   const [formData, setFormData] = useState({
     name: "",
     phoneNumber: "",
+    email: "",
     category: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.phoneNumber || !formData.category) {
       toast.error("Please fill in all fields");
       return;
@@ -59,9 +61,12 @@ export function CreateRecipientModal({
 
     setIsLoading(true);
     try {
-      await notificationRecipientService.createRecipient(formData);
+      await notificationRecipientService.createRecipient({
+        ...formData,
+        email: formData.email.trim() || undefined,
+      });
       toast.success("Recipient created successfully");
-      setFormData({ name: "", phoneNumber: "", category: "" });
+      setFormData({ name: "", phoneNumber: "", email: "", category: "" });
       onOpenChange(false);
       onSuccess();
     } catch (error: any) {
@@ -106,6 +111,19 @@ export function CreateRecipientModal({
               placeholder="+250788123456"
               className="bg-white border-gray-300 text-gray-900"
               required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-gray-900">Email (optional)</Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              disabled={isLoading}
+              placeholder="finance@foodbundles.rw"
+              className="bg-white border-gray-300 text-gray-900"
             />
           </div>
 

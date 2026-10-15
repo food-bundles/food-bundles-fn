@@ -138,6 +138,12 @@ export function ReverseStatusDialog({
                 </option>
               ))}
             </select>
+            {toStatus === currentStatus && (
+              <p className="text-xs text-amber-600">
+                This is already the current status — pick a different one to
+                reverse it.
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -158,7 +164,7 @@ export function ReverseStatusDialog({
           </Button>
           <Button
             onClick={() => onConfirm(toStatus, reason.trim() || "")}
-            disabled={isProcessing}
+            disabled={isProcessing || toStatus === currentStatus}
           >
             {isProcessing ? "Processing..." : "Reverse Status"}
           </Button>
