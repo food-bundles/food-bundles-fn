@@ -18,6 +18,7 @@ import {
   // Eye,
   Check,
   Gift,
+  X,
 } from "lucide-react";
 import {
   Select,
@@ -110,12 +111,12 @@ const ProductCard = memo(function ProductCard({
   isWishlisted = false,
   onToggleWishlist,
 }: ProductCardProps) {
-  const [isHovered, setIsHovered] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [inputValue, setInputValue] = useState("1");
 
-  const { addToCart, cartItems, updateCartItem } = useCart();
+  const { addToCart, cartItems, updateCartItem, removeCartItem } = useCart();
+  const [isRemoving, setIsRemoving] = useState(false);
   const cartItem = cartItems.find((item) => item.productId === id);
   const isInCart = !!cartItem;
   const cartQuantity = cartItem?.quantity || 0;
@@ -153,11 +154,20 @@ const ProductCard = memo(function ProductCard({
   // Reconcile local quantity from the cart on every change, unless an update is
   // in flight. This prevents the card and the drawer from pushing stale values
   // back and forth (the "shaking" total), and survives page refreshes.
+  const prevCartQuantityRef = useRef(cartQuantity);
   useEffect(() => {
+    const wasInCart = prevCartQuantityRef.current > 0;
+    prevCartQuantityRef.current = cartQuantity;
     if (isUpdatingRef.current || isAddingToCart) return;
     if (cartQuantity > 0) {
       setQuantity(cartQuantity);
       setInputValue(cartQuantity.toString());
+    } else if (wasInCart) {
+      // The item left the cart (removed / cart cleared): reset to 1. Keeping the
+      // old quantity (> 1) made the auto-add below put it straight back.
+      if (autoUpdateTimerRef.current) clearTimeout(autoUpdateTimerRef.current);
+      setQuantity(1);
+      setInputValue("1");
     }
   }, [cartQuantity]);
 
@@ -222,8 +232,6 @@ const ProductCard = memo(function ProductCard({
   return (
     <div
       className="w-full bg-white transition-all duration-300 max-w-[200px] sm:max-w-[220px]"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       <Card className="border border-gray-200 shadow hover:shadow-lg rounded-md hover:rounded hover:border-green-500 overflow-hidden transition-all duration-300 p-0 pb-2 h-full">
         <div className="relative w-full flex items-center justify-center group overflow-hidden h-40 sm:h-[180px]">
@@ -252,81 +260,6 @@ const ProductCard = memo(function ProductCard({
             </a>
           )}
 
-          <div
-            className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${
-              isHovered ? "opacity-100 scale-100" : "opacity-0 scale-95"
-            }`}
-          >
-            <div className="bg-green-500 flex items-center justify-center shadow-lg px-8 p-1 space-x-6 sm:space-x-8 rounded-full">
-              <button
-                onClick={handleCartAction}
-                disabled={isAddingToCart || isUpdateDisabled}
-                className={`text-white hover:text-gray-200 transition-colors font-bold ${
-                  isAddingToCart || isUpdateDisabled
-                    ? "opacity-50 cursor-not-allowed"
-                    : ""
-                }`}
-              >
-                {isAddingToCart ? (
-                  <div className="border-2 border-white border-t-transparent rounded-full animate-spin w-6 h-6" />
-                ) : (
-                  <ShoppingCart className="w-6 h-6" />
-                )}
-              </button>
-              <button
-                onClick={handleWishlist}
-                aria-label={isWishlisted ? "Remove from wishlist" : "Save to wishlist"}
-                title={isWishlisted ? "Remove from wishlist" : "Save to wishlist"}
-                className="text-white hover:text-gray-200"
-              >
-                <Heart
-                  className={`w-6 h-6 transition-all ${isWishlisted ? "fill-orange-500 text-orange-500 scale-110" : ""}`}
-                />
-              </button>
-            </div>
-
-            <div className="flex items-center justify-center gap-2 pt-3">
-              <div className="flex items Benin border bg-white border-gray-300 rounded-full overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newValue = Math.max(
-                      1,
-                      (Number.parseFloat(inputValue) || 1) - 1,
-                    );
-                    setInputValue(newValue.toString());
-                    setQuantity(newValue);
-                  }}
-                  disabled={isAddingToCart}
-                  className="px-2 py-1 text-sm bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
-                >
-                  -
-                </button>
-                <input
-                  type="number"
-                  value={inputValue}
-                  onChange={handleQuantityChange}
-                  onBlur={handleQuantityBlur}
-                  step="0.01"
-                  min="0.1"
-                  disabled={isAddingToCart}
-                  className="w-12 text-center text-sm font-semibold focus:outline-none disabled:bg-gray-100 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newValue = (Number.parseFloat(inputValue) || 0) + 1;
-                    setInputValue(newValue.toString());
-                    setQuantity(newValue);
-                  }}
-                  disabled={isAddingToCart}
-                  className="px-2 py-1 text-sm bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
 
         <div className="px-3 sm:px-4 pt-2">
@@ -347,8 +280,106 @@ const ProductCard = memo(function ProductCard({
                     /{unit}
                   </span>
                 )}
-              </span>        
+              </span>
           </div>
+        </div>
+
+        {/* Actions always visible (no hover needed) on every screen size */}
+        <div className="flex items-center gap-1.5 px-2.5 sm:px-3 pt-2">
+          <button
+            type="button"
+            onClick={handleWishlist}
+            aria-label={isWishlisted ? "Remove from wishlist" : "Save to wishlist"}
+            className={`shrink-0 flex items-center justify-center w-8 h-8 rounded-full border transition-colors active:scale-95 ${
+              isWishlisted
+                ? "border-rose-200 bg-rose-50 text-rose-500"
+                : "border-gray-200 bg-white text-gray-500"
+            }`}
+          >
+            <Heart className={`w-4 h-4 ${isWishlisted ? "fill-rose-500" : ""}`} />
+          </button>
+
+          <div className="flex items-center flex-1 min-w-0 h-8 border border-gray-200 rounded-full overflow-hidden bg-white">
+            <button
+              type="button"
+              aria-label="Decrease quantity"
+              onClick={() => {
+                const newValue = Math.max(1, (Number.parseFloat(inputValue) || 1) - 1);
+                setInputValue(newValue.toString());
+                setQuantity(newValue);
+              }}
+              disabled={isAddingToCart}
+              className="w-7 h-full shrink-0 text-gray-700 bg-gray-50 active:bg-gray-200 disabled:opacity-50"
+            >
+              −
+            </button>
+            <input
+              type="number"
+              inputMode="decimal"
+              aria-label="Quantity"
+              value={inputValue}
+              onChange={handleQuantityChange}
+              onBlur={handleQuantityBlur}
+              step="0.01"
+              min="0.1"
+              disabled={isAddingToCart}
+              className="w-full min-w-0 text-center text-sm font-semibold focus:outline-none disabled:bg-gray-100 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+            />
+            <button
+              type="button"
+              aria-label="Increase quantity"
+              onClick={() => {
+                const newValue = (Number.parseFloat(inputValue) || 0) + 1;
+                setInputValue(newValue.toString());
+                setQuantity(newValue);
+              }}
+              disabled={isAddingToCart}
+              className="w-7 h-full shrink-0 text-gray-700 bg-gray-50 active:bg-gray-200 disabled:opacity-50"
+            >
+              +
+            </button>
+          </div>
+
+          {isInCart && isUpdateDisabled ? (
+            // Already in the cart with this quantity: offer to take it out
+            <button
+              type="button"
+              onClick={async () => {
+                if (!cartItem) return;
+                setIsRemoving(true);
+                await removeCartItem(cartItem.id);
+                setIsRemoving(false);
+              }}
+              disabled={isRemoving}
+              aria-label="Remove from cart"
+              title="Remove from cart"
+              className={`shrink-0 flex items-center justify-center w-10 h-8 rounded-lg border border-red-200 bg-red-50 text-red-600 transition-colors active:scale-95 ${
+                isRemoving ? "opacity-50" : ""
+              }`}
+            >
+              {isRemoving ? (
+                <div className="border-2 border-red-500 border-t-transparent rounded-full animate-spin w-4 h-4" />
+              ) : (
+                <X className="w-4 h-4" />
+              )}
+            </button>
+          ) : (
+          <button
+            type="button"
+            onClick={handleCartAction}
+            disabled={isAddingToCart || isUpdateDisabled}
+            aria-label={isInCart ? "Update quantity in cart" : "Add to cart"}
+            className={`shrink-0 flex items-center justify-center w-10 h-8 rounded-lg text-white transition-colors active:scale-95 ${
+              isInCart ? "bg-green-700" : "bg-green-600"
+            } ${isAddingToCart || isUpdateDisabled ? "opacity-50" : ""}`}
+          >
+            {isAddingToCart ? (
+              <div className="border-2 border-white border-t-transparent rounded-full animate-spin w-4 h-4" />
+            ) : (
+              <span>Buy</span>
+            )}
+          </button>
+          )}
         </div>
       </Card>
     </div>
