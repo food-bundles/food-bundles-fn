@@ -531,7 +531,17 @@ export default function AdminOrdersPage() {
         )
       );
       
-      await orderService.updateOrder(orderId, { paymentStatus });
+      const response: any = await orderService.updateOrder(orderId, { paymentStatus });
+      // The backend may move the order status back to Pending when the
+      // payment is no longer completed — show what it saved
+      const savedStatus = response?.data?.status as Order['status'] | undefined;
+      if (savedStatus) {
+        setOrders(prevOrders =>
+          prevOrders.map(order =>
+            order.id === orderId ? { ...order, status: savedStatus } : order
+          )
+        );
+      }
       toast.success("Payment status updated successfully");
     } catch (error: any) {
       // Revert on error
