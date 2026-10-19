@@ -162,7 +162,7 @@ export function ProductVerificationModal({
   };
 
   const farmerName =
-    submission.farmer.email.split("@")[0] || submission.farmer.phone;
+    submission.farmer.email?.split("@")[0] || submission.farmer.phone || "Unknown";
   const totalAmount = acceptedPrice * acceptedQuantity;
 
   return (
@@ -230,9 +230,11 @@ export function ProductVerificationModal({
                   <p className="text-sm text-gray-500">
                     {submission.farmer.phone}
                   </p>
-                  <p className="text-sm text-gray-500">
-                    {submission.farmer.email}
-                  </p>
+                  {submission.farmer.email && (
+                    <p className="text-sm text-gray-500">
+                      {submission.farmer.email}
+                    </p>
+                  )}
                 </div>
               </div>
 
