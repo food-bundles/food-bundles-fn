@@ -244,9 +244,11 @@ export function ProductVerificationModal({
                   <p className="text-sm text-gray-500">
                     {submission.farmer.phone}
                   </p>
-                  <p className="text-sm text-gray-500">
-                    {submission.farmer.email}
-                  </p>
+                  {submission.farmer.email && (
+                    <p className="text-sm text-gray-500">
+                      {submission.farmer.email}
+                    </p>
+                  )}
                 </div>
               </div>
 
