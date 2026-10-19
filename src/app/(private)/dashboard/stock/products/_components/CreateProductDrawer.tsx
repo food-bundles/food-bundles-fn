@@ -202,7 +202,6 @@ export function CreateProductDrawer({
     if (
       !formData.productName ||
       !formData.categoryId ||
-      !formData.sku ||
       !formData.unit ||
       formData.quantity <= 0 ||
       formData.unitPrice <= 0 ||
@@ -211,7 +210,6 @@ export function CreateProductDrawer({
       const missingFields = [];
       if (!formData.productName) missingFields.push('Product Name');
       if (!formData.categoryId) missingFields.push('Category');
-      if (!formData.sku) missingFields.push('SKU');
       if (!formData.unit) missingFields.push('Unit');
       if (formData.quantity <= 0) missingFields.push('Quantity (must be > 0)');
       if (formData.unitPrice <= 0) missingFields.push('Unit Price (must be > 0)');
@@ -242,16 +240,12 @@ export function CreateProductDrawer({
         customerTypePrices: selectedCustomerTypePrices,
       };
 
+      // A failed request throws (handled below), so reaching here means it was created
       const response = await productService.createProduct(foodBundlesData);
-      
-      if (response.success) {
-        onSubmit?.(formData);
-        toast.success("Product created successfully");
-        resetForm();
-        onClose();
-      } else {
-        toast.error(response.message || "Failed to create product in Food Bundles");
-      }
+      onSubmit?.(formData);
+      toast.success(response?.message || "Product created successfully");
+      resetForm();
+      onClose();
     } catch (error: any) {
       console.error("Error creating product:", error);
       toast.error(error.response?.data?.message || "Failed to create product");
@@ -378,19 +372,6 @@ export function CreateProductDrawer({
                         handleInputChange("productName", e.target.value)
                       }
                       placeholder="Enter product name"
-                      className="focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sku" className="text-xs font-medium">
-                      SKU *
-                    </Label>
-                    <Input
-                      id="sku"
-                      value={formData.sku}
-                      onChange={(e) => handleInputChange("sku", e.target.value)}
-                      placeholder="PRD-0001"
                       className="focus:ring-2 focus:ring-green-500 focus:border-green-500"
                       required
                     />
