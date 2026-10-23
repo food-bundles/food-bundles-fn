@@ -19,11 +19,16 @@ export interface ISessionData {
 }
 
 export interface ICreateFarmerData {
+  name: string;
   location: string;
+  province?: string;
+  district?: string;
+  sector?: string;
+  cell?: string;
+  village?: string;
   phone?: string;
-  email?: string;
+  email?: string; // optional for farmers
   password?: string;
-  tin: string;
   agreed?: boolean;
 }
 
