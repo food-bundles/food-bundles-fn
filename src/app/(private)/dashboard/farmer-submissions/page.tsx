@@ -17,6 +17,7 @@ import {
 import { useAuth } from "@/app/contexts/auth-context";
 import { getAdminSubmissionColumns } from "./_components/farmer-submissions-columns";
 import { ProductVerificationModal } from "../_components/productVerificationModal";
+import { useAdminAccess } from "@/app/hooks/useAdminAccess";
 import { ConfirmationDialog } from "./_components/ApprovalConfirmationDialog";
 import { submissionService } from "@/app/services/submissionServices";
 import {
@@ -114,6 +115,9 @@ export default function FarmerSubmissionsPage() {
 
   // Contexts
   const { getAllSubmissions, approveSubmission } = useSubmissions();
+  const { can, user: accessUser } = useAdminAccess();
+  // Rebuild the action menus once the user's permissions have loaded
+  const permissionsKey = `${accessUser?.role ?? ""}:${(accessUser?.permissions || []).join(",")}`;
   const { user } = useAuth();
 
   // Modal handlers
@@ -427,9 +431,12 @@ export default function FarmerSubmissionsPage() {
       setForceCompleteTarget,
       setPayoutTarget,
       setReverseStatusTarget,
-      setHistoryTarget
+      setHistoryTarget,
+      // Each menu action follows its own farmer submissions permission
+      (action: string) => can("farmer_submissions", action)
     );
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [permissionsKey]);
 
   // Clear date range filter
   const clearDateRange = () => {
@@ -591,7 +598,7 @@ export default function FarmerSubmissionsPage() {
         {payoutTarget && (
           <SubmissionPayoutModal
             isOpen={!!payoutTarget}
-            defaultPhone={payoutTarget.farmer.phone}
+            defaultPhone={payoutTarget.farmer.phone || ""}
             onClose={() => setPayoutTarget(null)}
             onRequestOTP={handleRequestPayoutOTP}
             onVerifyOTP={handleVerifyPayoutOTP}

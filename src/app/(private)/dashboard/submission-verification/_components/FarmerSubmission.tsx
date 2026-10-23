@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import {
   useSubmissions,
   type FarmerSubmission as SubmissionType,
+  farmerDisplayName,
 } from "@/app/contexts/submission-context";
 import { toast } from "sonner";
 import FarmerManagement from "./FarmerManagement";
@@ -103,7 +104,7 @@ export default function FarmerSubmission({
     return {
       id: submission.id,
       phone: submission.farmer.phone,
-      name: submission.farmer.email?.split("@")[0] || "Unknown",
+      name: farmerDisplayName(submission.farmer),
       date: submissionDate.toLocaleDateString(),
       time: submissionDate.toLocaleTimeString([], {
         hour: "2-digit",
@@ -141,12 +142,12 @@ export default function FarmerSubmission({
       ? unverifiedFarmers.filter(
           (farmer) =>
             farmer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            farmer.phone.includes(searchTerm)
+            (farmer.phone || "").includes(searchTerm)
         )
       : verifiedFarmers.filter(
           (farmer) =>
             farmer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            farmer.phone.includes(searchTerm)
+            (farmer.phone || "").includes(searchTerm)
         );
 
   const handleCardClick = (farmerId: string) => {

@@ -15,10 +15,13 @@ import {
   History,
 } from "lucide-react";
 import { CiEdit } from "react-icons/ci";
-import { FarmerSubmission } from "@/app/contexts/submission-context";
+import { FarmerSubmission, farmerDisplayName } from "@/app/contexts/submission-context";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { formatDateTime } from "@/lib/reusableFunctions";
@@ -76,7 +79,10 @@ export function getAdminSubmissionColumns(
   onForceComplete: (submission: FarmerSubmission) => void,
   onPayout: (submission: FarmerSubmission) => void,
   onReverseStatus: (submission: FarmerSubmission) => void,
-  onViewHistory: (submission: FarmerSubmission) => void
+  onViewHistory: (submission: FarmerSubmission) => void,
+  // Farmer submissions permission check for one action ("approve", "verify"…);
+  // hides actions the user's role can't do. Omitted = everything allowed.
+  can: (action: string) => boolean = () => true
 ): ColumnDef<FarmerSubmission>[] {
   return [
     // Selection column
@@ -121,7 +127,7 @@ export function getAdminSubmissionColumns(
       header: "Farmer",
       cell: ({ row }) => {
         const farmer = row.original.farmer;
-        const farmerName = farmer.email?.split("@")[0] || "Unknown";
+        const farmerName = farmerDisplayName(farmer);
 
         return (
           <div className="flex items-center space-x-3">
@@ -383,7 +389,9 @@ export function getAdminSubmissionColumns(
       },
     },
 
-    // Actions column
+    // Actions column: one ⋮ menu with every action (icon + name). Actions
+    // show only when the submission's status allows them and the user's role
+    // has the permission.
     {
       id: "actions",
       header: "Actions",
@@ -396,123 +404,116 @@ export function getAdminSubmissionColumns(
           ["PENDING", "PROCESSING", "COMPLETED"].includes(p.status)
         );
 
+        const actions = [
+          {
+            key: "verify",
+            label: "Verify submission",
+            icon: <CheckCircle className="h-4 w-4 text-green-600" />,
+            show: submission.status === "PENDING" && can("verify"),
+            onSelect: () => onOpenModal(submission, "verify"),
+          },
+          {
+            key: "approve",
+            label: "Approve submission",
+            icon: <CheckIcon className="h-4 w-4 text-green-600" />,
+            show: !isLocked && can("approve"),
+            onSelect: () => onApproveSubmission(submission.id),
+          },
+          {
+            key: "force",
+            label: "Force complete",
+            icon: <CheckCircle className="h-4 w-4 text-blue-600" />,
+            show: submission.status === "VERIFIED" && can("force_complete"),
+            onSelect: () => onForceComplete(submission),
+          },
+          {
+            key: "payout",
+            label: "Pay farmer",
+            icon: <Wallet className="h-4 w-4 text-purple-600" />,
+            show: submission.status === "APPROVED" && !hasActivePayout && can("request_payout"),
+            onSelect: () => onPayout(submission),
+          },
+          {
+            key: "edit",
+            label: "Edit submission",
+            icon: <CiEdit className="h-4 w-4 text-gray-700" />,
+            show: can("edit"),
+            onSelect: () => onOpenModal(submission, "edit"),
+          },
+          {
+            key: "history",
+            label: "Payout & status history",
+            icon: <History className="h-4 w-4 text-indigo-600" />,
+            show: true,
+            onSelect: () => onViewHistory(submission),
+          },
+          {
+            key: "reverse",
+            label: "Move status back",
+            icon: <Undo2 className="h-4 w-4 text-amber-600" />,
+            show: can("reverse_status"),
+            onSelect: () => onReverseStatus(submission),
+          },
+          {
+            key: "reject",
+            label: "Reject submission",
+            icon: <XCircle className="h-4 w-4 text-red-600" />,
+            show: ["PENDING", "VERIFIED"].includes(submission.status) && can("reject"),
+            onSelect: () => onReject(submission),
+          },
+        ].filter((action) => action.show);
+        const canDelete = !isLocked && can("delete");
+
         return (
-          <div className="flex items-center space-x-1">
-            {/* Approve Submission Button - Changed from Eye to ThumbsUp icon */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 text-green-600 hover:text-green-800 hover:bg-blue-50"
-              onClick={() => onApproveSubmission(submission.id)}
-              title="Approve submission"
-              disabled={isLocked}
-            >
-              <CheckIcon className="h-6 w-6 text-green-600" />
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 text-gray-600 hover:text-gray-800 hover:bg-gray-50"
-              onClick={() => onOpenModal(submission, "edit")}
-              title="Edit submission"
-            >
-              <CiEdit className="h-4 w-4" />
-            </Button>
-
-            {submission.status === "PENDING" && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                  onClick={() => onOpenModal(submission, "verify")}
-                  title="Verify submission"
-                >
-                  <CheckCircle className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                  onClick={() => onReject(submission)}
-                  title="Reject submission"
-                >
-                  <XCircle className="h-4 w-4" />
-                </Button>
-              </>
-            )}
-
-            {submission.status === "VERIFIED" && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                  onClick={() => onReject(submission)}
-                  title="Reject submission"
-                >
-                  <XCircle className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                  onClick={() => onForceComplete(submission)}
-                  title="Force complete submission"
-                >
-                  <CheckCircle className="h-4 w-4" />
-                </Button>
-              </>
-            )}
-
-            {submission.status === "APPROVED" && !hasActivePayout && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
-                onClick={() => onPayout(submission)}
-                title="Pay via PayPack"
+                className="h-8 w-8 p-0"
+                aria-label="Open actions"
+                onClick={(e) => e.stopPropagation()}
               >
-                <Wallet className="h-4 w-4" />
+                <MoreHorizontal className="h-4 w-4" />
               </Button>
-            )}
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-              onClick={() => onViewHistory(submission)}
-              title="View payout and status history"
-            >
-              <History className="h-4 w-4" />
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-              onClick={() => onReverseStatus(submission)}
-              title="Reverse status"
-            >
-              <Undo2 className="h-4 w-4" />
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-30"
-              onClick={() => onDelete(submission)}
-              title={
-                isLocked
-                  ? "Cannot delete an approved or paid submission"
-                  : "Delete submission"
-              }
-              disabled={isLocked}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuLabel className="text-xs text-gray-500">Actions</DropdownMenuLabel>
+              {actions.map((action) => (
+                <DropdownMenuItem
+                  key={action.key}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    action.onSelect();
+                  }}
+                  className="gap-2 text-sm cursor-pointer"
+                >
+                  {action.icon}
+                  {action.label}
+                </DropdownMenuItem>
+              ))}
+              {canDelete && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(submission);
+                    }}
+                    className="gap-2 text-sm text-red-600 focus:text-red-700 cursor-pointer"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete submission
+                  </DropdownMenuItem>
+                </>
+              )}
+              {isLocked && (
+                <p className="px-2 pt-1 pb-1.5 text-[11px] text-gray-500">
+                  Approved and paid submissions can&apos;t be approved again or deleted.
+                </p>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         );
       },
       enableSorting: false,
