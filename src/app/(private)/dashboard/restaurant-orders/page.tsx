@@ -562,7 +562,7 @@ export default function AdminOrdersPage() {
     onPaymentStatusUpdate: handlePaymentStatusUpdate,
     onEdit: handleEditOrder,
     onSendPaymentLink: handleSendPaymentLink,
-    canManage: can("orders", "manage"),
+    can: (action: string) => can("orders", action),
   });
 
   const filters = [
@@ -603,14 +603,16 @@ export default function AdminOrdersPage() {
           <h1 className="text-[16px] font-medium">Restaurant Orders</h1>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            onClick={() => setCreateOrderModalOpen(true)}
-            className="bg-green-600 hover:bg-green-700 text-white"
-          >
-            <PlusCircle className="h-4 w-4 mr-1" />
-            Create Order
-          </Button>
+          {can("orders", "create") && (
+            <Button
+              size="sm"
+              onClick={() => setCreateOrderModalOpen(true)}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              <PlusCircle className="h-4 w-4 mr-1" />
+              Create Order
+            </Button>
+          )}
           <ExportButton
             module="orders"
             filters={{

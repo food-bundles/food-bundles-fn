@@ -3,8 +3,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import jwt from "jsonwebtoken";
-import { ROLE_ROUTES, sanitizeRedirect } from "@/lib/navigations";
-import { canOpenPage } from "@/lib/admin-permissions";
+import { MOVED_APPS, ROLE_ROUTES, sanitizeRedirect } from "@/lib/navigations";
+import { canOpenPage, firstDashboardPage } from "@/lib/admin-permissions";
 
 // Send to login, remembering the page (with its query) to return to afterwards
 const redirectToLogin = (req: NextRequest, reason?: string) => {
@@ -20,6 +20,14 @@ const redirectToLogin = (req: NextRequest, reason?: string) => {
 export async function middleware(req: NextRequest) {
   const token = req.cookies.get("auth-token")?.value;
   const pathname = req.nextUrl.pathname;
+
+  // Aggregator and logistics apps moved into the dashboard
+  const moved = Object.keys(MOVED_APPS).find(
+    (app) => pathname === app || pathname.startsWith(app + "/"),
+  );
+  if (moved) {
+    return NextResponse.redirect(new URL(MOVED_APPS[moved], req.url));
+  }
 
   // Role-based route protection
   const roleRoutes = ROLE_ROUTES;
@@ -154,7 +162,9 @@ export async function middleware(req: NextRequest) {
       // enforces permissions on every request.
       const meUser = userData?.user || userData?.data?.user;
       if (pathname.startsWith("/dashboard") && meUser && !canOpenPage(meUser, pathname)) {
-        return NextResponse.redirect(new URL("/unauthorized", req.url));
+        // The home page sends people to the first page their role opens
+        const target = pathname === "/dashboard" ? firstDashboardPage(meUser) : "/unauthorized";
+        return NextResponse.redirect(new URL(target, req.url));
       }
 
       if (userRole === "TRADER" && pathname.startsWith("/traders")) {

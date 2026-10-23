@@ -6,6 +6,7 @@ import {
 } from "@/app/contexts/submission-context";
 import { toast } from "sonner";
 import FarmerManagement from "./FarmerManagement";
+import { useAdminAccess } from "@/app/hooks/useAdminAccess";
 
 interface FarmerSubmissionProps {
   initialSubmissions?: SubmissionType[];
@@ -30,6 +31,10 @@ export default function FarmerSubmission({
   const [loading, setLoading] = useState(false);
 
   const { getAllSubmissions, purchaseSubmission } = useSubmissions();
+  // Verifying needs "Verify"; the Farmers tab needs farmer access
+  const { can } = useAdminAccess();
+  const canVerify = can("farmer_submissions", "verify");
+  const canSeeFarmers = can("farmers");
 
   // Fetch submissions on component mount
   useEffect(() => {
@@ -248,7 +253,7 @@ export default function FarmerSubmission({
           {[
             { key: "unverified", label: "Unverified" },
             { key: "verified", label: "Verified" },
-            { key: "farmers", label: "Farmers" },
+            ...(canSeeFarmers ? [{ key: "farmers", label: "Farmers" }] : []),
           ].map((filter) => (
             <button
               key={filter.key}
@@ -270,7 +275,7 @@ export default function FarmerSubmission({
       </div>
 
       {/* Content based on active tab */}
-      {activeTab === "farmers" ? (
+      {activeTab === "farmers" && canSeeFarmers ? (
         <FarmerManagement />
       ) : (
         <>
@@ -281,9 +286,9 @@ export default function FarmerSubmission({
                 className="bg-[#F0FDF4] rounded-lg p-3 sm:p-4 border border-gray-200 relative"
               >
                 <div
-                  className={`${!farmer.isVerified ? "cursor-pointer" : ""}`}
+                  className={`${!farmer.isVerified && canVerify ? "cursor-pointer" : ""}`}
                   onClick={() =>
-                    !farmer.isVerified && handleCardClick(farmer.id)
+                    !farmer.isVerified && canVerify && handleCardClick(farmer.id)
                   }
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">

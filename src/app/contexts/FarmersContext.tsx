@@ -5,6 +5,7 @@ import { farmersService } from "@/app/services/farmersService";
 
 export interface Farmer {
   id: string;
+  name?: string | null;
   province: string;
   district: string;
   sector: string;

@@ -327,8 +327,9 @@ export const createOrdersColumns = (actions: {
   onPaymentStatusUpdate: (orderId: string, paymentStatus: string) => void;
   onEdit?: (order: Order) => void;
   onSendPaymentLink?: (order: Order) => void;
-  // False hides the status arrows (users without the Orders "manage" permission)
-  canManage?: boolean;
+  // Orders permission check for one action ("update_status", "edit"…);
+  // hides the matching arrows and menu items. Omitted = everything allowed.
+  can?: (action: string) => boolean;
 }): ColumnDef<Order>[] => [
   {
     accessorKey: "#",
@@ -412,7 +413,7 @@ export const createOrdersColumns = (actions: {
               ? undefined
               : "Complete the payment first, then the order status can be changed"
           }
-          canManage={actions.canManage}
+          canManage={actions.can?.("update_status") ?? true}
           kind="order"
           getColor={getOrderStatusColor}
           orderId={order.id}
@@ -438,7 +439,7 @@ export const createOrdersColumns = (actions: {
               ? `The order status will go back to Pending (now ${getStatusLabel(order.status)}) until the payment is completed again.`
               : null
           }
-          canManage={actions.canManage}
+          canManage={actions.can?.("update_payment_status") ?? true}
           kind="payment"
           getColor={getPaymentStatusColor}
           orderId={order.id}
@@ -487,26 +488,30 @@ export const createOrdersColumns = (actions: {
                 <FileText className="mr-2 h-4 w-4" />
                 Print Order
               </DropdownMenuItem>
-              {actions.onEdit && ["PENDING", "CONFIRMED"].includes(order.status) && (
+              {actions.onEdit && (actions.can?.("edit") ?? true) && ["PENDING", "CONFIRMED"].includes(order.status) && (
                 <DropdownMenuItem onClick={() => actions.onEdit!(order)}>
                   <Edit3 className="mr-2 h-4 w-4" />
                   Edit Order
                 </DropdownMenuItem>
               )}
-              {actions.onSendPaymentLink && order.paymentStatus === "FAILED" && (
+              {actions.onSendPaymentLink && (actions.can?.("send_payment_link") ?? true) && order.paymentStatus === "FAILED" && (
                 <DropdownMenuItem onClick={() => actions.onSendPaymentLink!(order)}>
                   <Send className="mr-2 h-4 w-4" />
                   Send Payment Link
                 </DropdownMenuItem>
               )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-red-600"
-                onClick={() => actions.onDelete(order)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete Order
-              </DropdownMenuItem>
+              {(actions.can?.("delete") ?? true) && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-red-600"
+                    onClick={() => actions.onDelete(order)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Order
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
