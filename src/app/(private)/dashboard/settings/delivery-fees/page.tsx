@@ -43,7 +43,8 @@ const EXAMPLES = [
 
 export default function DeliveryFeesPage() {
   const { can } = useAdminAccess();
-  const canEdit = can("delivery_settings", "manage");
+  const canEdit = can("delivery_settings", "edit");
+  const canReset = can("delivery_settings", "reset");
   const [settings, setSettings] = useState<DeliverySettings | null>(null);
   const [form, setForm] = useState({
     enabled: true,
@@ -248,9 +249,13 @@ export default function DeliveryFeesPage() {
 
         {canEdit ? (
           <div className="flex flex-wrap justify-between gap-2">
-            <Button variant="outline" onClick={() => setConfirmReset(true)} disabled={saving}>
-              Reset to defaults
-            </Button>
+            {canReset ? (
+              <Button variant="outline" onClick={() => setConfirmReset(true)} disabled={saving}>
+                Reset to defaults
+              </Button>
+            ) : (
+              <span />
+            )}
             <Button onClick={save} disabled={saving} className="bg-green-600 hover:bg-green-700">
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save settings

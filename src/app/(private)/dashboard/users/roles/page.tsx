@@ -33,8 +33,13 @@ import { adminsService } from "@/app/services/adminsService";
 import { useAdminAccess } from "@/app/hooks/useAdminAccess";
 import { RoleEditorDialog } from "./_components/role-editor-dialog";
 
-// Dashboard users whose access comes from a role (others use their own apps)
-const ASSIGNABLE = ["ADMIN", "STAFF", "MARKET_PRICES"];
+// Dashboard users whose access comes from a role (office staff and field roles)
+const ASSIGNABLE = ["ADMIN", "STAFF", "MARKET_PRICES", "AGGREGATOR", "LOGISTICS"];
+
+const ACCOUNT_LABELS: Record<string, string> = {
+  AGGREGATOR: "Aggregator",
+  LOGISTICS: "Logistics",
+};
 
 export default function RolesPage() {
   const { user, loading: userLoading, isSuperAdmin } = useAdminAccess();
@@ -109,7 +114,7 @@ export default function RolesPage() {
   }
 
   const teamMembers = admins.filter((a) => ASSIGNABLE.includes(a.role) || a.role === "SUPERUSER");
-  const permissionCount = catalog.length * 2;
+  const permissionCount = catalog.reduce((sum, m) => sum + (m.actions?.length || 0), 0);
 
   return (
     <div className="p-4 space-y-4">
@@ -229,6 +234,11 @@ export default function RolesPage() {
                     <span className="truncate font-medium text-gray-900">
                       {admin.username}
                       {isSelf && <span className="ml-1 text-xs text-gray-500">(you)</span>}
+                      {ACCOUNT_LABELS[admin.role] && (
+                        <span className="ml-2 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700">
+                          {ACCOUNT_LABELS[admin.role]}
+                        </span>
+                      )}
                     </span>
                     <span className="truncate text-gray-600">{admin.email}</span>
                     {isSuper ? (
@@ -257,7 +267,8 @@ export default function RolesPage() {
             )}
           </div>
           <p className="mt-2 text-xs text-gray-500">
-            Traders, logistics and aggregators use their own apps and are not listed here.
+            Aggregators and logistics keep only seeing their own work (their submissions and
+            deliveries); their role decides which pages and actions they get. Traders use their own app.
           </p>
         </TabsContent>
       </Tabs>

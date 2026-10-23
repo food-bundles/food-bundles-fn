@@ -31,6 +31,6 @@ export function useAdminAccess() {
     user,
     loading,
     isSuperAdmin: isSuperAdmin(user),
-    can: (module: string, action: "view" | "manage" = "view") => can(user, module, action),
+    can: (module: string, action: string = "view") => can(user, module, action),
   };
 }

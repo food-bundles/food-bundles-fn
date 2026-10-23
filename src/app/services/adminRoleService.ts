@@ -3,10 +3,16 @@ import createAxiosClient from "@/app/hooks/axiosClient";
 
 const axiosClient = createAxiosClient();
 
+export interface PermissionAction {
+  key: string; // "view", "create", "update_payment_status"…
+  label: string;
+}
+
 export interface PermissionModuleInfo {
   key: string;
   label: string;
   group: string;
+  actions: PermissionAction[];
 }
 
 export interface AdminRole {
