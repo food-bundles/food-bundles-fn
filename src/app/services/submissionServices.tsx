@@ -1,4 +1,4 @@
-import { PurchaseSubmissionPayload } from "../contexts/submission-context";
+import { PurchaseSubmissionPayload, type SubmissionStage } from "../contexts/submission-context";
 import createAxiosClient from "../hooks/axiosClient";
 
 export interface FarmerFeedbackPayload {
@@ -77,11 +77,45 @@ export const submissionService = {
     return response.data;
   },
 
-  approveSubmission: async (submissionId: string) => {
+  /** Stage 2: approve at the price, or send a counter offer when it is below what the farmer asks.
+   *  Omit price to use the Food Bundles price (only "Set price" users may send another one). */
+  approveSubmission: async (submissionId: string, price?: number) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.patch(
-      `/submissions/${submissionId}/approve`
+      `/submissions/${submissionId}/approve`,
+      price !== undefined ? { price } : {}
     );
+    return response.data;
+  },
+
+  /** Asked price, Food Bundles price, and whether the user may change it */
+  getSubmissionPrice: async (submissionId: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get(`/submissions/${submissionId}/price`);
+    return response.data as {
+      success: boolean;
+      data: {
+        askedPrice: number;
+        originalPrice: number | null;
+        foodBundlesPrice: number | null;
+        agreedPrice: number | null;
+        counterOfferPrice: number | null;
+        canSetPrice: boolean;
+      };
+    };
+  },
+
+  /** Stage 4: pay by MoMo (PayPack cashout) to the given number */
+  paySubmissionMomo: async (submissionId: string, phoneNumber: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(`/submissions/${submissionId}/payout`, { phoneNumber });
+    return response.data;
+  },
+
+  /** Stage 4: the farmer was paid in cash */
+  paySubmissionCash: async (submissionId: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(`/submissions/${submissionId}/pay-cash`);
     return response.data;
   },
 
@@ -182,7 +216,7 @@ export const submissionService = {
 
   reverseSubmissionStatus: async (
     submissionId: string,
-    payload: { toStatus: "PENDING" | "VERIFIED" | "APPROVED" | "PAID"; reason?: string }
+    payload: { toStatus: SubmissionStage; reason?: string }
   ) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.patch(

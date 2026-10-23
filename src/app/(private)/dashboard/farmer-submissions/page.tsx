@@ -12,30 +12,37 @@ import { toast } from "sonner";
 import {
   FarmerSubmission,
   SubmissionResponse,
+  type SubmissionStage,
   useSubmissions,
 } from "@/app/contexts/submission-context";
 import { useAuth } from "@/app/contexts/auth-context";
 import { getAdminSubmissionColumns } from "./_components/farmer-submissions-columns";
 import { ProductVerificationModal } from "../_components/productVerificationModal";
 import { useAdminAccess } from "@/app/hooks/useAdminAccess";
-import { ConfirmationDialog } from "./_components/ApprovalConfirmationDialog";
 import { submissionService } from "@/app/services/submissionServices";
 import {
   ReasonConfirmDialog,
   ReverseStatusDialog,
 } from "./_components/SubmissionActionDialogs";
-import { SubmissionPayoutModal } from "./_components/SubmissionPayoutModal";
+import {
+  ApproveSubmissionModal,
+  PaySubmissionModal,
+  VerifySubmissionModal,
+} from "./_components/SubmissionStageModals";
 import { SubmissionHistoryModal } from "./_components/SubmissionHistoryModal";
 import { exportService } from "@/app/services/exportService";
 import { AddSubmissionModal } from "./_components/AddSubmissionModal";
 
 // Filter options
+// Stages in flow order: submit → approve → verify → pay
 const statusOptions = [
-  { label: "All Status", value: "all" },
-  { label: "Pending", value: "PENDING" },
-  { label: "Verified", value: "VERIFIED" },
-  { label: "Approved", value: "APPROVED" },
+  { label: "All stages", value: "all" },
+  { label: "Submitted", value: "PENDING" },
+  { label: "Waiting for farmer", value: "NEGOTIATING" },
+  { label: "Approved (to verify)", value: "APPROVED" },
+  { label: "Verified (to pay)", value: "VERIFIED" },
   { label: "Paid", value: "PAID" },
+  { label: "Rejected", value: "REJECTED" },
 ];
 
 const feedbackStatusOptions = [
@@ -99,8 +106,9 @@ export default function FarmerSubmissionsPage() {
   const [deleteTarget, setDeleteTarget] = useState<FarmerSubmission | null>(
     null
   );
-  const [forceCompleteTarget, setForceCompleteTarget] =
-    useState<FarmerSubmission | null>(null);
+  // Stage popups: approve (price), verify (weigh), pay (payoutTarget)
+  const [approveTarget, setApproveTarget] = useState<FarmerSubmission | null>(null);
+  const [verifyTarget, setVerifyTarget] = useState<FarmerSubmission | null>(null);
   const [reverseStatusTarget, setReverseStatusTarget] =
     useState<FarmerSubmission | null>(null);
   const [payoutTarget, setPayoutTarget] = useState<FarmerSubmission | null>(
@@ -140,61 +148,6 @@ export default function FarmerSubmissionsPage() {
     setModalMode(mode);
   };
 
-  // MODIFIED: Handle approval click - now shows confirmation dialog
-  const handleApproveSubmissionClick = async (submissionId: string) => {
-    setPendingApprovalId(submissionId);
-    setShowConfirmDialog(true);
-  };
-
-  // NEW: Handle confirmed approval
-  const handleConfirmApproval = async () => {
-    if (!pendingApprovalId) return;
-
-    try {
-      setApproving(pendingApprovalId);
-
-      const response = await approveSubmission(pendingApprovalId);
-
-      if (response.success) {
-        toast.success("Submission approved successfully!");
-
-        // Update the local state to reflect the approval
-        setSubmissions((prevSubmissions) =>
-          prevSubmissions.map((submission) =>
-            submission.id === pendingApprovalId
-              ? {
-                  ...submission,
-                  status: "APPROVED" as const,
-                  approvedAt: new Date().toISOString(),
-                }
-              : submission
-          )
-        );
-
-        // Close dialog
-        setShowConfirmDialog(false);
-      } else {
-        toast.error(response.message || "Failed to approve submission");
-      }
-    } catch (error: any) {
-      console.error("Error approving submission:", error);
-      toast.error(
-        error?.response?.data?.message || "Failed to approve submission"
-      );
-    } finally {
-      setApproving(null);
-      setPendingApprovalId(null);
-    }
-  };
-
-  // NEW: Handle cancel approval
-  const handleCancelApproval = () => {
-    if (!approving) {
-      setShowConfirmDialog(false);
-      setPendingApprovalId(null);
-    }
-  };
-
   const updateSubmissionInState = (
     submissionId: string,
     changes: Partial<FarmerSubmission>
@@ -220,6 +173,7 @@ export default function FarmerSubmissionsPage() {
       if (response.success) {
         toast.success("Submission rejected successfully!");
         updateSubmissionInState(rejectTarget.id, {
+          status: "REJECTED" as const,
           farmerFeedbackStatus: "REJECTED" as const,
         });
         setRejectTarget(null);
@@ -261,37 +215,8 @@ export default function FarmerSubmissionsPage() {
     }
   };
 
-  const handleConfirmForceComplete = async (reason: string) => {
-    if (!forceCompleteTarget) return;
-    try {
-      setIsActionProcessing(true);
-      const response = await submissionService.forceCompleteSubmission(
-        forceCompleteTarget.id,
-        reason || undefined
-      );
-
-      if (response.success) {
-        toast.success("Submission force-completed successfully!");
-        updateSubmissionInState(forceCompleteTarget.id, {
-          status: "APPROVED" as const,
-          approvedAt: new Date().toISOString(),
-        });
-        setForceCompleteTarget(null);
-      } else {
-        toast.error(response.message || "Failed to force-complete submission");
-      }
-    } catch (error: any) {
-      toast.error(
-        error?.response?.data?.message ||
-          "Failed to force-complete submission"
-      );
-    } finally {
-      setIsActionProcessing(false);
-    }
-  };
-
   const handleConfirmReverseStatus = async (
-    toStatus: "PENDING" | "VERIFIED" | "APPROVED" | "PAID",
+    toStatus: SubmissionStage,
     reason: string
   ) => {
     if (!reverseStatusTarget) return;
@@ -316,39 +241,6 @@ export default function FarmerSubmissionsPage() {
     } finally {
       setIsActionProcessing(false);
     }
-  };
-
-  const handleRequestPayoutOTP = async (phoneNumber: string) => {
-    if (!payoutTarget) throw new Error("No submission selected");
-    const response = await submissionService.requestSubmissionPayoutOTP(
-      payoutTarget.id,
-      phoneNumber
-    );
-
-    if (!response.success) {
-      throw new Error(response.message || "Failed to send OTP");
-    }
-
-    return response.sessionId as string;
-  };
-
-  const handleVerifyPayoutOTP = async (otp: string, sessionId: string) => {
-    if (!payoutTarget) throw new Error("No submission selected");
-    const response = await submissionService.verifySubmissionPayoutOTP(
-      payoutTarget.id,
-      otp,
-      sessionId
-    );
-
-    if (!response.success) {
-      throw new Error(response.message || "Failed to initiate payout");
-    }
-
-    toast.success(
-      "Payout initiated. It is pending confirmation once PayPack processes the cashout."
-    );
-    setPayoutTarget(null);
-    fetchSubmissions(pagination.page, pagination.limit);
   };
 
   // Fetch submissions from the server, applying all current filters/pagination
@@ -423,18 +315,17 @@ export default function FarmerSubmissionsPage() {
 
   // Get columns for admin view - MODIFIED: Pass the click handler instead
   const columns = useMemo(() => {
-    return getAdminSubmissionColumns(
-      handleOpenModal,
-      handleApproveSubmissionClick,
-      setRejectTarget,
-      setDeleteTarget,
-      setForceCompleteTarget,
-      setPayoutTarget,
-      setReverseStatusTarget,
-      setHistoryTarget,
+    return getAdminSubmissionColumns({
+      onApprove: setApproveTarget,
+      onVerify: setVerifyTarget,
+      onPay: setPayoutTarget,
+      onReject: setRejectTarget,
+      onDelete: setDeleteTarget,
+      onReverseStatus: setReverseStatusTarget,
+      onViewHistory: setHistoryTarget,
       // Each menu action follows its own farmer submissions permission
-      (action: string) => can("farmer_submissions", action)
-    );
+      can: (action: string) => can("farmer_submissions", action),
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [permissionsKey]);
 
@@ -545,14 +436,6 @@ export default function FarmerSubmissionsPage() {
 
         {/* REMOVED: Old loading overlay */}
         {/* REPLACED WITH: Confirmation Dialog */}
-        <ConfirmationDialog
-          isOpen={showConfirmDialog}
-          onConfirm={handleConfirmApproval}
-          onCancel={handleCancelApproval}
-          submissionId={pendingApprovalId ?? ""}
-          isProcessing={!!approving}
-        />
-
         <ReasonConfirmDialog
           isOpen={!!rejectTarget}
           title="Reject Submission"
@@ -575,16 +458,6 @@ export default function FarmerSubmissionsPage() {
           onConfirm={handleConfirmDelete}
         />
 
-        <ReasonConfirmDialog
-          isOpen={!!forceCompleteTarget}
-          title="Force Complete Submission"
-          description="Force-complete this submission without waiting for farmer feedback?"
-          confirmLabel="Force Complete"
-          isProcessing={isActionProcessing}
-          onClose={() => setForceCompleteTarget(null)}
-          onConfirm={handleConfirmForceComplete}
-        />
-
         {reverseStatusTarget && (
           <ReverseStatusDialog
             isOpen={!!reverseStatusTarget}
@@ -595,15 +468,22 @@ export default function FarmerSubmissionsPage() {
           />
         )}
 
-        {payoutTarget && (
-          <SubmissionPayoutModal
-            isOpen={!!payoutTarget}
-            defaultPhone={payoutTarget.farmer.phone || ""}
-            onClose={() => setPayoutTarget(null)}
-            onRequestOTP={handleRequestPayoutOTP}
-            onVerifyOTP={handleVerifyPayoutOTP}
-          />
-        )}
+        {/* One popup per stage: approve → verify → pay */}
+        <ApproveSubmissionModal
+          submission={approveTarget}
+          onClose={() => setApproveTarget(null)}
+          onDone={() => fetchSubmissions(pagination.page, pagination.limit)}
+        />
+        <VerifySubmissionModal
+          submission={verifyTarget}
+          onClose={() => setVerifyTarget(null)}
+          onDone={() => fetchSubmissions(pagination.page, pagination.limit)}
+        />
+        <PaySubmissionModal
+          submission={payoutTarget}
+          onClose={() => setPayoutTarget(null)}
+          onDone={() => fetchSubmissions(pagination.page, pagination.limit)}
+        />
 
         <SubmissionHistoryModal
           isOpen={!!historyTarget}

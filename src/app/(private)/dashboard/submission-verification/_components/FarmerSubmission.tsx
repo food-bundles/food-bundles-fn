@@ -35,6 +35,8 @@ export default function FarmerSubmission({
   // Verifying needs "Verify"; the Farmers tab needs farmer access
   const { can } = useAdminAccess();
   const canVerify = can("farmer_submissions", "verify");
+  // The agreed price is fixed unless the role may set prices
+  const canSetPrice = can("farmer_submissions", "set_price");
   const canSeeFarmers = can("farmers");
 
   // Fetch submissions on component mount
@@ -64,7 +66,11 @@ export default function FarmerSubmission({
 
   // Replace the existing time calculation logic with this improved version
 
-  const transformedSubmissions = submissions.map((submission) => {
+  // Face-to-face stage: approved submissions wait here to be weighed;
+  // verified and paid ones are listed as done. Earlier stages are not shown.
+  const transformedSubmissions = submissions
+    .filter((submission) => ["APPROVED", "VERIFIED", "PAID"].includes(submission.status))
+    .map((submission) => {
     const submissionDate = new Date(submission.submittedAt);
     const now = new Date();
     const timeDiff = now.getTime() - submissionDate.getTime();
@@ -96,10 +102,7 @@ export default function FarmerSubmission({
     }
 
     const location = `${submission.province}, ${submission.district}, ${submission.sector}, ${submission.cell}, ${submission.village}`;
-    const isVerified =
-      submission.status === "VERIFIED" ||
-      submission.status === "APPROVED" ||
-      submission.status === "PAID";
+    const isVerified = submission.status === "VERIFIED" || submission.status === "PAID";
 
     return {
       id: submission.id,
@@ -126,6 +129,8 @@ export default function FarmerSubmission({
         ? new Date(submission.verifiedAt).toLocaleDateString()
         : undefined,
       status: submission.status,
+      agreedPrice: submission.agreedPrice ?? null,
+      submittedQty: submission.submittedQty,
       originalSubmission: submission,
     };
   });
@@ -151,6 +156,17 @@ export default function FarmerSubmission({
         );
 
   const handleCardClick = (farmerId: string) => {
+    const card = transformedSubmissions.find((item) => item.id === farmerId);
+    if (card) {
+      setAcceptedQuantities((prev) => ({
+        ...prev,
+        [farmerId]: prev[farmerId] ?? String(card.submittedQty ?? ""),
+      }));
+      setAcceptedPrices((prev) => ({
+        ...prev,
+        [farmerId]: prev[farmerId] ?? String(card.agreedPrice ?? ""),
+      }));
+    }
     setExpandedCards((prev) => {
       const newExpanded = new Set(prev);
       if (newExpanded.has(farmerId)) {
@@ -220,7 +236,7 @@ export default function FarmerSubmission({
       {/* Header with count */}
       <div className="mb-4 sm:mb-6">
         <h2 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">
-          You have {verifiedCount} verified Farmers
+          {unverifiedFarmers.length} to verify · {verifiedCount} verified
         </h2>
 
         {/* Search Bar */}
@@ -252,7 +268,7 @@ export default function FarmerSubmission({
         {/* Tab Navigation */}
         <div className="flex items-center gap-3 sm:gap-6 border-b border-gray-200 overflow-x-auto">
           {[
-            { key: "unverified", label: "Unverified" },
+            { key: "unverified", label: "To verify" },
             { key: "verified", label: "Verified" },
             ...(canSeeFarmers ? [{ key: "farmers", label: "Farmers" }] : []),
           ].map((filter) => (
@@ -336,6 +352,15 @@ export default function FarmerSubmission({
                           </div>
                         </div>
 
+                        {!farmer.isVerified && farmer.agreedPrice != null && (
+                          <div className="mt-2 text-xs sm:text-sm text-gray-700">
+                            Agreed price:{" "}
+                            <span className="font-semibold text-green-700">
+                              {farmer.agreedPrice.toLocaleString()} Rwf / unit
+                            </span>
+                          </div>
+                        )}
+
                         {/* Accepted Details (for verified farmers) */}
                         {farmer.isVerified &&
                           farmer.acceptedQuantity &&
@@ -396,6 +421,8 @@ export default function FarmerSubmission({
                             type="number"
                             className="w-16 sm:w-20 px-2 py-1 border border-gray-300 rounded text-xs sm:text-sm"
                             placeholder="Rwf"
+                            disabled={!canSetPrice}
+                            title={canSetPrice ? undefined : "The agreed price is used"}
                             value={acceptedPrices[farmer.id] || ""}
                             onChange={(e) =>
                               setAcceptedPrices((prev) => ({

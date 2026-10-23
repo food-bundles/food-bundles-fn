@@ -13,7 +13,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-type SubmissionStatus = "PENDING" | "VERIFIED" | "APPROVED" | "PAID";
+type SubmissionStatus = "PENDING" | "NEGOTIATING" | "APPROVED" | "VERIFIED" | "PAID" | "REJECTED";
 
 interface ReasonConfirmDialogProps {
   isOpen: boolean;
@@ -86,11 +86,14 @@ interface ReverseStatusDialogProps {
   onConfirm: (toStatus: SubmissionStatus, reason: string) => void;
 }
 
+// Flow order: submit → approve → verify → pay
 const STATUS_OPTIONS: SubmissionStatus[] = [
   "PENDING",
-  "VERIFIED",
+  "NEGOTIATING",
   "APPROVED",
+  "VERIFIED",
   "PAID",
+  "REJECTED",
 ];
 
 export function ReverseStatusDialog({

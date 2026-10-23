@@ -8,8 +8,8 @@ import ProductSubmissionModal from "./product-submission-modal";
 import { Product } from "./product-context";
 import { SubmissionDetailsModal } from "./submission-details-modal";
 import { SubmissionsTable } from "./SubmissionsTable";
-import { DashboardStatGrid } from "./dashboard/dashboard-stat-grid";
-import { SubmissionsTrendChart } from "./dashboard/submissions-trend-chart";
+import { FarmerSummaryCards } from "./dashboard/farmer-summary-cards";
+import { FarmerActivityChart } from "./dashboard/farmer-activity-chart";
 import { TopProductsChart } from "./dashboard/top-products-chart";
 import { StatusBreakdownChart } from "./dashboard/status-breakdown-chart";
 import { RecentActivityFeed } from "./dashboard/recent-activity-feed";
@@ -57,6 +57,8 @@ const transformSubmissionToProduct = (submission: Submission): Product => {
     priceValue: submission.wishedPrice,
     acceptedQty: submission.acceptedQty,
     acceptedPrice: submission.acceptedPrice,
+    counterOfferPrice: submission.counterOfferPrice ?? null,
+    agreedPrice: submission.agreedPrice ?? null,
     farmerFeedbackStatus: submission.farmerFeedbackStatus,
     feedbackDeadline: submission.feedbackDeadline,
   };
@@ -164,17 +166,24 @@ export default function ProductManagement() {
           </Alert>
         )}
 
-        <DashboardStatGrid products={products} earnings={earnings} loading={loading} />
+        {/* Everything important at a glance: earnings, submissions, performance */}
+        <FarmerSummaryCards
+          products={products}
+          earnings={earnings}
+          farmerName={user?.name}
+          loading={loading}
+        />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <SubmissionsTrendChart data={trends} metric="submissions" loading={analyticsLoading} />
-          <SubmissionsTrendChart data={trends} metric="earnings" loading={analyticsLoading} />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2">
+            <FarmerActivityChart data={trends} loading={analyticsLoading} />
+          </div>
+          <StatusBreakdownChart products={products} loading={loading} />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <TopProductsChart data={topProducts} loading={analyticsLoading} />
-          <StatusBreakdownChart products={products} loading={loading} />
+          <RecentActivityFeed items={activity} loading={analyticsLoading} />
         </div>
-        <RecentActivityFeed items={activity} loading={analyticsLoading} />
 
         <SubmissionsTable
           products={products}

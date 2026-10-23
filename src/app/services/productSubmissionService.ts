@@ -33,7 +33,11 @@ export interface Submission {
   submittedQty: number
   unit: string
   wishedPrice: number
-  status: "PENDING" | "VERIFIED" | "APPROVED" | "PAID"
+  status: "PENDING" | "NEGOTIATING" | "APPROVED" | "VERIFIED" | "PAID" | "REJECTED"
+  /** Price Food Bundles offered (waits for the farmer's answer) */
+  counterOfferPrice?: number | null
+  /** Price both sides agreed */
+  agreedPrice?: number | null
   createdAt: string
   updatedAt: string
   farmerId: string
