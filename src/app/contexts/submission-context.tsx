@@ -28,7 +28,9 @@ export interface FarmerSubmission {
   acceptedQty: number | null;
   totalAmount: number | null;
   categoryId: string;
-  status: "PENDING" | "VERIFIED" | "APPROVED" | "PAID";
+  // Flow: PENDING → APPROVED → VERIFIED → PAID; NEGOTIATING = counter offer
+  // waiting for the farmer; REJECTED = closed without buying
+  status: SubmissionStage;
   farmerFeedbackStatus: "PENDING" | "ACCEPTED" | "REJECTED" | "EXTENDED" | null;
   farmerFeedbackAt: string | null;
   farmerFeedbackNotes: string | null;
@@ -50,7 +52,21 @@ export interface FarmerSubmission {
   village: string;
   farmer: FarmerInfo;
   payouts?: SubmissionPayout[];
+  /** Food Bundles buying price when the price was decided */
+  foodBundlesPrice?: number | null;
+  /** Price Food Bundles offered (waits for the farmer) */
+  counterOfferPrice?: number | null;
+  /** Price both sides agreed at approval */
+  agreedPrice?: number | null;
+  rejectionReason?: string | null;
+  rejectedAt?: string | null;
 }
+
+export type SubmissionStage = "PENDING" | "NEGOTIATING" | "APPROVED" | "VERIFIED" | "PAID" | "REJECTED";
+
+/** What the farmer currently asks per unit (their latest counter, else the original). */
+export const askedPriceOf = (s: Pick<FarmerSubmission, "wishedPrice" | "farmerCounterOffer">) =>
+  s.farmerCounterOffer ?? s.wishedPrice ?? 0;
 
 export interface SubmissionPayout {
   id: string;
@@ -61,6 +77,7 @@ export interface SubmissionPayout {
   paypackStatus: string | null;
   status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | "CANCELLED" | "REFUNDED" | "VOUCHER_CREDIT";
   initiatedBy: string;
+  method?: "MOMO" | "CASH";
   confirmedAt: string | null;
   createdAt: string;
   updatedAt: string;

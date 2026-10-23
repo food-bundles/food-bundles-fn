@@ -24,6 +24,15 @@ import { Spinner } from "@/components/ui/shadcn-io/spinner"
 import { toast } from "sonner"
 import { Category, productSubmissionService } from "@/app/services/productSubmissionService"
 import { locationService } from "@/app/services/locationService"
+import { authService } from "@/app/services/authService"
+
+type RegisteredLocation = {
+  province: string
+  district: string
+  sector: string
+  cell: string
+  village: string
+}
 
 const MapComponent = dynamic(
   () => import("@/app/(private)/restaurant/checkout/_components/MapComponent"),
@@ -96,6 +105,10 @@ export default function ProductSubmissionModal({ isOpen, onClose, onSubmit }: Pr
   const [loadingLocation, setLoadingLocation] = useState(false)
   const [loadingFarmerLocation, setLoadingFarmerLocation] = useState(false)
   const [usedRegisteredLocation, setUsedRegisteredLocation] = useState(false)
+  // "registered" = same as the location saved at signup (default when there is
+  // one); "other" = the farmer picks a different place in the fields below
+  const [registeredLocation, setRegisteredLocation] = useState<RegisteredLocation | null>(null)
+  const [locationMode, setLocationMode] = useState<"registered" | "other">("other")
 
   // Map-based location picking (additive to the province/district/.../village cascade)
   const [useMapPicker, setUseMapPicker] = useState(false)
@@ -122,10 +135,22 @@ export default function ProductSubmissionModal({ isOpen, onClose, onSubmit }: Pr
     setLoadingFarmerLocation(true)
     isPrefillingRef.current = true
     try {
-      const profile = await productSubmissionService.getCurrentFarmerProfile()
-      if (!profile?.province) {
+      const me = await authService.getCurrentUser()
+      const profile = (me?.user || me?.data?.user || null) as Partial<RegisteredLocation> | null
+      if (!profile?.province || !profile.district || !profile.sector || !profile.cell || !profile.village) {
+        // No complete signup location saved: the farmer picks one below
+        setRegisteredLocation(null)
+        setLocationMode("other")
         return
       }
+      setRegisteredLocation({
+        province: profile.province,
+        district: profile.district,
+        sector: profile.sector,
+        cell: profile.cell,
+        village: profile.village,
+      })
+      setLocationMode("registered")
 
       let districtOptions: string[] = []
       let sectorOptions: string[] = []
@@ -373,6 +398,16 @@ const loadVillages = async (province: string, district: string, sector: string, 
     }
   }
 
+  const chooseLocationMode = (mode: "registered" | "other") => {
+    setLocationMode(mode)
+    setErrors((prev) => ({ ...prev, province: "", district: "", sector: "", cell: "", village: "" }))
+    if (mode === "registered" && registeredLocation) {
+      prefillFromFarmerProfile()
+    } else {
+      setFormData((prev) => ({ ...prev, province: "", district: "", sector: "", cell: "", village: "" }))
+    }
+  }
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
@@ -381,11 +416,14 @@ const loadVillages = async (province: string, district: string, sector: string, 
     if (formData.quantity <= 0) newErrors.quantity = "Quantity must be greater than 0"
     if (formData.wishedPrice <= 0) newErrors.wishedPrice = "Price must be greater than 0"
 
-    if (!formData.province?.trim()) newErrors.province = "Province is required"
-    if (!formData.district?.trim()) newErrors.district = "District is required"
-    if (!formData.sector?.trim()) newErrors.sector = "Sector is required"
-    if (!formData.cell?.trim()) newErrors.cell = "Cell is required"
-    if (!formData.village?.trim()) newErrors.village = "Village is required"
+    // With "same as my signup location" the saved place is used as-is
+    if (locationMode === "other") {
+      if (!formData.province?.trim()) newErrors.province = "Province is required"
+      if (!formData.district?.trim()) newErrors.district = "District is required"
+      if (!formData.sector?.trim()) newErrors.sector = "Sector is required"
+      if (!formData.cell?.trim()) newErrors.cell = "Cell is required"
+      if (!formData.village?.trim()) newErrors.village = "Village is required"
+    }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -400,7 +438,12 @@ const loadVillages = async (province: string, district: string, sector: string, 
 
     try {
       
-      const response = await productSubmissionService.submitProduct(formData)
+      // Same as signup: send the saved place (the backend also falls back to it)
+      const payload =
+        locationMode === "registered" && registeredLocation
+          ? { ...formData, ...registeredLocation }
+          : formData
+      const response = await productSubmissionService.submitProduct(payload)
       
 
       // Check if submission was successful
@@ -426,6 +469,7 @@ const loadVillages = async (province: string, district: string, sector: string, 
         setUseMapPicker(false)
         setMapLocation(null)
         setUsedRegisteredLocation(false)
+        setLocationMode(registeredLocation ? "registered" : "other")
         onClose()
       } else {
         toast.error("Failed to submit product")
@@ -683,16 +727,53 @@ const loadVillages = async (province: string, district: string, sector: string, 
                   </button>
                 </div>
 
-                {loadingFarmerLocation && (
+                {loadingFarmerLocation && !registeredLocation && (
                   <p className="text-sm text-gray-500">Loading your registered location...</p>
                 )}
 
-                {!loadingFarmerLocation && usedRegisteredLocation && (
-                  <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-3 py-2">
-                    Using your registered location — change the fields below if this submission is from elsewhere.
-                  </p>
+                {/* Where is the produce? Same as signup (default) or somewhere else */}
+                {registeredLocation && (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => chooseLocationMode("registered")}
+                      className={`text-left rounded-lg border px-3 py-2.5 transition-colors cursor-pointer ${
+                        locationMode === "registered"
+                          ? "border-green-600 bg-green-50 ring-1 ring-green-600"
+                          : "border-gray-300 hover:border-green-300"
+                      }`}
+                    >
+                      <span className="block text-sm font-semibold text-gray-900">
+                        Same as my signup location
+                      </span>
+                      <span className="block text-xs text-gray-600 mt-0.5">
+                        {[
+                          registeredLocation.village,
+                          registeredLocation.cell,
+                          registeredLocation.sector,
+                          registeredLocation.district,
+                          registeredLocation.province,
+                        ].join(", ")}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => chooseLocationMode("other")}
+                      className={`text-left rounded-lg border px-3 py-2.5 transition-colors cursor-pointer ${
+                        locationMode === "other"
+                          ? "border-green-600 bg-green-50 ring-1 ring-green-600"
+                          : "border-gray-300 hover:border-green-300"
+                      }`}
+                    >
+                      <span className="block text-sm font-semibold text-gray-900">A different location</span>
+                      <span className="block text-xs text-gray-600 mt-0.5">
+                        Choose the province, district, sector, cell and village
+                      </span>
+                    </button>
+                  </div>
                 )}
 
+                {locationMode === "other" && (
                 <div className="grid md:grid-cols-2 gap-6">
                   {/* Province */}
                   <div className="space-y-2">
@@ -828,16 +909,18 @@ const loadVillages = async (province: string, district: string, sector: string, 
                     />
                   </div>
                 </div>
+                )}
 
                 {/* Optional map picker for GPS precision, additive to the fields above */}
                 {useMapPicker && (
                   <div className="space-y-2">
                     <p className="text-sm text-gray-600">
-                      Pin your exact location for delivery accuracy — this doesn&apos;t replace the province,
-                      district, sector, cell, and village selected above.
+                      Tap <strong>Use my current location</strong> or tap the map to drop a pin. It helps us find
+                      the nearest market; it doesn&apos;t replace the location above.
                     </p>
-                    <div className="h-64">
+                    <div className="h-64 flex">
                       <MapComponent
+                        showLocateButton
                         tempLocation={mapLocation}
                         onLocationSelect={(location) => {
                           setMapLocation(location)

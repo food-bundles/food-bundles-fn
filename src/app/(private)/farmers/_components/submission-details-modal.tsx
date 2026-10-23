@@ -1,5 +1,6 @@
 "use client";
 
+import { stageLabel } from "./status-helpers";
 import { useState } from "react";
 import { Package, Tag, Hash, MapPin, Calendar } from "lucide-react";
 import {
@@ -46,19 +47,15 @@ export function SubmissionDetailsModal({
   const [action, setAction] = useState<Action>(null);
   const [notes, setNotes] = useState("");
   const [counterOffer, setCounterOffer] = useState("");
-  const [counterQty, setCounterQty] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const awaitingFeedback =
-    !!product &&
-    product.status === "VERIFIED" &&
-    (product.farmerFeedbackStatus === "PENDING" || product.farmerFeedbackStatus === null);
+  // A counter offer from Food Bundles is waiting for the farmer's answer
+  const awaitingFeedback = !!product && product.status === "NEGOTIATING" && !!product.counterOfferPrice;
 
   const resetForm = () => {
     setAction(null);
     setNotes("");
     setCounterOffer("");
-    setCounterQty("");
   };
 
   const handleClose = () => {
@@ -70,8 +67,8 @@ export function SubmissionDetailsModal({
     if (!product?.submissionId && !product?.id) return;
     if (!action) return;
 
-    if (action === "EXTENDED" && !counterOffer && !counterQty) {
-      showToast("error", "Provide a counter price or quantity to negotiate.");
+    if (action === "EXTENDED" && !(Number(counterOffer) > 0)) {
+      showToast("error", "Enter the price you want per unit.");
       return;
     }
 
@@ -81,15 +78,15 @@ export function SubmissionDetailsModal({
         feedbackStatus: action,
         notes: notes || undefined,
         counterOffer: counterOffer ? Number(counterOffer) : undefined,
-        counterQty: counterQty ? Number(counterQty) : undefined,
+
       });
       showToast(
         "success",
         action === "ACCEPTED"
-          ? "Offer accepted."
+          ? "Offer accepted. Your product is approved."
           : action === "REJECTED"
-            ? "Offer rejected."
-            : "Counter-offer sent."
+            ? "Offer declined."
+            : "Your price was sent to Food Bundles."
       );
       resetForm();
       onFeedbackSubmitted?.();
@@ -144,12 +141,21 @@ export function SubmissionDetailsModal({
                 </div>
                 <span className="font-medium">Status:</span>
               </div>
-              <Badge className={`${getStatusColor(product.displayStatus)} border-0 text-xs`}>{product.displayStatus}</Badge>
+              <Badge className={`${getStatusColor(product.displayStatus)} border-0 text-xs`}>
+                {stageLabel(product.displayStatus)}
+              </Badge>
             </div>
 
-            {product.status === "VERIFIED" && product.acceptedQty !== null && product.acceptedPrice !== null && (
-              <div className="rounded-lg bg-blue-50 border border-blue-100 p-3 text-xs text-blue-900">
-                Offer: {product.acceptedQty} units at RWF {product.acceptedPrice.toLocaleString()} each
+            {awaitingFeedback && (
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900">
+                Food Bundles offers <strong>RWF {product.counterOfferPrice!.toLocaleString()}</strong> per unit
+                (you asked {product.price}). Accept, decline, or propose your own price.
+              </div>
+            )}
+            {product.agreedPrice != null && ["APPROVED", "VERIFIED", "PAID"].includes(product.status) && (
+              <div className="rounded-lg bg-green-50 border border-green-100 p-3 text-xs text-green-900">
+                Agreed price: RWF {product.agreedPrice.toLocaleString()} per unit
+                {product.acceptedQty != null && ` · received ${product.acceptedQty} units`}
               </div>
             )}
 
@@ -161,10 +167,10 @@ export function SubmissionDetailsModal({
                     Accept
                   </Button>
                   <Button size="sm" variant="outline" className="flex-1" onClick={() => setAction("EXTENDED")}>
-                    Counter-offer
+                    My price
                   </Button>
                   <Button size="sm" variant="destructive" className="flex-1" onClick={() => setAction("REJECTED")}>
-                    Reject
+                    Decline
                   </Button>
                 </div>
               </div>
@@ -173,24 +179,13 @@ export function SubmissionDetailsModal({
             {action && (
               <div className="flex flex-col gap-3 pt-2 border-t border-gray-100">
                 {action === "EXTENDED" && (
-                  <div className="grid grid-cols-2 gap-2">
-                    <Input
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      placeholder="Counter price"
-                      value={counterOffer}
-                      onChange={(e) => setCounterOffer(e.target.value)}
-                    />
-                    <Input
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      placeholder="Counter qty"
-                      value={counterQty}
-                      onChange={(e) => setCounterQty(e.target.value)}
-                    />
-                  </div>
+                  <Input
+                    type="number"
+                    min="1"
+                    placeholder="Your price per unit (RWF)"
+                    value={counterOffer}
+                    onChange={(e) => setCounterOffer(e.target.value)}
+                  />
                 )}
                 <Textarea
                   placeholder="Notes (optional)"

@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { useEffect, useState } from "react";
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
+import { LocateFixed, Loader2 } from "lucide-react";
 
 // Fix for default markers in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -21,6 +23,8 @@ interface LocationData {
 interface MapComponentProps {
   tempLocation: LocationData | null;
   onLocationSelect: (location: LocationData) => void;
+  /** Show a "Use my current location" button (browser GPS). */
+  showLocateButton?: boolean;
 }
 
 function LocationMarker({ onLocationSelect }: { onLocationSelect: (location: LocationData) => void }) {
@@ -32,23 +36,88 @@ function LocationMarker({ onLocationSelect }: { onLocationSelect: (location: Loc
   return null;
 }
 
-export default function MapComponent({ tempLocation, onLocationSelect }: MapComponentProps) {
+// Maps opened inside a popup start before their box has its final size, which
+// leaves grey tiles; re-measure once it is on screen. Also follow the pin.
+function MapSync({ location }: { location: LocationData | null }) {
+  const map = useMap();
+  useEffect(() => {
+    const timer = setTimeout(() => map.invalidateSize(), 250);
+    return () => clearTimeout(timer);
+  }, [map]);
+  useEffect(() => {
+    if (location) map.setView([location.lat, location.lng], Math.max(map.getZoom(), 16));
+  }, [map, location]);
+  return null;
+}
+
+export default function MapComponent({
+  tempLocation,
+  onLocationSelect,
+  showLocateButton = false,
+}: MapComponentProps) {
+  const [locating, setLocating] = useState(false);
+  const [locateError, setLocateError] = useState("");
+
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setLocateError("Your browser can't share its location. Tap the map instead.");
+      return;
+    }
+    setLocating(true);
+    setLocateError("");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocating(false);
+        onLocationSelect({ lat: position.coords.latitude, lng: position.coords.longitude });
+      },
+      (error) => {
+        setLocating(false);
+        setLocateError(
+          error.code === error.PERMISSION_DENIED
+            ? "Location permission was denied. Allow it in your browser, or tap the map instead."
+            : "Couldn't get your location. Tap the map to place the pin instead."
+        );
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+    );
+  };
+
   return (
-    <div className="flex-1 rounded border border-gray-300 overflow-hidden">
+    // Fills its parent: give the parent a height (e.g. h-64)
+    <div className="relative flex-1 h-full min-h-[200px] rounded border border-gray-300 overflow-hidden">
       <MapContainer
-        center={[
-          tempLocation?.lat || -1.9577,
-          tempLocation?.lng || 30.0619,
-        ]}
+        center={[tempLocation?.lat || -1.9577, tempLocation?.lng || 30.0619]}
         zoom={15}
         style={{ height: "100%", width: "100%" }}
       >
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <LocationMarker onLocationSelect={onLocationSelect} />
-        {tempLocation && (
-          <Marker position={[tempLocation.lat, tempLocation.lng]} />
-        )}
+        <MapSync location={tempLocation} />
+        {tempLocation && <Marker position={[tempLocation.lat, tempLocation.lng]} />}
       </MapContainer>
+
+      {showLocateButton && (
+        <div className="absolute top-2 right-2 z-[1000] flex flex-col items-end gap-1">
+          <button
+            type="button"
+            onClick={useCurrentLocation}
+            disabled={locating}
+            className="flex items-center gap-1.5 rounded-md bg-white px-3 py-1.5 text-xs font-medium text-gray-800 shadow-md border border-gray-200 hover:bg-gray-50 disabled:opacity-60 cursor-pointer"
+          >
+            {locating ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <LocateFixed className="h-3.5 w-3.5 text-green-600" />
+            )}
+            {locating ? "Finding you..." : "Use my current location"}
+          </button>
+          {locateError && (
+            <p className="max-w-56 rounded-md bg-white/95 px-2 py-1 text-[11px] text-red-600 shadow">
+              {locateError}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

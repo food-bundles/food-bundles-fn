@@ -1,7 +1,6 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -14,8 +13,8 @@ import {
   Wallet,
   History,
 } from "lucide-react";
-import { CiEdit } from "react-icons/ci";
-import { FarmerSubmission, farmerDisplayName } from "@/app/contexts/submission-context";
+import { askedPriceOf, FarmerSubmission, farmerDisplayName } from "@/app/contexts/submission-context";
+import { StageProgress } from "./SubmissionStageModals";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,24 +25,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { formatDateTime } from "@/lib/reusableFunctions";
 
-// Helper functions
-const getStatusColor = (status: string) => {
-  switch (status.toUpperCase()) {
-    case "ACCEPTED":
-    case "APPROVED":
-      return "bg-green-100 text-green-800 hover:bg-green-100";
-    case "REJECTED":
-      return "bg-red-100 text-red-800 hover:bg-red-100";
-    case "PENDING":
-      return "bg-yellow-100 text-yellow-800 hover:bg-yellow-100";
-    case "VERIFIED":
-      return "bg-blue-100 text-blue-800 hover:bg-blue-100";
-    case "PAID":
-      return "bg-purple-100 text-purple-800 hover:bg-purple-100";
-    default:
-      return "bg-gray-100 text-gray-800 hover:bg-gray-100";
-  }
-};
 
 const formatCurrency = (amount: number | null) => {
   if (amount === null) return "-";
@@ -68,22 +49,29 @@ const formatDate = (dateString: string | null) => {
 };
 
 // Create comprehensive admin columns showing all fields
-export function getAdminSubmissionColumns(
-  onOpenModal: (
-    submission: FarmerSubmission,
-    mode: "view" | "verify" | "edit"
-  ) => void,
-  onApproveSubmission: (submissionId: string) => void,
-  onReject: (submission: FarmerSubmission) => void,
-  onDelete: (submission: FarmerSubmission) => void,
-  onForceComplete: (submission: FarmerSubmission) => void,
-  onPayout: (submission: FarmerSubmission) => void,
-  onReverseStatus: (submission: FarmerSubmission) => void,
-  onViewHistory: (submission: FarmerSubmission) => void,
+export interface SubmissionColumnActions {
+  onApprove: (submission: FarmerSubmission) => void; // stage 2: approve / counter offer
+  onVerify: (submission: FarmerSubmission) => void; // stage 3: verify face to face
+  onPay: (submission: FarmerSubmission) => void; // stage 4: pay the farmer
+  onReject: (submission: FarmerSubmission) => void;
+  onDelete: (submission: FarmerSubmission) => void;
+  onReverseStatus: (submission: FarmerSubmission) => void;
+  onViewHistory: (submission: FarmerSubmission) => void;
   // Farmer submissions permission check for one action ("approve", "verify"…);
   // hides actions the user's role can't do. Omitted = everything allowed.
-  can: (action: string) => boolean = () => true
-): ColumnDef<FarmerSubmission>[] {
+  can?: (action: string) => boolean;
+}
+
+export function getAdminSubmissionColumns({
+  onApprove,
+  onVerify,
+  onPay,
+  onReject,
+  onDelete,
+  onReverseStatus,
+  onViewHistory,
+  can = () => true,
+}: SubmissionColumnActions): ColumnDef<FarmerSubmission>[] {
   return [
     // Selection column
     {
@@ -181,48 +169,44 @@ export function getAdminSubmissionColumns(
       ),
     },
 
-    // Prices
+    // Prices: asked, Food Bundles, offer / agreed
     {
       accessorKey: "prices",
-      header: "Prices (RWF/kg)",
-      cell: ({ row }) => (
-        <div className="flex flex-col space-y-1">
-          <div className="text-sm">
-            <span className="text-gray-600">Wished:</span>
-            <span className="font-medium ml-1">{row.original.wishedPrice}</span>
-          </div>
-          {row.original.acceptedPrice && (
-            <div className="text-sm">
-              <span className="text-gray-600">Accepted:</span>
-              <span className="font-medium ml-1 text-green-600">
-                {row.original.acceptedPrice}
-              </span>
+      header: "Prices (RWF/unit)",
+      cell: ({ row }) => {
+        const s = row.original;
+        return (
+          <div className="flex flex-col space-y-0.5 text-sm">
+            <div>
+              <span className="text-gray-600">Asks:</span>
+              <span className="font-medium ml-1">{askedPriceOf(s).toLocaleString()}</span>
+              {s.farmerCounterOffer != null && (
+                <span className="ml-1 text-xs text-amber-700">(new price)</span>
+              )}
             </div>
-          )}
-        </div>
-      ),
-    },
-
-    // Farmer Counter Offer
-    {
-      accessorKey: "farmerCounterOffer",
-      header: "Counter Offer (RWF/kg)",
-      cell: ({ row }) => (
-        <span className="text-sm font-medium">
-          {formatCurrency(row.original.farmerCounterOffer)}
-        </span>
-      ),
-    },
-
-    // Farmer Counter Quantity
-    {
-      accessorKey: "farmerCounterQty",
-      header: "Counter Qty (kg)",
-      cell: ({ row }) => (
-        <span className="text-sm font-medium">
-          {row.original.farmerCounterQty ?? "-"}
-        </span>
-      ),
+            {s.foodBundlesPrice != null && (
+              <div>
+                <span className="text-gray-600">Food Bundles:</span>
+                <span className="font-medium ml-1">{s.foodBundlesPrice.toLocaleString()}</span>
+              </div>
+            )}
+            {s.status === "NEGOTIATING" && s.counterOfferPrice != null && (
+              <div>
+                <span className="text-gray-600">Offered:</span>
+                <span className="font-medium ml-1 text-amber-700">{s.counterOfferPrice.toLocaleString()}</span>
+              </div>
+            )}
+            {(s.acceptedPrice ?? s.agreedPrice) != null && s.status !== "NEGOTIATING" && (
+              <div>
+                <span className="text-gray-600">Agreed:</span>
+                <span className="font-medium ml-1 text-green-600">
+                  {(s.acceptedPrice ?? s.agreedPrice)!.toLocaleString()}
+                </span>
+              </div>
+            )}
+          </div>
+        );
+      },
     },
 
     // Total Amount
@@ -251,32 +235,11 @@ export function getAdminSubmissionColumns(
       ),
     },
 
-    // Status
+    // Stage: Submitted → Approved → Verified → Paid
     {
       accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => (
-        <div className="flex flex-col space-y-1">
-          <Badge className={getStatusColor(row.original.status)}>
-            {row.original.status}
-          </Badge>
-        </div>
-      ),
-    },
-
-    // Farmer Feedback Status
-    {
-      accessorKey: "Farmer Reaction",
-      header: "Farmer's Reaction",
-      cell: ({ row }) => (
-        <Badge
-          className={getStatusColor(
-            row.original.farmerFeedbackStatus || "PENDING"
-          )}
-        >
-          {row.original.farmerFeedbackStatus || "PENDING"}
-        </Badge>
-      ),
+      header: "Stage",
+      cell: ({ row }) => <StageProgress status={row.original.status} />,
     },
 
     // Aggregator
@@ -397,48 +360,41 @@ export function getAdminSubmissionColumns(
       header: "Actions",
       cell: ({ row }) => {
         const submission = row.original;
-        const isLocked =
-          submission.status === "APPROVED" || submission.status === "PAID";
 
         const hasActivePayout = (submission.payouts || []).some((p) =>
           ["PENDING", "PROCESSING", "COMPLETED"].includes(p.status)
         );
 
+        // Only the next step of the current stage is offered
+        const stage = submission.status;
         const actions = [
           {
-            key: "verify",
-            label: "Verify submission",
-            icon: <CheckCircle className="h-4 w-4 text-green-600" />,
-            show: submission.status === "PENDING" && can("verify"),
-            onSelect: () => onOpenModal(submission, "verify"),
-          },
-          {
             key: "approve",
-            label: "Approve submission",
+            label: "Approve / set price",
             icon: <CheckIcon className="h-4 w-4 text-green-600" />,
-            show: !isLocked && can("approve"),
-            onSelect: () => onApproveSubmission(submission.id),
+            show: stage === "PENDING" && can("approve"),
+            onSelect: () => onApprove(submission),
           },
           {
-            key: "force",
-            label: "Force complete",
-            icon: <CheckCircle className="h-4 w-4 text-blue-600" />,
-            show: submission.status === "VERIFIED" && can("force_complete"),
-            onSelect: () => onForceComplete(submission),
+            key: "verify",
+            label: "Verify (weigh & record)",
+            icon: <CheckCircle className="h-4 w-4 text-green-600" />,
+            show: stage === "APPROVED" && can("verify"),
+            onSelect: () => onVerify(submission),
           },
           {
             key: "payout",
             label: "Pay farmer",
             icon: <Wallet className="h-4 w-4 text-purple-600" />,
-            show: submission.status === "APPROVED" && !hasActivePayout && can("request_payout"),
-            onSelect: () => onPayout(submission),
+            show: stage === "VERIFIED" && !hasActivePayout && can("request_payout"),
+            onSelect: () => onPay(submission),
           },
           {
-            key: "edit",
-            label: "Edit submission",
-            icon: <CiEdit className="h-4 w-4 text-gray-700" />,
-            show: can("edit"),
-            onSelect: () => onOpenModal(submission, "edit"),
+            key: "reject",
+            label: stage === "NEGOTIATING" ? "Withdraw offer & reject" : "Reject submission",
+            icon: <XCircle className="h-4 w-4 text-red-600" />,
+            show: ["PENDING", "NEGOTIATING", "APPROVED"].includes(stage) && can("reject"),
+            onSelect: () => onReject(submission),
           },
           {
             key: "history",
@@ -451,18 +407,17 @@ export function getAdminSubmissionColumns(
             key: "reverse",
             label: "Move status back",
             icon: <Undo2 className="h-4 w-4 text-amber-600" />,
-            show: can("reverse_status"),
+            show: stage !== "PENDING" && can("reverse_status"),
             onSelect: () => onReverseStatus(submission),
           },
-          {
-            key: "reject",
-            label: "Reject submission",
-            icon: <XCircle className="h-4 w-4 text-red-600" />,
-            show: ["PENDING", "VERIFIED"].includes(submission.status) && can("reject"),
-            onSelect: () => onReject(submission),
-          },
         ].filter((action) => action.show);
-        const canDelete = !isLocked && can("delete");
+        const canDelete = (stage === "PENDING" || stage === "REJECTED") && can("delete");
+        const waitingNote =
+          stage === "NEGOTIATING"
+            ? "Counter offer sent. Waiting for the farmer to accept or decline."
+            : stage === "VERIFIED" && hasActivePayout
+              ? "MoMo payment in progress. Confirm it in the history."
+              : null;
 
         return (
           <DropdownMenu>
@@ -507,10 +462,8 @@ export function getAdminSubmissionColumns(
                   </DropdownMenuItem>
                 </>
               )}
-              {isLocked && (
-                <p className="px-2 pt-1 pb-1.5 text-[11px] text-gray-500">
-                  Approved and paid submissions can&apos;t be approved again or deleted.
-                </p>
+              {waitingNote && (
+                <p className="px-2 pt-1 pb-1.5 text-[11px] text-amber-700">{waitingNote}</p>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
