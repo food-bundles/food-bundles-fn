@@ -10,9 +10,14 @@ import {
 // Types based on your backend response
 export interface FarmerInfo {
   id: string;
-  phone: string;
-  email: string;
+  name?: string | null;
+  phone: string | null;
+  email: string | null; // optional for farmers
 }
+
+/** Best label for a farmer: name, else the part of the email before @, else phone. */
+export const farmerDisplayName = (farmer?: FarmerInfo | null) =>
+  farmer?.name?.trim() || farmer?.email?.split("@")[0] || farmer?.phone || "Unknown farmer";
 
 export interface FarmerSubmission {
   aggregator: any;
