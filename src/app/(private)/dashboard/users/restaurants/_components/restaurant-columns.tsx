@@ -18,6 +18,8 @@ export type Restaurant = {
   ordersCount: number;
   totalSpent: number;
   status: "active" | "inactive" | "suspended";
+  /** Customer type (school, hotel, restaurant…) */
+  customerType?: { id: string; name: string } | null;
 };
 
 export const getRestaurantColumns = (
@@ -58,11 +60,25 @@ export const getRestaurantColumns = (
   },
   {
     accessorKey: "name",
-    header: "Rest Name",
+    header: "Customer",
     cell: ({ row }) => {
       const fullName = row.getValue("name") as string;
       const shortName = fullName.split(" - ")[0];
       return <div className="">{shortName}</div>;
+    },
+  },
+  {
+    id: "customerType",
+    header: "Type",
+    cell: ({ row }) => {
+      const type = row.original.customerType;
+      return type ? (
+        <span className="inline-flex rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-xs font-medium capitalize text-emerald-800">
+          {type.name.toLowerCase()}
+        </span>
+      ) : (
+        <span className="text-xs text-gray-400">No type</span>
+      );
     },
   },
   {

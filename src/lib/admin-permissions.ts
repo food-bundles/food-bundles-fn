@@ -12,6 +12,7 @@ const PAGE_MODULES: Array<[string, string]> = [
   ["/dashboard", "dashboard"],
   ["/dashboard/farmer-submissions", "farmer_submissions"],
   ["/dashboard/submission-verification", "farmer_submissions"],
+  ["/dashboard/supply-requests", "supply_requests"],
   ["/dashboard/restaurant-orders", "orders"],
   ["/dashboard/deliveries", "deliveries"],
   ["/dashboard/stock/products", "products"],

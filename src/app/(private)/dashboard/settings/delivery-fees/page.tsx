@@ -24,6 +24,7 @@ import {
   deliverySettingsService,
   timingLabel,
 } from "@/lib/delivery-fee";
+import { CustomerTypeFees } from "./_components/customer-type-fees";
 
 const TIMING_OPTIONS = [
   { value: 0, label: "Same day" },
@@ -54,6 +55,8 @@ export default function DeliveryFeesPage() {
   });
   const [saving, setSaving] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  // Reloads the per-type list after the default rules change
+  const [savedCount, setSavedCount] = useState(0);
 
   const fillForm = (data: DeliverySettings) =>
     setForm({
@@ -83,6 +86,7 @@ export default function DeliveryFeesPage() {
     try {
       const saved = await deliverySettingsService.update(draft);
       setSettings(saved);
+      setSavedCount((n) => n + 1);
       toast.success("Delivery settings saved. New orders use them right away.");
     } catch (error: unknown) {
       const message =
@@ -136,7 +140,8 @@ export default function DeliveryFeesPage() {
           Delivery Fees
         </h1>
         <p className="text-xs text-gray-600">
-          The delivery fee depends on the order amount and when the customer wants delivery.
+          The delivery fee depends on the order amount, when the customer wants delivery, and the
+          customer type (schools, hotels… can have their own fees).
         </p>
       </div>
 
@@ -265,6 +270,8 @@ export default function DeliveryFeesPage() {
           <p className="text-xs text-gray-500">You can view these settings but not change them.</p>
         )}
       </div>
+
+      <CustomerTypeFees canEdit={canEdit} refreshKey={savedCount} />
 
       <div className="rounded-xl border bg-white">
         <p className="px-4 py-3 text-xs font-semibold text-gray-700 border-b">Examples with these settings</p>

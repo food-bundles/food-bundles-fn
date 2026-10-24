@@ -30,6 +30,7 @@ import {
   PermissionModuleInfo,
 } from "@/app/services/adminRoleService";
 import { adminsService } from "@/app/services/adminsService";
+import { customerTypeService } from "@/app/services/customerTypeService";
 import { useAdminAccess } from "@/app/hooks/useAdminAccess";
 import { RoleEditorDialog } from "./_components/role-editor-dialog";
 
@@ -52,6 +53,17 @@ export default function RolesPage() {
   const [editingRole, setEditingRole] = useState<AdminRole | null>(null);
   const [deletingRole, setDeletingRole] = useState<AdminRole | null>(null);
   const [assigning, setAssigning] = useState<string | null>(null);
+  const [customerTypeNames, setCustomerTypeNames] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    customerTypeService
+      .getAllCustomerTypes()
+      .then((res: { data?: Array<{ id: string; name: string }> } | Array<{ id: string; name: string }>) => {
+        const list = Array.isArray(res) ? res : res?.data || [];
+        setCustomerTypeNames(Object.fromEntries(list.map((t) => [t.id, t.name])));
+      })
+      .catch(() => setCustomerTypeNames({}));
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -195,6 +207,17 @@ export default function RolesPage() {
                   {role.description && (
                     <p className="mt-2 line-clamp-2 text-xs text-gray-600">{role.description}</p>
                   )}
+                  <p className="mt-2 text-[11px] text-gray-500">
+                    Customers:{" "}
+                    <span className="font-medium capitalize text-gray-700">
+                      {role.locked || !role.customerTypeIds?.length
+                        ? "all types"
+                        : role.customerTypeIds
+                            .map((id) => customerTypeNames[id] || "removed type")
+                            .join(", ")
+                            .toLowerCase()}
+                    </span>
+                  </p>
                   <div className="mt-auto flex items-center justify-between pt-3 text-xs text-gray-600">
                     <span className="flex items-center gap-1">
                       <Users className="h-3.5 w-3.5" />
