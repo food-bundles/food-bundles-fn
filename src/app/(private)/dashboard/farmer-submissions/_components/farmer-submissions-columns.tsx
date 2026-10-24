@@ -13,7 +13,12 @@ import {
   Wallet,
   History,
 } from "lucide-react";
-import { askedPriceOf, FarmerSubmission, farmerDisplayName } from "@/app/contexts/submission-context";
+import {
+  agreedPriceOf,
+  askedPriceOf,
+  FarmerSubmission,
+  farmerDisplayName,
+} from "@/app/contexts/submission-context";
 import { StageProgress } from "./SubmissionStageModals";
 import {
   DropdownMenu,
@@ -108,27 +113,6 @@ export function getAdminSubmissionColumns({
       ),
     },
 
-    // Farmer Information
-    {
-      accessorKey: "farmer",
-      id: "farmerInfo",
-      header: "Farmer",
-      cell: ({ row }) => {
-        const farmer = row.original.farmer;
-        const farmerName = farmerDisplayName(farmer);
-
-        return (
-          <div className="flex items-center space-x-3">
-            <div className="flex flex-col">
-              <span className="font-medium">{farmerName}</span>
-              <span className="text-xs text-gray-500">{farmer.phone}</span>
-              <span className="text-xs text-gray-400">{farmer.email}</span>
-            </div>
-          </div>
-        );
-      },
-    },
-
     // Product Information
     {
       accessorKey: "productName",
@@ -196,12 +180,18 @@ export function getAdminSubmissionColumns({
                 <span className="font-medium ml-1 text-amber-700">{s.counterOfferPrice.toLocaleString()}</span>
               </div>
             )}
-            {(s.acceptedPrice ?? s.agreedPrice) != null && s.status !== "NEGOTIATING" && (
+            {["APPROVED", "VERIFIED", "PAID"].includes(s.status) && (
               <div>
                 <span className="text-gray-600">Agreed:</span>
                 <span className="font-medium ml-1 text-green-600">
-                  {(s.acceptedPrice ?? s.agreedPrice)!.toLocaleString()}
+                  {(s.acceptedPrice ?? agreedPriceOf(s)).toLocaleString()}
                 </span>
+              </div>
+            )}
+            {s.totalAmount != null && s.status !== "NEGOTIATING" && s.status !== "REJECTED" && (
+              <div className="pt-0.5">
+                <span className="text-gray-600">Total:</span>
+                <span className="ml-1 font-bold text-gray-900">{s.totalAmount}</span>
               </div>
             )}
           </div>
@@ -209,16 +199,7 @@ export function getAdminSubmissionColumns({
       },
     },
 
-    // Total Amount
-    {
-      accessorKey: "totalAmount",
-      header: "Total Amount",
-      cell: ({ row }) => (
-        <span className="font-medium">
-          {formatCurrency(row.original.totalAmount)}
-        </span>
-      ),
-    },
+   
 
     // Location
     {
@@ -242,34 +223,6 @@ export function getAdminSubmissionColumns({
       cell: ({ row }) => <StageProgress status={row.original.status} />,
     },
 
-    // Aggregator
-    {
-      accessorKey: "Verified By",
-      header: "Verified By",
-      cell: ({ row }) => {
-        const aggregator = row.original.aggregator;
-        if (!aggregator) return <span className="text-gray-400">-</span>;
-
-        return (
-          <div className="flex flex-col">
-            <span className="font-medium text-sm">{aggregator.username}</span>
-            <span className="text-xs text-gray-500">{aggregator.phone}</span>
-          </div>
-        );
-      },
-    },
-
-    // Dates - Submitted
-    {
-      accessorKey: "submittedAt",
-      header: "Submitted",
-      cell: ({ row }) => (
-        <span className="text-sm">
-          {formatDateTime(row.original.submittedAt)}
-        </span>
-      ),
-    },
-
     // More details dropdown (for fields that don't need to be always visible)
     {
       id: "moreDetails",
@@ -287,6 +240,31 @@ export function getAdminSubmissionColumns({
             <DropdownMenuContent align="end" className="w-64">
               <div className="p-2 space-y-2">
                 <div className="text-sm font-medium">Additional Details</div>
+
+                <div className="rounded-md bg-gray-50 p-2 text-xs">
+                  <div className="font-medium text-gray-900">
+                    {farmerDisplayName(submission.farmer)}
+                  </div>
+                  {submission.farmer?.phone && (
+                    <div className="text-gray-600">{submission.farmer.phone}</div>
+                  )}
+                  {submission.farmer?.email && (
+                    <div className="text-gray-500">{submission.farmer.email}</div>
+                  )}
+                </div>
+
+                <div className="text-xs">
+                  <span className="text-gray-600">Submitted:</span>{" "}
+                  {formatDateTime(submission.submittedAt)}
+                </div>
+
+                {submission.aggregator && (
+                  <div className="text-xs">
+                    <span className="text-gray-600">Verified by:</span>{" "}
+                    {submission.aggregator.username}
+                    {submission.aggregator.phone ? ` · ${submission.aggregator.phone}` : ""}
+                  </div>
+                )}
 
                 {submission.verifiedAt && (
                   <div className="text-xs">

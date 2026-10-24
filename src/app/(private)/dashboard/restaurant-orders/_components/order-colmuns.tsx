@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Eye, MoreHorizontal, Trash2, FileText, Edit3, Send, ChevronLeft, ChevronRight } from "lucide-react";
 
 // Helper function to get payment method colors
-const getPaymentMethodColor = (method: string) => {
-  switch (method.toLowerCase()) {
+// No method yet (e.g. an order from a supply request, not paid yet) → grey
+const getPaymentMethodColor = (method?: string | null) => {
+  switch ((method || "").toLowerCase()) {
     case 'cash':
       return 'bg-green-100 text-green-700 border-green-200';
     case 'card':
@@ -100,7 +101,8 @@ export interface Order {
   packagingFee?: number;
   status: "PENDING" | "CONFIRMED" | "PREPARING" | "READY" |"IN_TRANSIT" | "DELIVERED" | "CANCELLED" | "REFUNDED";
   paymentStatus: "PENDING" | "PROCESSING" | "COMPLETED" | "VOUCHER_CREDIT" | "FAILED" | "CANCELLED" | "REFUNDED";
-  paymentMethod: "CASH" | "MOBILE_MONEY" | "CARD" | "BANK_TRANSFER"| "VOUCHER";
+  // null until the customer chooses how to pay (e.g. supply request orders)
+  paymentMethod: "CASH" | "MOBILE_MONEY" | "CARD" | "BANK_TRANSFER" | "VOUCHER" | null;
   billingName: string;
   billingPhone: string;
   billingEmail: string;
@@ -393,7 +395,7 @@ export const createOrdersColumns = (actions: {
               row.original.paymentMethod,
             )}`}
           >
-            {row.original.paymentMethod}
+            {row.original.paymentMethod || "not chosen"}
           </div>
         </div>
       );

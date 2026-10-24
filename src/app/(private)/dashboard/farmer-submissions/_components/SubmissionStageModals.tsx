@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  agreedPriceOf,
   askedPriceOf,
   farmerDisplayName,
   type FarmerSubmission,
@@ -236,7 +237,9 @@ export function VerifySubmissionModal({ submission, onClose, onDone }: StageModa
   useEffect(() => {
     if (!submission) return;
     setQuantity(String(submission.submittedQty ?? ""));
-    setPrice(String(submission.agreedPrice ?? ""));
+    // Older approvals kept the price in acceptedPrice
+    const agreed = agreedPriceOf(submission);
+    setPrice(agreed ? String(agreed) : "");
   }, [submission]);
 
   if (!submission) return null;
@@ -272,7 +275,7 @@ export function VerifySubmissionModal({ submission, onClose, onDone }: StageModa
         <div className="space-y-4">
           <div className="space-y-2 rounded-lg border bg-gray-50 p-3">
             <PriceLine label="Submitted" value={`${submission.submittedQty}`} />
-            <PriceLine label="Agreed price" value={`${rwf(submission.agreedPrice)} / unit`} strong />
+            <PriceLine label="Agreed price" value={`${rwf(agreedPriceOf(submission))} / unit`} strong />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">

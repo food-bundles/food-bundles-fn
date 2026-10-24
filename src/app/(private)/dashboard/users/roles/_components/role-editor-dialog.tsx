@@ -20,6 +20,7 @@ import {
   adminRoleService,
   PermissionModuleInfo,
 } from "@/app/services/adminRoleService";
+import { customerTypeService } from "@/app/services/customerTypeService";
 
 interface RoleEditorDialogProps {
   open: boolean;
@@ -34,6 +35,9 @@ export function RoleEditorDialog({ open, role, catalog, onClose, onSaved }: Role
   const [description, setDescription] = useState("");
   const [permissions, setPermissions] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
+  // Customer types this role works with (empty = all types)
+  const [customerTypes, setCustomerTypes] = useState<Array<{ id: string; name: string }>>([]);
+  const [customerTypeIds, setCustomerTypeIds] = useState<Set<string>>(new Set());
 
   const readOnly = !!role?.locked;
 
@@ -42,7 +46,27 @@ export function RoleEditorDialog({ open, role, catalog, onClose, onSaved }: Role
     setName(role?.name || "");
     setDescription(role?.description || "");
     setPermissions(new Set(role?.permissions || []));
+    setCustomerTypeIds(new Set(role?.customerTypeIds || []));
   }, [open, role]);
+
+  useEffect(() => {
+    if (!open || customerTypes.length > 0) return;
+    customerTypeService
+      .getAllCustomerTypes()
+      .then((res: { data?: Array<{ id: string; name: string }> } | Array<{ id: string; name: string }>) => {
+        const list = Array.isArray(res) ? res : res?.data || [];
+        setCustomerTypes(list.map((t) => ({ id: t.id, name: t.name })));
+      })
+      .catch(() => setCustomerTypes([]));
+  }, [open, customerTypes.length]);
+
+  const toggleCustomerType = (id: string, checked: boolean) =>
+    setCustomerTypeIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
 
   const groups = useMemo(() => {
     const map = new Map<string, PermissionModuleInfo[]>();
@@ -86,7 +110,12 @@ export function RoleEditorDialog({ open, role, catalog, onClose, onSaved }: Role
       return;
     }
     setSaving(true);
-    const payload = { name: name.trim(), description: description.trim(), permissions: [...permissions] };
+    const payload = {
+      name: name.trim(),
+      description: description.trim(),
+      permissions: [...permissions],
+      customerTypeIds: [...customerTypeIds],
+    };
     const result = role
       ? await adminRoleService.updateRole(role.id, payload)
       : await adminRoleService.createRole(payload);
@@ -138,6 +167,37 @@ export function RoleEditorDialog({ open, role, catalog, onClose, onSaved }: Role
                 className="text-sm min-h-9"
                 rows={1}
               />
+            </div>
+          </div>
+
+          {/* Which customers this role works with */}
+          <div className="rounded-lg border p-3 space-y-2">
+            <div>
+              <p className="text-sm font-medium text-gray-900">Customer types</p>
+              <p className="text-xs text-gray-500">
+                Limit this role to some customers (e.g. only hotels or schools): customer lists and their
+                orders show just those types.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+              <label className="flex items-center gap-1.5 text-sm text-gray-800">
+                <Checkbox
+                  checked={customerTypeIds.size === 0}
+                  disabled={readOnly}
+                  onCheckedChange={(v) => v && setCustomerTypeIds(new Set())}
+                />
+                All customer types
+              </label>
+              {customerTypes.map((type) => (
+                <label key={type.id} className="flex items-center gap-1.5 text-sm capitalize text-gray-800">
+                  <Checkbox
+                    checked={customerTypeIds.has(type.id)}
+                    disabled={readOnly}
+                    onCheckedChange={(v) => toggleCustomerType(type.id, !!v)}
+                  />
+                  {type.name.toLowerCase()}
+                </label>
+              ))}
             </div>
           </div>
 

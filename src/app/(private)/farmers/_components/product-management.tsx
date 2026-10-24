@@ -10,6 +10,7 @@ import { SubmissionDetailsModal } from "./submission-details-modal";
 import { SubmissionsTable } from "./SubmissionsTable";
 import { FarmerSummaryCards } from "./dashboard/farmer-summary-cards";
 import { FarmerActivityChart } from "./dashboard/farmer-activity-chart";
+import { RequestedProducts } from "./dashboard/requested-products";
 import { TopProductsChart } from "./dashboard/top-products-chart";
 import { StatusBreakdownChart } from "./dashboard/status-breakdown-chart";
 import { RecentActivityFeed } from "./dashboard/recent-activity-feed";
@@ -165,6 +166,14 @@ export default function ProductManagement() {
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
+
+        {/* Products customers need (aggregators' supply requests) come first */}
+        <RequestedProducts
+          onSubmitted={() => {
+            fetchSubmissions();
+            fetchAnalytics();
+          }}
+        />
 
         {/* Everything important at a glance: earnings, submissions, performance */}
         <FarmerSummaryCards

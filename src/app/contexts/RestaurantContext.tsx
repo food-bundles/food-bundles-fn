@@ -21,6 +21,8 @@ export interface Restaurant {
   ordersCount: number;
   totalSpent: number;
   status: "active" | "inactive" | "suspended";
+  /** Customer type (school, hotel, restaurant…) */
+  customerType?: { id: string; name: string } | null;
 }
 
 export interface RestaurantsResponse {
@@ -37,6 +39,7 @@ interface RestaurantContextType {
     status?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    customerTypeId?: string;
   }) => Promise<RestaurantsResponse & { pagination?: any }>;
 }
 
@@ -50,6 +53,7 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
     status?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    customerTypeId?: string;
   }): Promise<RestaurantsResponse & { pagination?: any }> => {
     try {
       const response = await restaurantService.getAllRestaurants(params);
@@ -80,6 +84,7 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
             ordersCount: ordersCount,
             totalSpent: totalSpent,
             status: "active" as const, // Default to active
+            customerType: restaurant.customerType ?? null,
           };
         });
 

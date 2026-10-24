@@ -64,6 +64,12 @@ export interface FarmerSubmission {
 
 export type SubmissionStage = "PENDING" | "NEGOTIATING" | "APPROVED" | "VERIFIED" | "PAID" | "REJECTED";
 
+/** Price both sides agreed. Submissions approved before the new flow kept it in
+ *  acceptedPrice (or only the farmer's price), so fall back to those. */
+export const agreedPriceOf = (
+  s: Pick<FarmerSubmission, "agreedPrice" | "acceptedPrice" | "farmerCounterOffer" | "wishedPrice">
+) => s.agreedPrice ?? s.acceptedPrice ?? s.farmerCounterOffer ?? s.wishedPrice ?? 0;
+
 /** What the farmer currently asks per unit (their latest counter, else the original). */
 export const askedPriceOf = (s: Pick<FarmerSubmission, "wishedPrice" | "farmerCounterOffer">) =>
   s.farmerCounterOffer ?? s.wishedPrice ?? 0;

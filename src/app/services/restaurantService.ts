@@ -12,6 +12,8 @@ export const restaurantService = {
     status?: string;
     sortBy?: string;
     sortOrder?: "asc" | "desc";
+    /** Only customers of this type (schools, hotels…) */
+    customerTypeId?: string;
   }) => {
     try {
       const response = await axiosClient.get("/restaurants", { params });

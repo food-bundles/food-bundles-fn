@@ -38,6 +38,7 @@ import {
   Trash2,
   Truck,
   ClipboardCheck,
+  ClipboardList,
   Search,
   X,
   CornerDownLeft,
@@ -59,6 +60,7 @@ const searchKeywords: Record<string, string[]> = {
   "/dashboard/restaurant-orders": ["orders", "sales", "purchases", "delivery", "invoice", "receipt", "ebm"],
   "/dashboard/submission-verification": ["aggregator", "verify", "weigh", "harvest", "farmers", "accept"],
   "/dashboard/users/trash": ["deleted", "removed", "restore", "recycle", "bin"],
+  "/dashboard/supply-requests": ["school", "needs", "demand", "list", "timetable", "aggregator", "request"],
   "/dashboard/deliveries": ["logistics", "delivery", "transit", "otp", "dispatch", "driver"],
   "/dashboard/stock/products": ["items", "inventory", "goods", "catalog", "price"],
   "/dashboard/stock/categories": ["groups", "types", "classification"],
@@ -78,7 +80,7 @@ const searchKeywords: Record<string, string[]> = {
   "/dashboard/invitations": ["invite", "onboarding", "join", "referral"],
   "/dashboard/users/lookup": ["find", "search", "user", "account", "phone"],
   "/dashboard/users/farmers": ["growers", "suppliers"],
-  "/dashboard/users/restaurants": ["clients", "customers", "hotels", "buyers"],
+  "/dashboard/users/restaurants": ["clients", "restaurants", "hotels", "schools", "buyers"],
   "/dashboard/users/affiliators": ["affiliates", "agents", "partners", "referral"],
   "/dashboard/users/administration": ["admins", "staff", "team", "employees"],
   "/dashboard/users/roles": ["permissions", "access", "rbac", "privileges", "security"],
@@ -92,14 +94,27 @@ const searchKeywords: Record<string, string[]> = {
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   {
+    // Farmer journey: manage every stage, or verify face to face
     icon: FileText,
-    label: "Farmer Submission",
-    href: "/dashboard/farmer-submissions",
-  },
-  {
-    icon: ClipboardCheck,
-    label: "Verify Submissions",
-    href: "/dashboard/submission-verification",
+    label: "Farmer Submissions",
+    href: "/dashboard/submissions",
+    subItems: [
+      {
+        icon: FileText,
+        label: "Submission Management",
+        href: "/dashboard/farmer-submissions",
+      },
+      {
+        icon: ClipboardCheck,
+        label: "Verify Submissions",
+        href: "/dashboard/submission-verification",
+      },
+      {
+        icon: ClipboardList,
+        label: "Supply Requests",
+        href: "/dashboard/supply-requests",
+      },
+    ],
   },
   {
     icon: ShoppingCart,
@@ -222,7 +237,7 @@ const menuItems = [
       },
       {
         icon: Soup,
-        label: "Restaurants",
+        label: "Customers",
         href: "/dashboard/users/restaurants",
       },
       {

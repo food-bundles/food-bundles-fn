@@ -8,6 +8,8 @@ import type { Restaurant } from "@/app/contexts/RestaurantContext";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import { Store, Activity, Ban, AlertCircle, ChevronRight, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { customerTypeService } from "@/app/services/customerTypeService";
+import { useAdminAccess } from "@/app/hooks/useAdminAccess";
 
 export default function RestaurantsPage() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -18,6 +20,24 @@ export default function RestaurantsPage() {
   // Filter states lifted up for server-side filtering
   const [searchValue, setSearchValue] = useState("");
   const [statusValue, setStatusValue] = useState("all");
+  // Customer type tab ("" = all the types this user works with)
+  const [customerTypeId, setCustomerTypeId] = useState("");
+  const [customerTypes, setCustomerTypes] = useState<Array<{ id: string; name: string }>>([]);
+  const { user } = useAdminAccess();
+  const scope = user?.customerTypeScope ?? null;
+
+  useEffect(() => {
+    customerTypeService
+      .getAllCustomerTypes()
+      .then((res: any) => {
+        const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+        setCustomerTypes(list.map((t: any) => ({ id: t.id, name: t.name })));
+      })
+      .catch(() => setCustomerTypes([]));
+  }, []);
+
+  // Only the types this user may see (all of them for admins)
+  const visibleTypes = scope ? customerTypes.filter((t) => scope.includes(t.id)) : customerTypes;
   
   const [pagination, setPagination] = useState({
     page: 1,
@@ -41,7 +61,8 @@ export default function RestaurantsPage() {
     limit = 5, 
     isPagination = false,
     search = searchValue,
-    status = statusValue
+    status = statusValue,
+    typeId = customerTypeId
   ) => {
     try {
       setError(null);
@@ -55,7 +76,8 @@ export default function RestaurantsPage() {
         page, 
         limit,
         search: search || undefined,
-        status: status !== "all" ? status : undefined
+        status: status !== "all" ? status : undefined,
+        customerTypeId: typeId || undefined,
       });
 
       if (response?.success && Array.isArray(response?.data)) {
@@ -92,15 +114,15 @@ export default function RestaurantsPage() {
       setLoading(false);
       setPaginationLoading(false);
     }
-  }, [getAllRestaurants, searchValue, statusValue]);
+  }, [getAllRestaurants, searchValue, statusValue, customerTypeId]);
 
   // Debounced fetch when search or status changes
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchRestaurants(1, pagination.limit, false, searchValue, statusValue);
+      fetchRestaurants(1, pagination.limit, false, searchValue, statusValue, customerTypeId);
     }, 400); // 400ms debounce
     return () => clearTimeout(timer);
-  }, [searchValue, statusValue, pagination.limit, fetchRestaurants]);
+  }, [searchValue, statusValue, customerTypeId, pagination.limit, fetchRestaurants]);
 
   const handlePaginationChange = (page: number, limit: number) => {
     fetchRestaurants(page, limit, true);
@@ -118,7 +140,7 @@ export default function RestaurantsPage() {
         <div className="p-4 rounded-full bg-red-100 mb-4">
           <AlertCircle className="w-12 h-12 text-red-600" />
         </div>
-        <h2 className="text-xl font-bold text-gray-800">Failed to load restaurants</h2>
+        <h2 className="text-xl font-bold text-gray-800">Failed to load customers</h2>
         <p className="text-gray-500 max-w-md text-center">{error}</p>
         <Button 
           onClick={() => fetchRestaurants(pagination.page, pagination.limit, false, searchValue, statusValue)}
@@ -140,12 +162,48 @@ export default function RestaurantsPage() {
           <ChevronRight className="w-4 h-4" />
           <span>Users</span>
           <ChevronRight className="w-4 h-4" />
-          <span className="text-gray-900">Restaurants</span>
+          <span className="text-gray-900">Customers</span>
         </div>
         <div className="flex justify-between items-end">
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Restaurants Management</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Customers</h1>
         </div>
+        <p className="text-sm text-gray-500">
+          Restaurants, schools, hotels and every other customer type.
+        </p>
       </div>
+
+      {/* Customer type tabs (only the types this user works with) */}
+      {visibleTypes.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {(scope ? visibleTypes.length > 1 : true) && (
+            <button
+              type="button"
+              onClick={() => setCustomerTypeId("")}
+              className={`h-8 px-3 rounded-full border text-xs transition-colors cursor-pointer ${
+                customerTypeId === ""
+                  ? "border-emerald-600 bg-emerald-50 text-emerald-700 font-medium"
+                  : "border-gray-300 text-gray-700 hover:border-emerald-300"
+              }`}
+            >
+              {scope ? "All my customers" : "All customers"}
+            </button>
+          )}
+          {visibleTypes.map((type) => (
+            <button
+              key={type.id}
+              type="button"
+              onClick={() => setCustomerTypeId(type.id)}
+              className={`h-8 px-3 rounded-full border text-xs capitalize transition-colors cursor-pointer ${
+                customerTypeId === type.id
+                  ? "border-emerald-600 bg-emerald-50 text-emerald-700 font-medium"
+                  : "border-gray-300 text-gray-700 hover:border-emerald-300"
+              }`}
+            >
+              {type.name.toLowerCase()}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -161,7 +219,7 @@ export default function RestaurantsPage() {
             </div>
           </div>
           <div className="space-y-1">
-            <p className="text-xs text-gray-600 font-medium">Total Restaurants</p>
+            <p className="text-xs text-gray-600 font-medium">Total Customers</p>
             <p className="text-sm font-bold text-emerald-600">
               {metrics.total}
             </p>
