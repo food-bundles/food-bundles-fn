@@ -92,14 +92,22 @@ const searchKeywords: Record<string, string[]> = {
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
   {
+    // Farmer journey: manage every stage, or verify face to face
     icon: FileText,
-    label: "Farmer Submission",
-    href: "/dashboard/farmer-submissions",
-  },
-  {
-    icon: ClipboardCheck,
-    label: "Verify Submissions",
-    href: "/dashboard/submission-verification",
+    label: "Farmer Submissions",
+    href: "/dashboard/submissions",
+    subItems: [
+      {
+        icon: FileText,
+        label: "Submission Management",
+        href: "/dashboard/farmer-submissions",
+      },
+      {
+        icon: ClipboardCheck,
+        label: "Verify Submissions",
+        href: "/dashboard/submission-verification",
+      },
+    ],
   },
   {
     icon: ShoppingCart,
