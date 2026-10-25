@@ -42,6 +42,7 @@ import {
   Search,
   X,
   CornerDownLeft,
+  MapPin,
 } from "lucide-react";
 import NotificationsDrawer from "@/app/(private)/restaurant/_components/notificationDrawer";
 import { usePathname, useRouter } from "next/navigation";
@@ -70,6 +71,7 @@ const searchKeywords: Record<string, string[]> = {
   "/dashboard/stock/fb-reports": ["reports", "sales", "tabletronic", "revenue"],
   "/dashboard/subscriptions": ["plans", "premium", "membership", "billing"],
   "/dashboard/markets": ["prices", "market", "wfp", "commodity", "trends"],
+  "/dashboard/aggregation-sites": ["collection", "drop-off", "pickup", "location", "nearest", "map"],
   "/dashboard/predictive-intelligence": ["ai", "forecast", "prediction", "analytics"],
   "/dashboard/supply-intelligence": ["ai", "supply", "farmers", "forecast"],
   "/dashboard/market-price-intelligence": ["ai", "prices", "market", "trends"],
@@ -172,6 +174,11 @@ const menuItems = [
     icon: TrendingUp,
     label: "Market Prices",
     href: "/dashboard/markets",
+  },
+  {
+    icon: MapPin,
+    label: "Aggregation Sites",
+    href: "/dashboard/aggregation-sites",
   },
   {
     icon: Brain,

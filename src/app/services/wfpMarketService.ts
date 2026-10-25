@@ -98,6 +98,7 @@ export interface WfpUploadResponse {
   data: {
     totalRows: number;
     insertedCount: number;
+    skippedExisting?: number;
     marketsDiscovered: number;
     marketsCreated: number;
     dateRange: {
