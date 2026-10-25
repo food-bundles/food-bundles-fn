@@ -38,7 +38,7 @@ import { AddSubmissionModal } from "./_components/AddSubmissionModal";
 const statusOptions = [
   { label: "All stages", value: "all" },
   { label: "Submitted", value: "PENDING" },
-  { label: "Waiting for farmer", value: "NEGOTIATING" },
+  { label: "Counter-offer", value: "NEGOTIATING" },
   { label: "Approved (to verify)", value: "APPROVED" },
   { label: "Verified (to pay)", value: "VERIFIED" },
   { label: "Paid", value: "PAID" },

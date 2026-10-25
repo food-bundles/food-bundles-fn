@@ -28,8 +28,8 @@ export interface FarmerSubmission {
   acceptedQty: number | null;
   totalAmount: number | null;
   categoryId: string;
-  // Flow: PENDING → APPROVED → VERIFIED → PAID; NEGOTIATING = counter offer
-  // waiting for the farmer; REJECTED = closed without buying
+  // Flow: PENDING → APPROVED → VERIFIED → PAID; NEGOTIATING = counter-offer
+  // sent to the farmer; REJECTED = closed without buying
   status: SubmissionStage;
   farmerFeedbackStatus: "PENDING" | "ACCEPTED" | "REJECTED" | "EXTENDED" | null;
   farmerFeedbackAt: string | null;

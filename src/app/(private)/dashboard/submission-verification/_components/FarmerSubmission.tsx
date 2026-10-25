@@ -25,7 +25,7 @@ interface FarmerSubmissionProps {
 // One tab per stage of the farmer journey: submit → approve → verify → pay
 const STAGE_TABS: Array<{ key: SubmissionStage; label: string; empty: string }> = [
   { key: "PENDING", label: "To approve", empty: "No submissions waiting for approval." },
-  { key: "NEGOTIATING", label: "Waiting for farmer", empty: "No counter offers waiting for farmers." },
+  { key: "NEGOTIATING", label: "Counter-offer", empty: "No counter-offers sent." },
   { key: "APPROVED", label: "To verify", empty: "Nothing to weigh right now." },
   { key: "VERIFIED", label: "To pay", empty: "No farmers waiting for payment." },
   { key: "PAID", label: "Paid", empty: "No paid submissions yet." },
@@ -283,8 +283,8 @@ export default function FarmerSubmission({ initialSubmissions = [] }: FarmerSubm
                         {/* What this stage needs to know */}
                         {s.status === "NEGOTIATING" && (
                           <div className="mt-2 rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-xs sm:text-sm text-amber-900">
-                            Counter offer of <strong>{rwf(s.counterOfferPrice)}</strong> sent. Waiting for the farmer
-                            to accept or decline.
+                            Counter-offer of <strong>{rwf(s.counterOfferPrice)}</strong> sent. The farmer accepts,
+                            declines or proposes a price.
                           </div>
                         )}
                         {s.status === "APPROVED" && (

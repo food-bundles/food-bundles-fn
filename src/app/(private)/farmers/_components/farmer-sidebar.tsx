@@ -27,8 +27,8 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/farmers" },
-  // Supply requests from aggregators (schools, hotels…)
-  { icon: ShoppingBasket, label: "Products Needed", href: "/farmers/products-needed" },
+  // Buying offers from aggregators' supply requests (schools, hotels…)
+  { icon: ShoppingBasket, label: "Buying Offers", href: "/farmers/offers" },
   { icon: ClipboardList, label: "Submissions", href: "/farmers/submissions" },
   { icon: Wallet, label: "Sales", href: "/farmers/sales" },
   { icon: User, label: "Profile", href: "/farmers/profile" },

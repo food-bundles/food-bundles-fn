@@ -49,7 +49,7 @@ export function SubmissionDetailsModal({
   const [counterOffer, setCounterOffer] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // A counter offer from Food Bundles is waiting for the farmer's answer
+  // A counter-offer from Food Bundles the farmer answers
   const awaitingFeedback = !!product && product.status === "NEGOTIATING" && !!product.counterOfferPrice;
 
   const resetForm = () => {
