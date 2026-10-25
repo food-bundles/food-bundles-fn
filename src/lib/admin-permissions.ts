@@ -24,6 +24,7 @@ const PAGE_MODULES: Array<[string, string]> = [
   ["/dashboard/sales", "sales_reports"],
   ["/dashboard/subscriptions", "subscriptions"],
   ["/dashboard/markets", "markets"],
+  ["/dashboard/aggregation-sites", "markets"],
   ["/dashboard/market-reports", "markets"],
   ["/dashboard/predictive-intelligence", "intelligence"],
   ["/dashboard/supply-intelligence", "intelligence"],
