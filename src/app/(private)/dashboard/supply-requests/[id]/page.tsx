@@ -21,7 +21,7 @@ const formatDay = (value: string) =>
 
 const STAGE_LABELS: Record<string, string> = {
   PENDING: "Submitted",
-  NEGOTIATING: "Waiting for farmer",
+  NEGOTIATING: "Counter-offer",
   APPROVED: "Approved",
   VERIFIED: "Verified",
   PAID: "Paid",

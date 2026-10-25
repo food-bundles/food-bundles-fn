@@ -27,10 +27,11 @@ const formatDay = (day: string) =>
   new Date(`${day}T00:00:00Z`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
 
 /**
- * Products customers (schools, hotels…) need, posted by Food Bundles
- * aggregators. The farmer supplies one, several or all of them.
+ * Buying offers: Food Bundles offers to buy these products (needed by
+ * customers such as schools, posted by aggregators). The farmer supplies one,
+ * several or all of them.
  */
-export function RequestedProducts({
+export function BuyingOffers({
   onSubmitted,
   showEmpty = false,
 }: {
@@ -113,13 +114,13 @@ export function RequestedProducts({
         <div>
           <p className="flex items-center gap-2 text-sm font-semibold text-gray-900">
             <ClipboardList className="h-4 w-4 text-green-600" />
-            Products needed
+            Buying offers
             {lineCount > 0 && (
               <span className="rounded-full bg-green-600 px-2 py-0.5 text-[11px] font-semibold text-white">{lineCount}</span>
             )}
           </p>
           <p className="text-xs text-gray-500">
-            Customers need these products. Supply one or as many as you have.
+            Food Bundles offers to buy these products. Supply one or as many as you have.
           </p>
         </div>
         {lineCount > 0 && (
@@ -136,7 +137,7 @@ export function RequestedProducts({
       </div>
       {requests.length === 0 ? (
         <p className="px-5 py-8 text-center text-sm text-gray-500">
-          No products are needed right now. Check back soon.
+          No buying offers right now. Check back soon.
         </p>
       ) : visible.length === 0 ? (
         <p className="px-5 py-8 text-center text-sm text-gray-500">Nothing matches “{search}”.</p>

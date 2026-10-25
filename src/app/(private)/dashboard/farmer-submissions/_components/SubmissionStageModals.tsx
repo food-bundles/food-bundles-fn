@@ -53,7 +53,7 @@ export function StageProgress({ status }: { status: SubmissionStage }) {
   }
   const current = stepIndex(status);
   const label =
-    status === "NEGOTIATING" ? "Waiting for farmer" : STEPS[current]?.label ?? status;
+    status === "NEGOTIATING" ? "Counter-offer" : STEPS[current]?.label ?? status;
   return (
     <div className="flex min-w-32 flex-col gap-1">
       <div className="flex items-center gap-1">

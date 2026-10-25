@@ -392,7 +392,7 @@ export function getAdminSubmissionColumns({
         const canDelete = (stage === "PENDING" || stage === "REJECTED") && can("delete");
         const waitingNote =
           stage === "NEGOTIATING"
-            ? "Counter offer sent. Waiting for the farmer to accept or decline."
+            ? "Counter-offer sent. The farmer accepts, declines or proposes a price."
             : stage === "VERIFIED" && hasActivePayout
               ? "MoMo payment in progress. Confirm it in the history."
               : null;
