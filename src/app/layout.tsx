@@ -24,7 +24,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${nunitoSans.variable}`}>
+    <html lang="en" className={`${nunitoSans.variable}`} suppressHydrationWarning>
       <body suppressHydrationWarning>
         <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}>
           <ImageKitProvider>

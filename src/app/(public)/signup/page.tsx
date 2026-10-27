@@ -1186,8 +1186,20 @@ function SignupForm() {
       return "Business name must be at least 2 characters";
     if (name.trim().length > 100)
       return "Business name is too long (max 100 characters)";
-    if (!/^[a-zA-Z0-9\s\-'&.]+$/.test(name.trim())) {
+    // Letters in any language (Café), numbers and common punctuation
+    if (!/^[\p{L}\p{N}\s\-'’&.,()/]+$/u.test(name.trim())) {
       return "Business name contains invalid characters";
+    }
+    return null;
+  }
+
+  // Farmer's full name (required by the backend; at least 2 characters)
+  function validatePersonName(name: string): string | null {
+    if (!name || !name.trim()) return "Your full name is required";
+    if (name.trim().length < 2) return "Name must be at least 2 characters";
+    if (name.trim().length > 100) return "Name is too long (max 100 characters)";
+    if (!/^[\p{L}\s\-'’.]+$/u.test(name.trim())) {
+      return "Name can only contain letters, spaces, hyphens and apostrophes";
     }
     return null;
   }
@@ -1217,6 +1229,11 @@ function SignupForm() {
     const phone = formData.get("phone") as string;
     const password = formData.get("password") as string;
     const name = formData.get("name") as string;
+
+    if (selectedRole === UserRole.FARMER) {
+      const nameError = validatePersonName(name);
+      if (nameError) errors.name = nameError;
+    }
 
     if (selectedRole === UserRole.RESTAURANT) {
       const nameError = validateRestaurantName(name);
@@ -1309,11 +1326,21 @@ function SignupForm() {
 
     try {
       if (selectedRole === UserRole.FARMER) {
+        // Email is optional for farmers; the location picked in the modal is
+        // sent as its parts (validated by the backend) plus a readable address
+        const { province, district, sector, cell, village } = locationData;
         const farmerData: ICreateFarmerData = {
-          email: email || undefined,
+          name: name.trim(),
+          email: email?.trim() || undefined,
           password,
-          tin: formData.get("tin") as string,
-          location: locationToSave,
+          location:
+            locationToSave ||
+            [village, cell, sector, district, province].filter(Boolean).join(", "),
+          province,
+          district,
+          sector,
+          cell,
+          village,
           phone,
           agreed,
         };
@@ -1635,6 +1662,27 @@ function SignupForm() {
               </div>
             )}
 
+            {selectedRole === UserRole.FARMER && (
+              <div className="relative">
+                <Input
+                  type="text"
+                  name="name"
+                  placeholder="Full name"
+                  autoComplete="name"
+                  className={` h-10 border-gray-300 text-gray-900 focus:border-green-500 focus:ring-green-500 rounded-none ${
+                    validationErrors.name
+                      ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                      : ""
+                  }`}
+                  disabled={!isBackendAvailable || isLoading}
+                  onChange={() => handleInputChange("name")}
+                />
+                {validationErrors.name && (
+                  <p className="text-red-600 text-xs mt-1">{validationErrors.name}</p>
+                )}
+              </div>
+            )}
+
             {selectedRole === UserRole.RESTAURANT && (
               <>
                 {/* Business type = customer type (saved in customerTypeId, not in role).
@@ -1701,7 +1749,7 @@ function SignupForm() {
                 type="email"
                 name="email"
                 placeholder={
-                  selectedRole === UserRole.FARMER ? "Email" : "Email Address"
+                  selectedRole === UserRole.FARMER ? "Email (optional)" : "Email Address"
                 }
                 className={` h-10 border-gray-300 text-gray-900 focus:border-green-500 focus:ring-green-500 rounded-none ${
                   validationErrors.email

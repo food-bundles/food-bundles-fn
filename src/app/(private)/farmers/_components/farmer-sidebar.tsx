@@ -3,12 +3,14 @@
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
+  ClipboardList,
   Wallet,
   User,
   Settings,
   LogOut,
   ChevronDown,
   Mail,
+  ShoppingBasket,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -25,6 +27,9 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/farmers" },
+  // Buying offers from aggregators' supply requests (schools, hotels…)
+  { icon: ShoppingBasket, label: "Buying Offers", href: "/farmers/offers" },
+  { icon: ClipboardList, label: "Submissions", href: "/farmers/submissions" },
   { icon: Wallet, label: "Sales", href: "/farmers/sales" },
   { icon: User, label: "Profile", href: "/farmers/profile" },
   { icon: Settings, label: "Settings", href: "/farmers/setting/authenticator" },

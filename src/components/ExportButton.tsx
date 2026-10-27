@@ -5,6 +5,27 @@ import { FileSpreadsheet, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { exportService, ExportModuleType, ExportFilterParams } from "@/app/services/exportService";
 import { showToast } from "@/lib/toast";
+import { useAdminAccess } from "@/app/hooks/useAdminAccess";
+
+// Permission that allows each export (mirrors EXPORT_MODULES in the backend
+// export routes): any one of these is enough
+const EXPORT_PERMISSIONS: Record<string, string[]> = {
+  users: ["user_lookup.view", "farmers.export", "restaurants.export", "admins.export"],
+  orders: ["orders.export"],
+  restaurants: ["restaurants.export"],
+  payments: ["orders.export", "deposits.export"],
+  products: ["products.export"],
+  farmers: ["farmers.export"],
+  logistics: ["admins.export"],
+  aggregators: ["admins.export"],
+  subscriptions: ["subscriptions.export"],
+  wallets: ["deposits.export"],
+  loans: ["vouchers.export"],
+  deposits: ["deposits.export"],
+  transactions: ["deposits.export"],
+  submissions: ["farmer_submissions.export"],
+  markets: ["markets.export"],
+};
 
 interface ExportButtonProps {
   module: ExportModuleType;
@@ -26,6 +47,11 @@ export const ExportButton: React.FC<ExportButtonProps> = ({
   size = "sm",
 }) => {
   const [loading, setLoading] = useState(false);
+  const { can, loading: accessLoading } = useAdminAccess();
+  const allowed = (EXPORT_PERMISSIONS[module] || []).some((p) => {
+    const [feature, action] = p.split(".");
+    return can(feature, action);
+  });
 
   const handleExport = async () => {
     try {
@@ -41,6 +67,9 @@ export const ExportButton: React.FC<ExportButtonProps> = ({
       setLoading(false);
     }
   };
+
+  // Hidden for people without the export permission of this data
+  if (accessLoading || !allowed) return null;
 
   return (
     <Button

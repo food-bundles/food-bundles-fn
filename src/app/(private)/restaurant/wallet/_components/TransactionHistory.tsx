@@ -104,7 +104,7 @@ export function TransactionHistory({ isOpen, onClose }: TransactionHistoryProps)
                           </p>
                           {transaction.paymentMethod && (
                             <p className="text-xs text-gray-500">
-                              via {transaction.paymentMethod.replace('_', ' ')}
+                              via {(transaction.paymentMethod || "").replace('_', ' ')}
                             </p>
                           )}
                         </div>

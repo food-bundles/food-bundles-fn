@@ -470,6 +470,43 @@ export const voucherService = {
     return response.data;
   },
 
+  // ── Admin pays a voucher on behalf of a restaurant ──────────────────────
+  // Prepaid wallet: text the restaurant an OTP it reads back to the admin
+  requestAdminRepayOTP: async (sessionId: string, amount?: number) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(
+      `/vouchers/sessions/${sessionId}/admin-repay/request-otp`,
+      { amount }
+    );
+    return response.data;
+  },
+
+  // MOBILE_MONEY needs phoneNumber (USSD push); CASH (prepaid wallet) needs otp
+  adminRepayLoanSession: async (
+    sessionId: string,
+    paymentData: {
+      paymentMethod: "MOBILE_MONEY" | "CASH";
+      phoneNumber?: string;
+      otp?: string;
+      amount?: number;
+    },
+  ) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(
+      `/vouchers/sessions/${sessionId}/admin-repay`,
+      paymentData
+    );
+    return response.data;
+  },
+
+  adminVerifyLoanRepayment: async (sessionId: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get(
+      `/vouchers/sessions/${sessionId}/admin-repay/verify`
+    );
+    return response.data;
+  },
+
   getAllLoanSessions: async (params?: {
     status?: string;
     restaurantId?: string;

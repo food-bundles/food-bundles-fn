@@ -1,7 +1,6 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -10,34 +9,27 @@ import {
   CheckCircle,
   MoreHorizontal,
   CheckIcon,
+  Undo2,
+  Wallet,
+  History,
 } from "lucide-react";
-import { CiEdit } from "react-icons/ci";
-import { FarmerSubmission } from "@/app/contexts/submission-context";
+import {
+  agreedPriceOf,
+  askedPriceOf,
+  FarmerSubmission,
+  farmerDisplayName,
+} from "@/app/contexts/submission-context";
+import { StageProgress } from "./SubmissionStageModals";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { formatDateTime } from "@/lib/reusableFunctions";
 
-// Helper functions
-const getStatusColor = (status: string) => {
-  switch (status.toUpperCase()) {
-    case "ACCEPTED":
-    case "APPROVED":
-      return "bg-green-100 text-green-800 hover:bg-green-100";
-    case "REJECTED":
-      return "bg-red-100 text-red-800 hover:bg-red-100";
-    case "PENDING":
-      return "bg-yellow-100 text-yellow-800 hover:bg-yellow-100";
-    case "VERIFIED":
-      return "bg-blue-100 text-blue-800 hover:bg-blue-100";
-    case "PAID":
-      return "bg-purple-100 text-purple-800 hover:bg-purple-100";
-    default:
-      return "bg-gray-100 text-gray-800 hover:bg-gray-100";
-  }
-};
 
 const formatCurrency = (amount: number | null) => {
   if (amount === null) return "-";
@@ -62,13 +54,29 @@ const formatDate = (dateString: string | null) => {
 };
 
 // Create comprehensive admin columns showing all fields
-export function getAdminSubmissionColumns(
-  onOpenModal: (
-    submission: FarmerSubmission,
-    mode: "view" | "verify" | "edit"
-  ) => void,
-  onApproveSubmission: (submissionId: string) => void
-): ColumnDef<FarmerSubmission>[] {
+export interface SubmissionColumnActions {
+  onApprove: (submission: FarmerSubmission) => void; // stage 2: approve / counter offer
+  onVerify: (submission: FarmerSubmission) => void; // stage 3: verify face to face
+  onPay: (submission: FarmerSubmission) => void; // stage 4: pay the farmer
+  onReject: (submission: FarmerSubmission) => void;
+  onDelete: (submission: FarmerSubmission) => void;
+  onReverseStatus: (submission: FarmerSubmission) => void;
+  onViewHistory: (submission: FarmerSubmission) => void;
+  // Farmer submissions permission check for one action ("approve", "verify"…);
+  // hides actions the user's role can't do. Omitted = everything allowed.
+  can?: (action: string) => boolean;
+}
+
+export function getAdminSubmissionColumns({
+  onApprove,
+  onVerify,
+  onPay,
+  onReject,
+  onDelete,
+  onReverseStatus,
+  onViewHistory,
+  can = () => true,
+}: SubmissionColumnActions): ColumnDef<FarmerSubmission>[] {
   return [
     // Selection column
     {
@@ -103,27 +111,6 @@ export function getAdminSubmissionColumns(
           {row.index + 1}
         </div>
       ),
-    },
-
-    // Farmer Information
-    {
-      accessorKey: "farmer",
-      id: "farmerInfo",
-      header: "Farmer",
-      cell: ({ row }) => {
-        const farmer = row.original.farmer;
-        const farmerName = farmer.email?.split("@")[0] || "Unknown";
-
-        return (
-          <div className="flex items-center space-x-3">
-            <div className="flex flex-col">
-              <span className="font-medium">{farmerName}</span>
-              <span className="text-xs text-gray-500">{farmer.phone}</span>
-              <span className="text-xs text-gray-400">{farmer.email}</span>
-            </div>
-          </div>
-        );
-      },
     },
 
     // Product Information
@@ -166,38 +153,53 @@ export function getAdminSubmissionColumns(
       ),
     },
 
-    // Prices
+    // Prices: asked, Food Bundles, offer / agreed
     {
       accessorKey: "prices",
-      header: "Prices (RWF/kg)",
-      cell: ({ row }) => (
-        <div className="flex flex-col space-y-1">
-          <div className="text-sm">
-            <span className="text-gray-600">Wished:</span>
-            <span className="font-medium ml-1">{row.original.wishedPrice}</span>
-          </div>
-          {row.original.acceptedPrice && (
-            <div className="text-sm">
-              <span className="text-gray-600">Accepted:</span>
-              <span className="font-medium ml-1 text-green-600">
-                {row.original.acceptedPrice}
-              </span>
+      header: "Prices (RWF/unit)",
+      cell: ({ row }) => {
+        const s = row.original;
+        return (
+          <div className="flex flex-col space-y-0.5 text-sm">
+            <div>
+              <span className="text-gray-600">Asks:</span>
+              <span className="font-medium ml-1">{askedPriceOf(s).toLocaleString()}</span>
+              {s.farmerCounterOffer != null && (
+                <span className="ml-1 text-xs text-amber-700">(new price)</span>
+              )}
             </div>
-          )}
-        </div>
-      ),
+            {s.foodBundlesPrice != null && (
+              <div>
+                <span className="text-gray-600">Food Bundles:</span>
+                <span className="font-medium ml-1">{s.foodBundlesPrice.toLocaleString()}</span>
+              </div>
+            )}
+            {s.status === "NEGOTIATING" && s.counterOfferPrice != null && (
+              <div>
+                <span className="text-gray-600">Offered:</span>
+                <span className="font-medium ml-1 text-amber-700">{s.counterOfferPrice.toLocaleString()}</span>
+              </div>
+            )}
+            {["APPROVED", "VERIFIED", "PAID"].includes(s.status) && (
+              <div>
+                <span className="text-gray-600">Agreed:</span>
+                <span className="font-medium ml-1 text-green-600">
+                  {(s.acceptedPrice ?? agreedPriceOf(s)).toLocaleString()}
+                </span>
+              </div>
+            )}
+            {s.totalAmount != null && s.status !== "NEGOTIATING" && s.status !== "REJECTED" && (
+              <div className="pt-0.5">
+                <span className="text-gray-600">Total:</span>
+                <span className="ml-1 font-bold text-gray-900">{s.totalAmount}</span>
+              </div>
+            )}
+          </div>
+        );
+      },
     },
 
-    // Total Amount
-    {
-      accessorKey: "totalAmount",
-      header: "Total Amount",
-      cell: ({ row }) => (
-        <span className="font-medium">
-          {formatCurrency(row.original.totalAmount)}
-        </span>
-      ),
-    },
+   
 
     // Location
     {
@@ -214,60 +216,11 @@ export function getAdminSubmissionColumns(
       ),
     },
 
-    // Status
+    // Stage: Submitted → Approved → Verified → Paid
     {
       accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => (
-        <div className="flex flex-col space-y-1">
-          <Badge className={getStatusColor(row.original.status)}>
-            {row.original.status}
-          </Badge>
-        </div>
-      ),
-    },
-
-    // Farmer Feedback Status
-    {
-      accessorKey: "Farmer Reaction",
-      header: "Farmer's Reaction",
-      cell: ({ row }) => (
-        <Badge
-          className={getStatusColor(
-            row.original.farmerFeedbackStatus || "PENDING"
-          )}
-        >
-          {row.original.farmerFeedbackStatus || "PENDING"}
-        </Badge>
-      ),
-    },
-
-    // Aggregator
-    {
-      accessorKey: "Verified By",
-      header: "Verified By",
-      cell: ({ row }) => {
-        const aggregator = row.original.aggregator;
-        if (!aggregator) return <span className="text-gray-400">-</span>;
-
-        return (
-          <div className="flex flex-col">
-            <span className="font-medium text-sm">{aggregator.username}</span>
-            <span className="text-xs text-gray-500">{aggregator.phone}</span>
-          </div>
-        );
-      },
-    },
-
-    // Dates - Submitted
-    {
-      accessorKey: "submittedAt",
-      header: "Submitted",
-      cell: ({ row }) => (
-        <span className="text-sm">
-          {formatDateTime(row.original.submittedAt)}
-        </span>
-      ),
+      header: "Stage",
+      cell: ({ row }) => <StageProgress status={row.original.status} />,
     },
 
     // More details dropdown (for fields that don't need to be always visible)
@@ -287,6 +240,31 @@ export function getAdminSubmissionColumns(
             <DropdownMenuContent align="end" className="w-64">
               <div className="p-2 space-y-2">
                 <div className="text-sm font-medium">Additional Details</div>
+
+                <div className="rounded-md bg-gray-50 p-2 text-xs">
+                  <div className="font-medium text-gray-900">
+                    {farmerDisplayName(submission.farmer)}
+                  </div>
+                  {submission.farmer?.phone && (
+                    <div className="text-gray-600">{submission.farmer.phone}</div>
+                  )}
+                  {submission.farmer?.email && (
+                    <div className="text-gray-500">{submission.farmer.email}</div>
+                  )}
+                </div>
+
+                <div className="text-xs">
+                  <span className="text-gray-600">Submitted:</span>{" "}
+                  {formatDateTime(submission.submittedAt)}
+                </div>
+
+                {submission.aggregator && (
+                  <div className="text-xs">
+                    <span className="text-gray-600">Verified by:</span>{" "}
+                    {submission.aggregator.username}
+                    {submission.aggregator.phone ? ` · ${submission.aggregator.phone}` : ""}
+                  </div>
+                )}
 
                 {submission.verifiedAt && (
                   <div className="text-xs">
@@ -352,70 +330,121 @@ export function getAdminSubmissionColumns(
       },
     },
 
-    // Actions column
+    // Actions column: one ⋮ menu with every action (icon + name). Actions
+    // show only when the submission's status allows them and the user's role
+    // has the permission.
     {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
         const submission = row.original;
 
+        const hasActivePayout = (submission.payouts || []).some((p) =>
+          ["PENDING", "PROCESSING", "COMPLETED"].includes(p.status)
+        );
+
+        // Only the next step of the current stage is offered
+        const stage = submission.status;
+        const actions = [
+          {
+            key: "approve",
+            label: "Approve / set price",
+            icon: <CheckIcon className="h-4 w-4 text-green-600" />,
+            show: stage === "PENDING" && can("approve"),
+            onSelect: () => onApprove(submission),
+          },
+          {
+            key: "verify",
+            label: "Verify (weigh & record)",
+            icon: <CheckCircle className="h-4 w-4 text-green-600" />,
+            show: stage === "APPROVED" && can("verify"),
+            onSelect: () => onVerify(submission),
+          },
+          {
+            key: "payout",
+            label: "Pay farmer",
+            icon: <Wallet className="h-4 w-4 text-purple-600" />,
+            show: stage === "VERIFIED" && !hasActivePayout && can("request_payout"),
+            onSelect: () => onPay(submission),
+          },
+          {
+            key: "reject",
+            label: stage === "NEGOTIATING" ? "Withdraw offer & reject" : "Reject submission",
+            icon: <XCircle className="h-4 w-4 text-red-600" />,
+            show: ["PENDING", "NEGOTIATING", "APPROVED"].includes(stage) && can("reject"),
+            onSelect: () => onReject(submission),
+          },
+          {
+            key: "history",
+            label: "Payout & status history",
+            icon: <History className="h-4 w-4 text-indigo-600" />,
+            show: true,
+            onSelect: () => onViewHistory(submission),
+          },
+          {
+            key: "reverse",
+            label: "Move status back",
+            icon: <Undo2 className="h-4 w-4 text-amber-600" />,
+            show: stage !== "PENDING" && can("reverse_status"),
+            onSelect: () => onReverseStatus(submission),
+          },
+        ].filter((action) => action.show);
+        const canDelete = (stage === "PENDING" || stage === "REJECTED") && can("delete");
+        const waitingNote =
+          stage === "NEGOTIATING"
+            ? "Counter-offer sent. The farmer accepts, declines or proposes a price."
+            : stage === "VERIFIED" && hasActivePayout
+              ? "MoMo payment in progress. Confirm it in the history."
+              : null;
+
         return (
-          <div className="flex items-center space-x-1">
-            {/* Approve Submission Button - Changed from Eye to ThumbsUp icon */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 text-green-600 hover:text-green-800 hover:bg-blue-50"
-              onClick={() => onApproveSubmission(submission.id)}
-              title="Approve submission"
-              disabled={
-                submission.status === "APPROVED" || submission.status === "PAID"
-              }
-            >
-              <CheckIcon className="h-6 w-6 text-green-600" />
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 text-gray-600 hover:text-gray-800 hover:bg-gray-50"
-              onClick={() => onOpenModal(submission, "edit")}
-              title="Edit submission"
-            >
-              <CiEdit className="h-4 w-4" />
-            </Button>
-
-            {submission.status === "PENDING" && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                  onClick={() => onOpenModal(submission, "verify")}
-                  title="Verify submission"
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                aria-label="Open actions"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuLabel className="text-xs text-gray-500">Actions</DropdownMenuLabel>
+              {actions.map((action) => (
+                <DropdownMenuItem
+                  key={action.key}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    action.onSelect();
+                  }}
+                  className="gap-2 text-sm cursor-pointer"
                 >
-                  <CheckCircle className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                  title="Reject submission"
-                >
-                  <XCircle className="h-4 w-4" />
-                </Button>
-              </>
-            )}
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-              title="Delete submission"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
+                  {action.icon}
+                  {action.label}
+                </DropdownMenuItem>
+              ))}
+              {canDelete && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(submission);
+                    }}
+                    className="gap-2 text-sm text-red-600 focus:text-red-700 cursor-pointer"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete submission
+                  </DropdownMenuItem>
+                </>
+              )}
+              {waitingNote && (
+                <p className="px-2 pt-1 pb-1.5 text-[11px] text-amber-700">{waitingNote}</p>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         );
       },
       enableSorting: false,

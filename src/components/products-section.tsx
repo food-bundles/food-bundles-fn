@@ -18,6 +18,7 @@ import {
   // Eye,
   Check,
   Gift,
+  X,
 } from "lucide-react";
 import {
   Select,
@@ -44,9 +45,12 @@ import { useAuth } from "@/app/contexts/auth-context";
 import { useCart } from "@/app/contexts/cart-context";
 import { useProductSection } from "@/hooks/useProductSection";
 import { productService } from "@/app/services/productService";
+import { wishlistService } from "@/app/services/wishlistService";
+import { toast } from "sonner";
 import RestaurantAvailablePromos from "@/app/(private)/restaurant/_components/RestaurantAvailablePromos";
 // import { ChristmasAnimation } from "@/components/ChristmasAnimation";
-import Link from "next/link";
+import RestaurantCardsShowcase from "@/components/restaurant-cards-showcase";
+import { motion, useReducedMotion } from "motion/react";
 
 // Helper function to get role-based price from customerTypePrices
 const getRoleBasedPrice = (product: any, userRole: string, customerTypeId?: string | null) => {
@@ -88,6 +92,9 @@ interface ProductCardProps {
   productData?: Product;
   userRole?: string;
   customerTypeId?: string | null;
+  // Wishlist (saved products) — state lives in ProductsSection
+  isWishlisted?: boolean;
+  onToggleWishlist?: (productId: string) => void;
 }
 
 const ProductCard = memo(function ProductCard({
@@ -101,14 +108,15 @@ const ProductCard = memo(function ProductCard({
   productData,
   userRole,
   customerTypeId,
+  isWishlisted = false,
+  onToggleWishlist,
 }: ProductCardProps) {
-  const [isHovered, setIsHovered] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [inputValue, setInputValue] = useState("1");
-  const [isWishlisted, setIsWishlisted] = useState(false);
 
-  const { addToCart, cartItems, updateCartItem } = useCart();
+  const { addToCart, cartItems, updateCartItem, removeCartItem } = useCart();
+  const [isRemoving, setIsRemoving] = useState(false);
   const cartItem = cartItems.find((item) => item.productId === id);
   const isInCart = !!cartItem;
   const cartQuantity = cartItem?.quantity || 0;
@@ -146,11 +154,20 @@ const ProductCard = memo(function ProductCard({
   // Reconcile local quantity from the cart on every change, unless an update is
   // in flight. This prevents the card and the drawer from pushing stale values
   // back and forth (the "shaking" total), and survives page refreshes.
+  const prevCartQuantityRef = useRef(cartQuantity);
   useEffect(() => {
+    const wasInCart = prevCartQuantityRef.current > 0;
+    prevCartQuantityRef.current = cartQuantity;
     if (isUpdatingRef.current || isAddingToCart) return;
     if (cartQuantity > 0) {
       setQuantity(cartQuantity);
       setInputValue(cartQuantity.toString());
+    } else if (wasInCart) {
+      // The item left the cart (removed / cart cleared): reset to 1. Keeping the
+      // old quantity (> 1) made the auto-add below put it straight back.
+      if (autoUpdateTimerRef.current) clearTimeout(autoUpdateTimerRef.current);
+      setQuantity(1);
+      setInputValue("1");
     }
   }, [cartQuantity]);
 
@@ -201,10 +218,7 @@ const ProductCard = memo(function ProductCard({
     }
   }, [isInCart, cartItem, quantity, addToCart, updateCartItem, id]);
 
-  const handleWishlist = () => {
-    setIsWishlisted(true);
-    setTimeout(() => setIsWishlisted(false), 2000);
-  };
+  const handleWishlist = () => onToggleWishlist?.(id);
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
@@ -218,8 +232,6 @@ const ProductCard = memo(function ProductCard({
   return (
     <div
       className="w-full bg-white transition-all duration-300 max-w-[200px] sm:max-w-[220px]"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       <Card className="border border-gray-200 shadow hover:shadow-lg rounded-md hover:rounded hover:border-green-500 overflow-hidden transition-all duration-300 p-0 pb-2 h-full">
         <div className="relative w-full flex items-center justify-center group overflow-hidden h-40 sm:h-[180px]">
@@ -248,79 +260,6 @@ const ProductCard = memo(function ProductCard({
             </a>
           )}
 
-          <div
-            className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${
-              isHovered ? "opacity-100 scale-100" : "opacity-0 scale-95"
-            }`}
-          >
-            <div className="bg-green-500 flex items-center justify-center shadow-lg px-8 p-1 space-x-6 sm:space-x-8 rounded-full">
-              <button
-                onClick={handleCartAction}
-                disabled={isAddingToCart || isUpdateDisabled}
-                className={`text-white hover:text-gray-200 transition-colors font-bold ${
-                  isAddingToCart || isUpdateDisabled
-                    ? "opacity-50 cursor-not-allowed"
-                    : ""
-                }`}
-              >
-                {isAddingToCart ? (
-                  <div className="border-2 border-white border-t-transparent rounded-full animate-spin w-6 h-6" />
-                ) : (
-                  <ShoppingCart className="w-6 h-6" />
-                )}
-              </button>
-              <button
-                onClick={handleWishlist}
-                className="text-white hover:text-gray-200"
-              >
-                <Heart
-                  className={`w-6 h-6 transition-all ${isWishlisted ? "fill-orange-500 text-orange-500 scale-110" : ""}`}
-                />
-              </button>
-            </div>
-
-            <div className="flex items-center justify-center gap-2 pt-3">
-              <div className="flex items Benin border bg-white border-gray-300 rounded-full overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newValue = Math.max(
-                      1,
-                      (Number.parseFloat(inputValue) || 1) - 1,
-                    );
-                    setInputValue(newValue.toString());
-                    setQuantity(newValue);
-                  }}
-                  disabled={isAddingToCart}
-                  className="px-2 py-1 text-sm bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
-                >
-                  -
-                </button>
-                <input
-                  type="number"
-                  value={inputValue}
-                  onChange={handleQuantityChange}
-                  onBlur={handleQuantityBlur}
-                  step="0.01"
-                  min="0.1"
-                  disabled={isAddingToCart}
-                  className="w-12 text-center text-sm font-semibold focus:outline-none disabled:bg-gray-100 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newValue = (Number.parseFloat(inputValue) || 0) + 1;
-                    setInputValue(newValue.toString());
-                    setQuantity(newValue);
-                  }}
-                  disabled={isAddingToCart}
-                  className="px-2 py-1 text-sm bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
 
         <div className="px-3 sm:px-4 pt-2">
@@ -341,8 +280,106 @@ const ProductCard = memo(function ProductCard({
                     /{unit}
                   </span>
                 )}
-              </span>        
+              </span>
           </div>
+        </div>
+
+        {/* Actions always visible (no hover needed) on every screen size */}
+        <div className="flex items-center gap-1.5 px-2.5 sm:px-3 pt-2">
+          <button
+            type="button"
+            onClick={handleWishlist}
+            aria-label={isWishlisted ? "Remove from wishlist" : "Save to wishlist"}
+            className={`shrink-0 flex items-center justify-center w-8 h-8 rounded-full border transition-colors active:scale-95 ${
+              isWishlisted
+                ? "border-rose-200 bg-rose-50 text-rose-500"
+                : "border-gray-200 bg-white text-gray-500"
+            }`}
+          >
+            <Heart className={`w-4 h-4 ${isWishlisted ? "fill-rose-500" : ""}`} />
+          </button>
+
+          <div className="flex items-center flex-1 min-w-0 h-8 border border-gray-200 rounded-full overflow-hidden bg-white">
+            <button
+              type="button"
+              aria-label="Decrease quantity"
+              onClick={() => {
+                const newValue = Math.max(1, (Number.parseFloat(inputValue) || 1) - 1);
+                setInputValue(newValue.toString());
+                setQuantity(newValue);
+              }}
+              disabled={isAddingToCart}
+              className="w-7 h-full shrink-0 text-gray-700 bg-gray-50 active:bg-gray-200 disabled:opacity-50"
+            >
+              −
+            </button>
+            <input
+              type="number"
+              inputMode="decimal"
+              aria-label="Quantity"
+              value={inputValue}
+              onChange={handleQuantityChange}
+              onBlur={handleQuantityBlur}
+              step="0.01"
+              min="0.1"
+              disabled={isAddingToCart}
+              className="w-full min-w-0 text-center text-sm font-semibold focus:outline-none disabled:bg-gray-100 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+            />
+            <button
+              type="button"
+              aria-label="Increase quantity"
+              onClick={() => {
+                const newValue = (Number.parseFloat(inputValue) || 0) + 1;
+                setInputValue(newValue.toString());
+                setQuantity(newValue);
+              }}
+              disabled={isAddingToCart}
+              className="w-7 h-full shrink-0 text-gray-700 bg-gray-50 active:bg-gray-200 disabled:opacity-50"
+            >
+              +
+            </button>
+          </div>
+
+          {isInCart && isUpdateDisabled ? (
+            // Already in the cart with this quantity: offer to take it out
+            <button
+              type="button"
+              onClick={async () => {
+                if (!cartItem) return;
+                setIsRemoving(true);
+                await removeCartItem(cartItem.id);
+                setIsRemoving(false);
+              }}
+              disabled={isRemoving}
+              aria-label="Remove from cart"
+              title="Remove from cart"
+              className={`shrink-0 flex items-center justify-center w-10 h-8 rounded-lg border border-red-200 bg-red-50 text-red-600 transition-colors active:scale-95 ${
+                isRemoving ? "opacity-50" : ""
+              }`}
+            >
+              {isRemoving ? (
+                <div className="border-2 border-red-500 border-t-transparent rounded-full animate-spin w-4 h-4" />
+              ) : (
+                <X className="w-4 h-4" />
+              )}
+            </button>
+          ) : (
+          <button
+            type="button"
+            onClick={handleCartAction}
+            disabled={isAddingToCart || isUpdateDisabled}
+            aria-label={isInCart ? "Update quantity in cart" : "Add to cart"}
+            className={`shrink-0 flex items-center justify-center w-10 h-8 rounded-lg text-white transition-colors active:scale-95 ${
+              isInCart ? "bg-green-700" : "bg-green-600"
+            } ${isAddingToCart || isUpdateDisabled ? "opacity-50" : ""}`}
+          >
+            {isAddingToCart ? (
+              <div className="border-2 border-white border-t-transparent rounded-full animate-spin w-4 h-4" />
+            ) : (
+              <span>Buy</span>
+            )}
+          </button>
+          )}
         </div>
       </Card>
     </div>
@@ -429,6 +466,91 @@ export function ProductsSection({
   const [hasPromoCodes, setHasPromoCodes] = useState(false);
   const { totalItems, totalQuantity, totalAmount, isLoading } = useCartSummary();
 
+  // ── Wishlist (saved products) ───────────────────────────────────────────
+  // Only buyers have a wishlist; guests are asked to log in.
+  const isBuyer =
+    isAuthenticated && ["RESTAURANT", "HOTEL", "AFFILIATOR"].includes(user?.role || "");
+  const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
+  const [wishlistRaw, setWishlistRaw] = useState<any[]>([]);
+  const [showSaved, setShowSaved] = useState(false);
+
+  const loadWishlist = useCallback(async () => {
+    try {
+      const data = await wishlistService.getWishlist();
+      setWishlistIds(new Set(data.productIds));
+      setWishlistRaw(data.products);
+    } catch (error) {
+      console.error("Failed to load wishlist:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isBuyer) loadWishlist();
+    else {
+      setWishlistIds(new Set());
+      setWishlistRaw([]);
+      setShowSaved(false);
+    }
+  }, [isBuyer, loadWishlist]);
+
+  const toggleWishlist = useCallback(
+    async (productId: string) => {
+      if (!isBuyer) {
+        toast.info("Log in with your restaurant account to save products");
+        return;
+      }
+      const wasSaved = wishlistIds.has(productId);
+      // Update the heart right away; undo if the server says no
+      setWishlistIds((prev) => {
+        const next = new Set(prev);
+        if (wasSaved) next.delete(productId);
+        else next.add(productId);
+        return next;
+      });
+      try {
+        if (wasSaved) await wishlistService.remove(productId);
+        else await wishlistService.add(productId);
+        toast.success(wasSaved ? "Removed from your wishlist" : "Saved to your wishlist");
+        loadWishlist(); // keep the saved-products view in sync
+      } catch (error: any) {
+        setWishlistIds((prev) => {
+          const next = new Set(prev);
+          if (wasSaved) next.add(productId);
+          else next.delete(productId);
+          return next;
+        });
+        toast.error(error?.response?.data?.message || "Could not update your wishlist");
+      }
+    },
+    [isBuyer, wishlistIds, loadWishlist]
+  );
+
+  // Saved products in the same shape the parent page gives the grid
+  const savedProducts = useMemo<Product[]>(
+    () =>
+      wishlistRaw.map((product: any) => {
+        const price = getRoleBasedPrice(product, user?.role || "RESTAURANT", user?.customerTypeId);
+        return {
+          id: product.id,
+          name: product.productName,
+          price,
+          image: product.images?.[0] || "/placeholder.svg",
+          category: {
+            id: product.category?.id || "",
+            name: product.category?.name || "OTHER",
+            description: product.category?.description,
+          },
+          inStock: product.quantity > 0,
+          rating: 4.5,
+          createdAt: product.createdAt,
+          unit: product.unit,
+          discountedPrice: null,
+          bonus: product.bonus ?? 0,
+        } as Product;
+      }),
+    [wishlistRaw, user?.role, user?.customerTypeId]
+  );
+
   // Check for promo codes availability on mount
   useEffect(() => {
     const checkPromoCodes = async () => {
@@ -469,7 +591,11 @@ export function ProductsSection({
 
  const sortedProducts = useMemo(() => {
   // Use discounted products if available, otherwise use regular products
-  const productsToSort = showDiscounted && discountedProducts.length > 0 ? discountedProducts : products;
+  const productsToSort = showSaved
+    ? savedProducts
+    : showDiscounted && discountedProducts.length > 0
+      ? discountedProducts
+      : products;
   
   // Sorting logic
   if (!sorting?.sortBy || sorting.sortBy === "random") return productsToSort;
@@ -492,7 +618,7 @@ export function ProductsSection({
         return 0;
     }
   });
-}, [products, discountedProducts, showDiscounted, sorting?.sortBy]);
+}, [products, discountedProducts, showDiscounted, showSaved, savedProducts, sorting?.sortBy]);
 
 
   // Show all categories (backend handles filtering)
@@ -504,6 +630,14 @@ export function ProductsSection({
     ...categories,
   ];
   const userName = user?.name;
+  const reduceMotion = useReducedMotion();
+
+  // Computed after mount so server and client markup match
+  const [greeting, setGreeting] = useState("");
+  useEffect(() => {
+    const hour = new Date().getHours();
+    setGreeting(hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening");
+  }, []);
 
   return (
     <section
@@ -515,28 +649,70 @@ export function ProductsSection({
         <div className="flex gap-0 relative">
           <div className="  w-full">
             {isAuthenticated && user && (
-              <div className="flex items-center justify-center bg-gray-100 py-4 sm:py-6 px-10 border-b border-gray-100">
-                <div className="flex flex-col lg:flex-row items-center lg:items-stretch justify-between gap-4 w-full px-4">
+              <div className="relative overflow-hidden bg-linear-to-br from-green-50 via-white to-amber-50 py-5 sm:py-6 px-4 sm:px-10 border-b border-gray-100">
+                {/* Decorative background */}
+                <div className="pointer-events-none absolute -top-24 -left-20 w-72 h-72 rounded-full bg-green-200/40 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-24 -right-16 w-72 h-72 rounded-full bg-amber-200/40 blur-3xl" />
+
+                <div className="relative flex flex-col lg:flex-row items-center justify-between gap-6 w-full">
                   {/* Left: Greeting */}
-                  <div className="flex flex-col justify-center text-center lg:text-left">
-                    <div className="flex items-center justify-center lg:justify-start gap-3">
-                      <h1 className="text-[16px] font-semibold text-gray-800">
-                        Hello <span className="text-green-600">{userName}</span>!
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    className="flex items-center gap-4 text-center lg:text-left"
+                  >
+                 
+
+                    <div className="flex flex-col gap-1">
+                      {greeting && (
+                        <p className="text-[12px] font-medium uppercase tracking-wider text-green-700/80">
+                          {greeting}
+                        </p>
+                      )}
+                      <h1 className="text-[20px] sm:text-[22px] font-bold text-gray-900 leading-tight">
+                        Hello,{" "}
+                        <span className="bg-linear-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">
+                          {userName}
+                        </span>
+                        <motion.span
+                          className="inline-block ml-1 origin-[70%_70%]"
+                          animate={reduceMotion ? undefined : { rotate: [0, 18, -8, 18, 0] }}
+                          transition={{ duration: 1.4, delay: 0.5, repeat: Infinity, repeatDelay: 4 }}
+                        >
+                        </motion.span>
                       </h1>
+                      <p className="text-gray-500 text-sm">
+                        Fresh from our farm, straight to your kitchen.
+                      </p>
+
                       {hasPromoCodes && (
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Sheet open={isPromoSheetOpen} onOpenChange={setIsPromoSheetOpen}>
                                 <SheetTrigger asChild>
-                                  <button 
-                                    className="relative p-3 hover:bg-gray-200 rounded-full transition-all duration-300 group"
+                                  <motion.button
+                                    whileHover={{ scale: 1.04 }}
+                                    whileTap={{ scale: 0.97 }}
+                                    className="relative mt-1 self-center lg:self-start inline-flex items-center gap-2 rounded-full bg-white border border-green-200 pl-1.5 pr-3 py-1 text-[12px] font-semibold text-green-700 shadow-sm hover:border-green-400 transition-colors"
                                     onClick={() => {
                                       setShowSparkles(true);
                                       setTimeout(() => setShowSparkles(false), 1000);
                                     }}
                                   >
-                                    <Gift className="h-9 w-9 text-green-500 hover:text-green-600 group-hover:scale-110 transition-all duration-200" />
+                                    <motion.span
+                                      className="flex items-center justify-center w-6 h-6 rounded-full bg-green-100"
+                                      animate={reduceMotion ? undefined : { rotate: [0, -12, 12, -6, 0] }}
+                                      transition={{ duration: 0.8, repeat: Infinity, repeatDelay: 3 }}
+                                    >
+                                      <Gift className="h-3.5 w-3.5 text-green-600" />
+                                    </motion.span>
+                                    You have promo gifts
+                                    <span className="relative flex h-2 w-2">
+                                      <span className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75 animate-ping" />
+                                      <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500" />
+                                    </span>
                                     {showSparkles && (
                                       <div className="absolute inset-0 pointer-events-none">
                                         {[...Array(8)].map((_, i) => (
@@ -553,7 +729,7 @@ export function ProductsSection({
                                         ))}
                                       </div>
                                     )}
-                                  </button>
+                                  </motion.button>
                                 </SheetTrigger>
                                 <SheetContent className="w-[400px] sm:w-[540px] bg-gradient-to-br from-white to-yellow-50">
                                   <SheetHeader className="space-y-4 pb-6 border-b border-yellow-100">
@@ -586,108 +762,111 @@ export function ProductsSection({
                         </TooltipProvider>
                       )}
                     </div>
-                    <p className="text-gray-500 text-sm">
-                      Welcome to Our Farm <span className="text-2xl"></span>
-                    </p>
-                  </div>
+                  </motion.div>
 
-                  {/* Middle: Benefits & Subscribe */}
-                  <div className="bg-gray-200 md:rounded-full rounded-md px-4 sm:px-6 py-3 shadow-lg w-full lg:w-auto flex flex-col md:flex-row sm:flex-row items-center justify-between gap-3">
-                    {/* Profile Images */}
-                    <div className="flex items-center -space-x-6">
-                      {[
-                        "/imgs/restaurant1.jpg",
-                        "/imgs/restaurant1.jpg",
-                        "/imgs/restaurant1.jpg",
-                        "/imgs/restaurant1.jpg",
-                      ].map((src, i) => (
-                        <div
-                          key={i}
-                          className="w-10 h-10 bg-linear-to-br from-orange-400 to-red-500 rounded-full border-2 border-gray-800 flex items-center justify-center overflow-hidden"
-                        >
-                          <OptimizedImage
-                            src={src}
-                            width={32}
-                            height={32}
-                            alt="avatar"
-                            className="rounded-full w-full h-full object-cover"
-                            transformation={[
-                              { width: 64, height: 64, crop: "fill", quality: "80" }
-                            ]}
-                          />
-                        </div>
-                      ))}{" "}
-                      <p className="ml-7 text-[18px] text-green-500 font-bold">
-                        {" "}
-                        + 20
-                      </p>
-                    </div>
-
-                    {/* Advantages Text */}
-                    <div className=" flex flex-col text-start sm:text-left text-gray-900 text-[13px]">
-                      <span>🗸 Free Delivery</span>
-                      <span>🗸 EBM Orders</span>
-                      <span>🗸 Advertisement</span>
-                      <span className="">🗸 ... more</span>
-                    </div>
-
-                    {/* Subscribe Button */}
-                    <Link href="/restaurant/subscribe" className="shrink-0">
-                      <button className="bg-linear-to-r from-yellow-400 to-orange-400 text-gray-900 px-4 sm:px-6 py-2 rounded-full text-sm font-bold hover:from-yellow-300 hover:to-orange-300 transition-all duration-200 shadow-md transform hover:scale-105">
-                        Subscribe
-                      </button>
-                    </Link>
-                  </div>
+                  {/* Middle: Animated voucher / wallet / subscription cards */}
+                  <RestaurantCardsShowcase />
 
                   {/* Right: Cart Section */}
-                  <div className="flex items-center gap-3 bg-white rounded p-3 border border-gray-200 shadow w-full sm:w-auto">
-                    <div className="flex items-center gap-3">
-                      {/* Wishlist */}
-                      <div className="relative cursor-pointer">
-                        <Heart className="w-6 h-6 text-gray-900 hover:text-green-600 transition-colors" />
-                        <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                          0
-                        </span>
-                      </div>
-
-                      {/* Cart */}
-                      <div className="relative">
-                        <div
-                          onClick={() => setIsCartOpen(true)}
-                          className="cursor-pointer"
-                        >
-                          <ShoppingCart className="h-6 w-6 text-gray-900 hover:text-green-600 transition-colors" />
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}
+                    className="w-full sm:w-72 rounded-2xl bg-white/80 backdrop-blur border border-gray-200 shadow-lg shadow-gray-200/60 p-4"
+                  >
+                    <div className="flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setIsCartOpen(true)}
+                        className="flex items-center gap-2.5 text-left"
+                      >
+                        <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-green-50">
+                          <ShoppingCart className="h-5 w-5 text-green-600" />
                           {isLoading ? (
-                            <Skeleton className="absolute -top-2 -right-2 h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-green-600/60" />
+                            <Skeleton className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-green-600/60" />
                           ) : (
                             totalQuantity >= 0 && (
-                              <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                              <motion.span
+                                key={totalItems}
+                                initial={{ scale: 0.4 }}
+                                animate={{ scale: 1 }}
+                                transition={{ type: "spring", stiffness: 500, damping: 15 }}
+                                className="absolute -top-1.5 -right-1.5 bg-green-600 text-white text-[10px] font-bold rounded-full min-w-5 h-5 px-1 flex items-center justify-center ring-2 ring-white"
+                              >
                                 {totalItems > 99 ? "99+" : totalItems}
-                              </span>
+                              </motion.span>
                             )
                           )}
                         </div>
-                        <CartDrawer
-                          isOpen={isCartOpen}
-                          onClose={() => setIsCartOpen(false)}
+                        <div>
+                          <p className="text-[13px] font-semibold text-gray-900 leading-tight">My Cart</p>
+                          <p className="text-[11px] text-gray-500">
+                            {totalItems} {totalItems === 1 ? "item" : "items"}
+                          </p>
+                        </div>
+                      </button>
+
+                      {/* Wishlist */}
+                      <button
+                        type="button"
+                        aria-label={showSaved ? "Show all products" : "Show saved products"}
+                        title={showSaved ? "Show all products" : "Show saved products"}
+                        aria-pressed={showSaved}
+                        onClick={() => setShowSaved((value) => !value)}
+                        className={`relative flex items-center justify-center w-9 h-9 rounded-full transition-colors group ${
+                          showSaved ? "bg-rose-50" : "hover:bg-rose-50"
+                        }`}
+                      >
+                        <Heart
+                          className={`w-5 h-5 transition-colors ${
+                            showSaved || wishlistIds.size > 0
+                              ? "fill-rose-500 text-rose-500"
+                              : "text-gray-500 group-hover:text-rose-500"
+                          }`}
                         />
-                      </div>
+                        <span
+                          className={`absolute -top-0.5 -right-0.5 text-[10px] font-semibold rounded-full min-w-4 h-4 px-0.5 flex items-center justify-center ${
+                            wishlistIds.size > 0 ? "bg-rose-500 text-white" : "bg-gray-200 text-gray-700"
+                          }`}
+                        >
+                          {wishlistIds.size > 99 ? "99+" : wishlistIds.size}
+                        </span>
+                      </button>
                     </div>
 
                     {/* Cart Total */}
-                    <div className="border-l border-gray-200 pl-3 text-center sm:text-left">
-                      <div className="text-[13px] font-medium text-gray-900">
-                        Cart Total
+                    <div className="mt-3 flex items-end justify-between gap-3 rounded-xl bg-linear-to-r from-gray-50 to-green-50/60 px-3 py-2.5">
+                      <div className="text-left">
+                        <p className="text-[11px] uppercase tracking-wider text-gray-500">Cart Total</p>
+                        <motion.p
+                          key={String(totalAmount)}
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="text-[20px] font-bold text-gray-900 leading-tight"
+                        >
+                          {totalAmount} <span className="text-[12px] font-medium text-gray-500">Rwf</span>
+                        </motion.p>
                       </div>
-                      <div className="text-[15px] font-bold text-gray-900">
-                        {totalAmount}{" "}
-                        <span className="text-[13px] font-normal">Rwf</span>
-                      </div>
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setIsCartOpen(true)}
+                        className="shrink-0 rounded-full bg-green-600 hover:bg-green-700 text-white text-[12px] font-semibold px-4 py-2 shadow-md shadow-green-600/30 transition-colors"
+                      >
+                        View cart
+                      </motion.button>
                     </div>
-                  </div>
+                  </motion.div>
                 </div>
               </div>
             )}
+
+            {/* Kept outside the transformed/blurred cart card so `position: fixed` stays relative to the viewport */}
+            <CartDrawer
+              isOpen={isCartOpen}
+              onClose={() => setIsCartOpen(false)}
+            />
 
             <div className="bg-transparent ">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-4">
@@ -822,6 +1001,21 @@ export function ProductsSection({
             {/* Products Grid */}
             <div className="px-4 sm:px-6 overflow-y-auto">
               <div className="mb-12">
+                {showSaved && (
+                  <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-rose-100 bg-rose-50 px-4 py-2 text-[13px] text-rose-800">
+                    <span className="flex items-center gap-2">
+                      <Heart className="h-4 w-4 fill-rose-500 text-rose-500" />
+                      Your saved products ({wishlistIds.size})
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowSaved(false)}
+                      className="font-medium text-rose-700 underline underline-offset-2 hover:text-rose-900 cursor-pointer"
+                    >
+                      Show all products
+                    </button>
+                  </div>
+                )}
                 {search?.isSearching ? (
                   <div className="flex items-center justify-center py-16">
                     <div className="flex items-center gap-3">
@@ -846,16 +1040,20 @@ export function ProductsSection({
                         productData={product}
                         userRole={user?.role}
                         customerTypeId={user?.customerTypeId}
+                        isWishlisted={wishlistIds.has(product.id)}
+                        onToggleWishlist={toggleWishlist}
                       />
                     ))}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-16">
                     <h3 className="text-[14px] font-medium text-gray-900 mb-2">
-                      No products found
+                      {showSaved ? "No saved products yet" : "No products found"}
                     </h3>
                     <p className="text-gray-800 text-[13px] text-center max-w-md mb-4">
-                      {searchQuery
+                      {showSaved
+                        ? "Tap the heart on a product to save it here."
+                        : searchQuery
                         ? `No products found matching.`
                         : selectedCategory === "All Categories"
                           ? "There are no products available at the moment."

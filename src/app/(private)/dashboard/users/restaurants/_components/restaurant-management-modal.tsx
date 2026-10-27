@@ -16,6 +16,11 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
+import { useAdminAccess } from "@/app/hooks/useAdminAccess";
+
+// Backend message when there is one (e.g. "Another account already uses this email")
+const errorMessage = (error: any, fallback: string) =>
+  error?.response?.data?.message || error?.message || fallback;
 import type { Restaurant } from "./restaurant-columns";
 
 interface RestaurantManagementModalProps {
@@ -39,6 +44,10 @@ export function RestaurantManagementModal({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  // Edit needs restaurants.edit; delete (to trash) and passwords: super admin only
+  const { can, isSuperAdmin } = useAdminAccess();
+  const canEdit = can("restaurants", "edit");
 
   // Edit form state
   const [editData, setEditData] = useState({
@@ -65,6 +74,7 @@ export function RestaurantManagementModal({
 
   const handleCancelEdit = () => {
     setIsEditing(false);
+    setNewPassword("");
     if (restaurant) {
       setEditData({
         name: restaurant.name,
@@ -80,13 +90,17 @@ export function RestaurantManagementModal({
     
     setIsLoading(true);
     try {
-      await onEdit(restaurant.id, editData);
+      await onEdit(restaurant.id, {
+        ...editData,
+        ...(isSuperAdmin && newPassword ? { password: newPassword } : {}),
+      });
       toast.success("Restaurant updated successfully");
       setIsEditing(false);
+      setNewPassword("");
       onUpdate();
     } catch (error: any) {
       console.error("Failed to update restaurant:", error);
-      toast.error(error.message || "Failed to update restaurant");
+      toast.error(errorMessage(error, "Failed to update restaurant"));
     } finally {
       setIsLoading(false);
     }
@@ -98,14 +112,14 @@ export function RestaurantManagementModal({
     setIsLoading(true);
     try {
       await onDelete(restaurant.id);
-      toast.success("Restaurant deleted successfully");
+      toast.success("Restaurant moved to the trash. A super admin can restore it.");
       setIsDeleting(false);
       setDeleteConfirmText("");
       onOpenChange(false);
       onUpdate();
     } catch (error: any) {
       console.error("Failed to delete restaurant:", error);
-      toast.error(error.message || "Failed to delete restaurant");
+      toast.error(errorMessage(error, "Failed to delete restaurant"));
     } finally {
       setIsLoading(false);
     }
@@ -181,6 +195,25 @@ export function RestaurantManagementModal({
                   className="bg-white border-gray-300 text-gray-900"
                 />
               </div>
+
+              {isSuperAdmin && (
+                <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                  <Label htmlFor="newPassword" className="text-gray-900">Set a new password (optional)</Label>
+                  <Input
+                    id="newPassword"
+                    type="text"
+                    autoComplete="off"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    disabled={isLoading}
+                    placeholder="Leave empty to keep the current one"
+                    className="bg-white border-gray-300 text-gray-900"
+                  />
+                  <p className="text-[11px] text-amber-800">
+                    Passwords are stored encrypted, so the current one can&apos;t be shown. Share the new one with the restaurant.
+                  </p>
+                </div>
+              )}
             </div>
           ) : isDeleting ? (
             <div className="py-4 space-y-4">
@@ -192,9 +225,10 @@ export function RestaurantManagementModal({
 
               <div className="space-y-4">
                 <div className="text-center space-y-2">
-                  <h3 className="text-lg font-semibold text-gray-900">Delete Restaurant</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">Move restaurant to the trash</h3>
                   <p className="text-sm text-gray-600">
-                    This action cannot be undone. To confirm deletion, please type the{" "}
+                    The restaurant can no longer sign in and is hidden from lists. A super admin can
+                    restore it from the trash. To confirm, please type the{" "}
                     <span className="font-semibold text-gray-900">restaurant name</span> below:
                   </p>
                 </div>
@@ -306,27 +340,31 @@ export function RestaurantManagementModal({
                 disabled={isLoading || !isDeleteConfirmValid}
                 className="bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? "Deleting..." : "I Understand"}
+                {isLoading ? "Moving..." : "Move to trash"}
               </Button>
             </>
           ) : (
             <>
-              <Button
-                variant="outline"
-                onClick={handleEdit}
-                className="flex items-center gap-1 bg-white border-gray-300 text-gray-900 hover:bg-gray-50"
-              >
-                <PencilIcon className="h-4 w-4" />
-                Edit
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => setIsDeleting(true)}
-                className="flex items-center gap-1"
-              >
-                <Trash2Icon className="h-4 w-4" />
-                Delete
-              </Button>
+              {canEdit && (
+                <Button
+                  variant="outline"
+                  onClick={handleEdit}
+                  className="flex items-center gap-1 bg-white border-gray-300 text-gray-900 hover:bg-gray-50"
+                >
+                  <PencilIcon className="h-4 w-4" />
+                  Edit
+                </Button>
+              )}
+              {isSuperAdmin && (
+                <Button
+                  variant="destructive"
+                  onClick={() => setIsDeleting(true)}
+                  className="flex items-center gap-1"
+                >
+                  <Trash2Icon className="h-4 w-4" />
+                  Move to trash
+                </Button>
+              )}
             </>
           )}
         </DialogFooter>

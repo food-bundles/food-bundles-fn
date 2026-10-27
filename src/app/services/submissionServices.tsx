@@ -1,4 +1,4 @@
-import { PurchaseSubmissionPayload } from "../contexts/submission-context";
+import { PurchaseSubmissionPayload, type SubmissionStage } from "../contexts/submission-context";
 import createAxiosClient from "../hooks/axiosClient";
 
 export interface FarmerFeedbackPayload {
@@ -10,9 +10,18 @@ export interface FarmerFeedbackPayload {
 
 export const submissionService = {
   // --- GET Routes ---
-  getAllSubmissions: async () => {
+  getAllSubmissions: async (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    feedbackStatus?: string;
+    province?: string;
+    search?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.get("/submissions");
+    const response = await axiosClient.get("/submissions", { params });
     return response.data;
   },
 
@@ -68,11 +77,45 @@ export const submissionService = {
     return response.data;
   },
 
-  approveSubmission: async (submissionId: string) => {
+  /** Stage 2: approve at the price, or send a counter offer when it is below what the farmer asks.
+   *  Omit price to use the Food Bundles price (only "Set price" users may send another one). */
+  approveSubmission: async (submissionId: string, price?: number) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.patch(
-      `/submissions/${submissionId}/approve`
+      `/submissions/${submissionId}/approve`,
+      price !== undefined ? { price } : {}
     );
+    return response.data;
+  },
+
+  /** Asked price, Food Bundles price, and whether the user may change it */
+  getSubmissionPrice: async (submissionId: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get(`/submissions/${submissionId}/price`);
+    return response.data as {
+      success: boolean;
+      data: {
+        askedPrice: number;
+        originalPrice: number | null;
+        foodBundlesPrice: number | null;
+        agreedPrice: number | null;
+        counterOfferPrice: number | null;
+        canSetPrice: boolean;
+      };
+    };
+  },
+
+  /** Stage 4: pay by MoMo (PayPack cashout) to the given number */
+  paySubmissionMomo: async (submissionId: string, phoneNumber: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(`/submissions/${submissionId}/payout`, { phoneNumber });
+    return response.data;
+  },
+
+  /** Stage 4: the farmer was paid in cash */
+  paySubmissionCash: async (submissionId: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(`/submissions/${submissionId}/pay-cash`);
     return response.data;
   },
 
@@ -141,6 +184,113 @@ export const submissionService = {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.patch(
       `/farmers/${submissionId}/feedback`,
+      payload
+    );
+    return response.data;
+  },
+
+  // --- Admin overrides, payouts, and reversal ---
+  rejectSubmission: async (submissionId: string, reason?: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(
+      `/submissions/${submissionId}/reject`,
+      { reason }
+    );
+    return response.data;
+  },
+
+  deleteSubmission: async (submissionId: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.delete(`/submissions/${submissionId}`);
+    return response.data;
+  },
+
+  forceCompleteSubmission: async (submissionId: string, reason?: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(
+      `/submissions/${submissionId}/force-complete`,
+      { reason }
+    );
+    return response.data;
+  },
+
+  reverseSubmissionStatus: async (
+    submissionId: string,
+    payload: { toStatus: SubmissionStage; reason?: string }
+  ) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(
+      `/submissions/${submissionId}/reverse-status`,
+      payload
+    );
+    return response.data;
+  },
+
+  getSubmissionStatusHistory: async (submissionId: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get(
+      `/submissions/${submissionId}/status-history`
+    );
+    return response.data;
+  },
+
+  requestSubmissionPayoutOTP: async (submissionId: string, phoneNumber: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(
+      `/submissions/${submissionId}/payout/request-otp`,
+      { phoneNumber }
+    );
+    return response.data;
+  },
+
+  verifySubmissionPayoutOTP: async (
+    submissionId: string,
+    otp: string,
+    sessionId: string
+  ) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(
+      `/submissions/${submissionId}/payout/verify-otp`,
+      { otp, sessionId }
+    );
+    return response.data;
+  },
+
+  confirmSubmissionPayout: async (
+    submissionId: string,
+    payoutId: string,
+    outcome: "COMPLETED" | "FAILED"
+  ) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(
+      `/submissions/${submissionId}/payout/${payoutId}/confirm`,
+      { outcome }
+    );
+    return response.data;
+  },
+
+  getSubmissionPayouts: async (submissionId: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get(
+      `/submissions/${submissionId}/payouts`
+    );
+    return response.data;
+  },
+
+  adminCreateSubmission: async (payload: {
+    farmerId: string;
+    productId: string;
+    quantity: number;
+    wishedPrice: number;
+    province?: string;
+    district?: string;
+    sector?: string;
+    cell?: string;
+    village?: string;
+  }) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(
+      "/farmers/admin-create-submission",
       payload
     );
     return response.data;

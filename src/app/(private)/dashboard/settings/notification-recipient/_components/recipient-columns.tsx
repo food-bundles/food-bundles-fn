@@ -7,17 +7,19 @@ export type NotificationRecipient = {
   id: string;
   name: string;
   phoneNumber: string;
+  email?: string | null;
   category: string;
   isActive: boolean;
   createdAt: string;
 };
 
-const categoryLabels: Record<string, string> = {
+export const categoryLabels: Record<string, string> = {
   MATURED_VOUCHERS: "Matured Vouchers",
   EXPIRED_VOUCHERS: "Expired Vouchers",
   LOW_STOCK: "Low Stock",
   PAYMENT_ISSUES: "Payment Issues",
   SYSTEM_ALERTS: "System Alerts",
+  PRIVATE_RECEIVER: "Private Receiver",
 };
 
 export const getRecipientColumns = (
@@ -45,6 +47,15 @@ export const getRecipientColumns = (
     cell: ({ row }) => (
       <div className="flex items-center gap-2">
         <span>{row.getValue("phoneNumber")}</span>
+      </div>
+    ),
+  },
+  {
+    accessorKey: "email",
+    header: "Email",
+    cell: ({ row }) => (
+      <div className="text-sm text-gray-600">
+        {(row.getValue("email") as string | null) || "-"}
       </div>
     ),
   },

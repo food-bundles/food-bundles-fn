@@ -30,11 +30,17 @@ import {
   PermissionModuleInfo,
 } from "@/app/services/adminRoleService";
 import { adminsService } from "@/app/services/adminsService";
+import { customerTypeService } from "@/app/services/customerTypeService";
 import { useAdminAccess } from "@/app/hooks/useAdminAccess";
 import { RoleEditorDialog } from "./_components/role-editor-dialog";
 
-// Dashboard users whose access comes from a role (others use their own apps)
-const ASSIGNABLE = ["ADMIN", "STAFF", "MARKET_PRICES"];
+// Dashboard users whose access comes from a role (office staff and field roles)
+const ASSIGNABLE = ["ADMIN", "STAFF", "MARKET_PRICES", "AGGREGATOR", "LOGISTICS"];
+
+const ACCOUNT_LABELS: Record<string, string> = {
+  AGGREGATOR: "Aggregator",
+  LOGISTICS: "Logistics",
+};
 
 export default function RolesPage() {
   const { user, loading: userLoading, isSuperAdmin } = useAdminAccess();
@@ -47,6 +53,17 @@ export default function RolesPage() {
   const [editingRole, setEditingRole] = useState<AdminRole | null>(null);
   const [deletingRole, setDeletingRole] = useState<AdminRole | null>(null);
   const [assigning, setAssigning] = useState<string | null>(null);
+  const [customerTypeNames, setCustomerTypeNames] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    customerTypeService
+      .getAllCustomerTypes()
+      .then((res: { data?: Array<{ id: string; name: string }> } | Array<{ id: string; name: string }>) => {
+        const list = Array.isArray(res) ? res : res?.data || [];
+        setCustomerTypeNames(Object.fromEntries(list.map((t) => [t.id, t.name])));
+      })
+      .catch(() => setCustomerTypeNames({}));
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -109,7 +126,7 @@ export default function RolesPage() {
   }
 
   const teamMembers = admins.filter((a) => ASSIGNABLE.includes(a.role) || a.role === "SUPERUSER");
-  const permissionCount = catalog.length * 2;
+  const permissionCount = catalog.reduce((sum, m) => sum + (m.actions?.length || 0), 0);
 
   return (
     <div className="p-4 space-y-4">
@@ -190,6 +207,17 @@ export default function RolesPage() {
                   {role.description && (
                     <p className="mt-2 line-clamp-2 text-xs text-gray-600">{role.description}</p>
                   )}
+                  <p className="mt-2 text-[11px] text-gray-500">
+                    Customers:{" "}
+                    <span className="font-medium capitalize text-gray-700">
+                      {role.locked || !role.customerTypeIds?.length
+                        ? "all types"
+                        : role.customerTypeIds
+                            .map((id) => customerTypeNames[id] || "removed type")
+                            .join(", ")
+                            .toLowerCase()}
+                    </span>
+                  </p>
                   <div className="mt-auto flex items-center justify-between pt-3 text-xs text-gray-600">
                     <span className="flex items-center gap-1">
                       <Users className="h-3.5 w-3.5" />
@@ -229,6 +257,11 @@ export default function RolesPage() {
                     <span className="truncate font-medium text-gray-900">
                       {admin.username}
                       {isSelf && <span className="ml-1 text-xs text-gray-500">(you)</span>}
+                      {ACCOUNT_LABELS[admin.role] && (
+                        <span className="ml-2 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700">
+                          {ACCOUNT_LABELS[admin.role]}
+                        </span>
+                      )}
                     </span>
                     <span className="truncate text-gray-600">{admin.email}</span>
                     {isSuper ? (
@@ -257,7 +290,8 @@ export default function RolesPage() {
             )}
           </div>
           <p className="mt-2 text-xs text-gray-500">
-            Traders, logistics and aggregators use their own apps and are not listed here.
+            Aggregators and logistics keep only seeing their own work (their submissions and
+            deliveries); their role decides which pages and actions they get. Traders use their own app.
           </p>
         </TabsContent>
       </Tabs>

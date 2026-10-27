@@ -9,10 +9,8 @@ import {
   AlertCircle,
   X,
   Loader2,
-  Database,
   ArrowRight,
   Sparkles,
-  Server,
 } from "lucide-react";
 import {
   wfpMarketService,
@@ -38,7 +36,6 @@ export default function UploadWfpCsvModal({
   const [uploadResult, setUploadResult] = useState<WfpUploadResponse["data"] | null>(
     null
   );
-  const [importMode, setImportMode] = useState<"file" | "server">("file");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -89,17 +86,14 @@ export default function UploadWfpCsvModal({
     setProgress(0);
 
     try {
-      let res: WfpUploadResponse;
-      if (importMode === "server") {
-        res = await wfpMarketService.importLocalCsv();
-      } else {
-        if (!file) {
-          setError("Please select a CSV file to upload");
-          setUploading(false);
-          return;
-        }
-        res = await wfpMarketService.uploadCsv(file, (p) => setProgress(p));
+      if (!file) {
+        setError("Please select a CSV file to upload");
+        setUploading(false);
+        return;
       }
+      const res: WfpUploadResponse = await wfpMarketService.uploadCsv(file, (p) =>
+        setProgress(p)
+      );
 
       setUploadResult(res.data);
       onSuccess();
@@ -166,8 +160,8 @@ export default function UploadWfpCsvModal({
             {/* Isolation Guarantee Notice */}
             <div className="p-3.5 rounded-xl bg-green-50 border border-green-200 text-xs flex items-start gap-2.5">
               <Sparkles className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
-              <p className="leading-relaxed text-green-800">
-                <strong className="font-bold text-green-900">Isolated External Data:</strong> This ingestion pipeline stores records strictly in the external WFP surveillance repository. It does not overwrite, mutate, or merge into FoodBundles internal product catalog or local benchmark markets.
+              <p className="leading-relaxed text-green-800 font-medium">
+                <span className="font-semibold text-green-900">Isolated External Data:</span> This ingestion pipeline stores records strictly in the external WFP surveillance repository. It does not overwrite, mutate, or merge into FoodBundles internal product catalog or local benchmark markets.
               </p>
             </div>
 
@@ -192,7 +186,9 @@ export default function UploadWfpCsvModal({
                   <CheckCircle2 className="w-6 h-6 text-green-600 shrink-0" />
                   <div>
                     <h4 className="font-bold text-sm text-green-900">
-                      WFP Dataset Successfully Ingested!
+                      {uploadResult.insertedCount === 0
+                        ? "No New Records Found"
+                        : "WFP Dataset Successfully Ingested!"}
                     </h4>
                     <p className="text-xs text-green-700 mt-0.5">
                       Surveillance records have been saved into the isolated external database store.
@@ -200,10 +196,21 @@ export default function UploadWfpCsvModal({
                   </div>
                 </div>
 
+                {(uploadResult.skippedExisting ?? 0) > 0 && (
+                  <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span className="font-medium">
+                      {uploadResult.insertedCount === 0
+                        ? "This data is already uploaded. Every row in this file already exists, so nothing new was added."
+                        : `${uploadResult.skippedExisting!.toLocaleString()} rows were already uploaded and were skipped. Only new rows were added.`}
+                    </span>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200">
                     <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                      Processed Records
+                      New Records Added
                     </p>
                     <p className="text-xl font-bold text-gray-900 mt-1">
                       {uploadResult.insertedCount.toLocaleString()}
@@ -249,37 +256,7 @@ export default function UploadWfpCsvModal({
               </motion.div>
             ) : (
               <>
-                {/* Import Mode Tabs */}
-                <div className="grid grid-cols-2 p-1 bg-gray-100 rounded-xl gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setImportMode("file")}
-                    disabled={uploading}
-                    className={`py-2 px-3 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-2 ${
-                      importMode === "file"
-                        ? "bg-white text-gray-900 shadow-sm font-bold"
-                        : "text-gray-500 hover:text-gray-900"
-                    }`}
-                  >
-                    <UploadCloud className="w-3.5 h-3.5" />
-                    Upload File
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setImportMode("server")}
-                    disabled={uploading}
-                    className={`py-2 px-3 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-2 ${
-                      importMode === "server"
-                        ? "bg-white text-gray-900 shadow-sm font-bold"
-                        : "text-gray-500 hover:text-gray-900"
-                    }`}
-                  >
-                    <Server className="w-3.5 h-3.5" />
-                    Server File (Direct)
-                  </button>
-                </div>
-
-                {importMode === "file" ? (
+                {(
                   <div
                     onDragOver={(e) => {
                       e.preventDefault();
@@ -326,20 +303,6 @@ export default function UploadWfpCsvModal({
                       </div>
                     )}
                   </div>
-                ) : (
-                  <div className="p-4 rounded-xl bg-gray-50 border border-gray-200 space-y-2">
-                    <div className="flex items-center gap-2 text-gray-900 text-xs font-bold">
-                      <Database className="w-4 h-4 text-green-600" />
-                      Direct Server Import
-                    </div>
-                    <p className="text-xs text-gray-600 leading-relaxed">
-                      Imports directly from the local file path:
-                      <br />
-                      <code className="text-[11px] font-mono bg-white px-2 py-1 rounded border border-gray-200 mt-1 inline-block text-gray-800 break-all">
-                        C:\Users\muvunyi\Documents\FOODBUNDLES\wfp_food_prices_rwa.csv
-                      </code>
-                    </p>
-                  </div>
                 )}
 
                 {/* Progress Bar */}
@@ -376,7 +339,7 @@ export default function UploadWfpCsvModal({
                   <button
                     type="button"
                     onClick={handleUpload}
-                    disabled={uploading || (importMode === "file" && !file)}
+                    disabled={uploading || !file}
                     className="px-5 py-2.5 rounded-xl bg-green-600 text-white font-bold text-xs hover:bg-green-700 transition flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                   >
                     {uploading ? (

@@ -80,8 +80,8 @@ export function RestaurantManagement({
 
   const handleEditRestaurant = async (restaurantId: string, data: any) => {
     try {
+      // The modal shows the success message
       await restaurantService.updateRestaurant(restaurantId, data);
-      toast.success("Restaurant updated successfully");
       onRefresh();
     } catch (error: any) {
       throw new Error(
@@ -93,7 +93,6 @@ export function RestaurantManagement({
   const handleDeleteRestaurant = async (restaurantId: string) => {
     try {
       await restaurantService.deleteRestaurant(restaurantId);
-      toast.success("Restaurant deleted successfully");
       onRefresh();
     } catch (error: any) {
       throw new Error(

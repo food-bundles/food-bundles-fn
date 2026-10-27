@@ -17,6 +17,11 @@ import { Badge } from "@/components/ui/badge";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
 import type { Farmer } from "@/app/contexts/FarmersContext";
+import { useAdminAccess } from "@/app/hooks/useAdminAccess";
+
+// Backend message when there is one (e.g. "Another account already uses this email")
+const errorMessage = (error: any, fallback: string) =>
+  error?.response?.data?.message || error?.message || fallback;
 
 interface FarmerManagementModalProps {
   farmer: Farmer | null;
@@ -39,9 +44,14 @@ export function FarmerManagementModal({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  // Edit needs farmers.edit; delete (to trash) and passwords: super admin only
+  const { can, isSuperAdmin } = useAdminAccess();
+  const canEdit = can("farmers", "edit");
 
   // Edit form state
   const [editData, setEditData] = useState({
+    name: "",
     province: "",
     district: "",
     sector: "",
@@ -54,6 +64,7 @@ export function FarmerManagementModal({
   useEffect(() => {
     if (farmer) {
       setEditData({
+        name: farmer.name || "",
         province: farmer.province,
         district: farmer.district,
         sector: farmer.sector,
@@ -71,8 +82,10 @@ export function FarmerManagementModal({
 
   const handleCancelEdit = () => {
     setIsEditing(false);
+    setNewPassword("");
     if (farmer) {
       setEditData({
+        name: farmer.name || "",
         province: farmer.province,
         district: farmer.district,
         sector: farmer.sector,
@@ -89,13 +102,17 @@ export function FarmerManagementModal({
     
     setIsLoading(true);
     try {
-      await onEdit(farmer.id, editData);
+      await onEdit(farmer.id, {
+        ...editData,
+        ...(isSuperAdmin && newPassword ? { password: newPassword } : {}),
+      });
       toast.success("Farmer updated successfully");
       setIsEditing(false);
+      setNewPassword("");
       onUpdate();
     } catch (error: any) {
       console.error("Failed to update farmer:", error);
-      toast.error(error.message || "Failed to update farmer");
+      toast.error(errorMessage(error, "Failed to update farmer"));
     } finally {
       setIsLoading(false);
     }
@@ -107,14 +124,14 @@ export function FarmerManagementModal({
     setIsLoading(true);
     try {
       await onDelete(farmer.id);
-      toast.success("Farmer deleted successfully");
+      toast.success("Farmer moved to the trash. A super admin can restore them.");
       setIsDeleting(false);
       setDeleteConfirmText("");
       onOpenChange(false);
       onUpdate();
     } catch (error: any) {
       console.error("Failed to delete farmer:", error);
-      toast.error(error.message || "Failed to delete farmer");
+      toast.error(errorMessage(error, "Failed to delete farmer"));
     } finally {
       setIsLoading(false);
     }
@@ -147,6 +164,16 @@ export function FarmerManagementModal({
         <div className="overflow-y-auto scrollbar-thin px-6 flex-1">
           {isEditing ? (
             <div className="py-4 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-gray-900">Name</Label>
+                <Input
+                  id="name"
+                  value={editData.name}
+                  onChange={(e) => setEditData(prev => ({ ...prev, name: e.target.value }))}
+                  disabled={isLoading}
+                  className="bg-white border-gray-300 text-gray-900"
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="province" className="text-gray-900">Province</Label>
@@ -226,6 +253,25 @@ export function FarmerManagementModal({
                   className="bg-white border-gray-300 text-gray-900"
                 />
               </div>
+
+              {isSuperAdmin && (
+                <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                  <Label htmlFor="newPassword" className="text-gray-900">Set a new password / PIN (optional)</Label>
+                  <Input
+                    id="newPassword"
+                    type="text"
+                    autoComplete="off"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    disabled={isLoading}
+                    placeholder="Leave empty to keep the current one"
+                    className="bg-white border-gray-300 text-gray-900"
+                  />
+                  <p className="text-[11px] text-amber-800">
+                    Passwords are stored encrypted, so the current one can&apos;t be shown. Share the new one with the farmer.
+                  </p>
+                </div>
+              )}
             </div>
           ) : isDeleting ? (
             <div className="py-4 space-y-4">
@@ -237,9 +283,10 @@ export function FarmerManagementModal({
 
               <div className="space-y-4">
                 <div className="text-center space-y-2">
-                  <h3 className="text-lg font-semibold text-gray-900">Delete Farmer</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">Move farmer to the trash</h3>
                   <p className="text-sm text-gray-600">
-                    This action cannot be undone. To confirm deletion, please type{" "}
+                    The farmer can no longer sign in and is hidden from lists. A super admin can
+                    restore them from the trash. To confirm, please type{" "}
                     <span className="font-semibold text-gray-900">{farmerName}</span> below:
                   </p>
                 </div>
@@ -264,6 +311,10 @@ export function FarmerManagementModal({
           ) : (
             <div className="py-4 space-y-4">
               <div className="space-y-3">
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="text-sm font-medium text-gray-600">Name:</div>
+                  <div className="text-sm col-span-2 text-gray-900 font-medium">{farmer.name || "Not provided"}</div>
+                </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="text-sm font-medium text-gray-600">Province:</div>
                   <div className="text-sm col-span-2 text-gray-900 font-medium">{farmer.province}</div>
@@ -356,27 +407,31 @@ export function FarmerManagementModal({
                 disabled={isLoading || !isDeleteConfirmValid}
                 className="bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? "Deleting..." : "I Understand"}
+                {isLoading ? "Moving..." : "Move to trash"}
               </Button>
             </>
           ) : (
             <>
-              <Button
-                variant="outline"
-                onClick={handleEdit}
-                className="flex items-center gap-1 bg-white border-gray-300 text-gray-900 hover:bg-gray-50"
-              >
-                <PencilIcon className="h-4 w-4" />
-                Edit
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => setIsDeleting(true)}
-                className="flex items-center gap-1"
-              >
-                <Trash2Icon className="h-4 w-4" />
-                Delete
-              </Button>
+              {canEdit && (
+                <Button
+                  variant="outline"
+                  onClick={handleEdit}
+                  className="flex items-center gap-1 bg-white border-gray-300 text-gray-900 hover:bg-gray-50"
+                >
+                  <PencilIcon className="h-4 w-4" />
+                  Edit
+                </Button>
+              )}
+              {isSuperAdmin && (
+                <Button
+                  variant="destructive"
+                  onClick={() => setIsDeleting(true)}
+                  className="flex items-center gap-1"
+                >
+                  <Trash2Icon className="h-4 w-4" />
+                  Move to trash
+                </Button>
+              )}
             </>
           )}
         </DialogFooter>

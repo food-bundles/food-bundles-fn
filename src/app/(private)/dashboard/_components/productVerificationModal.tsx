@@ -33,8 +33,10 @@ import { toast } from "sonner";
 import {
   FarmerSubmission,
   useSubmissions,
+  farmerDisplayName,
 } from "@/app/contexts/submission-context";
 import { formatDateTime } from "@/lib/reusableFunctions";
+import { submissionService } from "@/app/services/submissionServices";
 
 interface ProductVerificationModalProps {
   submission: FarmerSubmission | null;
@@ -42,6 +44,7 @@ interface ProductVerificationModalProps {
   onClose: () => void;
   mode: "view" | "verify" | "edit";
   onModeChange: (mode: "view" | "verify" | "edit") => void;
+  onSuccess?: () => void;
 }
 
 export function ProductVerificationModal({
@@ -50,6 +53,7 @@ export function ProductVerificationModal({
   onClose,
   mode,
   onModeChange,
+  onSuccess,
 }: ProductVerificationModalProps) {
   const { purchaseSubmission } = useSubmissions();
 
@@ -127,12 +131,21 @@ export function ProductVerificationModal({
 
         toast.success("Product verified and accepted successfully!");
       } else {
-        // Handle rejection logic here
+        const response = await submissionService.rejectSubmission(
+          submission.id,
+          notes || undefined
+        );
+
+        if (!response.success) {
+          toast.error(response.message || "Failed to reject submission");
+          return;
+        }
+
         toast.success("Product rejected successfully!");
       }
 
+      onSuccess?.();
       onClose();
-      // Navigation or local state update would be better here than a hard reload
     } catch (error) {
       console.error("Error verifying submission:", error);
       toast.error("Failed to verify submission");
@@ -152,6 +165,7 @@ export function ProductVerificationModal({
       });
 
       toast.success("Submission updated successfully!");
+      onSuccess?.();
       onModeChange("view");
     } catch (error) {
       console.error("Error updating submission:", error);
@@ -161,8 +175,8 @@ export function ProductVerificationModal({
     }
   };
 
-  const farmerName =
-    submission.farmer.email.split("@")[0] || submission.farmer.phone;
+  // Farmers may have no email (optional at signup)
+  const farmerName = farmerDisplayName(submission.farmer);
   const totalAmount = acceptedPrice * acceptedQuantity;
 
   return (
@@ -230,9 +244,11 @@ export function ProductVerificationModal({
                   <p className="text-sm text-gray-500">
                     {submission.farmer.phone}
                   </p>
-                  <p className="text-sm text-gray-500">
-                    {submission.farmer.email}
-                  </p>
+                  {submission.farmer.email && (
+                    <p className="text-sm text-gray-500">
+                      {submission.farmer.email}
+                    </p>
+                  )}
                 </div>
               </div>
 

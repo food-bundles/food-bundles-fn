@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useAdminAccess } from "@/app/hooks/useAdminAccess";
 import Image from "next/image";
 
 type DeliveryStatus =
@@ -42,7 +43,14 @@ interface LogisticsOrder {
   createdAt: string;
 }
 
-export default function LogisticsPage() {
+// Delivery management (moved here from the old /logistics app)
+export default function DeliveriesPage() {
+  // "Update delivery status" shows the Mark as… buttons; "Confirm delivery"
+  // shows Mark as Delivered (customer OTP)
+  const { can } = useAdminAccess();
+  const canUpdateStatus = can("deliveries", "update_status");
+  const canConfirmDelivery = can("deliveries", "confirm_delivery");
+
   const [orders, setOrders] = useState<LogisticsOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -163,6 +171,7 @@ export default function LogisticsPage() {
   const getNextStatus = (
     currentStatus: DeliveryStatus
   ): DeliveryStatus | null => {
+    if (!canUpdateStatus) return null;
     const workflow: Record<DeliveryStatus, DeliveryStatus | null> = {
       PENDING: null,
       CONFIRMED: "PREPARING",
@@ -414,7 +423,7 @@ export default function LogisticsPage() {
                   </button>
                 )}
 
-                {order.status === "IN_TRANSIT" && (
+                {order.status === "IN_TRANSIT" && canConfirmDelivery && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -725,7 +734,7 @@ export default function LogisticsPage() {
 
                     
 
-                      {currentOrder.status === "IN_TRANSIT" && (
+                      {currentOrder.status === "IN_TRANSIT" && canConfirmDelivery && (
                         <button
                           onClick={() => {
                             setSelectedOrder(currentOrder);
@@ -1024,7 +1033,7 @@ export default function LogisticsPage() {
                             </button>
                           )}
 
-                          {quickModalOrder.status === "IN_TRANSIT" && (
+                          {quickModalOrder.status === "IN_TRANSIT" && canConfirmDelivery && (
                             <button
                               onClick={() => {
                                 setSelectedOrder(quickModalOrder);

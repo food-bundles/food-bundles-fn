@@ -114,7 +114,7 @@ export default function PaymentsPage() {
           payment.paymentId.toLowerCase().includes(searchLower) ||
           payment.recipientName.toLowerCase().includes(searchLower) ||
           payment.product.toLowerCase().includes(searchLower) ||
-          payment.paymentMethod.toLowerCase().includes(searchLower);
+          (payment.paymentMethod || "").toLowerCase().includes(searchLower);
 
         if (!matchesSearch) return false;
       }

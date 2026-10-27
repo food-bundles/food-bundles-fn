@@ -531,7 +531,17 @@ export default function AdminOrdersPage() {
         )
       );
       
-      await orderService.updateOrder(orderId, { paymentStatus });
+      const response: any = await orderService.updateOrder(orderId, { paymentStatus });
+      // The backend may move the order status back to Pending when the
+      // payment is no longer completed — show what it saved
+      const savedStatus = response?.data?.status as Order['status'] | undefined;
+      if (savedStatus) {
+        setOrders(prevOrders =>
+          prevOrders.map(order =>
+            order.id === orderId ? { ...order, status: savedStatus } : order
+          )
+        );
+      }
       toast.success("Payment status updated successfully");
     } catch (error: any) {
       // Revert on error
@@ -552,7 +562,7 @@ export default function AdminOrdersPage() {
     onPaymentStatusUpdate: handlePaymentStatusUpdate,
     onEdit: handleEditOrder,
     onSendPaymentLink: handleSendPaymentLink,
-    canManage: can("orders", "manage"),
+    can: (action: string) => can("orders", action),
   });
 
   const filters = [
@@ -593,14 +603,16 @@ export default function AdminOrdersPage() {
           <h1 className="text-[16px] font-medium">Restaurant Orders</h1>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            onClick={() => setCreateOrderModalOpen(true)}
-            className="bg-green-600 hover:bg-green-700 text-white"
-          >
-            <PlusCircle className="h-4 w-4 mr-1" />
-            Create Order
-          </Button>
+          {can("orders", "create") && (
+            <Button
+              size="sm"
+              onClick={() => setCreateOrderModalOpen(true)}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              <PlusCircle className="h-4 w-4 mr-1" />
+              Create Order
+            </Button>
+          )}
           <ExportButton
             module="orders"
             filters={{

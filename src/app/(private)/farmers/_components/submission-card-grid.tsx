@@ -1,5 +1,6 @@
 "use client";
 
+import { stageLabel } from "./status-helpers";
 import { motion } from "motion/react";
 import { Eye, MapPin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,7 +32,7 @@ export function SubmissionCardGrid({ products, onViewDetails }: SubmissionCardGr
                   <p className="font-semibold text-gray-900 truncate">{product.name}</p>
                   <p className="text-xs text-gray-500">{product.category.name}</p>
                 </div>
-                <Badge className={`${product.statusColor} border-0 text-xs shrink-0`}>{product.displayStatus}</Badge>
+                <Badge className={`${product.statusColor} border-0 text-xs shrink-0`}>{stageLabel(product.displayStatus)}</Badge>
               </div>
 
               <div className="flex items-center text-xs text-gray-600 gap-1">

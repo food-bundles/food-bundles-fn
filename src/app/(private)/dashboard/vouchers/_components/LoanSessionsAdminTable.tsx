@@ -28,11 +28,13 @@ import {
   Lock,
   Unlock,
   Check,
+  Banknote,
 } from "lucide-react";
 import { voucherService } from "@/app/services/voucherService";
 import { toast } from "sonner";
 import ApproveLoanSessionModal from "./ApproveLoanSessionModal";
 import { RejectReasonPicker } from "./RejectReasonPicker";
+import AdminRepayVoucherModal from "./AdminRepayVoucherModal";
 
 interface LoanSession {
   id: string;
@@ -110,6 +112,8 @@ export default function LoanSessionsAdminTable() {
   const [selected, setSelected] = useState<LoanSession | null>(null);
   const [acceptOpen, setAcceptOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
+  // Session the admin is paying on behalf of the restaurant
+  const [repaySession, setRepaySession] = useState<LoanSession | null>(null);
   const [approvedAmount, setApprovedAmount] = useState("");
   const [approvalPct, setApprovalPct] = useState("100");
   const [repaymentDays, setRepaymentDays] = useState("30");
@@ -459,6 +463,10 @@ export default function LoanSessionsAdminTable() {
       cell: ({ row }) => {
         const s = row.original;
         const isPending = s.status === "REQUESTED";
+        // A voucher can be paid while it is running and still has money owed
+        const canRepay =
+          ["ACTIVE", "PARTIALLY_USED", "FULLY_USED", "OVERDUE"].includes(s.status) &&
+          s.outstandingAmount > 0;
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -480,6 +488,10 @@ export default function LoanSessionsAdminTable() {
               >
                 <CheckCircle className="mr-2 h-4 w-4 text-blue-600" />
                 Accept (send to trader)
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled={!canRepay} onClick={() => setRepaySession(s)}>
+                <Banknote className="mr-2 h-4 w-4 text-green-600" />
+                Pay voucher
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -514,6 +526,14 @@ export default function LoanSessionsAdminTable() {
           isLoading={loading}
         />
       </div>
+
+      {/* Admin pays a voucher on behalf of the restaurant (MoMo or prepaid wallet) */}
+      <AdminRepayVoucherModal
+        open={!!repaySession}
+        session={repaySession}
+        onClose={() => setRepaySession(null)}
+        onPaid={load}
+      />
 
       {/* Approve loan modal (shared with the pending activities feed) */}
       <ApproveLoanSessionModal

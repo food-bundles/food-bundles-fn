@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Eye, MoreHorizontal, Trash2, FileText, Edit3, Send, ChevronLeft, ChevronRight } from "lucide-react";
 
 // Helper function to get payment method colors
-const getPaymentMethodColor = (method: string) => {
-  switch (method.toLowerCase()) {
+// No method yet (e.g. an order from a supply request, not paid yet) → grey
+const getPaymentMethodColor = (method?: string | null) => {
+  switch ((method || "").toLowerCase()) {
     case 'cash':
       return 'bg-green-100 text-green-700 border-green-200';
     case 'card':
@@ -100,7 +101,8 @@ export interface Order {
   packagingFee?: number;
   status: "PENDING" | "CONFIRMED" | "PREPARING" | "READY" |"IN_TRANSIT" | "DELIVERED" | "CANCELLED" | "REFUNDED";
   paymentStatus: "PENDING" | "PROCESSING" | "COMPLETED" | "VOUCHER_CREDIT" | "FAILED" | "CANCELLED" | "REFUNDED";
-  paymentMethod: "CASH" | "MOBILE_MONEY" | "CARD" | "BANK_TRANSFER"| "VOUCHER";
+  // null until the customer chooses how to pay (e.g. supply request orders)
+  paymentMethod: "CASH" | "MOBILE_MONEY" | "CARD" | "BANK_TRANSFER" | "VOUCHER" | null;
   billingName: string;
   billingPhone: string;
   billingEmail: string;
@@ -133,7 +135,7 @@ export interface Order {
   };
 }
 
-// Status progression flows — the stepper moves one step forward/back along these
+// Order status flow — the stepper moves one step forward/back along it
 const ORDER_STATUS_FLOW: Order["status"][] = [
   "PENDING",
   "CONFIRMED",
@@ -143,11 +145,38 @@ const ORDER_STATUS_FLOW: Order["status"][] = [
   "DELIVERED",
 ];
 
-const PAYMENT_STATUS_FLOW: Order["paymentStatus"][] = [
-  "PENDING",
-  "PROCESSING",
-  "COMPLETED",
-];
+// Paid = completed, or paid with voucher credit
+const PAID_STATUSES = ["COMPLETED", "VOUCHER_CREDIT"];
+const isPaid = (paymentStatus: string) => PAID_STATUSES.includes(paymentStatus);
+
+type Steps = { prev: string | null; next: string | null };
+
+// The order status only moves once the payment is completed. A cancelled
+// order can be reactivated: Next moves it to Confirmed, Back to Pending.
+const getOrderSteps = (order: Order): Steps => {
+  if (!isPaid(order.paymentStatus)) return { prev: null, next: null };
+  if (order.status === "CANCELLED") return { prev: "PENDING", next: "CONFIRMED" };
+  const index = ORDER_STATUS_FLOW.indexOf(order.status);
+  return {
+    prev: index > 0 ? ORDER_STATUS_FLOW[index - 1] : null,
+    next: index >= 0 && index < ORDER_STATUS_FLOW.length - 1 ? ORDER_STATUS_FLOW[index + 1] : null,
+  };
+};
+
+// Payment moves forward Pending → Processing → Completed. Back always goes to
+// Failed, from any status. A failed (or cancelled) payment can be marked
+// Completed when the restaurant did pay. Voucher credit and refunds are fixed.
+const PAYMENT_STEPS: Record<string, Steps> = {
+  PENDING: { prev: "FAILED", next: "PROCESSING" },
+  PROCESSING: { prev: "FAILED", next: "COMPLETED" },
+  COMPLETED: { prev: "FAILED", next: null },
+  FAILED: { prev: null, next: "COMPLETED" },
+  CANCELLED: { prev: "FAILED", next: "COMPLETED" },
+};
+
+// Orders still being processed go back to Pending when the payment stops
+// being completed (the backend does the same)
+const ORDER_RESET_ON_UNPAID = ["CONFIRMED", "PREPARING", "READY", "IN_TRANSIT"];
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "Pending",
@@ -167,24 +196,13 @@ const STATUS_LABELS: Record<string, string> = {
 const getStatusLabel = (status: string) => STATUS_LABELS[status] || status;
 
 // Status Stepper Component: [back] badge [next], each step confirmed via dialog
-// Payment statuses outside the normal flow that an admin can still correct:
-// e.g. the gateway reported FAILED/CANCELLED but the restaurant did pay.
-// Next marks it paid; Back returns it to Pending so payment can be retried.
-const PAYMENT_STATUS_RECOVERY: Record<string, { prev: string; next: string }> = {
-  FAILED: { prev: "PENDING", next: "COMPLETED" },
-  CANCELLED: { prev: "PENDING", next: "COMPLETED" },
-};
-
-// A cancelled order can be reactivated: Next moves it back into the flow
-// (Confirmed), Back returns it to Pending. Not offered when payment FAILED.
-const ORDER_STATUS_RECOVERY: Record<string, { prev: string; next: string }> = {
-  CANCELLED: { prev: "PENDING", next: "CONFIRMED" },
-};
-
-function StatusStepper({ currentStatus, flow, recovery, canManage = true, orderId, restaurantName, kind, getColor, onUpdate }: {
+function StatusStepper({ currentStatus, steps, lockedReason, getWarning, canManage = true, orderId, restaurantName, kind, getColor, onUpdate }: {
   currentStatus: string;
-  flow: string[];
-  recovery?: Record<string, { prev: string; next: string }>;
+  steps: Steps;
+  // Shown on hover when the stepper is locked (e.g. payment not completed)
+  lockedReason?: string;
+  // Extra note in the confirmation dialog for a given target status
+  getWarning?: (status: string) => string | null;
   canManage?: boolean;
   orderId: string;
   restaurantName: string;
@@ -194,24 +212,11 @@ function StatusStepper({ currentStatus, flow, recovery, canManage = true, orderI
 }) {
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
 
-  // Statuses outside the flow have no next/previous step, unless a recovery
-  // path is defined for them. Users who cannot manage orders get no arrows.
-  const index = flow.indexOf(currentStatus);
-  const recoverable = recovery?.[currentStatus];
-  const prevStatus = !canManage
-    ? null
-    : recoverable
-      ? recoverable.prev
-      : index > 0
-        ? flow[index - 1]
-        : null;
-  const nextStatus = !canManage
-    ? null
-    : recoverable
-      ? recoverable.next
-      : index >= 0 && index < flow.length - 1
-        ? flow[index + 1]
-        : null;
+  // Users who cannot manage orders get no arrows
+  const prevStatus = canManage ? steps.prev : null;
+  const nextStatus = canManage ? steps.next : null;
+  const locked = canManage && !!lockedReason && !prevStatus && !nextStatus;
+  const warning = pendingStatus && getWarning ? getWarning(pendingStatus) : null;
   const isBackward = pendingStatus !== null && pendingStatus === prevStatus;
   const title = kind === "order" ? "Order Status" : "Payment Status";
 
@@ -230,7 +235,7 @@ function StatusStepper({ currentStatus, flow, recovery, canManage = true, orderI
 
   return (
     <>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1" title={locked ? lockedReason : undefined}>
         <button
           type="button"
           title={prevStatus ? `Back to ${getStatusLabel(prevStatus)}` : undefined}
@@ -271,6 +276,11 @@ function StatusStepper({ currentStatus, flow, recovery, canManage = true, orderI
                 &quot;{pendingStatus && getStatusLabel(pendingStatus)}&quot;
               </span>
               ?
+              {warning && (
+                <span className="mt-3 block rounded-md bg-orange-50 border border-orange-200 px-3 py-2 text-[13px] text-orange-800">
+                  {warning}
+                </span>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex gap-3 pt-4">
@@ -319,8 +329,9 @@ export const createOrdersColumns = (actions: {
   onPaymentStatusUpdate: (orderId: string, paymentStatus: string) => void;
   onEdit?: (order: Order) => void;
   onSendPaymentLink?: (order: Order) => void;
-  // False hides the status arrows (users without the Orders "manage" permission)
-  canManage?: boolean;
+  // Orders permission check for one action ("update_status", "edit"…);
+  // hides the matching arrows and menu items. Omitted = everything allowed.
+  can?: (action: string) => boolean;
 }): ColumnDef<Order>[] => [
   {
     accessorKey: "#",
@@ -384,7 +395,7 @@ export const createOrdersColumns = (actions: {
               row.original.paymentMethod,
             )}`}
           >
-            {row.original.paymentMethod}
+            {row.original.paymentMethod || "not chosen"}
           </div>
         </div>
       );
@@ -398,11 +409,13 @@ export const createOrdersColumns = (actions: {
       return (
         <StatusStepper
           currentStatus={order.status}
-          flow={ORDER_STATUS_FLOW}
-          recovery={
-            order.paymentStatus === "FAILED" ? undefined : ORDER_STATUS_RECOVERY
+          steps={getOrderSteps(order)}
+          lockedReason={
+            isPaid(order.paymentStatus)
+              ? undefined
+              : "Complete the payment first, then the order status can be changed"
           }
-          canManage={actions.canManage}
+          canManage={actions.can?.("update_status") ?? true}
           kind="order"
           getColor={getOrderStatusColor}
           orderId={order.id}
@@ -420,9 +433,15 @@ export const createOrdersColumns = (actions: {
       return (
         <StatusStepper
           currentStatus={order.paymentStatus}
-          flow={PAYMENT_STATUS_FLOW}
-          recovery={PAYMENT_STATUS_RECOVERY}
-          canManage={actions.canManage}
+          steps={PAYMENT_STEPS[order.paymentStatus] ?? { prev: null, next: null }}
+          getWarning={(target) =>
+            isPaid(order.paymentStatus) &&
+            !isPaid(target) &&
+            ORDER_RESET_ON_UNPAID.includes(order.status)
+              ? `The order status will go back to Pending (now ${getStatusLabel(order.status)}) until the payment is completed again.`
+              : null
+          }
+          canManage={actions.can?.("update_payment_status") ?? true}
           kind="payment"
           getColor={getPaymentStatusColor}
           orderId={order.id}
@@ -471,26 +490,30 @@ export const createOrdersColumns = (actions: {
                 <FileText className="mr-2 h-4 w-4" />
                 Print Order
               </DropdownMenuItem>
-              {actions.onEdit && ["PENDING", "CONFIRMED"].includes(order.status) && (
+              {actions.onEdit && (actions.can?.("edit") ?? true) && ["PENDING", "CONFIRMED"].includes(order.status) && (
                 <DropdownMenuItem onClick={() => actions.onEdit!(order)}>
                   <Edit3 className="mr-2 h-4 w-4" />
                   Edit Order
                 </DropdownMenuItem>
               )}
-              {actions.onSendPaymentLink && order.paymentStatus === "FAILED" && (
+              {actions.onSendPaymentLink && (actions.can?.("send_payment_link") ?? true) && order.paymentStatus === "FAILED" && (
                 <DropdownMenuItem onClick={() => actions.onSendPaymentLink!(order)}>
                   <Send className="mr-2 h-4 w-4" />
                   Send Payment Link
                 </DropdownMenuItem>
               )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-red-600"
-                onClick={() => actions.onDelete(order)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete Order
-              </DropdownMenuItem>
+              {(actions.can?.("delete") ?? true) && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-red-600"
+                    onClick={() => actions.onDelete(order)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Order
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

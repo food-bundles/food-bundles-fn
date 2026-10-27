@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
-import type { NotificationRecipient } from "./recipient-columns";
+import { categoryLabels, type NotificationRecipient } from "./recipient-columns";
 
 interface RecipientManagementModalProps {
   recipient: NotificationRecipient | null;
@@ -40,15 +40,8 @@ const categoryOptions = [
   { value: "LOW_STOCK", label: "Low Stock" },
   { value: "PAYMENT_ISSUES", label: "Payment Issues" },
   { value: "SYSTEM_ALERTS", label: "System Alerts" },
+  { value: "PRIVATE_RECEIVER", label: "Private Receiver" },
 ];
-
-const categoryLabels: Record<string, string> = {
-  MATURED_VOUCHERS: "Matured Vouchers",
-  EXPIRED_VOUCHERS: "Expired Vouchers",
-  LOW_STOCK: "Low Stock",
-  PAYMENT_ISSUES: "Payment Issues",
-  SYSTEM_ALERTS: "System Alerts",
-};
 
 export function RecipientManagementModal({
   recipient,
@@ -66,6 +59,7 @@ export function RecipientManagementModal({
   const [editData, setEditData] = useState({
     name: "",
     phoneNumber: "",
+    email: "",
     category: "",
     isActive: true,
   });
@@ -75,6 +69,7 @@ export function RecipientManagementModal({
       setEditData({
         name: recipient.name,
         phoneNumber: recipient.phoneNumber,
+        email: recipient.email || "",
         category: recipient.category,
         isActive: recipient.isActive,
       });
@@ -91,6 +86,7 @@ export function RecipientManagementModal({
       setEditData({
         name: recipient.name,
         phoneNumber: recipient.phoneNumber,
+        email: recipient.email || "",
         category: recipient.category,
         isActive: recipient.isActive,
       });
@@ -102,7 +98,10 @@ export function RecipientManagementModal({
     
     setIsLoading(true);
     try {
-      await onEdit(recipient.id, editData);
+      await onEdit(recipient.id, {
+        ...editData,
+        email: editData.email.trim() || null,
+      });
       toast.success("Recipient updated successfully");
       setIsEditing(false);
       onUpdate();
@@ -178,6 +177,19 @@ export function RecipientManagementModal({
                   onChange={(e) => setEditData(prev => ({ ...prev, phoneNumber: e.target.value }))}
                   disabled={isLoading}
                   placeholder="+250788123456"
+                  className="bg-white border-gray-300 text-gray-900"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-gray-900">Email (optional)</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={editData.email}
+                  onChange={(e) => setEditData(prev => ({ ...prev, email: e.target.value }))}
+                  disabled={isLoading}
+                  placeholder="finance@foodbundles.rw"
                   className="bg-white border-gray-300 text-gray-900"
                 />
               </div>
@@ -263,6 +275,10 @@ export function RecipientManagementModal({
                 <div className="grid grid-cols-3 gap-2">
                   <div className="text-sm font-medium text-gray-600">Phone Number:</div>
                   <div className="text-sm col-span-2 text-gray-900">{recipient.phoneNumber}</div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="text-sm font-medium text-gray-600">Email:</div>
+                  <div className="text-sm col-span-2 text-gray-900">{recipient.email || "-"}</div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <div className="text-sm font-medium text-gray-600">Category:</div>

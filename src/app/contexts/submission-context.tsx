@@ -10,9 +10,14 @@ import {
 // Types based on your backend response
 export interface FarmerInfo {
   id: string;
-  phone: string;
-  email: string;
+  name?: string | null;
+  phone: string | null;
+  email: string | null; // optional for farmers
 }
+
+/** Best label for a farmer: name, else the part of the email before @, else phone. */
+export const farmerDisplayName = (farmer?: FarmerInfo | null) =>
+  farmer?.name?.trim() || farmer?.email?.split("@")[0] || farmer?.phone || "Unknown farmer";
 
 export interface FarmerSubmission {
   aggregator: any;
@@ -23,7 +28,9 @@ export interface FarmerSubmission {
   acceptedQty: number | null;
   totalAmount: number | null;
   categoryId: string;
-  status: "PENDING" | "VERIFIED" | "APPROVED" | "PAID";
+  // Flow: PENDING → APPROVED → VERIFIED → PAID; NEGOTIATING = counter-offer
+  // sent to the farmer; REJECTED = closed without buying
+  status: SubmissionStage;
   farmerFeedbackStatus: "PENDING" | "ACCEPTED" | "REJECTED" | "EXTENDED" | null;
   farmerFeedbackAt: string | null;
   farmerFeedbackNotes: string | null;
@@ -44,6 +51,52 @@ export interface FarmerSubmission {
   cell: string;
   village: string;
   farmer: FarmerInfo;
+  payouts?: SubmissionPayout[];
+  /** Food Bundles buying price when the price was decided */
+  foodBundlesPrice?: number | null;
+  /** Price Food Bundles offered (waits for the farmer) */
+  counterOfferPrice?: number | null;
+  /** Price both sides agreed at approval */
+  agreedPrice?: number | null;
+  rejectionReason?: string | null;
+  rejectedAt?: string | null;
+}
+
+export type SubmissionStage = "PENDING" | "NEGOTIATING" | "APPROVED" | "VERIFIED" | "PAID" | "REJECTED";
+
+/** Price both sides agreed. Submissions approved before the new flow kept it in
+ *  acceptedPrice (or only the farmer's price), so fall back to those. */
+export const agreedPriceOf = (
+  s: Pick<FarmerSubmission, "agreedPrice" | "acceptedPrice" | "farmerCounterOffer" | "wishedPrice">
+) => s.agreedPrice ?? s.acceptedPrice ?? s.farmerCounterOffer ?? s.wishedPrice ?? 0;
+
+/** What the farmer currently asks per unit (their latest counter, else the original). */
+export const askedPriceOf = (s: Pick<FarmerSubmission, "wishedPrice" | "farmerCounterOffer">) =>
+  s.farmerCounterOffer ?? s.wishedPrice ?? 0;
+
+export interface SubmissionPayout {
+  id: string;
+  submissionId: string;
+  amount: number;
+  phoneNumber: string;
+  paypackRef: string | null;
+  paypackStatus: string | null;
+  status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | "CANCELLED" | "REFUNDED" | "VOUCHER_CREDIT";
+  initiatedBy: string;
+  method?: "MOMO" | "CASH";
+  confirmedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SubmissionStatusHistoryEntry {
+  id: string;
+  submissionId: string;
+  fromStatus: string;
+  toStatus: string;
+  reason: string | null;
+  changedBy: string;
+  createdAt: string;
 }
 
 export interface SubmissionResponse {
@@ -79,7 +132,16 @@ export interface PurchaseSubmissionPayload {
 
 interface SubmissionContextType {
   // Submission operations
-  getAllSubmissions: () => Promise<SubmissionResponse>;
+  getAllSubmissions: (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    feedbackStatus?: string;
+    province?: string;
+    search?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }) => Promise<SubmissionResponse>;
   getSubmissionById: (
     submissionId: string
   ) => Promise<{ data: FarmerSubmission }>;
@@ -128,10 +190,21 @@ export function SubmissionProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const getAllSubmissions =
-    useCallback(async (): Promise<SubmissionResponse> => {
-      return await submissionService.getAllSubmissions();
-    }, []);
+  const getAllSubmissions = useCallback(
+    async (params?: {
+      page?: number;
+      limit?: number;
+      status?: string;
+      feedbackStatus?: string;
+      province?: string;
+      search?: string;
+      dateFrom?: string;
+      dateTo?: string;
+    }): Promise<SubmissionResponse> => {
+      return await submissionService.getAllSubmissions(params);
+    },
+    []
+  );
 
   const getSubmissionById = useCallback(async (submissionId: string) => {
     return await submissionService.getSubmissionById(submissionId);
