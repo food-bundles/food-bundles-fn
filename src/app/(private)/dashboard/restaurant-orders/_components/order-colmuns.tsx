@@ -135,7 +135,7 @@ export interface Order {
   };
 }
 
-// Order status flow — the stepper moves one step forward/back along it
+// Order status flow — free movement in both directions
 const ORDER_STATUS_FLOW: Order["status"][] = [
   "PENDING",
   "CONFIRMED",
@@ -143,40 +143,40 @@ const ORDER_STATUS_FLOW: Order["status"][] = [
   "READY",
   "IN_TRANSIT",
   "DELIVERED",
+  "CANCELLED",
+  "REFUNDED",
 ];
-
-// Paid = completed, or paid with voucher credit
-const PAID_STATUSES = ["COMPLETED", "VOUCHER_CREDIT"];
-const isPaid = (paymentStatus: string) => PAID_STATUSES.includes(paymentStatus);
 
 type Steps = { prev: string | null; next: string | null };
 
-// The order status only moves once the payment is completed. A cancelled
-// order can be reactivated: Next moves it to Confirmed, Back to Pending.
 const getOrderSteps = (order: Order): Steps => {
-  if (!isPaid(order.paymentStatus)) return { prev: null, next: null };
-  if (order.status === "CANCELLED") return { prev: "PENDING", next: "CONFIRMED" };
   const index = ORDER_STATUS_FLOW.indexOf(order.status);
+  if (index === -1) return { prev: null, next: null };
   return {
     prev: index > 0 ? ORDER_STATUS_FLOW[index - 1] : null,
-    next: index >= 0 && index < ORDER_STATUS_FLOW.length - 1 ? ORDER_STATUS_FLOW[index + 1] : null,
+    next: index < ORDER_STATUS_FLOW.length - 1 ? ORDER_STATUS_FLOW[index + 1] : null,
   };
 };
 
-// Payment moves forward Pending → Processing → Completed. Back always goes to
-// Failed, from any status. A failed (or cancelled) payment can be marked
-// Completed when the restaurant did pay. Voucher credit and refunds are fixed.
-const PAYMENT_STEPS: Record<string, Steps> = {
-  PENDING: { prev: "FAILED", next: "PROCESSING" },
-  PROCESSING: { prev: "FAILED", next: "COMPLETED" },
-  COMPLETED: { prev: "FAILED", next: null },
-  FAILED: { prev: null, next: "COMPLETED" },
-  CANCELLED: { prev: "FAILED", next: "COMPLETED" },
-};
+// Payment status flow — free movement in both directions
+const PAYMENT_STATUS_FLOW: Order["paymentStatus"][] = [
+  "PENDING",
+  "PROCESSING",
+  "COMPLETED",
+  "VOUCHER_CREDIT",
+  "FAILED",
+  "CANCELLED",
+  "REFUNDED",
+];
 
-// Orders still being processed go back to Pending when the payment stops
-// being completed (the backend does the same)
-const ORDER_RESET_ON_UNPAID = ["CONFIRMED", "PREPARING", "READY", "IN_TRANSIT"];
+const getPaymentSteps = (paymentStatus: Order["paymentStatus"]): Steps => {
+  const index = PAYMENT_STATUS_FLOW.indexOf(paymentStatus);
+  if (index === -1) return { prev: null, next: null };
+  return {
+    prev: index > 0 ? PAYMENT_STATUS_FLOW[index - 1] : null,
+    next: index < PAYMENT_STATUS_FLOW.length - 1 ? PAYMENT_STATUS_FLOW[index + 1] : null,
+  };
+};
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "Pending",
@@ -196,12 +196,9 @@ const STATUS_LABELS: Record<string, string> = {
 const getStatusLabel = (status: string) => STATUS_LABELS[status] || status;
 
 // Status Stepper Component: [back] badge [next], each step confirmed via dialog
-function StatusStepper({ currentStatus, steps, lockedReason, getWarning, canManage = true, orderId, restaurantName, kind, getColor, onUpdate }: {
+function StatusStepper({ currentStatus, steps, getWarning, canManage = true, orderId, restaurantName, kind, getColor, onUpdate }: {
   currentStatus: string;
   steps: Steps;
-  // Shown on hover when the stepper is locked (e.g. payment not completed)
-  lockedReason?: string;
-  // Extra note in the confirmation dialog for a given target status
   getWarning?: (status: string) => string | null;
   canManage?: boolean;
   orderId: string;
@@ -215,7 +212,6 @@ function StatusStepper({ currentStatus, steps, lockedReason, getWarning, canMana
   // Users who cannot manage orders get no arrows
   const prevStatus = canManage ? steps.prev : null;
   const nextStatus = canManage ? steps.next : null;
-  const locked = canManage && !!lockedReason && !prevStatus && !nextStatus;
   const warning = pendingStatus && getWarning ? getWarning(pendingStatus) : null;
   const isBackward = pendingStatus !== null && pendingStatus === prevStatus;
   const title = kind === "order" ? "Order Status" : "Payment Status";
@@ -235,7 +231,7 @@ function StatusStepper({ currentStatus, steps, lockedReason, getWarning, canMana
 
   return (
     <>
-      <div className="flex items-center gap-1" title={locked ? lockedReason : undefined}>
+      <div className="flex items-center gap-1">
         <button
           type="button"
           title={prevStatus ? `Back to ${getStatusLabel(prevStatus)}` : undefined}
@@ -410,12 +406,7 @@ export const createOrdersColumns = (actions: {
         <StatusStepper
           currentStatus={order.status}
           steps={getOrderSteps(order)}
-          lockedReason={
-            isPaid(order.paymentStatus)
-              ? undefined
-              : "Complete the payment first, then the order status can be changed"
-          }
-          canManage={actions.can?.("update_status") ?? true}
+          canManage={(actions.can?.("update_status") ?? true) && order.paymentStatus !== "FAILED" && order.paymentStatus !== "CANCELLED"}
           kind="order"
           getColor={getOrderStatusColor}
           orderId={order.id}
@@ -433,14 +424,7 @@ export const createOrdersColumns = (actions: {
       return (
         <StatusStepper
           currentStatus={order.paymentStatus}
-          steps={PAYMENT_STEPS[order.paymentStatus] ?? { prev: null, next: null }}
-          getWarning={(target) =>
-            isPaid(order.paymentStatus) &&
-            !isPaid(target) &&
-            ORDER_RESET_ON_UNPAID.includes(order.status)
-              ? `The order status will go back to Pending (now ${getStatusLabel(order.status)}) until the payment is completed again.`
-              : null
-          }
+          steps={getPaymentSteps(order.paymentStatus)}
           canManage={actions.can?.("update_payment_status") ?? true}
           kind="payment"
           getColor={getPaymentStatusColor}
@@ -490,7 +474,7 @@ export const createOrdersColumns = (actions: {
                 <FileText className="mr-2 h-4 w-4" />
                 Print Order
               </DropdownMenuItem>
-              {actions.onEdit && (actions.can?.("edit") ?? true) && ["PENDING", "CONFIRMED"].includes(order.status) && (
+              {actions.onEdit && (
                 <DropdownMenuItem onClick={() => actions.onEdit!(order)}>
                   <Edit3 className="mr-2 h-4 w-4" />
                   Edit Order
