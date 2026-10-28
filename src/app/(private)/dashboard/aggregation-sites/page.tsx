@@ -2,12 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Loader2, MapPin, Pencil, RefreshCw, Search, Users, Wand2 } from "lucide-react";
+import { Loader2, MapPin, Pencil, Plus, RefreshCw, Search, Users, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { locationService } from "@/app/services/locationService";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +24,7 @@ import {
   AggregationSiteUpdate,
   AggregationSiteWithCounts as AggregationSite,
   aggregationSiteService,
+  isManualSite,
 } from "@/app/services/aggregationSiteService";
 import { SiteMembersDialog } from "./_components/SiteMembersDialog";
 import { AssignedFarmersDialog } from "./_components/AssignedFarmersDialog";
@@ -50,8 +53,51 @@ export default function AggregationSitesPage() {
   const [showAssigned, setShowAssigned] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  const [editing, setEditing] = useState<AggregationSite | null>(null);
+  // "new" while the admin adds a site by hand, a site while they edit one
+  const [editing, setEditing] = useState<AggregationSite | "new" | null>(null);
   const [form, setForm] = useState({ name: "", district: "", province: "", latitude: "", longitude: "" });
+  const isNew = editing === "new";
+
+  // Rwanda's provinces and the districts of the chosen one, the same list farmers pick from, so a site's
+  // district matches theirs exactly (nearest-site matching and supply requests compare them)
+  const [provinces, setProvinces] = useState<string[]>([]);
+  const [districts, setDistricts] = useState<string[]>([]);
+  const [loadingDistricts, setLoadingDistricts] = useState(false);
+
+  useEffect(() => {
+    if (!editing || provinces.length > 0) return;
+    locationService
+      .fetchLocationHierarchy([])
+      .then((result: unknown) => {
+        const list = Array.isArray(result)
+          ? result
+          : ((result as { provinces?: unknown[] })?.provinces ?? []);
+        setProvinces(list.map((p) => (typeof p === "string" ? p : (p as { name: string }).name)).filter(Boolean));
+      })
+      .catch(() => toast.error("Failed to load the provinces"));
+  }, [editing, provinces.length]);
+
+  useEffect(() => {
+    if (!editing || !form.province) {
+      setDistricts([]);
+      return;
+    }
+    let active = true;
+    setLoadingDistricts(true);
+    locationService
+      .getDistrictsByProvince(form.province)
+      .then((list) => active && setDistricts(list))
+      .finally(() => active && setLoadingDistricts(false));
+    return () => {
+      active = false;
+    };
+  }, [editing, form.province]);
+
+  // A site from the WFP list may spell its place differently: keep its current value as a choice
+  const withCurrent = (list: string[], current: string) =>
+    current && !list.some((v) => v.toLowerCase() === current.toLowerCase()) ? [current, ...list] : list;
+  const provinceOptions = withCurrent(provinces, form.province);
+  const districtOptions = withCurrent(districts, form.district);
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
@@ -120,6 +166,11 @@ export default function AggregationSitesPage() {
     }
   };
 
+  const openCreate = () => {
+    setEditing("new");
+    setForm({ name: "", district: "", province: "", latitude: "", longitude: "" });
+  };
+
   const openEdit = useCallback((site: AggregationSite) => {
     setEditing(site);
     setForm({
@@ -133,12 +184,19 @@ export default function AggregationSitesPage() {
 
   const latitude = Number(form.latitude);
   const longitude = Number(form.longitude);
+  // A new site may leave both coordinates empty (it is then placed at its district's centre); an edit keeps them
+  const noCoordinates = form.latitude.trim() === "" && form.longitude.trim() === "";
   const coordinatesValid =
-    form.latitude.trim() !== "" &&
-    form.longitude.trim() !== "" &&
-    Math.abs(latitude) <= 90 &&
-    Math.abs(longitude) <= 180;
-  const formValid = form.name.trim().length > 0 && coordinatesValid;
+    (isNew && noCoordinates) ||
+    (form.latitude.trim() !== "" &&
+      form.longitude.trim() !== "" &&
+      Number.isFinite(latitude) &&
+      Number.isFinite(longitude) &&
+      Math.abs(latitude) <= 90 &&
+      Math.abs(longitude) <= 180);
+  // Without coordinates the backend needs a place to work the position out from
+  const placeGiven = form.district.trim() !== "" || form.province.trim() !== "";
+  const formValid = form.name.trim().length > 0 && coordinatesValid && (!isNew || !noCoordinates || placeGiven);
 
   const saveEdit = async () => {
     if (!editing || !formValid) return;
@@ -151,8 +209,22 @@ export default function AggregationSitesPage() {
     };
     setSaving(true);
     try {
-      replaceSite(await aggregationSiteService.update(editing.id, changes));
-      toast.success("Site updated. New harvests use the new details right away.");
+      if (editing === "new") {
+        const created = await aggregationSiteService.create({
+          ...changes,
+          name: changes.name!,
+          ...(noCoordinates ? {} : { latitude, longitude }),
+        });
+        const { approximate, ...site } = created;
+        setSites((current) => [...current, site]);
+        setSearch("");
+        toast.success(
+          `${site.name} added${approximate ? ` at the centre of ${site.district || site.province}. Edit it to set the exact point` : ""}. Use "Assign nearest sites" to give it the people who have no site yet, or add them from the site.`
+        );
+      } else {
+        replaceSite(await aggregationSiteService.update(editing.id, changes));
+        toast.success("Site updated. New harvests use the new details right away.");
+      }
       setEditing(null);
     } catch (error) {
       toast.error(errorMessage(error, "Failed to save the site"));
@@ -221,7 +293,12 @@ export default function AggregationSitesPage() {
       {
         accessorKey: "lastPriceDate",
         header: "Last WFP price",
-        cell: ({ row }) => <div className="text-xs">{formatDate(row.original.lastPriceDate)}</div>,
+        cell: ({ row }) =>
+          isManualSite(row.original) ? (
+            <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">Added by admin</span>
+          ) : (
+            <div className="text-xs">{formatDate(row.original.lastPriceDate)}</div>
+          ),
       },
       {
         id: "active",
@@ -276,11 +353,15 @@ export default function AggregationSitesPage() {
           <p className="text-xs text-gray-600 max-w-xl">
             Where farmers and aggregators meet. Each farmer and each aggregator is given the active site nearest to them
             automatically, and an admin can choose another one from Users. Sites come from the markets in the WFP price
-            list; switch off the ones that are not real collection points.
+            list, and you can add your own collection points; switch off the ones that are not real collection points.
           </p>
         </div>
         {canEdit && (
           <div className="flex flex-wrap gap-2">
+            <Button variant="green" size="sm" onClick={openCreate}>
+              <Plus className="h-3.5 w-3.5" />
+              Add site
+            </Button>
             <Button variant="outline" size="sm" onClick={assignAll} disabled={assigning}>
               {assigning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
               Assign nearest sites
@@ -382,58 +463,118 @@ export default function AggregationSitesPage() {
       <Dialog open={!!editing} onOpenChange={(open) => !open && !saving && setEditing(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit site</DialogTitle>
+            <DialogTitle>{isNew ? "Add aggregation site" : "Edit site"}</DialogTitle>
             <DialogDescription>
-              Correct the name or the exact location. WFP coordinates are only accurate to about 1 km, so use the real
-              collection point.
+              {isNew
+                ? "A collection point where farmers bring their harvest and aggregators collect it. Use the exact place: farmers are matched to the site nearest to them."
+                : "Correct the name or the exact location. WFP coordinates are only accurate to about 1 km, so use the real collection point."}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3">
             <div className="space-y-1">
               <Label htmlFor="site-name">Name</Label>
-              <Input id="site-name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              <Input
+                id="site-name"
+                value={form.name}
+                placeholder={isNew ? "e.g. Kimironko collection point" : undefined}
+                autoFocus={isNew}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
             </div>
+            {/* Province first: it decides which districts can be picked */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label htmlFor="site-district">District</Label>
-                <Input
-                  id="site-district"
-                  value={form.district}
-                  onChange={(e) => setForm({ ...form, district: e.target.value })}
-                />
-              </div>
               <div className="space-y-1">
                 <Label htmlFor="site-province">Province</Label>
-                <Input
-                  id="site-province"
-                  value={form.province}
-                  onChange={(e) => setForm({ ...form, province: e.target.value })}
-                />
+                <Select
+                  value={form.province || undefined}
+                  onValueChange={(province) =>
+                    setForm((current) => ({
+                      ...current,
+                      province,
+                      // A district belongs to one province: changing the province clears it
+                      district: province === current.province ? current.district : "",
+                    }))
+                  }
+                >
+                  <SelectTrigger id="site-province" className="w-full">
+                    <SelectValue placeholder={provinces.length ? "Choose a province" : "Loading..."} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {provinceOptions.map((province) => (
+                      <SelectItem key={province} value={province}>
+                        {province}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="site-district">District</Label>
+                <Select
+                  value={form.district || undefined}
+                  onValueChange={(district) => setForm((current) => ({ ...current, district }))}
+                  disabled={!form.province}
+                >
+                  <SelectTrigger id="site-district" className="w-full">
+                    <SelectValue
+                      placeholder={
+                        !form.province ? "Choose a province first" : loadingDistricts ? "Loading..." : "Choose a district"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {districtOptions.map((district) => (
+                      <SelectItem key={district} value={district}>
+                        {district}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label htmlFor="site-lat">Latitude</Label>
+                <Label htmlFor="site-lat">
+                  Latitude{isNew && <span className="font-normal text-gray-400"> (optional)</span>}
+                </Label>
                 <Input
                   id="site-lat"
                   inputMode="decimal"
+                  placeholder={isNew ? "-1.9441" : undefined}
                   value={form.latitude}
                   onChange={(e) => setForm({ ...form, latitude: e.target.value })}
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="site-lng">Longitude</Label>
+                <Label htmlFor="site-lng">
+                  Longitude{isNew && <span className="font-normal text-gray-400"> (optional)</span>}
+                </Label>
                 <Input
                   id="site-lng"
                   inputMode="decimal"
+                  placeholder={isNew ? "30.0619" : undefined}
                   value={form.longitude}
                   onChange={(e) => setForm({ ...form, longitude: e.target.value })}
                 />
               </div>
             </div>
             {!coordinatesValid && (
-              <p className="text-xs text-red-600">Latitude must be between -90 and 90, longitude between -180 and 180.</p>
+              <p className="text-xs text-red-600">
+                {isNew
+                  ? "Fill in both latitude and longitude, or leave both empty."
+                  : "Latitude must be between -90 and 90, longitude between -180 and 180."}
+              </p>
+            )}
+            {isNew && coordinatesValid && noCoordinates && !placeGiven && (
+              <p className="text-xs text-amber-700">Without coordinates, add the district or province so farmers can be matched to this site.</p>
+            )}
+            {isNew && (
+              <p className="text-[11px] text-gray-500">
+                Without coordinates the site is placed at the centre of its district, and you can set the exact point
+                later. To add them: in Google Maps, press and hold on the collection point and copy the two numbers shown
+                (latitude, then longitude).
+              </p>
             )}
           </div>
 
@@ -443,7 +584,7 @@ export default function AggregationSitesPage() {
             </Button>
             <Button variant="green" onClick={saveEdit} disabled={!formValid || saving}>
               {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              Save
+              {isNew ? "Add site" : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -103,6 +103,19 @@ export interface AggregationSiteUpdate {
   isActive?: boolean;
 }
 
+export interface AggregationSiteInput {
+  name: string;
+  province?: string | null;
+  district?: string | null;
+  /** Optional: without them the site is placed at the centre of its district or province */
+  latitude?: number;
+  longitude?: number;
+  isActive?: boolean;
+}
+
+/** marketName of a site an admin added by hand rather than from the WFP market list */
+export const isManualSite = (site: Pick<AggregationSite, "marketName">) => site.marketName.startsWith("manual:");
+
 export interface SyncResult {
   markets: number;
   created: number;
@@ -115,6 +128,12 @@ export const aggregationSiteService = {
     if (filters?.active !== undefined) params.active = String(filters.active);
     if (filters?.district) params.district = filters.district;
     const response = await createAxiosClient().get("/aggregation-sites", { params });
+    return response.data.data;
+  },
+
+  // POST /aggregation-sites: add a collection point by hand (not from the WFP market list)
+  create: async (site: AggregationSiteInput): Promise<AggregationSiteWithCounts & { approximate?: boolean }> => {
+    const response = await createAxiosClient().post("/aggregation-sites", site);
     return response.data.data;
   },
 
