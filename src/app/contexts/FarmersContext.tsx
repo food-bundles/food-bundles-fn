@@ -17,6 +17,9 @@ export interface Farmer {
   createdAt: string;
   submissions: any[];
   status?: "active" | "inactive" | "pending";
+  /** The aggregation site the farmer delivers to */
+  aggregationSite?: { id: string; name: string } | null;
+  siteAssignedByAdmin?: boolean;
 }
 
 interface FarmersContextType {

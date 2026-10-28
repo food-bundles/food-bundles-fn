@@ -7,7 +7,8 @@ import { Farmer } from "@/app/contexts/FarmersContext";
 
 export const getFarmerColumns = (
   onManage: (farmer: Farmer) => void,
-  onViewDetails: (farmerId: string) => void
+  onViewDetails: (farmerId: string) => void,
+  onAssignSite?: (farmer: Farmer) => void
 ): ColumnDef<Farmer>[] => [
   {
     id: "index",
@@ -66,6 +67,21 @@ export const getFarmerColumns = (
   },
 
   {
+    id: "aggregationSite",
+    header: "Aggregation site",
+    cell: ({ row }) => {
+      const { aggregationSite, siteAssignedByAdmin } = row.original;
+      return aggregationSite ? (
+        <div className="flex flex-col">
+          <span className="text-[14px]">{aggregationSite.name}</span>
+          <span className="text-[12px] text-gray-500">{siteAssignedByAdmin ? "Chosen by an admin" : "Nearest"}</span>
+        </div>
+      ) : (
+        <span className="text-gray-400">Not assigned</span>
+      );
+    },
+  },
+  {
     accessorKey: "submissions",
     header: "Submissions",
     cell: ({ row }) => {
@@ -120,6 +136,7 @@ export const getFarmerColumns = (
       const farmer = row.original;
 
       return (
+        <div className="flex items-center">
         <Button 
           variant="ghost" 
           size="sm"
@@ -131,6 +148,19 @@ export const getFarmerColumns = (
         >
           Manage
         </Button>
+        {onAssignSite && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAssignSite(farmer);
+            }}
+          >
+            Site
+          </Button>
+        )}
+        </div>
       );
     },
   },

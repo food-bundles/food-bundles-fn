@@ -16,7 +16,8 @@ import { MoreHorizontal } from "lucide-react";
 export const getAdminColumns = (
   onManage: (admin: Admin) => void,
   onUpdateCommission: (admin: Admin) => void,
-  onViewDetails: (adminId: string) => void
+  onViewDetails: (adminId: string) => void,
+  onAssignSite?: (admin: Admin) => void
 ): ColumnDef<Admin>[] => [
     {
       id: "index",
@@ -97,6 +98,22 @@ export const getAdminColumns = (
       },
     },
     {
+      id: "aggregationSite",
+      header: "Aggregation site",
+      cell: ({ row }) => {
+        const { role, aggregationSite, siteAssignedByAdmin } = row.original;
+        if (role !== "AGGREGATOR") return <span className="text-gray-400">-</span>;
+        return aggregationSite ? (
+          <div className="flex flex-col">
+            <span>{aggregationSite.name}</span>
+            <span className="text-[12px] text-gray-500">{siteAssignedByAdmin ? "Chosen by an admin" : "Nearest"}</span>
+          </div>
+        ) : (
+          <span className="text-gray-400">Not assigned</span>
+        );
+      },
+    },
+    {
       accessorKey: "status",
       header: "Status",
       cell: ({ row }) => {
@@ -154,6 +171,17 @@ export const getAdminColumns = (
               }}>
                 Manage User
               </DropdownMenuItem>
+              {admin.role === "AGGREGATOR" && onAssignSite && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={(e) => {
+                    e.stopPropagation();
+                    onAssignSite(admin);
+                  }}>
+                    Aggregation Site
+                  </DropdownMenuItem>
+                </>
+              )}
               {admin.role === "TRADER" && (
                 <>
                   <DropdownMenuSeparator />

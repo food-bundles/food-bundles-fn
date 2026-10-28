@@ -14,6 +14,7 @@ import { FarmerManagementModal } from "./_components/farmer-management-modal";
 import { CreateFarmerModal } from "./_components/create-farmer-modal";
 import { farmersService } from "@/app/services/farmersService";
 import UserDetailsSheet from "./_components/UserDetailsSheet";
+import { AssignSiteDialog } from "../../aggregation-sites/_components/AssignSiteDialog";
 
 function FarmersPageContent() {
   const { farmers,  error, getAllFarmers, updateFarmer, deleteFarmer, clearError } = useFarmers();
@@ -26,6 +27,7 @@ function FarmersPageContent() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [siteTarget, setSiteTarget] = useState<Farmer | null>(null);
 
   // All hooks must be called before any conditional returns
   const filteredData = useMemo(() => {
@@ -72,7 +74,8 @@ function FarmersPageContent() {
       (farmerId: string) => {
         setSelectedUserId(farmerId);
         setIsDetailsSheetOpen(true);
-      }
+      },
+      (farmer: Farmer) => setSiteTarget(farmer)
     );
   }, []);
 
@@ -158,6 +161,16 @@ function FarmersPageContent() {
         onCreate={handleCreateFarmer}
       />
       
+      <AssignSiteDialog
+        target={
+          siteTarget
+            ? { kind: "farmer", id: siteTarget.id, name: siteTarget.name || siteTarget.phone || "This farmer" }
+            : null
+        }
+        onClose={() => setSiteTarget(null)}
+        onSaved={() => getAllFarmers()}
+      />
+
       <UserDetailsSheet
         isOpen={isDetailsSheetOpen}
         onClose={() => setIsDetailsSheetOpen(false)}
