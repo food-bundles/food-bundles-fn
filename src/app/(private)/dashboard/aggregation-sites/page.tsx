@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { Loader2, MapPin, Pencil, RefreshCw, Search } from "lucide-react";
+import { Loader2, MapPin, Pencil, RefreshCw, Search, Users, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,10 +19,12 @@ import {
 import { DataTable } from "@/components/data-table";
 import { useAdminAccess } from "@/app/hooks/useAdminAccess";
 import {
-  AggregationSite,
   AggregationSiteUpdate,
+  AggregationSiteWithCounts as AggregationSite,
   aggregationSiteService,
 } from "@/app/services/aggregationSiteService";
+import { SiteMembersDialog } from "./_components/SiteMembersDialog";
+import { AssignedFarmersDialog } from "./_components/AssignedFarmersDialog";
 
 type StatusFilter = "all" | "active" | "inactive";
 
@@ -43,6 +45,9 @@ export default function AggregationSitesPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [syncing, setSyncing] = useState(false);
+  const [assigning, setAssigning] = useState(false);
+  const [viewing, setViewing] = useState<AggregationSite | null>(null);
+  const [showAssigned, setShowAssigned] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const [editing, setEditing] = useState<AggregationSite | null>(null);
@@ -65,14 +70,14 @@ export default function AggregationSitesPage() {
     load();
   }, [load]);
 
-  const replaceSite = (updated: AggregationSite) =>
-    setSites((current) => current.map((s) => (s.id === updated.id ? updated : s)));
+  // The update endpoint returns the site without its counts, so keep the ones already loaded
+  const replaceSite = (updated: Partial<AggregationSite> & { id: string }) =>
+    setSites((current) => current.map((s) => (s.id === updated.id ? { ...s, ...updated } : s)));
 
   const toggleActive = useCallback(async (site: AggregationSite, isActive: boolean) => {
     setTogglingId(site.id);
     try {
-      const updated = await aggregationSiteService.update(site.id, { isActive });
-      setSites((current) => current.map((s) => (s.id === updated.id ? updated : s)));
+      replaceSite(await aggregationSiteService.update(site.id, { isActive }));
       toast.success(`${site.name} ${isActive ? "is now an active site" : "was switched off"}`);
     } catch (error) {
       toast.error(errorMessage(error, "Failed to update the site"));
@@ -95,6 +100,23 @@ export default function AggregationSitesPage() {
       toast.error(errorMessage(error, "Failed to sync from the WFP price list"));
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const assignAll = async () => {
+    setAssigning(true);
+    try {
+      const result = await aggregationSiteService.assignAll();
+      await load();
+      toast.success(
+        result.farmersAssigned + result.aggregatorsAssigned
+          ? `Sites assigned: ${result.farmersAssigned} farmer${result.farmersAssigned === 1 ? "" : "s"} and ${result.aggregatorsAssigned} aggregator${result.aggregatorsAssigned === 1 ? "" : "s"}`
+          : "Everyone who can be placed already has a site"
+      );
+    } catch (error) {
+      toast.error(errorMessage(error, "Failed to assign the sites"));
+    } finally {
+      setAssigning(false);
     }
   };
 
@@ -150,6 +172,9 @@ export default function AggregationSitesPage() {
   }, [sites, search, status]);
 
   const activeCount = sites.filter((s) => s.isActive).length;
+  const farmersAssigned = sites.reduce((sum, s) => sum + s.farmerCount, 0);
+  const aggregatorsAssigned = sites.reduce((sum, s) => sum + s.aggregatorCount, 0);
+  const sitesWithFarmers = sites.filter((s) => s.farmerCount > 0).length;
 
   const columns = useMemo<ColumnDef<AggregationSite>[]>(
     () => [
@@ -184,6 +209,16 @@ export default function AggregationSitesPage() {
         ),
       },
       {
+        id: "aggregators",
+        header: "Aggregators",
+        cell: ({ row }) => <div className="text-xs tabular-nums">{row.original.aggregatorCount}</div>,
+      },
+      {
+        id: "farmers",
+        header: "Farmers",
+        cell: ({ row }) => <div className="text-xs tabular-nums">{row.original.farmerCount}</div>,
+      },
+      {
         accessorKey: "lastPriceDate",
         header: "Last WFP price",
         cell: ({ row }) => <div className="text-xs">{formatDate(row.original.lastPriceDate)}</div>,
@@ -200,24 +235,32 @@ export default function AggregationSitesPage() {
           />
         ),
       },
-      ...(canEdit
-        ? [
-            {
-              id: "actions",
-              header: "",
-              cell: ({ row }) => (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => openEdit(row.original)}
-                  aria-label={`Edit ${row.original.name}`}
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </Button>
-              ),
-            } as ColumnDef<AggregationSite>,
-          ]
-        : []),
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => (
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setViewing(row.original)}
+              aria-label={`People at ${row.original.name}`}
+            >
+              <Users className="h-3.5 w-3.5" />
+            </Button>
+            {canEdit && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => openEdit(row.original)}
+                aria-label={`Edit ${row.original.name}`}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
+        ),
+      },
     ],
     [canEdit, togglingId, toggleActive, openEdit]
   );
@@ -231,19 +274,26 @@ export default function AggregationSitesPage() {
             Aggregation Sites
           </h1>
           <p className="text-xs text-gray-600 max-w-xl">
-            Where farmers bring their harvest. Each farmer is sent to the active site nearest to them. Sites come from the
-            markets in the WFP price list; switch off the ones that are not real collection points.
+            Where farmers and aggregators meet. Each farmer and each aggregator is given the active site nearest to them
+            automatically, and an admin can choose another one from Users. Sites come from the markets in the WFP price
+            list; switch off the ones that are not real collection points.
           </p>
         </div>
         {canEdit && (
-          <Button variant="outline" size="sm" onClick={sync} disabled={syncing}>
-            {syncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-            Sync from WFP markets
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={assignAll} disabled={assigning}>
+              {assigning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+              Assign nearest sites
+            </Button>
+            <Button variant="outline" size="sm" onClick={sync} disabled={syncing}>
+              {syncing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+              Sync from WFP markets
+            </Button>
+          </div>
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="p-4 rounded-lg border bg-green-50 transition-all duration-200 hover:shadow-md">
           <div className="space-y-1">
             <p className="text-xs text-gray-600 font-medium">Active Sites</p>
@@ -260,6 +310,26 @@ export default function AggregationSitesPage() {
           <div className="space-y-1">
             <p className="text-xs text-gray-600 font-medium">Total Sites</p>
             <p className="text-sm font-bold text-blue-600">{sites.length}</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowAssigned(true)}
+          className="p-4 rounded-lg border bg-purple-50 text-left transition-all duration-200 hover:shadow-md cursor-pointer"
+          aria-label="Show the farmers assigned to a site"
+        >
+          <div className="space-y-1">
+            <p className="text-xs text-gray-600 font-medium">Farmers Assigned</p>
+            <p className="text-sm font-bold text-purple-600">{farmersAssigned}</p>
+            <p className="text-[11px] text-gray-500">
+              across {sitesWithFarmers} site{sitesWithFarmers === 1 ? "" : "s"} · click to see them
+            </p>
+          </div>
+        </button>
+        <div className="p-4 rounded-lg border bg-orange-50 transition-all duration-200 hover:shadow-md">
+          <div className="space-y-1">
+            <p className="text-xs text-gray-600 font-medium">Aggregators Assigned</p>
+            <p className="text-sm font-bold text-orange-600">{aggregatorsAssigned}</p>
           </div>
         </div>
       </div>
@@ -305,6 +375,9 @@ export default function AggregationSitesPage() {
           </div>
         }
       />
+
+      <AssignedFarmersDialog open={showAssigned} onClose={() => setShowAssigned(false)} />
+      <SiteMembersDialog site={viewing} onClose={() => setViewing(null)} canEdit={canEdit} onChanged={load} />
 
       <Dialog open={!!editing} onOpenChange={(open) => !open && !saving && setEditing(null)}>
         <DialogContent className="max-w-md">

@@ -24,6 +24,9 @@ export interface Admin {
   village?: string;
   createdAt: string;
   status?: "active" | "inactive" | "suspended";
+  /** Aggregators: the aggregation site they work from */
+  aggregationSite?: { id: string; name: string } | null;
+  siteAssignedByAdmin?: boolean;
 }
 
 export interface AdminsResponse {
