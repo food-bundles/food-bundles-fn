@@ -1,9 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Plus, Search, UserMinus } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarClock,
+  Loader2,
+  MapPin,
+  Plus,
+  Search,
+  Sprout,
+  Truck,
+  UserMinus,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -14,7 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 import {
   AggregationSite,
   SiteCandidate,
@@ -23,6 +33,7 @@ import {
 } from "@/app/services/aggregationSiteService";
 
 type Kind = "farmer" | "aggregator";
+type Section = "deliveries" | "aggregators" | "farmers";
 
 const errorMessage = (error: unknown, fallback: string) =>
   (error as { response?: { data?: { message?: string } } })?.response?.data?.message || fallback;
@@ -34,16 +45,69 @@ const formatMoment = (iso: string | null) =>
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
+// The WFP market list fills unknown places with this text instead of leaving them empty
+const realPlace = (value: string | null | undefined) =>
+  value && !/not available/i.test(value) ? value : null;
+
+/** "Rubavu, Western Province", or whichever part is known */
+const sitePlace = (site: AggregationSite | null | undefined) =>
+  [realPlace(site?.district), realPlace(site?.province)].filter(Boolean).join(", ");
+
+const initials = (name: string) => {
+  const words = name.trim().split(/\s+/).filter((w) => /[a-z]/i.test(w));
+  if (words.length === 0) return "#";
+  return (words[0][0] + (words[1]?.[0] ?? "")).toUpperCase();
+};
+
+/** Name and second line without repeating the phone when a person has no name yet */
+const nameAndDetail = (name: string | null, phone: string | null, place: string | null) => {
+  const title = name?.trim() || phone || "No name";
+  const detail = [place, name?.trim() ? phone : null].filter(Boolean).join(" · ");
+  return { title, detail };
+};
+
+// Delivery status words and colours, closest to how farmers see them
+const STATUS_STYLE: Record<string, string> = {
+  PENDING: "bg-amber-50 text-amber-800 ring-amber-200",
+  NEGOTIATING: "bg-orange-50 text-orange-800 ring-orange-200",
+  APPROVED: "bg-green-50 text-green-800 ring-green-200",
+};
+
+function Avatar({ name, tone = "green" }: { name: string; tone?: "green" | "gray" }) {
+  return (
+    <span
+      className={cn(
+        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold",
+        tone === "green" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"
+      )}
+      aria-hidden
+    >
+      {initials(name)}
+    </span>
+  );
+}
+
+function EmptyState({ icon: Icon, text }: { icon: typeof Users; text: string }) {
+  return (
+    <div className="flex flex-col items-center gap-2 px-6 py-10 text-center">
+      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+        <Icon className="h-5 w-5" />
+      </span>
+      <p className="max-w-sm text-sm text-gray-500">{text}</p>
+    </div>
+  );
+}
+
 interface Person {
   id: string;
-  name: string;
+  title: string;
   detail: string;
   chosenByAdmin: boolean;
 }
 
 interface PeopleTabProps {
   kind: Kind;
-  siteId: string;
+  site: AggregationSite;
   people: Person[];
   canEdit: boolean;
   emptyText: string;
@@ -52,7 +116,8 @@ interface PeopleTabProps {
 }
 
 /** One list of people at the site, with removing and (for admins) adding more from everyone not on it. */
-function PeopleTab({ kind, siteId, people, canEdit, emptyText, onChanged }: PeopleTabProps) {
+function PeopleTab({ kind, site, people, canEdit, emptyText, onChanged }: PeopleTabProps) {
+  const siteId = site.id;
   const label = kind === "farmer" ? "farmer" : "aggregator";
   const [adding, setAdding] = useState(false);
   const [picked, setPicked] = useState<Set<string>>(new Set());
@@ -124,116 +189,175 @@ function PeopleTab({ kind, siteId, people, canEdit, emptyText, onChanged }: Peop
     }
   };
 
+  const stopAdding = () => {
+    setAdding(false);
+    setToAdd(new Set());
+    setSearch("");
+  };
+
   if (adding) {
     return (
-      <div className="space-y-2">
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={stopAdding} disabled={busy}>
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          <p className="text-sm font-semibold text-gray-900">
+            Add {label}s to {site.name}
+          </p>
+        </div>
+
         <div className="relative">
-          <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={`Search ${label}s by name, phone or place`}
-            className="pl-7 h-8 text-xs"
+            className="h-10 pl-9 text-sm"
             autoFocus
           />
         </div>
-        <div className="max-h-64 overflow-y-auto">
+
+        <div className="max-h-80 overflow-y-auto rounded-lg border">
           {searching && candidates.length === 0 ? (
-            <div className="flex items-center gap-2 py-6 text-xs text-gray-500">
+            <div className="flex items-center justify-center gap-2 py-10 text-sm text-gray-500">
               <Loader2 className="h-4 w-4 animate-spin" /> Searching...
             </div>
           ) : candidates.length === 0 ? (
-            <p className="py-6 text-xs text-gray-500">No {label} found who is not already on this site.</p>
+            <EmptyState icon={Search} text={`No ${label} found who is not already on this site.`} />
           ) : (
             <ul className="divide-y">
-              {candidates.map((c) => (
-                <li key={c.id}>
-                  <label className="flex cursor-pointer items-center gap-3 py-2 text-xs">
-                    <Checkbox
-                      checked={toAdd.has(c.id)}
-                      onCheckedChange={() => setToAdd((current) => toggle(current, c.id))}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium truncate">{c.name || c.phone || label}</p>
-                      <p className="text-gray-500 truncate">{[c.place, c.phone].filter(Boolean).join(" · ")}</p>
-                    </div>
-                    <span className="shrink-0 text-gray-500">
-                      {c.currentSite ? `Now: ${c.currentSite.name}` : "No site yet"}
-                    </span>
-                  </label>
-                </li>
-              ))}
+              {candidates.map((c) => {
+                const { title, detail } = nameAndDetail(c.name, c.phone, c.place || null);
+                const selected = toAdd.has(c.id);
+                return (
+                  <li key={c.id}>
+                    <label
+                      className={cn(
+                        "flex cursor-pointer items-center gap-3 px-3 py-2.5 transition-colors hover:bg-gray-50",
+                        selected && "bg-green-50 hover:bg-green-50"
+                      )}
+                    >
+                      <Checkbox
+                        checked={selected}
+                        onCheckedChange={() => setToAdd((current) => toggle(current, c.id))}
+                        aria-label={`Select ${title}`}
+                      />
+                      <Avatar name={title} tone={c.name ? "green" : "gray"} />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-gray-900">{title}</p>
+                        {detail && <p className="truncate text-xs text-gray-500">{detail}</p>}
+                      </div>
+                      {/* Someone already on another site is moved here: say so before the admin adds them */}
+                      {c.currentSite ? (
+                        <span className="shrink-0 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-800 ring-1 ring-amber-200">
+                          Moves from {c.currentSite.name}
+                        </span>
+                      ) : (
+                        <span className="shrink-0 rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-medium text-gray-600">
+                          No site yet
+                        </span>
+                      )}
+                    </label>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
-        <div className="flex items-center justify-end gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={busy}
-            onClick={() => {
-              setAdding(false);
-              setToAdd(new Set());
-              setSearch("");
-            }}
-          >
-            Cancel
-          </Button>
-          <Button variant="green" size="sm" disabled={busy || toAdd.size === 0} onClick={addPicked}>
-            {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            Add {toAdd.size ? plural(toAdd.size, label) : "selected"}
-          </Button>
+
+        <div className="flex items-center justify-between gap-2 border-t pt-3">
+          <p className="text-xs text-gray-500">
+            {toAdd.size ? `${plural(toAdd.size, label)} selected` : `Tick the ${label}s to add`}
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled={busy} onClick={stopAdding}>
+              Cancel
+            </Button>
+            <Button variant="green" size="sm" disabled={busy || toAdd.size === 0} onClick={addPicked}>
+              {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              Add {toAdd.size ? plural(toAdd.size, label) : "selected"}
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-3">
       {canEdit && (
         <div className="flex items-center justify-between gap-2">
-          <Button variant="outline" size="sm" onClick={() => setAdding(true)}>
-            <Plus className="h-3.5 w-3.5" />
-            Add {label}s
-          </Button>
-          {picked.size > 0 && (
-            <Button variant="outline" size="sm" disabled={busy} onClick={removePicked}>
+          {picked.size > 0 ? (
+            <Button variant="outline" size="sm" disabled={busy} onClick={removePicked} className="text-red-700 hover:text-red-800">
               {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserMinus className="h-3.5 w-3.5" />}
               Remove {plural(picked.size, label)}
             </Button>
+          ) : (
+            <p className="text-xs text-gray-500">{people.length ? `Tick people to remove them from this site.` : ""}</p>
           )}
+          <Button variant="green" size="sm" onClick={() => setAdding(true)}>
+            <Plus className="h-3.5 w-3.5" />
+            Add {label}s
+          </Button>
         </div>
       )}
-      <div className="max-h-72 overflow-y-auto">
+
+      <div className="max-h-80 overflow-y-auto rounded-lg border">
         {people.length === 0 ? (
-          <p className="py-6 text-xs text-gray-500">{emptyText}</p>
+          <EmptyState icon={kind === "farmer" ? Sprout : Users} text={emptyText} />
         ) : (
           <ul className="divide-y">
-            {people.map((p) => (
-              <li key={p.id} className="flex items-center gap-3 py-2 text-xs">
-                {canEdit && (
-                  <Checkbox
-                    checked={picked.has(p.id)}
-                    onCheckedChange={() => setPicked((current) => toggle(current, p.id))}
-                    aria-label={`Select ${p.name}`}
-                  />
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium truncate">{p.name}</p>
-                  <p className="text-gray-500 truncate">{p.detail}</p>
-                </div>
-                {p.chosenByAdmin && (
-                  <Badge variant="outline" className="text-[10px]">
-                    chosen by an admin
-                  </Badge>
-                )}
-              </li>
-            ))}
+            {people.map((p) => {
+              const selected = picked.has(p.id);
+              const row = (
+                <>
+                  {canEdit && (
+                    <Checkbox
+                      checked={selected}
+                      onCheckedChange={() => setPicked((current) => toggle(current, p.id))}
+                      aria-label={`Select ${p.title}`}
+                    />
+                  )}
+                  <Avatar name={p.title} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-gray-900">{p.title}</p>
+                    {p.detail && <p className="truncate text-xs text-gray-500">{p.detail}</p>}
+                  </div>
+                  <span
+                    className={cn(
+                      "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium",
+                      p.chosenByAdmin ? "bg-green-50 text-green-800 ring-1 ring-green-200" : "bg-gray-100 text-gray-600"
+                    )}
+                  >
+                    {p.chosenByAdmin ? "Chosen by admin" : "Nearest site"}
+                  </span>
+                </>
+              );
+              return (
+                <li key={p.id}>
+                  {canEdit ? (
+                    <label
+                      className={cn(
+                        "flex cursor-pointer items-center gap-3 px-3 py-2.5 transition-colors hover:bg-gray-50",
+                        selected && "bg-red-50 hover:bg-red-50"
+                      )}
+                    >
+                      {row}
+                    </label>
+                  ) : (
+                    <div className="flex items-center gap-3 px-3 py-2.5">{row}</div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
+
       {canEdit && people.length > 0 && (
-        <p className="text-[11px] text-gray-500">
+        <p className="text-xs text-gray-500">
           Removing someone puts them back on their nearest site, so they leave this one unless it is their nearest.
         </p>
       )}
@@ -253,13 +377,12 @@ interface SiteMembersDialogProps {
 /** Who works from a site, who delivers to it, and who is coming on which day and time. */
 export function SiteMembersDialog({ site, onClose, canEdit = false, onChanged }: SiteMembersDialogProps) {
   const [data, setData] = useState<SiteMembers | null>(null);
-  const [loading, setLoading] = useState(false);
   const [version, setVersion] = useState(0);
+  const [section, setSection] = useState<Section>("deliveries");
 
   useEffect(() => {
     if (!site) return;
     let active = true;
-    setLoading(true);
     aggregationSiteService
       .members(site.id)
       .then((result) => active && setData(result))
@@ -267,17 +390,17 @@ export function SiteMembersDialog({ site, onClose, canEdit = false, onChanged }:
         if (!active) return;
         toast.error(errorMessage(error, "Failed to load the site"));
         onClose();
-      })
-      .finally(() => active && setLoading(false));
+      });
     return () => {
       active = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [site?.id, version]);
 
-  // A different site starts from a clean slate
+  // A different site starts from a clean slate, on its deliveries
   useEffect(() => {
     setData(null);
+    setSection("deliveries");
   }, [site?.id]);
 
   const changed = useCallback(() => {
@@ -285,90 +408,156 @@ export function SiteMembersDialog({ site, onClose, canEdit = false, onChanged }:
     onChanged?.();
   }, [onChanged]);
 
+  const place = sitePlace(site);
+  const sections: { key: Section; label: string; icon: typeof Users; count: number }[] = data
+    ? [
+        { key: "deliveries", label: "Coming", icon: Truck, count: data.deliveries.length },
+        { key: "aggregators", label: "Aggregators", icon: Users, count: data.aggregators.length },
+        { key: "farmers", label: "Farmers", icon: Sprout, count: data.farmers.length },
+      ]
+    : [];
+
   return (
     <Dialog open={!!site} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>{site?.name}</DialogTitle>
-          <DialogDescription>
-            The meeting point of its aggregators and farmers. {site?.district ? `${site.district} district.` : ""}
+      <DialogContent className="max-w-2xl gap-5">
+        <DialogHeader className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2 pr-6">
+            <DialogTitle className="text-xl">{site?.name}</DialogTitle>
+            {site && (
+              <span
+                className={cn(
+                  "rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
+                  site.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"
+                )}
+              >
+                {site.isActive ? "Active" : "Switched off"}
+              </span>
+            )}
+          </div>
+          <DialogDescription className="flex items-center gap-1.5 text-sm">
+            <MapPin className="h-4 w-4 shrink-0 text-green-700" />
+            {place || "District not recorded"}
+            <span className="text-gray-300">·</span>
+            Where its aggregators and farmers meet
           </DialogDescription>
         </DialogHeader>
 
         {!data ? (
-          <div className="flex items-center gap-2 py-8 text-xs text-gray-500">
+          <div className="flex items-center justify-center gap-2 py-12 text-sm text-gray-500">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading...
           </div>
         ) : (
-          <Tabs defaultValue="deliveries">
-            <TabsList>
-              <TabsTrigger value="deliveries">Coming ({data.deliveries.length})</TabsTrigger>
-              <TabsTrigger value="aggregators">Aggregators ({data.aggregators.length})</TabsTrigger>
-              <TabsTrigger value="farmers">Farmers ({data.farmers.length})</TabsTrigger>
-            </TabsList>
+          <>
+            {/* The three counts double as the tabs, so the numbers read at a glance */}
+            <div className="grid grid-cols-3 gap-2" role="tablist">
+              {sections.map(({ key, label, icon: Icon, count }) => {
+                const on = section === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    role="tab"
+                    aria-selected={on}
+                    onClick={() => setSection(key)}
+                    className={cn(
+                      "flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors",
+                      on ? "border-green-600 bg-green-50 ring-1 ring-green-600" : "border-gray-200 hover:bg-gray-50"
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                        on ? "bg-green-700 text-white" : "bg-gray-100 text-gray-500"
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-lg font-bold leading-none text-gray-900">{count}</span>
+                      <span className="mt-1 block truncate text-xs text-gray-500">{label}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
-            <TabsContent value="deliveries" className="max-h-80 overflow-y-auto">
-              {data.deliveries.length === 0 ? (
-                <p className="py-6 text-xs text-gray-500">No harvests are on their way to this site.</p>
-              ) : (
-                <ul className="divide-y">
-                  {data.deliveries.map((d) => (
-                    <li key={d.id} className="flex items-center justify-between gap-3 py-2 text-xs">
-                      <div className="min-w-0">
-                        <p className="font-medium truncate">
-                          {d.farmer.name || d.farmer.phone || "Farmer"}
-                          <span className="font-normal text-gray-500">
-                            {" "}
-                            · {d.productName}
-                            {d.submittedQty ? `, ${d.submittedQty}` : ""}
-                          </span>
-                        </p>
-                        {d.farmer.phone && <p className="text-gray-500">{d.farmer.phone}</p>}
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="font-medium">{formatMoment(d.deliveryDate)}</p>
-                        <Badge variant="outline" className="text-[10px]">
-                          {d.status.toLowerCase()}
-                        </Badge>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </TabsContent>
+            {section === "deliveries" && (
+              <div className="max-h-80 overflow-y-auto rounded-lg border">
+                {data.deliveries.length === 0 ? (
+                  <EmptyState icon={Truck} text="No harvests are on their way to this site." />
+                ) : (
+                  <ul className="divide-y">
+                    {data.deliveries.map((d) => {
+                      const farmer = d.farmer.name || d.farmer.phone || "Farmer";
+                      return (
+                        <li key={d.id} className="flex items-center gap-3 px-3 py-2.5">
+                          <Avatar name={farmer} />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-gray-900">
+                              {d.productName}
+                              {d.submittedQty ? <span className="font-normal text-gray-500"> · {d.submittedQty.toLocaleString("en-US")}</span> : null}
+                            </p>
+                            <p className="truncate text-xs text-gray-500">
+                              {farmer}
+                              {d.farmer.name && d.farmer.phone ? ` · ${d.farmer.phone}` : ""}
+                            </p>
+                          </div>
+                          <div className="flex shrink-0 flex-col items-end gap-1">
+                            <span className="flex items-center gap-1 text-xs font-medium text-gray-900">
+                              <CalendarClock className="h-3.5 w-3.5 text-green-700" />
+                              {formatMoment(d.deliveryDate)}
+                            </span>
+                            <span
+                              className={cn(
+                                "rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ring-1",
+                                STATUS_STYLE[d.status] ?? "bg-gray-50 text-gray-600 ring-gray-200"
+                              )}
+                            >
+                              {d.status.toLowerCase()}
+                            </span>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            )}
 
-            <TabsContent value="aggregators">
+            {section === "aggregators" && (
               <PeopleTab
                 kind="aggregator"
-                siteId={data.site.id}
+                site={data.site}
                 canEdit={canEdit}
                 onChanged={changed}
-                emptyText="No aggregator works from this site yet. Aggregators are given the nearest site to their district, or add them here."
+                emptyText="No aggregator works from this site yet. Aggregators get the site nearest their district, or add them here."
                 people={data.aggregators.map((a) => ({
                   id: a.id,
-                  name: a.username,
+                  title: a.username,
                   detail: a.phone || a.email,
                   chosenByAdmin: a.siteAssignedByAdmin,
                 }))}
               />
-            </TabsContent>
+            )}
 
-            <TabsContent value="farmers">
+            {section === "farmers" && (
               <PeopleTab
                 kind="farmer"
-                siteId={data.site.id}
+                site={data.site}
                 canEdit={canEdit}
                 onChanged={changed}
-                emptyText="No farmer delivers to this site yet."
-                people={data.farmers.map((f) => ({
-                  id: f.id,
-                  name: f.name || f.phone || "Farmer",
-                  detail: [f.sector, f.district].filter(Boolean).join(", ") || f.phone || "",
-                  chosenByAdmin: f.siteAssignedByAdmin,
-                }))}
+                emptyText="No farmer delivers to this site yet. Farmers get their nearest site, or add them here."
+                people={data.farmers.map((f) => {
+                  const { title, detail } = nameAndDetail(
+                    f.name,
+                    f.phone,
+                    [f.sector, f.district].filter(Boolean).join(", ") || null
+                  );
+                  return { id: f.id, title, detail, chosenByAdmin: f.siteAssignedByAdmin };
+                })}
               />
-            </TabsContent>
-          </Tabs>
+            )}
+          </>
         )}
       </DialogContent>
     </Dialog>
