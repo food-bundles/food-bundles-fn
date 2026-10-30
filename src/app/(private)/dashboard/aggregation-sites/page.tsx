@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Loader2, MapPin, Pencil, Plus, RefreshCw, Search, Users, Wand2 } from "lucide-react";
 import { toast } from "sonner";
@@ -26,10 +26,22 @@ import {
   aggregationSiteService,
   isManualSite,
 } from "@/app/services/aggregationSiteService";
+import dynamic from "next/dynamic";
+import "leaflet/dist/leaflet.css";
 import { SiteMembersDialog } from "./_components/SiteMembersDialog";
 import { AssignedFarmersDialog } from "./_components/AssignedFarmersDialog";
 
-type StatusFilter = "all" | "active" | "inactive";
+// Leaflet needs the browser, so the map is only loaded on the client
+const MapComponent = dynamic(() => import("@/app/(private)/restaurant/checkout/_components/MapComponent"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full items-center justify-center rounded border border-gray-300 bg-gray-100">
+      <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+    </div>
+  ),
+});
+
+type StatusFilter ="all" | "active" | "inactive";
 
 const errorMessage = (error: unknown, fallback: string) =>
   (error as { response?: { data?: { message?: string } } })?.response?.data?.message || fallback;
@@ -197,6 +209,39 @@ export default function AggregationSitesPage() {
   // Without coordinates the backend needs a place to work the position out from
   const placeGiven = form.district.trim() !== "" || form.province.trim() !== "";
   const formValid = form.name.trim().length > 0 && coordinatesValid && (!isNew || !noCoordinates || placeGiven);
+
+  // The pin on the map, only once both fields hold a usable point
+  const pin =
+    !noCoordinates && coordinatesValid ? { lat: latitude, lng: longitude } : null;
+  // Fly the map to the chosen district (or province) so the admin starts near the place. A pin already
+  // on the map is never moved by this.
+  const [focus, setFocus] = useState<{ lat: number; lng: number; zoom: number } | null>(null);
+  const hasPin = useRef(false);
+  hasPin.current = !!pin;
+  useEffect(() => {
+    if (!editing) {
+      setFocus(null);
+      return;
+    }
+    const place = form.district || form.province;
+    if (!place || hasPin.current) return;
+    const controller = new AbortController();
+    const query = `${place}${form.district ? " District" : " Province"}, Rwanda`;
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=rw&q=${encodeURIComponent(query)}`, {
+      signal: controller.signal,
+    })
+      .then((res) => res.json())
+      .then((results: { lat: string; lon: string }[]) => {
+        if (results[0] && !hasPin.current) {
+          setFocus({ lat: Number(results[0].lat), lng: Number(results[0].lon), zoom: form.district ? 13 : 10 });
+        }
+      })
+      .catch(() => {}); // the map simply stays where it is
+    return () => controller.abort();
+  }, [editing, form.district, form.province]);
+
+  const pinLocation =({ lat, lng }: { lat: number; lng: number }) =>
+    setForm((current) => ({ ...current, latitude: lat.toFixed(6), longitude: lng.toFixed(6) }));
 
   const saveEdit = async () => {
     if (!editing || !formValid) return;
@@ -461,7 +506,7 @@ export default function AggregationSitesPage() {
       <SiteMembersDialog site={viewing} onClose={() => setViewing(null)} canEdit={canEdit} onChanged={load} />
 
       <Dialog open={!!editing} onOpenChange={(open) => !open && !saving && setEditing(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{isNew ? "Add aggregation site" : "Edit site"}</DialogTitle>
             <DialogDescription>
@@ -533,6 +578,15 @@ export default function AggregationSitesPage() {
                 </Select>
               </div>
             </div>
+            <div className="space-y-1">
+              <Label>Pin the collection point on the map</Label>
+              <div className="h-64">
+                <MapComponent tempLocation={pin} onLocationSelect={pinLocation} showLocateButton focus={focus} />
+              </div>
+              <p className="text-[11px] text-gray-500">
+                Click the map to drop the pin; the latitude and longitude below are filled in for you.
+              </p>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label htmlFor="site-lat">
@@ -572,8 +626,7 @@ export default function AggregationSitesPage() {
             {isNew && (
               <p className="text-[11px] text-gray-500">
                 Without coordinates the site is placed at the centre of its district, and you can set the exact point
-                later. To add them: in Google Maps, press and hold on the collection point and copy the two numbers shown
-                (latitude, then longitude).
+                later by pinning it on the map.
               </p>
             )}
           </div>
