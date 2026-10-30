@@ -41,6 +41,15 @@ const MapComponent = dynamic(() => import("@/app/(private)/restaurant/checkout/_
   ),
 });
 
+const SitesMap = dynamic(() => import("./_components/SitesMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[420px] items-center justify-center rounded-lg border bg-gray-100">
+      <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+    </div>
+  ),
+});
+
 type StatusFilter ="all" | "active" | "inactive";
 
 const errorMessage = (error: unknown, fallback: string) =>
@@ -64,6 +73,7 @@ export default function AggregationSitesPage() {
   const [viewing, setViewing] = useState<AggregationSite | null>(null);
   const [showAssigned, setShowAssigned] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [showMap, setShowMap] = useState(true);
 
   // "new" while the admin adds a site by hand, a site while they edit one
   const [editing, setEditing] = useState<AggregationSite | "new" | null>(null);
@@ -468,6 +478,21 @@ export default function AggregationSitesPage() {
           </button>
         </div>
       )}
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-gray-600">
+            {showMap ? `Showing ${visible.length} site${visible.length === 1 ? "" : "s"} on the map. The search and status filter below apply.` : ""}
+          </p>
+          <Button variant="outline" size="sm" onClick={() => setShowMap((v) => !v)}>
+            <MapPin className="h-3.5 w-3.5" />
+            {showMap ? "Hide map" : "Show map"}
+          </Button>
+        </div>
+        {showMap && (
+          <SitesMap sites={visible} canEdit={canEdit} onViewPeople={setViewing} onEdit={openEdit} />
+        )}
+      </div>
 
       <DataTable
         columns={columns}
