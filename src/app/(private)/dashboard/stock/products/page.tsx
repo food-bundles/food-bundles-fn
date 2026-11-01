@@ -67,6 +67,7 @@ export default function InventoryPage() {
           },
           bonus: product.bonus || 0,
           discountedPrice: product.bonus || 0,
+          ebmItem: product.ebmItem ?? null,
         }));
 
         setProducts(mappedProducts);

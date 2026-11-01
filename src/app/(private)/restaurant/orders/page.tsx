@@ -22,6 +22,7 @@ import CreateOrderModal from "./_components/CreateOrderModal";
 import PaymentLinkModal from "./_components/PaymentLinkModal";
 import { PaymentMethodProvider } from "@/app/contexts/paymentMethodContext";
 import { EditOrderModal } from "./_components/edit-order-modal";
+import { EbmSalesModal } from "./_components/EbmSalesModal";
 
 export default function RestaurantOrdersPage() {
   const [searchValue, setSearchValue] = useState("");
@@ -49,6 +50,8 @@ export default function RestaurantOrdersPage() {
   const [paymentLinkOrder, setPaymentLinkOrder] = useState<any>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editOrder, setEditOrder] = useState<any>(null);
+  const [ebmSalesModalOpen, setEbmSalesModalOpen] = useState(false);
+  const [ebmSalesOrder, setEbmSalesOrder] = useState<any>(null);
   const router = useRouter();
 
   // WebSocket integration
@@ -355,6 +358,11 @@ export default function RestaurantOrdersPage() {
     setEditModalOpen(true);
   };
 
+  const handleEbmSales = (order: any) => {
+    setEbmSalesOrder(order);
+    setEbmSalesModalOpen(true);
+  };
+
   const handleRetryPayment = async (order: any) => {
     try {
       setReorderingId(order.id);
@@ -419,6 +427,7 @@ export default function RestaurantOrdersPage() {
                 onSharePaymentLink: handleSharePaymentLink,
                 onRetryPayment: handleRetryPayment,
                 onEdit: handleEditOrder,
+              onEbmSales: handleEbmSales,
               }
             )}
             data={filteredData}
@@ -476,6 +485,17 @@ export default function RestaurantOrdersPage() {
         order={editOrder}
         onSaved={fetchOrders}
       />
+
+      {/* EBM Sales Modal */}
+      {ebmSalesOrder && (
+        <EbmSalesModal
+          open={ebmSalesModalOpen}
+          onOpenChange={(open) => { if (!open) { setEbmSalesModalOpen(false); setEbmSalesOrder(null); } }}
+          orderId={ebmSalesOrder.id}
+          orderNumber={ebmSalesOrder.originalData?.orderNumber || ebmSalesOrder.orderId}
+          paymentMethod={ebmSalesOrder.originalData?.paymentMethod || ebmSalesOrder.paymentMethod}
+        />
+      )}
     </div>
   );
 }

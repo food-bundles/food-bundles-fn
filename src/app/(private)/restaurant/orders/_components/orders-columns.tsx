@@ -7,7 +7,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Eye, Copy, Check, RefreshCw, Download, MoreHorizontal, RotateCcw, Share2, Link2, Pencil } from "lucide-react";
+import { Eye, Copy, Check, RefreshCw, Download, MoreHorizontal, RotateCcw, Share2, Link2, Pencil, Receipt } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -380,6 +380,7 @@ export const ordersColumns = (
     onSharePaymentLink?: (order: Order) => void;
     onRetryPayment?: (order: Order) => void;
     onEdit?: (order: Order) => void;
+    onEbmSales?: (order: Order) => void;
   }
 ): ColumnDef<Order>[] => {
   const {
@@ -387,6 +388,7 @@ export const ordersColumns = (
     onSharePaymentLink,
     onRetryPayment,
     onEdit,
+    onEbmSales,
   } = actions ?? {};
 
   return [
@@ -585,10 +587,16 @@ export const ordersColumns = (
               <Eye className="h-4 w-4 mr-2" />
               View Order
             </DropdownMenuItem>
-            {onEdit && ["PENDING", "CONFIRMED"].includes(order.status) && (
+            {onEdit && (
               <DropdownMenuItem onClick={() => onEdit(order)}>
                 <Pencil className="h-4 w-4 mr-2" />
                 Edit Order
+              </DropdownMenuItem>
+            )}
+            {onEbmSales && (order.status === "DELIVERED" || order.paymentStatus === "COMPLETED" || order.paymentStatus === "VOUCHER_CREDIT") && (
+              <DropdownMenuItem onClick={() => onEbmSales(order)}>
+                <Receipt className="h-4 w-4 mr-2" />
+                EBM Sales
               </DropdownMenuItem>
             )}
             <DropdownMenuItem onClick={() => onReorder(order)}>

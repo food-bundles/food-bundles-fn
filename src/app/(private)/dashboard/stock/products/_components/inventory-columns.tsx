@@ -5,10 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import type { Product } from "@/app/contexts/product-context";
+import { ShieldCheck, ShieldX } from "lucide-react";
 
 export const getInventoryColumns = (
   onManage: (product: Product) => void,
-  onStatusClick?: (product: Product) => void
+  onStatusClick?: (product: Product) => void,
+  onRegisterEbm?: (product: Product) => void,
 ): ColumnDef<Product>[] => [
   {
     id: "index",
@@ -267,20 +269,41 @@ export const getInventoryColumns = (
   },
 
   {
+    id: "ebm",
+    header: "EBM",
+    cell: ({ row }) => {
+      const product = row.original;
+      const hasEbm = !!product.ebmItem;
+      return hasEbm ? (
+        <div className="flex items-center gap-1">
+          <ShieldCheck className="h-3.5 w-3.5 text-green-600" />
+        </div>
+      ) : (
+        <button
+          onClick={() => onRegisterEbm?.(product)}
+          className="flex items-center gap-1 text-[11px] text-orange-600 hover:text-orange-800 transition-colors"
+          title="Register to EBM"
+        >
+          <ShieldX className="h-3.5 w-3.5" />
+        </button>
+      );
+    },
+  },
+  {
     id: "actions",
     header: "Actions",
     cell: ({ row }) => {
       const product = row.original;
-         return (
-           <Button
-             variant="ghost"
-             size="sm"
-             onClick={() => onManage(product)}
-             className="flex items-center gap-2 text-xs"
-           >
-             view
-           </Button>
-         );
+      return (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onManage(product)}
+          className="flex items-center gap-2 text-xs"
+        >
+          view
+        </Button>
+      );
     },
   },
 ];

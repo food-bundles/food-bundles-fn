@@ -2,7 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { Eye, MoreHorizontal, Trash2, FileText, Edit3, Send, ChevronLeft, ChevronRight } from "lucide-react";
+import { Eye, MoreHorizontal, Trash2, FileText, Edit3, Send, ChevronLeft, ChevronRight, Receipt } from "lucide-react";
 
 // Helper function to get payment method colors
 // No method yet (e.g. an order from a supply request, not paid yet) → grey
@@ -325,8 +325,7 @@ export const createOrdersColumns = (actions: {
   onPaymentStatusUpdate: (orderId: string, paymentStatus: string) => void;
   onEdit?: (order: Order) => void;
   onSendPaymentLink?: (order: Order) => void;
-  // Orders permission check for one action ("update_status", "edit"…);
-  // hides the matching arrows and menu items. Omitted = everything allowed.
+  onEbmSales?: (order: Order) => void;
   can?: (action: string) => boolean;
 }): ColumnDef<Order>[] => [
   {
@@ -484,6 +483,12 @@ export const createOrdersColumns = (actions: {
                 <DropdownMenuItem onClick={() => actions.onSendPaymentLink!(order)}>
                   <Send className="mr-2 h-4 w-4" />
                   Send Payment Link
+                </DropdownMenuItem>
+              )}
+              {actions.onEbmSales && (order.status === "DELIVERED" || order.paymentStatus === "COMPLETED" || order.paymentStatus === "VOUCHER_CREDIT") && (
+                <DropdownMenuItem onClick={() => actions.onEbmSales!(order)}>
+                  <Receipt className="mr-2 h-4 w-4" />
+                  EBM Sales
                 </DropdownMenuItem>
               )}
               {(actions.can?.("delete") ?? true) && (

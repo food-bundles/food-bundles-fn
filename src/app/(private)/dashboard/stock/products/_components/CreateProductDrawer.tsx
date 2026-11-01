@@ -43,6 +43,12 @@ export interface ProductFormData {
   expiryDate: Date | undefined;
   unit: string;
   customerTypePrices?: { customerTypeId: string; price: number; purchasePrice: number }[];
+  // EBM fields
+  ebmItemType?: "FINISHED_PRODUCT" | "RAW_MATERIAL" | "SERVICE";
+  ebmTaxType?: "A" | "B" | "A-EX";
+  ebmPackagingUnit?: string;
+  ebmQuantityUnit?: string;
+  ebmItemClassificationCode?: string;
 }
 
 interface CreateProductDrawerProps {
@@ -69,6 +75,11 @@ export function CreateProductDrawer({
     expiryDate: undefined,
     unit: "",
     customerTypePrices: [],
+    ebmItemType: undefined,
+    ebmTaxType: undefined,
+    ebmPackagingUnit: "",
+    ebmQuantityUnit: "",
+    ebmItemClassificationCode: "",
   });
 
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -244,6 +255,13 @@ export function CreateProductDrawer({
       const response = await productService.createProduct(foodBundlesData);
       onSubmit?.(formData);
       toast.success(response?.message || "Product created successfully");
+      if (response?.ebm) {
+        if (response.ebm.success) {
+          toast.success(`EBM: ${response.ebm.message}`);
+        } else {
+          toast.warning(`EBM: ${response.ebm.message}`);
+        }
+      }
       resetForm();
       onClose();
     } catch (error: any) {
@@ -272,6 +290,11 @@ export function CreateProductDrawer({
         price: 0,
         purchasePrice: 0,
       })),
+      ebmItemType: undefined,
+      ebmTaxType: undefined,
+      ebmPackagingUnit: "",
+      ebmQuantityUnit: "",
+      ebmItemClassificationCode: "",
     });
     setSelectedCustomerTypeIds([]);
     setImagePreviews([]);
@@ -712,6 +735,85 @@ export function CreateProductDrawer({
                       </PopoverContent>
                     </Popover>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* EBM Registration */}
+            <div className="bg-white p-4 rounded-lg border space-y-4">
+              <h3 className="text-xs font-semibold text-gray-700 border-b pb-2">
+                EBM Registration (IMB)
+              </h3>
+              <div className="flex gap-6">
+                <div className="flex-1 space-y-2">
+                  <Label className="text-xs font-medium">Item Type</Label>
+                  <Select
+                    value={formData.ebmItemType || ""}
+                    onValueChange={(value) =>
+                      handleInputChange("ebmItemType", value as ProductFormData["ebmItemType"])
+                    }
+                  >
+                    <SelectTrigger className="focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                      <SelectValue placeholder="Select item type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="FINISHED_PRODUCT">Finished Product</SelectItem>
+                      <SelectItem value="RAW_MATERIAL">Raw Material</SelectItem>
+                      <SelectItem value="SERVICE">Service</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex-1 space-y-2">
+                  <Label className="text-xs font-medium">Tax Type</Label>
+                  <Select
+                    value={formData.ebmTaxType || ""}
+                    onValueChange={(value) =>
+                      handleInputChange("ebmTaxType", value as ProductFormData["ebmTaxType"])
+                    }
+                  >
+                    <SelectTrigger className="focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                      <SelectValue placeholder="Select tax type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="A">A (Standard)</SelectItem>
+                      <SelectItem value="B">B (Zero-rated)</SelectItem>
+                      <SelectItem value="A-EX">A-EX (Exempt)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex gap-6">
+                <div className="flex-1 space-y-2">
+                  <Label className="text-xs font-medium">Packaging Unit</Label>
+                  <Select
+                    value={formData.ebmPackagingUnit || ""}
+                    onValueChange={(value) => handleInputChange("ebmPackagingUnit", value)}
+                  >
+                    <SelectTrigger className="focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                      <SelectValue placeholder="Select packaging unit" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      {["AM","BA","BC","BE","BF","BG","BJ","BK","BL","BQ","BR","BV","BZ","CA","CH","CJ","CL","CR","CS","CT","CTN","CY","DR","GT","HH","IZ","JR","JU","JY","KZ","LZ","NT","OU","PD","PG","PI","PO","PU","RL","RO","RZ","SK","TY","VG","VL","VO","VQ","VR","VT","VY","ML","TN"].map((u) => (
+                        <SelectItem key={u} value={u}>{u}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex-1 space-y-2">
+                  <Label className="text-xs font-medium">Quantity Unit</Label>
+                  <Select
+                    value={formData.ebmQuantityUnit || ""}
+                    onValueChange={(value) => handleInputChange("ebmQuantityUnit", value)}
+                  >
+                    <SelectTrigger className="focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                      <SelectValue placeholder="Select quantity unit" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      {["4B","AV","BA","BE","BG","BL","BLL","BX","CA","CEL","CMT","CR","DR","DZ","GLL","GRM","GRO","KG","KTM","KWT","L","LBR","LK","LTR","M","M2","M3","MGM","MTR","MWT","NO","NX","PA","PG","PR","RL","RO","SET","ST","TNE","TU","U","YRD"].map((u) => (
+                        <SelectItem key={u} value={u}>{u}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>

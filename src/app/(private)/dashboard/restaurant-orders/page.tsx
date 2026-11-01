@@ -16,6 +16,7 @@ import { orderService } from "@/app/services/orderService";
 import { ViewOrderModal, CancelOrderModal } from "./_components/order-modals";
 import { EditOrderModal } from "./_components/edit-order-modal";
 import { CreateAdminOrderModal } from "./_components/create-admin-order-modal";
+import { EbmSalesModal } from "./_components/EbmSalesModal";
 import { useWebSocket } from "@/hooks/useOrderWebSocket";
 import { useAuth } from "@/app/contexts/auth-context";
 import { useAdminAccess } from "@/app/hooks/useAdminAccess";
@@ -78,6 +79,7 @@ export default function AdminOrdersPage() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [createOrderModalOpen, setCreateOrderModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [ebmSalesModalOpen, setEbmSalesModalOpen] = useState(false);
 
   // Filter states
   const [searchValue, setSearchValue] = useState("");
@@ -335,6 +337,11 @@ export default function AdminOrdersPage() {
     setEditModalOpen(true);
   };
 
+  const handleEbmSales = (order: Order) => {
+    setSelectedOrder(order);
+    setEbmSalesModalOpen(true);
+  };
+
   const handleSendPaymentLink = async (order: Order) => {
     try {
       const result = await orderService.sendPaymentLink(order.id);
@@ -562,6 +569,7 @@ export default function AdminOrdersPage() {
     onPaymentStatusUpdate: handlePaymentStatusUpdate,
     onEdit: handleEditOrder,
     onSendPaymentLink: handleSendPaymentLink,
+    onEbmSales: handleEbmSales,
     can: (action: string) => can("orders", action),
   });
 
@@ -682,6 +690,16 @@ export default function AdminOrdersPage() {
         onClose={handleModalClose}
         onCreated={handleOrderUpdate}
       />
+
+      {selectedOrder && (
+        <EbmSalesModal
+          open={ebmSalesModalOpen}
+          onOpenChange={(open) => { if (!open) { setEbmSalesModalOpen(false); setSelectedOrder(null); } }}
+          orderId={selectedOrder.id}
+          orderNumber={selectedOrder.orderNumber}
+          paymentMethod={selectedOrder.paymentMethod}
+        />
+      )}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
