@@ -38,6 +38,13 @@ export const productService = {
       formData.append("unitId", productData.unitId);
     }
 
+    // EBM fields
+    if (productData.ebmItemType) formData.append("ebmItemType", productData.ebmItemType);
+    if (productData.ebmTaxType) formData.append("ebmTaxType", productData.ebmTaxType);
+    if (productData.ebmPackagingUnit) formData.append("ebmPackagingUnit", productData.ebmPackagingUnit);
+    if (productData.ebmQuantityUnit) formData.append("ebmQuantityUnit", productData.ebmQuantityUnit);
+    if (productData.ebmItemClassificationCode) formData.append("ebmItemClassificationCode", productData.ebmItemClassificationCode);
+
     // Add customer type prices
     if (productData.customerTypePrices && productData.customerTypePrices.length > 0) {
       formData.append("customerTypePrices", JSON.stringify(productData.customerTypePrices));
