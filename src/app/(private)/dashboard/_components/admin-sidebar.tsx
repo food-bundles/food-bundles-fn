@@ -166,6 +166,11 @@ const menuItems = [
     ],
   },
   {
+    icon: DollarSign,
+    label: "ebm",
+    href: "/dashboard/ebm",
+  },
+  {
     icon: Crown,
     label: "Subscriptions",
     href: "/dashboard/subscriptions",
