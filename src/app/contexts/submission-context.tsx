@@ -60,6 +60,14 @@ export interface FarmerSubmission {
   agreedPrice?: number | null;
   rejectionReason?: string | null;
   rejectedAt?: string | null;
+  /** Aggregator matched automatically (nearest site to the farmer) when the farmer supplied a request */
+  assignedAggregatorId?: string | null;
+  assignedAggregator?: { id: string; username: string; phone: string | null } | null;
+  aggregatorAssignedAt?: string | null;
+  /** No aggregator could be matched: an admin should pick one */
+  needsAssignmentReview?: boolean;
+  /** The supply request line this submission answers */
+  supplyRequestItem?: { id: string; weekday: number; quantity: number; request: { id: string; title: string | null } } | null;
 }
 
 export type SubmissionStage = "PENDING" | "NEGOTIATING" | "APPROVED" | "VERIFIED" | "PAID" | "REJECTED";

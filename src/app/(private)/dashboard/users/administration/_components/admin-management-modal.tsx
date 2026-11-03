@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LocationFields } from "@/components/location-fields";
 import { Badge } from "@/components/ui/badge";
 import { PencilIcon, Trash2Icon} from "lucide-react";
 import { toast } from "sonner";
@@ -200,61 +201,18 @@ export function AdminManagementModal({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="province" className="text-gray-900">Province</Label>
-                  <Input
-                    id="province"
-                    value={editData.province}
-                    onChange={(e) => setEditData(prev => ({ ...prev, province: e.target.value }))}
-                    disabled={isLoading}
-                    className="bg-white border-gray-300 text-gray-900"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="district" className="text-gray-900">District</Label>
-                  <Input
-                    id="district"
-                    value={editData.district}
-                    onChange={(e) => setEditData(prev => ({ ...prev, district: e.target.value }))}
-                    disabled={isLoading}
-                    className="bg-white border-gray-300 text-gray-900"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="sector" className="text-gray-900">Sector</Label>
-                  <Input
-                    id="sector"
-                    value={editData.sector}
-                    onChange={(e) => setEditData(prev => ({ ...prev, sector: e.target.value }))}
-                    disabled={isLoading}
-                    className="bg-white border-gray-300 text-gray-900"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cell" className="text-gray-900">Cell</Label>
-                  <Input
-                    id="cell"
-                    value={editData.cell}
-                    onChange={(e) => setEditData(prev => ({ ...prev, cell: e.target.value }))}
-                    disabled={isLoading}
-                    className="bg-white border-gray-300 text-gray-900"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="village" className="text-gray-900">Village</Label>
-                  <Input
-                    id="village"
-                    value={editData.village}
-                    onChange={(e) => setEditData(prev => ({ ...prev, village: e.target.value }))}
-                    disabled={isLoading}
-                    className="bg-white border-gray-300 text-gray-900"
-                  />
-                </div>
-              </div>
+              {/* Picked from Rwanda's official list instead of typed, so places are spelled the same everywhere */}
+              <LocationFields
+                value={{
+                  province: editData.province,
+                  district: editData.district,
+                  sector: editData.sector,
+                  cell: editData.cell,
+                  village: editData.village,
+                }}
+                onChange={(place) => setEditData((prev) => ({ ...prev, ...place }))}
+                disabled={isLoading}
+              />
 
               {isSuperAdmin && (
                 <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3">

@@ -12,6 +12,7 @@ import {
   Undo2,
   Wallet,
   History,
+  UserCog,
 } from "lucide-react";
 import {
   agreedPriceOf,
@@ -62,9 +63,13 @@ export interface SubmissionColumnActions {
   onDelete: (submission: FarmerSubmission) => void;
   onReverseStatus: (submission: FarmerSubmission) => void;
   onViewHistory: (submission: FarmerSubmission) => void;
+  /** Choose the aggregator who handles it (shown with the assign_aggregator permission) */
+  onAssignAggregator?: (submission: FarmerSubmission) => void;
   // Farmer submissions permission check for one action ("approve", "verify"…);
   // hides actions the user's role can't do. Omitted = everything allowed.
   can?: (action: string) => boolean;
+  /** The signed-in user, so an aggregator sees "Assigned to you" on their own submissions */
+  currentUserId?: string;
 }
 
 export function getAdminSubmissionColumns({
@@ -75,7 +80,9 @@ export function getAdminSubmissionColumns({
   onDelete,
   onReverseStatus,
   onViewHistory,
+  onAssignAggregator,
   can = () => true,
+  currentUserId,
 }: SubmissionColumnActions): ColumnDef<FarmerSubmission>[] {
   return [
     // Selection column
@@ -201,6 +208,45 @@ export function getAdminSubmissionColumns({
 
    
 
+    // Who brings it and who receives it: the farmer, and the aggregator matched to them
+    {
+      id: "assignment",
+      header: "Farmer & aggregator",
+      cell: ({ row }) => {
+        const s = row.original;
+        const mine = !!currentUserId && s.assignedAggregatorId === currentUserId;
+        return (
+          <div className="flex min-w-44 max-w-56 flex-col gap-1">
+            <div>
+              <div className="truncate text-sm font-medium">{farmerDisplayName(s.farmer)}</div>
+              {s.farmer?.phone && <div className="text-xs text-gray-500">{s.farmer.phone}</div>}
+            </div>
+            {s.assignedAggregator ? (
+              mine ? (
+                <span className="w-fit rounded-full bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-800 ring-1 ring-green-200">
+                  Assigned to you
+                </span>
+              ) : (
+                <div className="w-fit rounded-md bg-green-50 px-2 py-1 text-[11px] text-green-900 ring-1 ring-green-200">
+                  <span className="font-medium">Aggregator:</span> {s.assignedAggregator.username}
+                  {s.assignedAggregator.phone && <span className="block text-green-800/80">{s.assignedAggregator.phone}</span>}
+                </div>
+              )
+            ) : s.needsAssignmentReview ? (
+              <span className="w-fit rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800 ring-1 ring-amber-200">
+                Needs an aggregator
+              </span>
+            ) : null}
+            {s.supplyRequestItem?.request && (
+              <div className="truncate text-[11px] text-gray-500">
+                Request: {s.supplyRequestItem.request.title || "Supply request"}
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
+
     // Location
     {
       accessorKey: "location",
@@ -257,6 +303,15 @@ export function getAdminSubmissionColumns({
                   <span className="text-gray-600">Submitted:</span>{" "}
                   {formatDateTime(submission.submittedAt)}
                 </div>
+
+                {submission.assignedAggregator && (
+                  <div className="text-xs">
+                    <span className="text-gray-600">Assigned aggregator:</span>{" "}
+                    {submission.assignedAggregator.username}
+                    {submission.assignedAggregator.phone ? ` · ${submission.assignedAggregator.phone}` : ""}
+                    {submission.aggregatorAssignedAt ? ` (since ${formatDate(submission.aggregatorAssignedAt)})` : ""}
+                  </div>
+                )}
 
                 {submission.aggregator && (
                   <div className="text-xs">
@@ -373,6 +428,13 @@ export function getAdminSubmissionColumns({
             icon: <XCircle className="h-4 w-4 text-red-600" />,
             show: ["PENDING", "NEGOTIATING", "APPROVED"].includes(stage) && can("reject"),
             onSelect: () => onReject(submission),
+          },
+          {
+            key: "assign",
+            label: submission.assignedAggregator ? "Change aggregator" : "Assign aggregator",
+            icon: <UserCog className="h-4 w-4 text-green-700" />,
+            show: !!onAssignAggregator && !["PAID", "REJECTED"].includes(stage) && can("assign_aggregator"),
+            onSelect: () => onAssignAggregator?.(submission),
           },
           {
             key: "history",

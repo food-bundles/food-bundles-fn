@@ -47,6 +47,10 @@ export interface SupplyRequest {
   createdAt: string;
   restaurant: { id: string; name: string; district?: string | null; customerType?: { name: string } | null };
   createdBy: { id: string; username: string };
+  /** The aggregation site the request is served through (nearest the customer) */
+  aggregationSite?: { id: string; name: string; district: string | null } | null;
+  /** Aggregator an admin chose to handle the request (told about it, gets its farmers' submissions) */
+  assignedAggregator?: { id: string; username: string; phone: string | null } | null;
   _count?: { items: number; orders: number };
   items?: Array<{
     id: string;
@@ -94,6 +98,22 @@ export const errorMessage = (error: unknown, fallback: string) =>
 
 const data = <T>(response: { data?: { data?: T } }) => response.data?.data as T;
 
+/** Sites and aggregators a request can be given (place dialog) */
+export interface RequestPlaceOptions {
+  sites: { id: string; name: string; district: string | null; province: string | null }[];
+  aggregators: {
+    id: string;
+    username: string;
+    phone: string | null;
+    aggregationSite: { id: string; name: string; district: string | null; isActive: boolean } | null;
+    openSubmissions: number;
+    /** Straight-line km from the request's site; null when unknown */
+    distanceKm?: number | null;
+    /** Nearest the request's site */
+    automatic?: boolean;
+  }[];
+}
+
 export const supplyRequestService = {
   list: async (status?: string) =>
     data<SupplyRequest[]>(await createAxiosClient().get("/supply-requests", { params: status ? { status } : undefined })),
@@ -113,6 +133,16 @@ export const supplyRequestService = {
     id: string,
     payload: { title?: string; notes?: string; endDate?: string; items?: SupplyRequestItemInput[] },
   ) => data<SupplyRequest>(await createAxiosClient().patch(`/supply-requests/${id}`, payload)),
+
+  // GET /supply-requests/place-options: active sites and aggregators
+  placeOptions: async (requestId?: string) =>
+    data<RequestPlaceOptions>(
+      await createAxiosClient().get("/supply-requests/place-options", { params: requestId ? { requestId } : undefined })
+    ),
+
+  // PATCH /supply-requests/:id/place: where the request is served and who handles it (null clears)
+  setPlace: async (id: string, place: { aggregationSiteId?: string | null; aggregatorId?: string | null }) =>
+    data<SupplyRequest>(await createAxiosClient().patch(`/supply-requests/${id}/place`, place)),
 
   setStatus: async (id: string, status: "OPEN" | "CLOSED" | "CANCELLED") =>
     data<SupplyRequest>(await createAxiosClient().patch(`/supply-requests/${id}/status`, { status })),

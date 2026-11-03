@@ -8,6 +8,29 @@ export interface FarmerFeedbackPayload {
   counterQty?: number;
 }
 
+export interface AssignableAggregator {
+  id: string;
+  username: string;
+  phone: string | null;
+  aggregationSite: { id: string; name: string; district: string | null; isActive: boolean } | null;
+  /** Submissions still waiting on this aggregator */
+  openSubmissions: number;
+  /** Straight-line km from the farmer (one submission only); null when unknown */
+  distanceKm?: number | null;
+  /** The one the automatic rule picks for this submission */
+  automatic?: boolean;
+}
+
+export interface AssignAggregatorResult {
+  assigned: number;
+  /** Already with that aggregator */
+  unchanged: number;
+  /** Paid or rejected: left as they were */
+  skipped: number;
+  /** Handed back to the nearest rule but no aggregator was found */
+  unassigned: number;
+}
+
 export const submissionService = {
   // --- GET Routes ---
   getAllSubmissions: async (params?: {
@@ -23,6 +46,30 @@ export const submissionService = {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.get("/submissions", { params });
     return response.data;
+  },
+
+  // GET /submissions/aggregators: aggregators a submission can be given to (assign_aggregator permission).
+  // With one submission: distances from that farmer, and the automatic (nearest) one first.
+  listAggregators: async (submissionId?: string): Promise<AssignableAggregator[]> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/submissions/aggregators", {
+      params: submissionId ? { submissionId } : undefined,
+    });
+    return response.data.data;
+  },
+
+  // PATCH /submissions/:id/aggregator: choose who handles one submission; null = the nearest again
+  assignAggregator: async (submissionId: string, aggregatorId: string | null): Promise<AssignAggregatorResult> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(`/submissions/${submissionId}/aggregator`, { aggregatorId });
+    return response.data.data;
+  },
+
+  // POST /submissions/assign-aggregator: many farmers' submissions to one aggregator; null = the nearest again
+  assignAggregatorBulk: async (submissionIds: string[], aggregatorId: string | null): Promise<AssignAggregatorResult> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/submissions/assign-aggregator", { submissionIds, aggregatorId });
+    return response.data.data;
   },
 
   getSubmissionById: async (submissionId: string) => {
