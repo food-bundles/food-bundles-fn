@@ -27,7 +27,6 @@ import {
   isManualSite,
 } from "@/app/services/aggregationSiteService";
 import dynamic from "next/dynamic";
-import "leaflet/dist/leaflet.css";
 import { SiteMembersDialog } from "./_components/SiteMembersDialog";
 import { AssignedFarmersDialog } from "./_components/AssignedFarmersDialog";
 

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, ClipboardList, Loader2, Plus, Users } from "lucide-react";
+import { CalendarDays, ClipboardList, Loader2, MapPin, Plus, UserRound, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,6 +23,7 @@ import {
   supplyRequestService,
 } from "@/app/services/supplyRequestService";
 import { SupplyRequestForm } from "./_components/SupplyRequestForm";
+import { RequestPlaceDialog } from "./_components/RequestPlaceDialog";
 
 const STATUS_FILTERS = [
   { value: "OPEN", label: "Open" },
@@ -47,6 +48,10 @@ export default function SupplyRequestsPage() {
   const { can } = useAdminAccess();
   const canCreate = can("supply_requests", "create");
   const canAssign = can("supply_requests", "assign_customers");
+  // Choosing a request's site and aggregator is part of editing it; adding a new site needs the sites permission
+  const canEditRequests = can("supply_requests", "edit");
+  const canCreateSite = can("markets", "edit");
+  const [placeTarget, setPlaceTarget] = useState<SupplyRequest | null>(null);
 
   const [tab, setTab] = useState<"requests" | "aggregators">("requests");
   const [status, setStatus] = useState("OPEN");
@@ -160,6 +165,42 @@ export default function SupplyRequestsPage() {
                     <CalendarDays className="h-3.5 w-3.5" />
                     {formatDay(r.startDate)} – {formatDay(r.endDate)}
                   </p>
+                  {/* The site farmers bring it to; people near it were told about the request */}
+                  <div className="mt-1 flex items-center gap-1.5 text-xs text-gray-600">
+                    <MapPin className="h-3.5 w-3.5 shrink-0 text-green-700" />
+                    {r.aggregationSite ? (
+                      <span className="truncate">{r.aggregationSite.name}</span>
+                    ) : (
+                      <span className="text-amber-700">No aggregation site found</span>
+                    )}
+                    {canEditRequests && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          // The card is a link to the request: open the dialog instead
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setPlaceTarget(r);
+                        }}
+                        className={
+                          r.aggregationSite
+                            ? "ml-auto shrink-0 font-medium text-green-700 hover:underline"
+                            : "ml-auto shrink-0 rounded-full bg-amber-100 px-2.5 py-0.5 font-medium text-amber-900 hover:bg-amber-200"
+                        }
+                      >
+                        {r.aggregationSite ? "Change" : "Assign site"}
+                      </button>
+                    )}
+                  </div>
+                  {r.assignedAggregator && (
+                    <p className="mt-1 flex items-center gap-1.5 text-xs text-gray-600">
+                      <UserRound className="h-3.5 w-3.5 shrink-0 text-green-700" />
+                      <span className="truncate">
+                        Handled by {r.assignedAggregator.username}
+                        {r.assignedAggregator.phone ? ` · ${r.assignedAggregator.phone}` : ""}
+                      </span>
+                    </p>
+                  )}
                   <div className="mt-auto flex items-center justify-between pt-3 text-xs text-gray-600">
                     <span>
                       {r._count?.items ?? 0} product line{r._count?.items === 1 ? "" : "s"} · {r._count?.orders ?? 0} order
@@ -175,6 +216,14 @@ export default function SupplyRequestsPage() {
       )}
 
       <SupplyRequestForm open={formOpen} onClose={() => setFormOpen(false)} onSaved={() => load()} />
+      <RequestPlaceDialog
+        request={placeTarget}
+        canCreateSite={canCreateSite}
+        onClose={() => setPlaceTarget(null)}
+        onSaved={(updated) =>
+          setRequests((current) => current?.map((r) => (r.id === updated.id ? { ...r, ...updated } : r)) ?? current)
+        }
+      />
     </div>
   );
 }
