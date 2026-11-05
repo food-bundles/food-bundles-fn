@@ -4,6 +4,7 @@ import { Header } from "@/components/header";
 import { HeroWithRestaurants } from "@/components/hero-section";
 import QuickTalkSection from "@/components/quck-talk-section";
 import { FoodBundlesConnect } from "@/components/showcase-section";
+import { VoucherApplyQr } from "@/components/voucher-apply-qr";
 // import { ChristmasAnimation } from "@/components/ChristmasAnimation";
 import Image from "next/image";
 
@@ -135,6 +136,42 @@ export default async function HomePage() {
         </div>
         <div id="connect">
           <FoodBundlesConnect />
+        </div>
+
+        <div id="voucher" className="bg-white py-14 sm:py-20">
+          <div className="container mx-auto px-4">
+            <div className="grid items-center gap-10 lg:grid-cols-2">
+              <div>
+                <span className="inline-flex items-center rounded-full bg-green-50 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-green-700">
+                  Restaurant financing
+                </span>
+                <h2 className="mt-4 text-2xl font-bold leading-tight text-gray-900 sm:text-3xl">
+                  Apply for a Food Bundles voucher card
+                </h2>
+                <p className="mt-4 max-w-xl text-sm leading-relaxed text-gray-600 sm:text-base">
+                  Scan the QR code with your phone camera to create an account, apply for
+                  your voucher card, accept the terms and conditions, and request the
+                  financing your restaurant needs.
+                </p>
+                <ul className="mt-6 space-y-3 text-sm text-gray-700">
+                  <li className="flex items-start gap-2">
+                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-green-600" />
+                    Create an account or sign in if you are already registered.
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-green-600" />
+                    Submit your voucher card application and accept the terms.
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-green-600" />
+                    Request financing from your voucher page once your card is set up.
+                  </li>
+                </ul>
+              </div>
+
+              <VoucherApplyQr size={220} showActions={false} />
+            </div>
+          </div>
         </div>
 
         <div id="ask-help">

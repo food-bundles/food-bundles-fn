@@ -41,7 +41,7 @@ import {
 import { authService } from "@/app/services/authService";
 import { locationService } from "@/app/services/locationService";
 import { customerTypeService, CustomerType } from "@/app/services/customerTypeService";
-import { getRedirectPath } from "@/lib/navigations";
+import { getRedirectPath, sanitizeRedirect } from "@/lib/navigations";
 
 interface ValidationErrors {
   name?: string;
@@ -76,6 +76,14 @@ function SignupSearchParamsHandler({
       setSelectedRole(UserRole.RESTAURANT);
     } else if (role === "farmer") {
       setSelectedRole(UserRole.FARMER);
+    }
+
+    const redirect = sanitizeRedirect(searchParams?.get("redirect"));
+    if (redirect) {
+      localStorage.setItem("pendingRedirect", redirect);
+      if (redirect.startsWith("/restaurant")) {
+        setSelectedRole(UserRole.RESTAURANT);
+      }
     }
   }, [searchParams, setSelectedRole]);
 

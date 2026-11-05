@@ -477,8 +477,8 @@ export function ProductsSection({
   const loadWishlist = useCallback(async () => {
     try {
       const data = await wishlistService.getWishlist();
-      setWishlistIds(new Set(data.productIds));
-      setWishlistRaw(data.products);
+      setWishlistIds(new Set(data.productIds ?? []));
+      setWishlistRaw(data.products ?? []);
     } catch (error) {
       console.error("Failed to load wishlist:", error);
     }
@@ -528,7 +528,7 @@ export function ProductsSection({
   // Saved products in the same shape the parent page gives the grid
   const savedProducts = useMemo<Product[]>(
     () =>
-      wishlistRaw.map((product: any) => {
+      (wishlistRaw ?? []).map((product: any) => {
         const price = getRoleBasedPrice(product, user?.role || "RESTAURANT", user?.customerTypeId);
         return {
           id: product.id,
