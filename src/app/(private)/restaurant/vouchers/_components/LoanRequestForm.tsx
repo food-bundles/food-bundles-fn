@@ -179,7 +179,7 @@ export default function LoanRequestForm({ onSuccess }: LoanRequestFormProps) {
   };
 
   return (
-    <div className="mb-2">
+    <div id="loan-request" className="mb-2 scroll-mt-24">
       <h2 className="text-[16px] text-center font-medium mb-4">Finance on Voucher</h2>
       <div className="flex justify-center">
         <div className="w-80 flex flex-col p-6 border rounded shadow-none bg-white">

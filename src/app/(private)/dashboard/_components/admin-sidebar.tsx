@@ -43,6 +43,7 @@ import {
   X,
   CornerDownLeft,
   MapPin,
+  QrCode,
 } from "lucide-react";
 import NotificationsDrawer from "@/app/(private)/restaurant/_components/notificationDrawer";
 import { usePathname, useRouter } from "next/navigation";
@@ -91,6 +92,7 @@ const searchKeywords: Record<string, string[]> = {
   "/dashboard/settings/notification-recipient": ["sms", "alerts", "notifications", "phone"],
   "/dashboard/settings/delivery-fees": ["shipping", "transport", "logistics", "distance"],
   "/dashboard/settings/authenticator": ["2fa", "mfa", "otp", "security", "two factor"],
+  "/dashboard/settings/voucher-qr": ["qr", "voucher", "apply", "card", "loan", "print", "poster"],
 };
 
 const menuItems = [
@@ -303,6 +305,11 @@ const menuItems = [
         icon: MdSystemSecurityUpdate,
         label: "Authenticator",
         href: "/dashboard/settings/authenticator",
+      },
+      {
+        icon: QrCode,
+        label: "Voucher QR",
+        href: "/dashboard/settings/voucher-qr",
       },
     ],
   },

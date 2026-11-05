@@ -10,11 +10,19 @@ import { FinanceChart } from "./FinanceChart";
 import { UsersChart } from "./UsersChart";
 import { SystemStatus } from "./SystemStatus";
 import { MarketPriceComparison } from "./MarketPriceComparison";
+import { ebmService } from "@/app/services/ebmService";
 
 export function DashboardContent() {
   const { stats, error, refreshStats, sectionLoading } = useDashboard();
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [ebmStats, setEbmStats] = useState({
+    items: 0,
+    sales: 0,
+    submitted: 0,
+    failed: 0,
+  });
+  const [ebmLoading, setEbmLoading] = useState(true);
 
   useEffect(() => {
     setMounted(true);
@@ -25,6 +33,42 @@ export function DashboardContent() {
     }, 1000);
 
     return () => clearInterval(timeInterval);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadEbmStats = async () => {
+      const [itemsResult, salesResult] = await Promise.allSettled([
+        ebmService.getItemsFromDb(),
+        ebmService.getSalesFromDb(),
+      ]);
+
+      if (cancelled) return;
+
+      const items =
+        itemsResult.status === "fulfilled" && Array.isArray(itemsResult.value?.data)
+          ? itemsResult.value.data
+          : [];
+      const sales =
+        salesResult.status === "fulfilled" && Array.isArray(salesResult.value?.data)
+          ? salesResult.value.data
+          : [];
+
+      setEbmStats({
+        items: items.length,
+        sales: sales.length,
+        submitted: sales.filter((sale: { status?: string }) => sale.status === "SUBMITTED").length,
+        failed: sales.filter((sale: { status?: string }) => sale.status === "FAILED").length,
+      });
+      setEbmLoading(false);
+    };
+
+    loadEbmStats();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Prevent hydration mismatch by not rendering time until mounted
@@ -81,6 +125,7 @@ export function DashboardContent() {
             previousValue={stats?.users?.growth?.totalChange}
             gradient="from-emerald-600 to-green-800"
             loading={sectionLoading.users}
+            href="/dashboard/users/lookup"
             subMetrics={[
               { label: "Restaurants", value: stats?.users?.restaurants || 0 },
               { label: "Farmers", value: stats?.users?.farmers || 0 },
@@ -93,6 +138,7 @@ export function DashboardContent() {
             previousValue={stats?.orders?.growth?.totalChange}
             gradient="from-blue-600 to-blue-900"
             loading={sectionLoading.orders}
+            href="/dashboard/restaurant-orders"
             subMetrics={[
               { label: "Completed", value: stats?.orders?.completedOrders || 0 },
               { label: "Cancelled", value: stats?.orders?.cancelledOrders || 0 },
@@ -106,6 +152,7 @@ export function DashboardContent() {
             gradient="from-indigo-600 to-indigo-900"
             suffix=" RWF"
             loading={sectionLoading.finance}
+            href="/dashboard/deposits"
             subMetrics={[
               { label: "Revenue", value: stats?.finance?.totalRevenue || 0 },
               { label: "Expenses", value: stats?.finance?.totalExpenses || 0 },
@@ -117,6 +164,7 @@ export function DashboardContent() {
             previousValue={stats?.subscriptions?.growth?.totalChange}
             gradient="from-amber-500 to-orange-700"
             loading={sectionLoading.subscriptions}
+            href="/dashboard/subscriptions"
             subMetrics={[
               { label: "Plans", value: stats?.subscriptions?.totalPlans || 0 },
               { label: "Active", value: stats?.subscriptions?.activeSubscriptions || 0 },
@@ -133,10 +181,23 @@ export function DashboardContent() {
             previousValue={stats?.vouchers?.growth?.totalChange}
             gradient="from-teal-600 to-cyan-900"
             loading={sectionLoading.vouchers}
+            href="/dashboard/vouchers"
             subMetrics={[
               { label: "Credits", value: stats?.vouchers?.totalCredits || 0 },
               { label: "Used", value: stats?.vouchers?.usedVouchers || 0 },
               { label: "Matured", value: stats?.vouchers?.maturedVouchers || 0 },
+            ]}
+          />
+          <DashboardStatCard
+            title="EBM Sales"
+            value={ebmStats.sales}
+            gradient="from-rose-600 to-red-900"
+            loading={ebmLoading}
+            href="/dashboard/ebm"
+            subMetrics={[
+              { label: "Items", value: ebmStats.items },
+              { label: "Submitted", value: ebmStats.submitted },
+              { label: "Failed", value: ebmStats.failed },
             ]}
           />
           {/* <QuickStats loading={sectionLoading.quickStats} stats={stats} /> */}

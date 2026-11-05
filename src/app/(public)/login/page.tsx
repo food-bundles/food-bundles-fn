@@ -8,7 +8,7 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { ILoginData, UserRole } from "@/lib/types";
 import { authService } from "@/app/services/authService";
-import { getPostLoginPath } from "@/lib/navigations";
+import { getPostLoginPath, sanitizeRedirect } from "@/lib/navigations";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +29,7 @@ function LoginForm() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [redirectTarget, setRedirectTarget] = useState("");
   
   // Verification modal states
   const [showVerificationModal, setShowVerificationModal] = useState(false);
@@ -45,10 +46,14 @@ function LoginForm() {
 
   // Explain why the user landed here (set by middleware / axios 401 handler)
   useEffect(() => {
-    const reason = new URLSearchParams(window.location.search).get("reason");
+    const params = new URLSearchParams(window.location.search);
+    const reason = params.get("reason");
+    const redirect = sanitizeRedirect(params.get("redirect"));
+
+    if (redirect) setRedirectTarget(redirect);
     if (reason === "expired") {
       setInfoMessage("Your session has expired. Please log in again to continue.");
-    } else if (new URLSearchParams(window.location.search).get("redirect")) {
+    } else if (redirect) {
       setInfoMessage("Please log in to continue.");
     }
   }, []);
@@ -205,9 +210,12 @@ function LoginForm() {
           const traderUrl = `${process.env.NEXT_PUBLIC_TRADER_APP_URL}?token=${encodeURIComponent(token)}`;
           window.location.href = traderUrl;
         } else {
+          const pendingRedirect = localStorage.getItem("pendingRedirect");
+          if (pendingRedirect) localStorage.removeItem("pendingRedirect");
           const redirectPath = getPostLoginPath(
             userRole as UserRole,
-            new URLSearchParams(window.location.search).get("redirect")
+            new URLSearchParams(window.location.search).get("redirect") ||
+              pendingRedirect
           );
           window.location.href = redirectPath;
         }
@@ -277,13 +285,6 @@ function LoginForm() {
       setPasswordError("");
       const response = await authService.login(loginPayload);
       
-      const pendingRedirect = localStorage.getItem("pendingRedirect");
-      if (pendingRedirect) {
-        localStorage.removeItem("pendingRedirect");
-        window.location.href = pendingRedirect;
-        return;
-      }
-
       // Clear credentials from localStorage on successful login if not remembering
       if (!rememberMe) {
         localStorage.removeItem('loginIdentifier');
@@ -313,9 +314,12 @@ function LoginForm() {
           const traderUrl = `${process.env.NEXT_PUBLIC_TRADER_APP_URL}?token=${encodeURIComponent(token)}`;
           window.location.href = traderUrl;
         } else {
+          const pendingRedirect = localStorage.getItem("pendingRedirect");
+          if (pendingRedirect) localStorage.removeItem("pendingRedirect");
           const redirectPath = getPostLoginPath(
             userRole as UserRole,
-            new URLSearchParams(window.location.search).get("redirect")
+            new URLSearchParams(window.location.search).get("redirect") ||
+              pendingRedirect
           );
           window.location.href = redirectPath;
         }
@@ -498,7 +502,13 @@ function LoginForm() {
             <p className="text-xs text-gray-900">
               Don't have an account?{" "}
               <Link
-                href="/signup"
+                href={
+                  redirectTarget
+                    ? `/signup?redirect=${encodeURIComponent(redirectTarget)}${
+                        redirectTarget.startsWith("/restaurant") ? "&role=restaurant" : ""
+                      }`
+                    : "/signup"
+                }
                 className="text-green-600 hover:text-green-700 font-medium"
               >
                 Create account

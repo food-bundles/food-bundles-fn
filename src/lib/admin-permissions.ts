@@ -44,6 +44,7 @@ const PAGE_MODULES: Array<[string, string]> = [
   ["/dashboard/promo-codes", "promo_codes"],
   ["/dashboard/settings/notification-recipient", "sms_recipients"],
   ["/dashboard/settings/delivery-fees", "delivery_settings"],
+  ["/dashboard/settings/voucher-qr", "vouchers"],
 ];
 
 // Pages every dashboard user may open (their own settings)
