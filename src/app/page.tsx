@@ -11,7 +11,7 @@ import { HomeFooter } from "@/components/home/home-footer";
 export const metadata: Metadata = {
   title: "Food Bundles — Global fresh food infrastructure",
   description:
-    "Fresh food from Rwanda's farmers to restaurants, hotels and schools: distribution, instant mobile-money payment and contract farming.",
+    "Fresh food from farmers to restaurants, hotels and schools: distribution, instant mobile-money payment and contract farming.",
 };
 
 export default function HomePage() {
