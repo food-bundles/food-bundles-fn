@@ -106,6 +106,39 @@ export const restaurantService = {
     }
   },
 
+  // Category exclusions for a customer
+  getCategoryExclusions: async (restaurantId: string) => {
+    try {
+      const response = await axiosClient.get(
+        `/restaurants/${restaurantId}/category-exclusions`
+      );
+      return {
+        success: true,
+        data: response.data.data,
+      };
+    } catch (error: any) {
+      console.error("Get category exclusions error:", error);
+      throw error;
+    }
+  },
+
+  setCategoryExclusions: async (restaurantId: string, categoryIds: string[]) => {
+    try {
+      const response = await axiosClient.put(
+        `/restaurants/${restaurantId}/category-exclusions`,
+        { categoryIds }
+      );
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error: any) {
+      console.error("Set category exclusions error:", error);
+      throw error;
+    }
+  },
+
   // Create restaurant by admin (no password required)
   createRestaurantByAdmin: async (restaurantData: any) => {
     try {

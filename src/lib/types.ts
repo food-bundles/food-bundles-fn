@@ -40,7 +40,7 @@ export interface ICreateRestaurantData {
   password: string;
   tin: string;
   role?: "RESTAURANT" | "HOTEL";
-  // Customer type picked at signup (decides the prices the customer pays)
+  // Customer type picked at signup (decides the prices and categories the customer sees)
   customerTypeId?: string;
   agreed?: boolean;
 }

@@ -23,6 +23,9 @@ export interface Restaurant {
   status: "active" | "inactive" | "suspended";
   /** Customer type (school, hotel, restaurant…) */
   customerType?: { id: string; name: string } | null;
+  /** Product categories hidden from this specific customer */
+  categoryExclusions?: { categoryId: string; category: { id: string; name: string } }[];
+  categoryExclusionIds?: string[];
 }
 
 export interface RestaurantsResponse {
@@ -85,6 +88,12 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
             totalSpent: totalSpent,
             status: "active" as const, // Default to active
             customerType: restaurant.customerType ?? null,
+            categoryExclusions: restaurant.categoryExclusions ?? [],
+            categoryExclusionIds:
+              restaurant.categoryExclusionIds ??
+              (restaurant.categoryExclusions ?? []).map(
+                (row: { categoryId: string }) => row.categoryId,
+              ),
           };
         });
 
