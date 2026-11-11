@@ -15,6 +15,7 @@ interface CategoryFormData {
   name: string;
   description?: string;
   isActive: boolean;
+  showToGuests: boolean;
 }
 
 export default function StockCategoriesPage() {

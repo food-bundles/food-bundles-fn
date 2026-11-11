@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { GoogleLogin } from "@react-oauth/google";
+import { AuthPanel, authInput, authPrimaryButton, authSecondaryButton } from "@/components/home/auth-panel";
 
 function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -365,37 +366,42 @@ function LoginForm() {
 
   return (
     <>
-      <div className="w-full max-w-3xl flex">
-        <div className="hidden lg:flex w-1/2 bg-white p-8 flex-col justify-center rounded-none shadow">
-          <h2 className="text-ms font-medium text-gray-900 mb-4">
-            Welcome Back!
-          </h2>
-          <p className="text-xs text-gray-900">
-            Sign in to access your Food Bundles account.
-          </p>
+      <div className="grid w-full max-w-[1040px] overflow-hidden rounded-[24px] bg-white shadow-[0_40px_80px_-30px_#0B2E1F66] lg:grid-cols-2">
+        <div className="hidden lg:flex">
+          <AuthPanel
+            kicker="MEMBERS MARKET"
+            title="Welcome back."
+            text="Sign in to order, track deliveries and manage your Food Bundles account."
+            points={[
+              "Fresh produce, meat and drinks from the farm gate",
+              "Pay by mobile money or your Food Bundles Card",
+              "Track every order from hub to kitchen",
+            ]}
+          />
         </div>
 
         {/* Right form section */}
-        <div className="w-full lg:w-1/2 bg-white p-8  shadow">
+        <div className="w-full p-6 sm:p-10">
           {!isBackendAvailable && (
-            <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 text-sm mb-4">
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-xl text-sm mb-4">
               {backendMessage}
             </div>
           )}
           {infoMessage && !error && (
-            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 text-sm mb-4">
+            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-xl text-sm mb-4">
               {infoMessage}
             </div>
           )}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3  text-sm mb-4">
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm mb-4">
               {error}
             </div>
           )}
 
-          <h2 className="text-ms font-bold text-gray-900 mb-4">
-            Sign in to your account
+          <h2 className="fb-display text-[28px] font-bold tracking-[-0.6px] text-[#0B2E1F] mb-1">
+            Sign in
           </h2>
+          <p className="text-[15px] text-[#4A6358] mb-6">Use your email, TIN number or phone.</p>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="relative">
               <Input
@@ -407,7 +413,7 @@ function LoginForm() {
                   if (identifierError) setIdentifierError("");
                 }}
                 placeholder="Email/Tin number/Phone"
-                className={`pl-10 h-10 text-[13px] focus:border-green-500 focus:ring-green-500 rounded-none text-gray-900 ${
+                className={`${authInput} ${
                   identifierError ? "border-red-500" : "border-gray-300"
                 }`}
                 disabled={!isBackendAvailable || isLoading}
@@ -427,7 +433,7 @@ function LoginForm() {
                   if (passwordError) setPasswordError("");
                 }}
                 placeholder="Password"
-                className={`pl-10 h-10 text-[13px] focus:border-green-500 focus:ring-green-500 rounded-none text-gray-900 ${
+                className={`${authInput} ${
                   passwordError ? "border-red-500" : "border-gray-300"
                 }`}
                 disabled={!isBackendAvailable || isLoading}
@@ -435,7 +441,8 @@ function LoginForm() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3 text-gray-900 hover:text-gray-800 cursor-pointer"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute right-1 top-1 flex h-10 w-10 items-center justify-center rounded-full text-[#4A6358] hover:text-[#0B2E1F] cursor-pointer"
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4" />
@@ -449,18 +456,18 @@ function LoginForm() {
             </div>
 
             <div className="flex justify-between items-center">
-              <label className="flex items-center text-[13px] text-gray-600">
+              <label className="flex items-center text-[15px] text-[#4A6358] cursor-pointer">
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="w-4 h-4 text-green-700 border-gray-300 rounded focus:ring-green-700"
                 />
-                <span className="ml-2 text-xs">Remember me</span>
+                <span className="ml-2">Remember me</span>
               </label>
               <Link
                 href="/forgot-password"
-                className="text-green-600 hover:text-green-700 text-xs"
+                className="text-[15px] font-bold text-[#007A35] hover:text-[#0B2E1F]"
               >
                 Forgot password?
               </Link>
@@ -468,7 +475,7 @@ function LoginForm() {
 
             <button
               type="submit"
-              className="w-full h-10 bg-green-700 hover:bg-green-800 text-white text-[14px] font-medium flex items-center justify-center gap-2"
+              className={`w-full flex items-center justify-center gap-2 ${authPrimaryButton}`}
               disabled={isLoading || !isBackendAvailable}
             >
               {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -481,7 +488,7 @@ function LoginForm() {
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or continue with</span>
+              <span className="px-3 bg-white text-[#4A6358]">Or continue with</span>
             </div>
           </div>
 
@@ -499,7 +506,7 @@ function LoginForm() {
           </div>
 
           <div className="mt-6 text-center">
-            <p className="text-xs text-gray-900">
+            <p className="text-[15px] text-[#4A6358]">
               Don't have an account?{" "}
               <Link
                 href={
@@ -509,7 +516,7 @@ function LoginForm() {
                       }`
                     : "/signup"
                 }
-                className="text-green-600 hover:text-green-700 font-medium"
+                className="font-bold text-[#007A35] hover:text-[#0B2E1F]"
               >
                 Create account
               </Link>
@@ -566,7 +573,7 @@ function LoginForm() {
               <button
                 onClick={handleVerify}
                 disabled={isVerifying}
-                className="flex-1 h-10 bg-green-700 hover:bg-green-800 text-white text-sm font-medium flex items-center justify-center gap-2"
+                className={`flex-1 flex items-center justify-center gap-2 ${authPrimaryButton}`}
               >
                 {isVerifying && <Loader2 className="h-4 w-4 animate-spin" />}
                 {isVerifying ? "Verifying..." : "Verify"}
@@ -575,7 +582,7 @@ function LoginForm() {
               <button
                 onClick={handleResendOTP}
                 disabled={isResending || !verificationPhone}
-                className="flex-1 h-10 bg-gray-200 hover:bg-gray-300 text-gray-900 text-sm font-medium flex items-center justify-center gap-2"
+                className={`flex-1 flex items-center justify-center gap-2 ${authSecondaryButton}`}
               >
                 {isResending && <Loader2 className="h-4 w-4 animate-spin" />}
                 {isResending ? "Resending..." : "Resend OTP"}
@@ -620,7 +627,7 @@ function LoginForm() {
 
             <button
               onClick={handlePhoneSubmit}
-              className="w-full h-10 bg-green-700 hover:bg-green-800 text-white text-sm font-medium"
+              className={`w-full ${authPrimaryButton}`}
             >
               Continue
             </button>
@@ -633,11 +640,8 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className=" bg-white">
-      <div className="md:h-32 h-20 mt-12 w-full flex items-center justify-center bg-gray-100">
-        <h1 className="text-xl font-bold text-black">My Account</h1>
-      </div>
-      <div className="flex items-center justify-center py-6  px-6 lg:px-8">
+    <div>
+      <div className="flex items-center justify-center px-4 py-10 sm:px-8 sm:py-16">
         <LoginForm />
       </div>
     </div>

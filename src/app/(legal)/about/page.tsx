@@ -29,7 +29,6 @@ export default function AboutPage() {
     <LegalPage
       title="About Us"
       description="Learn about Food Bundles — the platform connecting restaurants with local farms for fresh, quality ingredients."
-      lastUpdated="August 13, 2026"
     >
       <SectionHeading>Who We Are</SectionHeading>
       <Paragraph>
@@ -56,6 +55,7 @@ export default function AboutPage() {
 
       <SectionHeading>What We Offer</SectionHeading>
       <List
+        variant="bullets"
         items={[
           <>
             <span className="font-medium text-gray-900">Fresh product sourcing:</span>{" "}
@@ -119,6 +119,7 @@ export default function AboutPage() {
         page, please contact us:
       </Paragraph>
       <List
+        variant="bullets"
         items={[
           <>
             Email: <span className="font-medium text-gray-900">info@food.rw</span> or{" "}

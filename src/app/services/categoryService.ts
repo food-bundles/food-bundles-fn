@@ -4,12 +4,17 @@ import createAxiosClient from "../hooks/axiosClient";
 export interface CreateCategoryData {
   name: string;
   description?: string;
+  isActive?: boolean;
+  /** Shown in the public shop to visitors who are not logged in */
+  showToGuests?: boolean;
 }
 
 export interface UpdateCategoryData {
   name?: string;
   description?: string;
   isActive?: boolean;
+  /** Shown in the public shop to visitors who are not logged in */
+  showToGuests?: boolean;
 }
 
 export const categoryService = {

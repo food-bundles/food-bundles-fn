@@ -42,7 +42,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useAuth } from "@/app/contexts/auth-context";
-import { useCart } from "@/app/contexts/cart-context";
+import { useCart, GUEST_CHECKOUT_HREF } from "@/app/contexts/cart-context";
 import { useProductSection } from "@/hooks/useProductSection";
 import { productService } from "@/app/services/productService";
 import { wishlistService } from "@/app/services/wishlistService";
@@ -105,6 +105,7 @@ const ProductCard = memo(function ProductCard({
   rating,
   discountPercent,
   unit,
+  category,
   productData,
   userRole,
   customerTypeId,
@@ -115,7 +116,8 @@ const ProductCard = memo(function ProductCard({
   const [quantity, setQuantity] = useState(1);
   const [inputValue, setInputValue] = useState("1");
 
-  const { addToCart, cartItems, updateCartItem, removeCartItem } = useCart();
+  const { addToCart, cartItems, updateCartItem, removeCartItem, isGuestCart } = useCart();
+  const checkoutHref = isGuestCart ? GUEST_CHECKOUT_HREF : "/restaurant/checkout";
   const [isRemoving, setIsRemoving] = useState(false);
   const cartItem = cartItems.find((item) => item.productId === id);
   const isInCart = !!cartItem;
@@ -125,6 +127,8 @@ const ProductCard = memo(function ProductCard({
   // Get role-based price with fallback
   const displayPrice = productData ? getRoleBasedPrice(productData, userRole || 'RESTAURANT', customerTypeId) : (price || 0);
   const safeDisplayPrice = typeof displayPrice === 'number' && displayPrice > 0 ? displayPrice : (price || 0);
+  // What a visitor's cart (kept in the browser) needs to show this product
+  const guestInfo = { name, price: safeDisplayPrice, image, unit };
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -192,7 +196,7 @@ const ProductCard = memo(function ProductCard({
 
       autoUpdateTimerRef.current = setTimeout(() => {
         isUpdatingRef.current = true;
-        addToCart(id, quantity).finally(() => {
+        addToCart(id, quantity, guestInfo).finally(() => {
           isUpdatingRef.current = false;
         });
       }, 400);
@@ -209,180 +213,163 @@ const ProductCard = memo(function ProductCard({
       if (isInCart && cartItem) {
         await updateCartItem(cartItem.id, quantity);
       } else {
-        await addToCart(id, quantity);
+        await addToCart(id, quantity, guestInfo);
       }
     } catch (error) {
       console.error("Cart error:", error);
     } finally {
       setIsAddingToCart(false);
     }
-  }, [isInCart, cartItem, quantity, addToCart, updateCartItem, id]);
+  }, [isInCart, cartItem, quantity, addToCart, updateCartItem, id, safeDisplayPrice]);
 
   const handleWishlist = () => onToggleWishlist?.(id);
 
-  const renderStars = (rating: number) => {
-    return Array.from({ length: 5 }, (_, i) => (
-      <Star
-        key={i}
-        className={`w-3 h-3 ${i < Math.floor(rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
-      />
-    ));
-  };
-
   return (
-    <div
-      className="w-full bg-white transition-all duration-300 max-w-[200px] sm:max-w-[220px]"
-    >
-      <Card className="border border-gray-200 shadow hover:shadow-lg rounded-md hover:rounded hover:border-green-500 overflow-hidden transition-all duration-300 p-0 pb-2 h-full">
-        <div className="relative w-full flex items-center justify-center group overflow-hidden h-40 sm:h-[180px]">
-          <OptimizedImage
-            src={image || "/placeholder.svg"}
-            alt={name}
-            width={200}
-            height={200}
-            className="object-contain w-full max-h-full transition-transform duration-300 group-hover:scale-105"
-            transformation={[
-              { width: 400, height: 400, crop: "pad", quality: "80" },
-            ]}
-          />
+    <article className="group flex h-full w-full flex-col overflow-hidden rounded-2xl border border-[#DCE6DF] bg-white transition-all duration-300 hover:-translate-y-0.5 hover:border-[#00A43A] hover:shadow-[0_24px_48px_-24px_#0B2E1F59]">
+      <div className="relative flex h-40 items-center justify-center overflow-hidden bg-[#F6F9F7] sm:h-48">
+        <OptimizedImage
+          src={image || "/placeholder.svg"}
+          alt={name}
+          width={200}
+          height={200}
+          className="max-h-full w-full object-contain p-3 transition-transform duration-300 group-hover:scale-105"
+          transformation={[
+            { width: 400, height: 400, crop: "pad", quality: "80" },
+          ]}
+        />
 
-          {discountPercent ? (
-            <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
-              {discountPercent}% OFF
-            </div>
-          ) : null}
+        {discountPercent ? (
+          <span className="absolute left-3 top-3 rounded-full bg-[#E5402D] px-2.5 py-1 text-xs font-bold text-white">
+            -{discountPercent}%
+          </span>
+        ) : null}
 
-          {isInCart && (
-            <a href="/restaurant/checkout" className="absolute inset-0">
-              <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-lg flex items-center cursor-pointer hover:bg-green-600 transition-colors">
-                <Check className="w-3 h-3 mr-1" /> Buy Now
-              </div>
-            </a>
-          )}
+        <button
+          type="button"
+          onClick={handleWishlist}
+          aria-label={isWishlisted ? "Remove from wishlist" : "Save to wishlist"}
+          aria-pressed={isWishlisted}
+          className={`absolute right-2.5 top-2.5 flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-[0_6px_16px_-8px_#0B2E1F80] transition-colors active:scale-95 ${
+            isWishlisted ? "text-rose-500" : "text-[#4A6358] hover:text-rose-500"
+          }`}
+        >
+          <Heart className={`h-4 w-4 ${isWishlisted ? "fill-rose-500" : ""}`} />
+        </button>
 
+        {isInCart && (
+          <a
+            href={checkoutHref}
+            className="absolute bottom-2.5 left-2.5 inline-flex items-center gap-1 rounded-full bg-[#0B2E1F] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#0F5C36]"
+          >
+            <Check className="h-3.5 w-3.5 text-[#00D048]" /> In cart · Checkout
+          </a>
+        )}
+      </div>
+
+      <div className="flex flex-1 flex-col gap-1 px-3.5 pt-3 sm:px-4">
+        {category && (
+          <span className="truncate text-[11px] font-bold uppercase tracking-[1px] text-[#00A43A]">
+            {category.replace(/_/g, " ")}
+          </span>
+        )}
+        <h3 className="line-clamp-2 min-h-[2.5rem] text-[15px] font-bold leading-tight text-[#0B2E1F]">
+          {name}
+        </h3>
+        <div className="mt-auto flex flex-wrap items-baseline gap-x-1 pt-1">
+          <span className="text-[17px] font-bold text-[#0B2E1F]">
+            {safeDisplayPrice.toLocaleString()} Rwf
+          </span>
+          {unit && <span className="text-sm text-[#4A6358]">/ {unit}</span>}
         </div>
+      </div>
 
-        <div className="px-3 sm:px-4 pt-2">
-          <h3 className="font-semibold text-gray-800 leading-tight line-clamp-2 min-h-6 text-sm">
-            {name}
-          </h3>
-          <div className="flex items-center gap-2 my-1">
-            <div className="flex">{renderStars(rating || 0)}</div>
-            <span className="text-gray-500 text-xs">
-              ({(rating || 0).toFixed(1)})
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-              <span className="font-bold text-gray-900 text-base">
-                {safeDisplayPrice.toLocaleString()} Rwf
-                {unit && (
-                  <span className="text-sm font-normal text-gray-600">
-                    /{unit}
-                  </span>
-                )}
-              </span>
-          </div>
-        </div>
-
-        {/* Actions always visible (no hover needed) on every screen size */}
-        <div className="flex items-center gap-1.5 px-2.5 sm:px-3 pt-2">
+      <div className="flex items-center gap-2 p-3 pt-2.5 sm:px-4">
+        <div className="flex h-10 min-w-0 flex-1 items-center overflow-hidden rounded-full border border-[#DCE6DF] bg-white">
           <button
             type="button"
-            onClick={handleWishlist}
-            aria-label={isWishlisted ? "Remove from wishlist" : "Save to wishlist"}
-            className={`shrink-0 flex items-center justify-center w-8 h-8 rounded-full border transition-colors active:scale-95 ${
-              isWishlisted
-                ? "border-rose-200 bg-rose-50 text-rose-500"
-                : "border-gray-200 bg-white text-gray-500"
+            aria-label="Decrease quantity"
+            onClick={() => {
+              const newValue = Math.max(1, (Number.parseFloat(inputValue) || 1) - 1);
+              setInputValue(newValue.toString());
+              setQuantity(newValue);
+            }}
+            disabled={isAddingToCart}
+            className="h-full w-9 shrink-0 text-lg text-[#0B2E1F] hover:bg-[#F6F9F7] disabled:opacity-50"
+          >
+            −
+          </button>
+          <input
+            type="number"
+            inputMode="decimal"
+            aria-label={`Quantity of ${name}`}
+            value={inputValue}
+            onChange={handleQuantityChange}
+            onBlur={handleQuantityBlur}
+            step="0.01"
+            min="0.1"
+            disabled={isAddingToCart}
+            className="w-full min-w-0 bg-transparent text-center text-[15px] font-bold text-[#0B2E1F] focus:outline-none disabled:opacity-60 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+          />
+          <button
+            type="button"
+            aria-label="Increase quantity"
+            onClick={() => {
+              const newValue = (Number.parseFloat(inputValue) || 0) + 1;
+              setInputValue(newValue.toString());
+              setQuantity(newValue);
+            }}
+            disabled={isAddingToCart}
+            className="h-full w-9 shrink-0 text-lg text-[#0B2E1F] hover:bg-[#F6F9F7] disabled:opacity-50"
+          >
+            +
+          </button>
+        </div>
+
+        {isInCart && isUpdateDisabled ? (
+          // Already in the cart with this quantity: offer to take it out
+          <button
+            type="button"
+            onClick={async () => {
+              if (!cartItem) return;
+              setIsRemoving(true);
+              await removeCartItem(cartItem.id);
+              setIsRemoving(false);
+            }}
+            disabled={isRemoving}
+            aria-label={`Remove ${name} from cart`}
+            title="Remove from cart"
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 transition-colors hover:bg-red-100 active:scale-95 ${
+              isRemoving ? "opacity-50" : ""
             }`}
           >
-            <Heart className={`w-4 h-4 ${isWishlisted ? "fill-rose-500" : ""}`} />
+            {isRemoving ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-500 border-t-transparent" />
+            ) : (
+              <X className="h-4 w-4" />
+            )}
           </button>
-
-          <div className="flex items-center flex-1 min-w-0 h-8 border border-gray-200 rounded-full overflow-hidden bg-white">
-            <button
-              type="button"
-              aria-label="Decrease quantity"
-              onClick={() => {
-                const newValue = Math.max(1, (Number.parseFloat(inputValue) || 1) - 1);
-                setInputValue(newValue.toString());
-                setQuantity(newValue);
-              }}
-              disabled={isAddingToCart}
-              className="w-7 h-full shrink-0 text-gray-700 bg-gray-50 active:bg-gray-200 disabled:opacity-50"
-            >
-              −
-            </button>
-            <input
-              type="number"
-              inputMode="decimal"
-              aria-label="Quantity"
-              value={inputValue}
-              onChange={handleQuantityChange}
-              onBlur={handleQuantityBlur}
-              step="0.01"
-              min="0.1"
-              disabled={isAddingToCart}
-              className="w-full min-w-0 text-center text-sm font-semibold focus:outline-none disabled:bg-gray-100 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
-            />
-            <button
-              type="button"
-              aria-label="Increase quantity"
-              onClick={() => {
-                const newValue = (Number.parseFloat(inputValue) || 0) + 1;
-                setInputValue(newValue.toString());
-                setQuantity(newValue);
-              }}
-              disabled={isAddingToCart}
-              className="w-7 h-full shrink-0 text-gray-700 bg-gray-50 active:bg-gray-200 disabled:opacity-50"
-            >
-              +
-            </button>
-          </div>
-
-          {isInCart && isUpdateDisabled ? (
-            // Already in the cart with this quantity: offer to take it out
-            <button
-              type="button"
-              onClick={async () => {
-                if (!cartItem) return;
-                setIsRemoving(true);
-                await removeCartItem(cartItem.id);
-                setIsRemoving(false);
-              }}
-              disabled={isRemoving}
-              aria-label="Remove from cart"
-              title="Remove from cart"
-              className={`shrink-0 flex items-center justify-center w-10 h-8 rounded-lg border border-red-200 bg-red-50 text-red-600 transition-colors active:scale-95 ${
-                isRemoving ? "opacity-50" : ""
-              }`}
-            >
-              {isRemoving ? (
-                <div className="border-2 border-red-500 border-t-transparent rounded-full animate-spin w-4 h-4" />
-              ) : (
-                <X className="w-4 h-4" />
-              )}
-            </button>
-          ) : (
+        ) : (
           <button
             type="button"
             onClick={handleCartAction}
             disabled={isAddingToCart || isUpdateDisabled}
-            aria-label={isInCart ? "Update quantity in cart" : "Add to cart"}
-            className={`shrink-0 flex items-center justify-center w-10 h-8 rounded-lg text-white transition-colors active:scale-95 ${
-              isInCart ? "bg-green-700" : "bg-green-600"
+            aria-label={isInCart ? `Update ${name} in cart` : `Add ${name} to cart`}
+            className={`flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full px-4 text-sm font-bold text-white transition-colors active:scale-95 ${
+              isInCart ? "bg-[#00A43A] hover:bg-[#007A35]" : "bg-[#0B2E1F] hover:bg-[#0F5C36]"
             } ${isAddingToCart || isUpdateDisabled ? "opacity-50" : ""}`}
           >
             {isAddingToCart ? (
-              <div className="border-2 border-white border-t-transparent rounded-full animate-spin w-4 h-4" />
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
             ) : (
-              <span>Buy</span>
+              <>
+                <ShoppingCart className="h-4 w-4" />
+                <span>{isInCart ? "Update" : "Add"}</span>
+              </>
             )}
           </button>
-          )}
-        </div>
-      </Card>
-    </div>
+        )}
+      </div>
+    </article>
   );
 });
 
@@ -862,6 +849,50 @@ export function ProductsSection({
               </div>
             )}
 
+            {!isAuthenticated && (
+              <>
+                <div className="mx-4 mt-5 flex flex-col gap-4 rounded-2xl border border-[#DCE6DF] bg-white p-4 sm:mx-6 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#E3F3E8]">
+                      <ShoppingCart className="h-5 w-5 text-[#007A35]" />
+                    </span>
+                    <div>
+                      <p className="m-0 text-[16px] font-bold text-[#0B2E1F]">No account needed to fill your cart</p>
+                      <p className="m-0 text-sm text-[#4A6358]">
+                        Your cart is saved on this device. Log in or sign up at checkout to confirm your prices and delivery.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsCartOpen(true)}
+                    className="flex shrink-0 items-center justify-between gap-3 rounded-full bg-[#0B2E1F] py-1.5 pl-4 pr-1.5 text-white"
+                  >
+                    <span className="text-sm font-bold">
+                      {totalItems} {totalItems === 1 ? "item" : "items"} · {totalAmount.toLocaleString()} Rwf
+                    </span>
+                    <span className="rounded-full bg-[#00D048] px-3.5 py-2 text-sm font-bold text-[#0B2E1F]">View cart</span>
+                  </button>
+                </div>
+
+                {totalItems > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setIsCartOpen(true)}
+                    aria-label={`Open cart, ${totalItems} items`}
+                    className="fixed bottom-20 left-4 z-40 flex items-center gap-2 rounded-full bg-[#0B2E1F] py-2 pl-3 pr-4 text-white shadow-[0_16px_40px_-12px_#0B2E1F] sm:bottom-4"
+                  >
+                    <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-[#00D048]">
+                      <ShoppingCart className="h-4 w-4 text-[#0B2E1F]" />
+                    </span>
+                    <span className="text-sm font-bold">
+                      {totalItems} · {totalAmount.toLocaleString()} Rwf
+                    </span>
+                  </button>
+                )}
+              </>
+            )}
+
             {/* Kept outside the transformed/blurred cart card so `position: fixed` stays relative to the viewport */}
             <CartDrawer
               isOpen={isCartOpen}
@@ -869,9 +900,9 @@ export function ProductsSection({
             />
 
             <div className="bg-transparent ">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-4">
+              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 px-4 sm:px-6 py-5">
                 {/* Category Filter Buttons */}
-                <div className="px-4 sm:px-8 pb-4">
+                <div>
                   <div className="flex flex-wrap gap-2">
                     {categoriesWithAll.map((category) => {
                       const isSelected = selectedCategory === category.name && !showDiscounted;
@@ -883,9 +914,10 @@ export function ProductsSection({
                             setShowDiscounted(false);
                             onCategorySelect?.(category.name);
                           }}
-                          className={`px-4 py-[3px] rounded-full text-[13px] font-medium transition-all ${isSelected
-                            ? "bg-green-600 text-white shadow-md"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300"
+                          aria-pressed={isSelected}
+                          className={`min-h-10 rounded-full px-4 text-[14px] font-bold transition-colors ${isSelected
+                            ? "bg-[#0B2E1F] text-white"
+                            : "border border-[#DCE6DF] bg-white text-[#0B2E1F] hover:border-[#00A43A]"
                             }`}
                         >
                           {category.name === "All Categories"
@@ -931,10 +963,11 @@ export function ProductsSection({
                           setDiscountedProducts([]);
                         }
                       }}
-                      className={`px-4 py-[3px] rounded-full text-[13px] font-medium transition-all ${showDiscounted
-                        ? "bg-green-600 text-white shadow-md"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300"
-                        }`}
+                      aria-pressed={showDiscounted}
+                          className={`min-h-10 rounded-full px-4 text-[14px] font-bold transition-colors ${showDiscounted
+                            ? "bg-[#0B2E1F] text-white"
+                            : "border border-[#DCE6DF] bg-white text-[#0B2E1F] hover:border-[#00A43A]"
+                            }`}
                     >
                       Discounted
                     </button>
@@ -944,16 +977,17 @@ export function ProductsSection({
                 </div>
 
 
-                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <div className="flex flex-row gap-2 w-full lg:w-auto">
                   {/* Search Input */}
                   {search && (
-                    <div className="relative">
+                    <div className="relative flex-1 lg:flex-none">
                       <input
-                        type="text"
-                        placeholder="Search by name or price"
+                        type="search"
+                        aria-label="Search products"
+                        placeholder="Search products"
                         value={localSearchQuery}
                         onChange={(e) => setLocalSearchQuery(e.target.value)}
-                        className="w-40 px-4 py-2 placeholder:text-[12px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-sm"
+                        className="h-10 w-full lg:w-60 rounded-full border border-[#DCE6DF] bg-white px-4 text-[15px] text-[#0B2E1F] placeholder:text-[#7A8E83] focus:border-[#00A43A] focus:outline-none focus:ring-2 focus:ring-[#00A43A]/25"
                       />
                       {search.isSearching && (
                         <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -964,19 +998,14 @@ export function ProductsSection({
                   )}
 
                   {sorting && (
-                    <div className="w-1/2 sm:w-auto">
+                    <div className="shrink-0">
                       <Select
                         value={sorting.sortBy}
                         onValueChange={(value) => sorting.onSortChange(value)}
                       >
                         <SelectTrigger
-                          className="
-                                w-40
-                                border border-gray-300 
-                                focus:ring-2 focus:ring-green-500 focus:border-green-500
-                                rounded-lg text-[12px] sm:text-[13px]
-                                bg-white
-                              "
+                          aria-label="Sort products"
+                          className="h-10! w-40 rounded-full border border-[#DCE6DF] bg-white text-[14px] text-[#0B2E1F] focus:ring-2 focus:ring-[#00A43A]/25"
                         >
                           <SelectValue placeholder="Sort by" />
                         </SelectTrigger>
@@ -989,8 +1018,7 @@ export function ProductsSection({
                           </SelectItem>
                           <SelectItem value="name_asc">A to Z</SelectItem>
                           <SelectItem value="name_desc">Z to A</SelectItem>
-                          <SelectItem value="rating">Top Rated</SelectItem>
-                        </SelectContent>
+                                                  </SelectContent>
                       </Select>
                     </div>
                   )}
@@ -999,7 +1027,7 @@ export function ProductsSection({
             </div>
 
             {/* Products Grid */}
-            <div className="px-4 sm:px-6 overflow-y-auto">
+            <div className="px-4 sm:px-6">
               <div className="mb-12">
                 {showSaved && (
                   <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-rose-100 bg-rose-50 px-4 py-2 text-[13px] text-rose-800">
@@ -1024,7 +1052,7 @@ export function ProductsSection({
                     </div>
                   </div>
                 ) : sortedProducts.length > 0 ? (
-                  <div className="grid gap-4 justify-items-center grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+                  <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                     {sortedProducts.map((product) => (
                       <ProductCard
                         key={product.id}
@@ -1047,7 +1075,7 @@ export function ProductsSection({
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-16">
-                    <h3 className="text-[14px] font-medium text-gray-900 mb-2">
+                    <h3 className="text-[18px] font-bold text-[#0B2E1F] mb-2">
                       {showSaved ? "No saved products yet" : "No products found"}
                     </h3>
                     <p className="text-gray-800 text-[13px] text-center max-w-md mb-4">
@@ -1093,8 +1121,7 @@ export function ProductsSection({
                         <SelectContent>
                           <SelectItem value="30">30</SelectItem>
                           <SelectItem value="100">100</SelectItem>
-                          <SelectItem value="100">500</SelectItem>
-                          <SelectItem value="100">1000000000</SelectItem>
+                          <SelectItem value="500">500</SelectItem>
                         </SelectContent>
                       </Select>
                       <span>per page</span>
@@ -1156,9 +1183,10 @@ export function ProductsSection({
                                 pagination.onPageChange(pageNumber)
                               }
                               disabled={pagination.isLoading}
-                              className={`px-3 py-1 rounded text-sm ${pageNumber === pagination.currentPage
-                                ? "bg-green-700 hover:bg-green-800 text-white"
-                                : "bg-white hover:bg-gray-100 text-gray-900 border border-gray-300"
+                              aria-current={pageNumber === pagination.currentPage ? "page" : undefined}
+                              className={`h-10 min-w-10 rounded-full px-3 text-sm font-bold ${pageNumber === pagination.currentPage
+                                ? "bg-[#0B2E1F] text-white"
+                                : "border border-[#DCE6DF] bg-white text-[#0B2E1F] hover:bg-[#F6F9F7]"
                                 }`}
                             >
                               {pageNumber}
