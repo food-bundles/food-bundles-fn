@@ -60,7 +60,7 @@ export const createCategoryColumns = (
     id: "actions",
     header: "Actions",
     cell: ({ row }) => {
-      const category = row.original; 
+      const category = row.original;
       return (
         <div className="flex gap-2">
           <Button
