@@ -3,7 +3,7 @@ import { SiteShell } from "@/components/home/site-shell";
 import { ShopCatalog } from "@/components/shop/shop-catalog";
 
 export const metadata: Metadata = {
-  title: "Shop — Food Bundles",
+  title: "Shop",
   description: "Fresh produce, meat and drinks from Rwanda's farmers, delivered to your kitchen.",
 };
 

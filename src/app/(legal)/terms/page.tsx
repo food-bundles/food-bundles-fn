@@ -3,7 +3,7 @@ import { LegalPage, LegalContent } from "@/components/legal-page";
 const { SectionHeading, Paragraph, List } = LegalContent;
 
 export const metadata = {
-  title: "Terms & Conditions | Food Bundles",
+  title: "Terms & Conditions",
 };
 
 export default function TermsPage() {

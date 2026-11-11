@@ -9,7 +9,8 @@ import { AppsAndCta, CardSection, ContactPill, FoodCourts } from "@/components/h
 import { HomeFooter } from "@/components/home/home-footer";
 
 export const metadata: Metadata = {
-  title: "Food Bundles — Global fresh food infrastructure",
+  title: { absolute: "Food Bundles — Global fresh food infrastructure" },
+  alternates: { canonical: "/" },
   description:
     "Fresh food from farmers to restaurants, hotels and schools: distribution, instant mobile-money payment and contract farming.",
 };

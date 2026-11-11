@@ -5,7 +5,7 @@ import { LegalPage, LegalContent } from "@/components/legal-page";
 const { SectionHeading, SubHeading, Paragraph, List } = LegalContent;
 
 export const metadata = {
-  title: "Privacy Policy | Food Bundles",
+  title: "Privacy Policy",
 };
 
 export default function PrivacyPolicyPage() {

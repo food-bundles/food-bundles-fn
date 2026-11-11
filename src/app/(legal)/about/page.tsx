@@ -12,7 +12,7 @@ import {
 const { SectionHeading, Paragraph, List } = LegalContent;
 
 export const metadata = {
-  title: "About Us | Food Bundles",
+  title: "About Us",
 };
 
 const companyFacts = [
