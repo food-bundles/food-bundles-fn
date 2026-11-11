@@ -665,6 +665,18 @@ export function Checkout() {
           setPendingCheckoutOrderId(orderId);
           setFlutterwaveRedirectUrl(redirectUrl);
           setShowFlutterwaveInfo(true);
+        } else if (paymentProvider === "MTN_MOMO") {
+          // MTN MoMo sends a USSD push to the phone - track order until confirmed.
+          if (orderId) {
+            setPendingCheckoutOrderId(orderId);
+            setPendingCheckoutNotice(
+              `An MTN MoMo payment request has been sent to ${formData.momoPhoneNumber}. Please approve the prompt on your phone. Your order is placed the moment payment is confirmed.`
+            );
+            setCheckoutStage("pending");
+            setShowPendingCheckoutModal(true);
+          } else {
+            window.location.href = "/restaurant";
+          }
         } else if (paymentProvider === "PAYPACK") {
           // Paypack sends a USSD request to the phone - keep this page and
           // track the order until payment is confirmed.
@@ -1339,8 +1351,16 @@ export function Checkout() {
 
               {method === "momo" && (
                 <div className="space-y-2 mt-3">
-                  <label className="flex items-center text-sm font-medium text-gray-700">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                     Phone Number
+                    <span className="flex items-center gap-1 ml-auto">
+                      <img
+                        src="https://res.cloudinary.com/kapkga1t/image/upload/v1793977428/mtn.jpg"
+                        alt="MTN MoMo"
+                        className="h-5 w-5 rounded-full object-cover"
+                      />
+                      <span className="text-xs text-yellow-600 font-semibold">MTN MoMo</span>
+                    </span>
                   </label>
 
                   <div className="relative">
@@ -1359,6 +1379,9 @@ export function Checkout() {
                       disabled={isSubmitting}
                     />
                   </div>
+                  <p className="text-xs text-gray-500">
+                    MTN numbers (078x / 079x) are processed via MTN MoMo directly. Airtel (072x / 073x) uses PayPack.
+                  </p>
                   {errors.momoPhoneNumber && (
                     <p className="text-red-600 text-xs">
                       {errors.momoPhoneNumber}

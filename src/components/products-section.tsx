@@ -446,8 +446,8 @@ export function ProductsSection({
   const loadWishlist = useCallback(async () => {
     try {
       const data = await wishlistService.getWishlist();
-      setWishlistIds(new Set(data.productIds));
-      setWishlistRaw(data.products);
+      setWishlistIds(new Set(data.productIds ?? []));
+      setWishlistRaw(data.products ?? []);
     } catch (error) {
       console.error("Failed to load wishlist:", error);
     }
