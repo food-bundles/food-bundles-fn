@@ -25,8 +25,11 @@ import {
   CustomerTypeFormData,
   CustomerType,
 } from "@/app/services/customerTypeService";
+import { useAdminAccess } from "@/app/hooks/useAdminAccess";
 
 export default function CustomerTypesPage() {
+  const { can } = useAdminAccess();
+  const canManageCategories = can("customer_types", "set_categories");
   const [customerTypes, setCustomerTypes] = useState<CustomerType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -97,21 +100,39 @@ export default function CustomerTypesPage() {
     }
   };
 
-  const handleSubmit = async (data: CustomerTypeFormData) => {
+  const handleSubmit = async (
+    data: CustomerTypeFormData,
+    categoryIds: string[],
+  ) => {
     try {
+      let customerTypeId = editingType?.id;
       if (editingType) {
         await customerTypeService.updateCustomerType(editingType.id, data);
-        toast.success("Customer type updated successfully");
       } else {
-        await customerTypeService.createCustomerType(data);
-        toast.success("Customer type created successfully");
+        const created = await customerTypeService.createCustomerType(data);
+        customerTypeId = created.data?.id;
+        if (!customerTypeId) throw new Error("Customer type was not created");
       }
+
+      if (canManageCategories && customerTypeId) {
+        await customerTypeService.setCustomerTypeCategories(
+          customerTypeId,
+          categoryIds,
+        );
+      }
+
+      toast.success(
+        editingType
+          ? "Customer type updated successfully"
+          : "Customer type created successfully",
+      );
       await fetchCustomerTypes();
       setEditingType(null);
     } catch (error) {
       toast.error(
         editingType ? "Failed to update customer type" : "Failed to create customer type"
       );
+      throw error;
     }
   };
 
@@ -220,6 +241,7 @@ export default function CustomerTypesPage() {
         open={isModalOpen}
         onOpenChange={handleModalClose}
         customerType={editingType}
+        canManageCategories={canManageCategories}
         onSubmit={handleSubmit}
       />
 

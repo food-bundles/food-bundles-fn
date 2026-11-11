@@ -11,27 +11,33 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { CustomerTypeFormData, CustomerType } from "@/app/services/customerTypeService";
+import { useActiveCategories } from "@/app/contexts/category-context";
 
 interface CustomerTypeModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   customerType?: CustomerType | null;
-  onSubmit: (data: CustomerTypeFormData) => Promise<void>;
+  canManageCategories?: boolean;
+  onSubmit: (data: CustomerTypeFormData, categoryIds: string[]) => Promise<void>;
 }
 
 export function CustomerTypeModal({
   open,
   onOpenChange,
   customerType,
+  canManageCategories = true,
   onSubmit,
 }: CustomerTypeModalProps) {
   const [formData, setFormData] = useState<CustomerTypeFormData>({
     name: "",
     description: "",
   });
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ name?: string }>({});
+  const { activeCategories } = useActiveCategories();
 
   useEffect(() => {
     if (customerType) {
@@ -39,11 +45,19 @@ export function CustomerTypeModal({
         name: customerType.name,
         description: customerType.description || "",
       });
+      setSelectedCategoryIds(customerType.visibleCategoryIds || []);
     } else {
       setFormData({ name: "", description: "" });
+      setSelectedCategoryIds(activeCategories.map((category) => category.id));
     }
     setErrors({});
-  }, [customerType, open]);
+  }, [customerType, open, activeCategories]);
+
+  const toggleCategory = (categoryId: string, checked: boolean) => {
+    setSelectedCategoryIds((prev) =>
+      checked ? [...new Set([...prev, categoryId])] : prev.filter((id) => id !== categoryId),
+    );
+  };
 
   const validate = () => {
     const newErrors: { name?: string } = {};
@@ -61,7 +75,10 @@ export function CustomerTypeModal({
     if (!validate()) return;
     try {
       setIsSubmitting(true);
-      await onSubmit({ ...formData, name: formData.name.trim() });
+      await onSubmit(
+        { ...formData, name: formData.name.trim() },
+        canManageCategories ? selectedCategoryIds : [],
+      );
       onOpenChange(false);
     } finally {
       setIsSubmitting(false);
@@ -113,6 +130,36 @@ export function CustomerTypeModal({
               className="bg-white border-gray-300 text-gray-900 focus:ring-2 focus:ring-green-500 focus:border-green-500"
             />
           </div>
+
+          {canManageCategories && (
+            <div className="space-y-2">
+              <Label className="text-gray-700">Visible product categories</Label>
+              <p className="text-xs text-gray-500">
+                Customers of this type only see products in the categories you tick.
+                Leave all unticked to hide the shop catalogue from them.
+              </p>
+              <div className="max-h-44 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-2">
+                {activeCategories.length === 0 ? (
+                  <p className="text-xs text-gray-500">No active categories yet.</p>
+                ) : (
+                  activeCategories.map((category) => (
+                    <label
+                      key={category.id}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={selectedCategoryIds.includes(category.id)}
+                        onCheckedChange={(checked) =>
+                          toggleCategory(category.id, checked === true)
+                        }
+                      />
+                      <span className="text-sm text-gray-800">{category.name}</span>
+                    </label>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button

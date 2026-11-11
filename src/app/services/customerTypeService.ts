@@ -5,12 +5,19 @@ export interface CustomerTypeFormData {
   description?: string;
 }
 
+export interface CustomerTypeCategory {
+  id: string;
+  name: string;
+}
+
 export interface CustomerType {
   id: string;
   name: string;
   description?: string;
   isActive: boolean;
   createdAt: string;
+  visibleCategories?: CustomerTypeCategory[];
+  visibleCategoryIds?: string[];
 }
 
 export interface CustomerTypeUsageProduct {
@@ -102,6 +109,14 @@ export const customerTypeService = {
   toggleCustomerTypeStatus: async (id: string) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.patch(`/customer-types/${id}/status`);
+    return response.data;
+  },
+
+  setCustomerTypeCategories: async (id: string, categoryIds: string[]) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.put(`/customer-types/${id}/categories`, {
+      categoryIds,
+    });
     return response.data;
   },
 

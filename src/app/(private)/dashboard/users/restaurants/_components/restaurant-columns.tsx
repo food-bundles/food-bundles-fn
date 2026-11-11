@@ -20,6 +20,9 @@ export type Restaurant = {
   status: "active" | "inactive" | "suspended";
   /** Customer type (school, hotel, restaurant…) */
   customerType?: { id: string; name: string } | null;
+  /** Product categories hidden from this specific customer */
+  categoryExclusions?: { categoryId: string; category: { id: string; name: string } }[];
+  categoryExclusionIds?: string[];
 };
 
 export const getRestaurantColumns = (
@@ -78,6 +81,21 @@ export const getRestaurantColumns = (
         </span>
       ) : (
         <span className="text-xs text-gray-400">No type</span>
+      );
+    },
+  },
+  {
+    id: "hiddenCategories",
+    header: "Hidden categories",
+    cell: ({ row }) => {
+      const hidden = row.original.categoryExclusions ?? [];
+      if (hidden.length === 0) {
+        return <span className="text-xs text-gray-400">None</span>;
+      }
+      return (
+        <span className="text-xs text-gray-700">
+          {hidden.map((row) => row.category.name).join(", ")}
+        </span>
       );
     },
   },

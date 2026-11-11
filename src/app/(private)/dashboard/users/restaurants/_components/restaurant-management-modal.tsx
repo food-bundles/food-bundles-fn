@@ -14,9 +14,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
 import { useAdminAccess } from "@/app/hooks/useAdminAccess";
+import { useActiveCategories } from "@/app/contexts/category-context";
+import { restaurantService } from "@/app/services/restaurantService";
 
 // Backend message when there is one (e.g. "Another account already uses this email")
 const errorMessage = (error: any, fallback: string) =>
@@ -48,6 +51,8 @@ export function RestaurantManagementModal({
   // Edit needs restaurants.edit; delete (to trash) and passwords: super admin only
   const { can, isSuperAdmin } = useAdminAccess();
   const canEdit = can("restaurants", "edit");
+  const canExcludeCategories = can("restaurants", "exclude_categories");
+  const { activeCategories } = useActiveCategories();
 
   // Edit form state
   const [editData, setEditData] = useState({
@@ -56,6 +61,11 @@ export function RestaurantManagementModal({
     phone: "",
     location: "",
   });
+  const [excludedCategoryIds, setExcludedCategoryIds] = useState<string[]>([]);
+
+  const exclusionsFor = (target: Restaurant) =>
+    target.categoryExclusionIds ??
+    (target.categoryExclusions ?? []).map((row) => row.categoryId);
 
   useEffect(() => {
     if (restaurant) {
@@ -65,6 +75,7 @@ export function RestaurantManagementModal({
         phone: restaurant.phone || "",
         location: restaurant.location,
       });
+      setExcludedCategoryIds(exclusionsFor(restaurant));
     }
   }, [restaurant]);
 
@@ -82,6 +93,7 @@ export function RestaurantManagementModal({
         phone: restaurant.phone || "",
         location: restaurant.location,
       });
+      setExcludedCategoryIds(exclusionsFor(restaurant));
     }
   };
 
@@ -94,6 +106,12 @@ export function RestaurantManagementModal({
         ...editData,
         ...(isSuperAdmin && newPassword ? { password: newPassword } : {}),
       });
+      if (canExcludeCategories) {
+        await restaurantService.setCategoryExclusions(
+          restaurant.id,
+          excludedCategoryIds,
+        );
+      }
       toast.success("Restaurant updated successfully");
       setIsEditing(false);
       setNewPassword("");
@@ -196,6 +214,43 @@ export function RestaurantManagementModal({
                 />
               </div>
 
+              {canExcludeCategories && (
+                <div className="space-y-2">
+                  <Label className="text-gray-900">Hide product categories</Label>
+                  <p className="text-[11px] text-gray-500">
+                    Ticked categories are hidden from this customer only, even
+                    when their customer type includes them.
+                  </p>
+                  <div className="max-h-40 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-2">
+                    {activeCategories.length === 0 ? (
+                      <p className="text-xs text-gray-500">No active categories yet.</p>
+                    ) : (
+                      activeCategories.map((category) => (
+                        <label
+                          key={category.id}
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
+                          <Checkbox
+                            checked={excludedCategoryIds.includes(category.id)}
+                            onCheckedChange={(checked) =>
+                              setExcludedCategoryIds((prev) =>
+                                checked === true
+                                  ? [...new Set([...prev, category.id])]
+                                  : prev.filter((id) => id !== category.id),
+                              )
+                            }
+                            disabled={isLoading}
+                          />
+                          <span className="text-sm text-gray-800">
+                            {category.name}
+                          </span>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+
               {isSuperAdmin && (
                 <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
                   <Label htmlFor="newPassword" className="text-gray-900">Set a new password (optional)</Label>
@@ -280,6 +335,20 @@ export function RestaurantManagementModal({
                     }>
                       {restaurant.status.charAt(0).toUpperCase() + restaurant.status.slice(1)}
                     </Badge>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="text-sm font-medium text-gray-600">Hidden categories:</div>
+                  <div className="text-sm col-span-2">
+                    {(restaurant.categoryExclusions ?? []).length === 0 ? (
+                      <span className="text-gray-500">None</span>
+                    ) : (
+                      <span className="text-gray-900">
+                        {(restaurant.categoryExclusions ?? [])
+                          .map((row) => row.category.name)
+                          .join(", ")}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">

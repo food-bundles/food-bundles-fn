@@ -34,6 +34,21 @@ export const createCustomerTypeColumns = (
     ),
   },
   {
+    id: "visibleCategories",
+    header: "Visible categories",
+    cell: ({ row }) => {
+      const categories = row.original.visibleCategories ?? [];
+      if (categories.length === 0) {
+        return <span className="text-gray-400">None</span>;
+      }
+      return (
+        <span className="text-gray-700">
+          {categories.map((category) => category.name).join(", ")}
+        </span>
+      );
+    },
+  },
+  {
     accessorKey: "isActive",
     header: "Status",
     cell: ({ row }) => (
