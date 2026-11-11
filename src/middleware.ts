@@ -5,7 +5,6 @@ import type { NextRequest } from "next/server";
 import jwt from "jsonwebtoken";
 import { MOVED_APPS, ROLE_ROUTES, sanitizeRedirect } from "@/lib/navigations";
 import { canOpenPage, firstDashboardPage } from "@/lib/admin-permissions";
-
 // Send to login, remembering the page (with its query) to return to afterwards
 const redirectToLogin = (req: NextRequest, reason?: string) => {
   const loginUrl = new URL("/login", req.url);
@@ -37,11 +36,6 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith(route),
   );
 
-  const guestOnlyRoutes = ["/guest"];
-  const isGuestOnlyRoute = guestOnlyRoutes.some((route) =>
-    pathname.startsWith(route),
-  );
-
   // Auth pages that logged-in users shouldn't access
   const authPages = [
     "/login",
@@ -63,24 +57,6 @@ export async function middleware(req: NextRequest) {
         const target =
           sanitizeRedirect(req.nextUrl.searchParams.get("redirect")) || "/";
         return NextResponse.redirect(new URL(target, req.url));
-      } catch (error) {
-        return NextResponse.next();
-      }
-    }
-    return NextResponse.next();
-  }
-
-  // Handle guest-only routes
-  if (isGuestOnlyRoute) {
-    if (token) {
-      try {
-        const decoded: any = jwt.decode(token);
-        if (decoded.exp && decoded.exp * 1000 < Date.now()) {
-          return NextResponse.next();
-        }
-        const redirectUrl = new URL("/", req.url);
-        redirectUrl.searchParams.set("showGuestToast", "true");
-        return NextResponse.redirect(redirectUrl);
       } catch (error) {
         return NextResponse.next();
       }
@@ -196,7 +172,6 @@ export const config = {
     "/restaurant/:path*",
     "/farmers/:path*",
     "/traders/:path*",
-    "/guest/:path*",
     "/login",
     "/signup",
     "/forgot-password",

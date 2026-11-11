@@ -13,7 +13,7 @@ export default function TermsPage() {
       description="The user agreement governing your use of the Food Bundles platform."
       lastUpdated="August 13, 2026"
     >
-      <SectionHeading>Executive Introduction</SectionHeading>
+      <SectionHeading>Introduction</SectionHeading>
       <Paragraph>
         This User Agreement establishes a clear, transparent, and fair framework
         for all restaurants using the Food Bundles platform. By registering or

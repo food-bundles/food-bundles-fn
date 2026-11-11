@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/data-table";
@@ -156,6 +157,13 @@ export default function CustomerTypesPage() {
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             Manage customer types for product pricing
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            Visitors who are not logged in see only categories marked &quot;Show to visitors&quot; on the{" "}
+            <Link href="/dashboard/stock/categories" className="font-medium text-green-700 underline underline-offset-2">
+              Categories
+            </Link>{" "}
+            page.
           </p>
         </div>
         <div className="flex gap-2">

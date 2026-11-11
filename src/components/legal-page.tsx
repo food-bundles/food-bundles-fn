@@ -1,89 +1,164 @@
 import React from "react";
 import Link from "next/link";
-import { ChevronRight, Home } from "lucide-react";
+import { ChevronRight, Mail, MapPin, MessageCircle } from "lucide-react";
+import { LegalTabs, LegalToc, PrintButton } from "./legal-page-client";
 
 interface LegalPageProps {
   title: string;
   description?: string;
-  lastUpdated: string;
+  /** Leave out on pages that are not legal documents (e.g. About) */
+  lastUpdated?: string;
   children: React.ReactNode;
 }
 
+// "1. Purpose & Scope" -> "purpose-scope", so every section can be linked to
+function slugify(node: React.ReactNode): string | undefined {
+  const text = React.Children.toArray(node)
+    .map((c) => (typeof c === "string" || typeof c === "number" ? String(c) : ""))
+    .join("");
+  const slug = text
+    .toLowerCase()
+    .replace(/^\s*\d+(\.\d+)*\.?\s*/, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+  return slug || undefined;
+}
+
 function SectionHeading({ children }: { children: React.ReactNode }) {
+  const id = slugify(children);
   return (
-    <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mt-10 mb-3 flex items-start gap-2.5">
-      <span className="mt-1.5 block h-2.5 w-2.5 shrink-0 rounded-sm bg-green-700" />
+    <h2
+      id={id}
+      data-legal-section
+      className="group mt-12 scroll-mt-28 border-t border-[#DCE6DF] pt-8 text-[22px] font-bold leading-snug tracking-[-0.3px] text-[#0B2E1F] first:mt-0 first:border-t-0 first:pt-0 [font-family:var(--font-inter-tight),sans-serif]"
+    >
       {children}
+      {id && (
+        <a
+          href={`#${id}`}
+          aria-label="Link to this section"
+          className="ml-2 text-[#00A43A] no-underline opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 print:hidden"
+        >
+          #
+        </a>
+      )}
     </h2>
   );
 }
 
 function SubHeading({ children }: { children: React.ReactNode }) {
-  return (
-    <h3 className="text-base font-semibold text-gray-900 mt-6 mb-2">{children}</h3>
-  );
+  return <h3 className="mb-2 mt-7 text-[17px] font-bold text-[#0B2E1F]">{children}</h3>;
 }
 
 function Paragraph({ children }: { children: React.ReactNode }) {
-  return <p className="text-gray-700 leading-relaxed mb-3">{children}</p>;
+  return <p className="mb-4 mt-4 text-[16px] leading-[1.75] text-[#2E4A3B]">{children}</p>;
 }
 
-function List({ items }: { items: React.ReactNode[] }) {
+const LETTERS = "abcdefghijklmnopqrstuvwxyz";
+
+/** Clauses are lettered (a), (b), (c) like a contract; use variant="bullets" for plain lists */
+function List({ items, variant = "clauses" }: { items: React.ReactNode[]; variant?: "clauses" | "bullets" }) {
+  if (variant === "bullets") {
+    return (
+      <ul className="mb-5 mt-4 space-y-2.5 pl-0">
+        {items.map((item, index) => (
+          <li key={index} className="flex gap-3 text-[16px] leading-[1.7] text-[#2E4A3B]">
+            <span aria-hidden="true" className="mt-[11px] block h-1.5 w-1.5 shrink-0 rounded-full bg-[#00A43A]" />
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+    );
+  }
   return (
-    <ul className="space-y-2 mb-4">
+    <ol className="mb-5 mt-4 list-none space-y-3 pl-0">
       {items.map((item, index) => (
-        <li key={index} className="flex gap-2.5 text-gray-700 leading-relaxed">
-          <span className="mt-2.5 block h-1 w-1 shrink-0 rounded-full bg-green-600" />
+        <li key={index} className="grid grid-cols-[2.25rem_1fr] text-[16px] leading-[1.7] text-[#2E4A3B]">
+          <span className="font-bold text-[#007A35]">({LETTERS[index] ?? index + 1})</span>
           <span>{item}</span>
         </li>
       ))}
-    </ul>
+    </ol>
   );
 }
 
-export function LegalPage({
-  title,
-  description,
-  lastUpdated,
-  children,
-}: LegalPageProps) {
+function ContactCard() {
   return (
-    <div className="bg-gray-50">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
-        <nav
-          aria-label="Breadcrumb"
-          className="mb-8 flex flex-wrap items-center gap-1 text-sm text-gray-500"
-        >
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-green-700 hover:text-green-800 transition-colors"
-          >
-            <Home className="h-4 w-4" />
-            Home
-          </Link>
-          <ChevronRight className="h-4 w-4 text-gray-400" />
-          <span className="font-medium text-gray-700">{title}</span>
-        </nav>
+    <aside className="mt-14 rounded-2xl bg-[#F6F9F7] p-6 sm:p-8 print:border print:border-gray-300 print:bg-white">
+      <h2 className="m-0 text-[20px] font-bold text-[#0B2E1F] [font-family:var(--font-inter-tight),sans-serif]">
+        Questions about this document?
+      </h2>
+      <p className="mb-5 mt-2 text-[15px] text-[#4A6358]">Our team will answer within one working day.</p>
+      <ul className="m-0 grid list-none gap-3 p-0 sm:grid-cols-3">
+        <li className="flex items-start gap-2.5 text-[15px]">
+          <Mail className="mt-0.5 h-4 w-4 shrink-0 text-[#00A43A]" />
+          <a href="mailto:sales@food.rw" className="font-bold text-[#0B2E1F] hover:text-[#007A35]">sales@food.rw</a>
+        </li>
+        <li className="flex items-start gap-2.5 text-[15px]">
+          <MessageCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#00A43A]" />
+          <a href="https://wa.me/250796897823" className="font-bold text-[#0B2E1F] hover:text-[#007A35]">WhatsApp 0796 897 823</a>
+        </li>
+        <li className="flex items-start gap-2.5 text-[15px] text-[#0B2E1F]">
+          <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#00A43A]" />
+          <span>Food Bundles Ltd, KG 5 Ave, Kigali, Rwanda</span>
+        </li>
+      </ul>
+    </aside>
+  );
+}
 
-        <header className="bg-white rounded-xl border border-gray-200 shadow-sm px-6 sm:px-8 lg:px-10 py-8 sm:py-10">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+export function LegalPage({ title, description, lastUpdated, children }: LegalPageProps) {
+  return (
+    <div className="bg-white">
+      <section className="relative overflow-hidden bg-[#0B2E1F] text-white print:bg-white print:text-black">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 print:hidden"
+          style={{
+            background:
+              "radial-gradient(circle at 10% 0%, #00D04838 0, transparent 40%), radial-gradient(circle at 90% 100%, #18A0A030 0, transparent 40%)",
+          }}
+        />
+        <div className="relative mx-auto max-w-[1180px] px-4 pt-10 sm:px-8 sm:pt-14">
+          <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-[14px] text-white/70 print:hidden">
+            <Link href="/" className="hover:text-white">Home</Link>
+            <ChevronRight className="h-4 w-4" />
+            <span>Legal</span>
+            <ChevronRight className="h-4 w-4" />
+            <span aria-current="page" className="font-bold text-white">{title}</span>
+          </nav>
+
+          <h1 className="mb-0 mt-4 text-[clamp(34px,4.6vw,56px)] font-bold leading-[1.02] tracking-[-1.6px] [font-family:var(--font-inter-tight),sans-serif]">
             {title}
           </h1>
           {description && (
-            <p className="mt-3 text-sm sm:text-[15px] text-gray-600 leading-relaxed">
-              {description}
-            </p>
+            <p className="mb-0 mt-4 max-w-[640px] text-[17px] leading-relaxed text-[#C9DCD0] print:text-gray-700">{description}</p>
           )}
-          <div className="mt-5 flex items-center gap-3 border-t border-gray-100 pt-4 text-xs sm:text-sm text-gray-500">
-            <span className="inline-flex items-center rounded-full bg-green-50 px-3 py-1 font-medium text-green-700">
-              Last updated: {lastUpdated}
-            </span>
-          </div>
-        </header>
 
-        <div className="mt-6 bg-white rounded-xl border border-gray-200 shadow-sm px-6 sm:px-8 lg:px-10 py-8 sm:py-10">
-          {children}
+          <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[14px] text-white/75 print:text-gray-700">
+            {lastUpdated && (
+              <span>
+                Last updated <b className="text-white print:text-black">{lastUpdated}</b>
+              </span>
+            )}
+            <span>Food Bundles Ltd · Kigali, Rwanda</span>
+            <PrintButton />
+          </div>
+
+          <LegalTabs />
         </div>
+      </section>
+
+      <div className="mx-auto grid max-w-[1180px] gap-10 px-4 py-10 sm:px-8 sm:py-14 lg:grid-cols-[230px_minmax(0,1fr)] lg:gap-16">
+        <aside className="print:hidden">
+          <div className="lg:sticky lg:top-24">
+            <LegalToc />
+          </div>
+        </aside>
+        <article data-legal-article className="min-w-0 max-w-[760px]">
+          {children}
+          <ContactCard />
+        </article>
       </div>
     </div>
   );

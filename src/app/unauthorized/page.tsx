@@ -6,7 +6,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { OptimizedImage } from "@/components/OptimizedImage";
-import { Header } from "@/components/header";
+import { SiteShell } from "@/components/home/site-shell";
 
 export default function Unauthorized() {
   const router = useRouter();
@@ -24,10 +24,10 @@ export default function Unauthorized() {
   };
 
   return (
-    <>
-    <Header />
-    {/* pt-16: room for the fixed header */}
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 pt-16">
+    <SiteShell footer={false}>
+
+    
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="max-w-md w-full text-center space-y-8">
         {/* Avatar Section */}
         <div className="flex justify-center">
@@ -87,6 +87,6 @@ export default function Unauthorized() {
         </div>
       </div>
     </div>
-    </>
+    </SiteShell>
   );
 }

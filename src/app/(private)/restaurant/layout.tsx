@@ -6,6 +6,7 @@ import { OrderProvider } from "@/app/contexts/orderContext";
 import { WalletProvider } from "@/app/contexts/WalletContext";
 import { RestaurantSidebar } from "./_components/restaurant-sidebar";
 import { RestaurantHeader } from "./_components/restaurant-header";
+import { siteFontVariables } from "@/components/home/fonts";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -33,7 +34,7 @@ export default function RestaurantLayout({ children }: LayoutProps) {
       <CheckoutProvider>
         <OrderProvider>
           <WalletProvider>
-          <div className="flex h-screen bg-white">
+          <div className={`flex h-screen bg-[#F6F9F7] ${siteFontVariables}`}>
             {/* Sidebar */}
             <div
               className={`${
@@ -49,13 +50,13 @@ export default function RestaurantLayout({ children }: LayoutProps) {
             {/* Mobile overlay */}
             {sidebarOpen && (
               <div
-                className="fixed inset-0 z-40 md:hidden"
+                className="fixed inset-0 z-40 bg-black/40 md:hidden"
                 onClick={() => setSidebarOpen(false)}
               />
             )}
 
             <div className="flex-1 flex flex-col min-w-0 overflow-y-auto scrollbar-thin">
-              <div className="bg-green-500 w-full flex-shrink-0">
+              <div className="sticky top-0 z-30 w-full flex-shrink-0">
                 <RestaurantHeader
                   onMenuClick={() => setSidebarOpen(!sidebarOpen)}
                   sidebarOpen={sidebarOpen}

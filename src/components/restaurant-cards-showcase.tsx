@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -18,21 +18,9 @@ import { CardStatus, IVoucherCard } from "@/lib/types";
 const FOOD_BUNDLES_LOGO =
   "https://res.cloudinary.com/dzxyelclu/image/upload/v1760111270/Food_bundle_logo_cfsnsw.png";
 
-const ROTATE_MS = 4500;
+const ROTATE_MS = 2800;
 const CARD_W = 290;
 const CARD_H = 172;
-
-// Card swap: how long it takes and how far apart the two cards fly before meeting
-const SWAP_S = 0.9;
-const SPREAD_X = 150;
-const SPREAD_Y = 34;
-
-// First-load starting points, one corner per card
-const ENTRY_CORNERS = [
-  { x: -260, y: -90, rotateZ: -25 }, // top-left
-  { x: 260, y: 90, rotateZ: 25 }, // bottom-right
-  { x: 260, y: -90, rotateZ: 20 }, // top-right
-];
 
 type CardKey = "voucher" | "wallet" | "subscribe";
 const ORDER: CardKey[] = ["voucher", "wallet", "subscribe"];
@@ -208,6 +196,8 @@ function SubscribeFace({ active }: { active: boolean }) {
 }
 
 // ─── Deck ─────────────────────────────────────────────────────────────────────
+// Same motion as the home page's Food Bundles Card stack: the cards rest at
+// angles behind each other, rotate on a timer, and the front one flips over.
 const HREF: Record<CardKey, string> = {
   voucher: "/restaurant/vouchers",
   wallet: "/restaurant/wallet",
@@ -220,12 +210,70 @@ const LABEL: Record<CardKey, string> = {
   subscribe: "Subscription",
 };
 
+// Resting place of each card: front, back-left, back-right (offsets kept small
+// so the stack stays the size of one card plus a little room)
+const SLOTS = [
+  "translate(0, 0) rotate(0deg) scale(1)",
+  "translate(-11%, -15%) rotate(-8deg) scale(0.88)",
+  "translate(11%, -9%) rotate(7deg) scale(0.92)",
+];
+
+const BACK: Record<CardKey, { title: string; text: string; bg: string }> = {
+  voucher: {
+    title: "Backed by Food Bundles. Trusted across our market.",
+    text: "This card guarantees supply, not debt.",
+    bg: "linear-gradient(135deg, #1F8A5C 0%, #145C3C 100%)",
+  },
+  wallet: {
+    title: "Top up once, pay every order instantly.",
+    text: "Your balance works on the web and in the app.",
+    bg: "linear-gradient(135deg, #1E293B 0%, #020617 100%)",
+  },
+  subscribe: {
+    title: "Free delivery, EBM orders and more.",
+    text: "Join 20+ restaurants on Premium.",
+    bg: "linear-gradient(135deg, #B45309 0%, #78350F 100%)",
+  },
+};
+
+function BackFace({ k, onFlip }: { k: CardKey; onFlip: () => void }) {
+  const b = BACK[k];
+  return (
+    <div className="relative flex h-full w-full flex-col overflow-hidden rounded-2xl text-white" style={{ background: b.bg }}>
+      <span className="mt-[7%] h-[17%] shrink-0 bg-black/70" />
+      <div className="flex flex-1 flex-col justify-between gap-1.5 px-4 pb-3 pt-2.5 text-center">
+        <p className="text-[12px] font-bold leading-tight">{b.title}</p>
+        <p className="text-[10px] text-white/75">{b.text}</p>
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={onFlip}
+            className="rounded-full px-2 py-1 text-[10px] font-semibold text-white/80 hover:text-white cursor-pointer"
+          >
+            Show front
+          </button>
+          <Link
+            href={HREF[k]}
+            className="flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[11px] font-bold text-gray-900 hover:bg-white/90"
+          >
+            Open {LABEL[k].toLowerCase()} <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function RestaurantCardsShowcase() {
   const reduce = useReducedMotion();
   const { wallet, getMyWallet } = useWallet();
   const [voucherCard, setVoucherCard] = useState<IVoucherCard | null>(null);
   const [front, setFront] = useState(0);
+  const [flipped, setFlipped] = useState(false);
+  // Rotation stops for good once someone picks or flips a card, and pauses on hover
+  const [auto, setAuto] = useState(true);
   const [paused, setPaused] = useState(false);
+  const running = auto && !paused && !reduce;
 
   useEffect(() => {
     if (!wallet) getMyWallet().catch(() => {});
@@ -236,44 +284,20 @@ export default function RestaurantCardsShowcase() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Card that was in front before the last switch; it flies out to one corner while
-  // the new front card flies out to the opposite corner, then they meet in the middle.
-  const [leaving, setLeaving] = useState<number | null>(null);
-
-  // Stagger only the first fly-in, not later hovers/swaps
-  const [intro, setIntro] = useState(true);
   useEffect(() => {
-    const id = setTimeout(() => setIntro(false), 1500);
-    return () => clearTimeout(id);
-  }, []);
-
-  const goTo = useCallback((target: number) => {
-    setFront((f) => {
-      if (target === f) return f;
-      setLeaving(f);
-      return target;
-    });
-  }, []);
-
-  const next = useCallback(() => {
-    setFront((f) => {
-      setLeaving(f);
-      return (f + 1) % ORDER.length;
-    });
-  }, []);
-
-  // Drop the keyframes once the swap is done so hover/re-renders don't replay it
-  useEffect(() => {
-    if (leaving === null) return;
-    const id = setTimeout(() => setLeaving(null), SWAP_S * 1000 + 50);
-    return () => clearTimeout(id);
-  }, [leaving, front]);
-
-  useEffect(() => {
-    if (paused || reduce) return;
-    const id = setInterval(next, ROTATE_MS);
+    if (!running) return;
+    const id = setInterval(() => {
+      setFront((f) => (f + 1) % ORDER.length);
+      setFlipped(false);
+    }, ROTATE_MS);
     return () => clearInterval(id);
-  }, [paused, reduce, next]);
+  }, [running]);
+
+  const goTo = (target: number) => {
+    setAuto(false);
+    setFlipped(false);
+    setFront(target);
+  };
 
   const renderFace = (key: CardKey, active: boolean) => {
     switch (key) {
@@ -299,88 +323,52 @@ export default function RestaurantCardsShowcase() {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div
-        className="relative"
-        style={{ width: CARD_W + 28, height: CARD_H + 14, perspective: 1200 }}
-      >
-        {ORDER.map((key, i) => {
-          // 0 = front, 1 = middle, 2 = back
-          const depth = (i - front + ORDER.length) % ORDER.length;
-          const isFront = depth === 0;
-          const rest = {
-            x: depth * 14,
-            y: depth * 7,
-            rotateZ: depth * 2,
-            zIndex: ORDER.length - depth,
-          };
-
-          const swapping = leaving !== null && !reduce;
-          const isLeaving = swapping && i === leaving;
-          const isEntering = swapping && isFront;
-
-          // Leaving card exits to the top-left corner, entering card to the bottom-right,
-          // then both slide back and meet in the middle with the new card on top.
-          const position = isLeaving
-            ? {
-                x: [0, -SPREAD_X, rest.x],
-                y: [0, -SPREAD_Y, rest.y],
-                rotateZ: [0, -12, rest.rotateZ],
-                zIndex: [ORDER.length, ORDER.length - 1, rest.zIndex],
-              }
-            : isEntering
-              ? {
-                  x: [14, SPREAD_X, 0],
-                  y: [7, SPREAD_Y, 0],
-                  rotateZ: [2, 12, 0],
-                  zIndex: [ORDER.length - 1, ORDER.length, ORDER.length],
-                }
-              : rest;
-
-          const corner = ENTRY_CORNERS[i % ENTRY_CORNERS.length];
-
-          return (
-            <motion.div
-              key={key}
-              className="absolute top-0 left-0 rounded-2xl shadow-xl"
-              style={{ width: CARD_W, height: CARD_H, transformStyle: "preserve-3d" }}
-              // On first load every card flies in from its own corner and meets in the stack
-              initial={reduce ? false : { ...corner, opacity: 0, scale: 0.8 }}
-              animate={{
-                ...position,
-                scale: 1 - depth * 0.06,
-                rotateY: isFront ? 0 : -8,
-                opacity: depth === 2 ? 0.75 : 1,
-                filter: isFront ? "brightness(1)" : "brightness(0.85)",
-              }}
-              whileHover={isFront ? { y: -4, rotateX: 6, rotateY: -6, scale: 1.02 } : { x: rest.x + 6 }}
-              transition={
-                isLeaving || isEntering
-                  ? { duration: SWAP_S, times: [0, 0.45, 1], ease: "easeInOut" }
-                  : {
-                      type: "spring",
-                      stiffness: 260,
-                      damping: 26,
-                      delay: intro ? (ORDER.length - 1 - i) * 0.15 : 0,
-                    }
-              }
-            >
-              {isFront ? (
-                <Link href={HREF[key]} aria-label={`Open ${LABEL[key]}`} className="block h-full w-full">
-                  {renderFace(key, true)}
-                </Link>
-              ) : (
-                <button
-                  type="button"
-                  aria-label={`Show ${LABEL[key]}`}
-                  onClick={() => goTo(i)}
-                  className="block h-full w-full text-left cursor-pointer"
+      <div className="px-9 pt-8" style={{ perspective: 1400 }}>
+        <div className="relative" style={{ width: CARD_W, height: CARD_H }}>
+          {ORDER.map((key, i) => {
+            // 0 = front, 1 = back-left, 2 = back-right
+            const slot = (i - front + ORDER.length) % ORDER.length;
+            const isFront = slot === 0;
+            const showBack = isFront && flipped;
+            return (
+              <div
+                key={key}
+                className="absolute inset-0 transition-[transform,filter] duration-[1100ms] ease-[cubic-bezier(.45,.05,.25,1)]"
+                style={{
+                  zIndex: ORDER.length - slot,
+                  transform: SLOTS[slot],
+                  filter: isFront ? "none" : "brightness(0.85)",
+                }}
+              >
+                <div
+                  className="absolute inset-0 transition-transform duration-[900ms] ease-[cubic-bezier(.3,.7,.2,1)] [transform-style:preserve-3d]"
+                  style={{ transform: showBack ? "rotateY(180deg)" : "rotateY(0deg)" }}
                 >
-                  {renderFace(key, false)}
-                </button>
-              )}
-            </motion.div>
-          );
-        })}
+                  <button
+                    type="button"
+                    inert={showBack}
+                    aria-label={isFront ? `${LABEL[key]}: show back` : `Show ${LABEL[key]}`}
+                    onClick={() => {
+                      if (isFront) {
+                        setAuto(false);
+                        setFlipped(true);
+                      } else goTo(i);
+                    }}
+                    className="absolute inset-0 block cursor-pointer rounded-2xl text-left shadow-xl [backface-visibility:hidden]"
+                  >
+                    {renderFace(key, isFront)}
+                  </button>
+                  <div
+                    inert={!showBack}
+                    className="absolute inset-0 rounded-2xl shadow-xl [backface-visibility:hidden] [transform:rotateY(180deg)]"
+                  >
+                    <BackFace k={key} onFlip={() => setFlipped(false)} />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Indicators */}
@@ -390,6 +378,7 @@ export default function RestaurantCardsShowcase() {
             key={key}
             type="button"
             aria-label={`Show ${LABEL[key]}`}
+            aria-current={i === front}
             onClick={() => goTo(i)}
             className="relative h-1.5 rounded-full bg-gray-300 overflow-hidden transition-all"
             style={{ width: i === front ? 28 : 8 }}
@@ -397,12 +386,12 @@ export default function RestaurantCardsShowcase() {
             <AnimatePresence>
               {i === front && (
                 <motion.span
-                  key={`${front}-${paused}`}
+                  key={`${front}-${running}`}
                   className="absolute inset-y-0 left-0 bg-green-600 rounded-full"
-                  initial={{ width: paused || reduce ? "100%" : "0%" }}
+                  initial={{ width: running ? "0%" : "100%" }}
                   animate={{ width: "100%" }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: paused || reduce ? 0 : ROTATE_MS / 1000, ease: "linear" }}
+                  transition={{ duration: running ? ROTATE_MS / 1000 : 0, ease: "linear" }}
                 />
               )}
             </AnimatePresence>

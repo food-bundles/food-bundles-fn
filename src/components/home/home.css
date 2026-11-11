@@ -1,0 +1,177 @@
+/* Home page (food.rw v4 design). Every class is prefixed fb- so nothing leaks
+   into the dashboard or other pages. */
+
+.fb-home {
+  --fb-ink: #0b2e1f;
+  --fb-ink-2: #0a2418;
+  --fb-green: #00d048;
+  --fb-green-600: #00a43a;
+  --fb-green-700: #007a35;
+  --fb-mint: #7cf2a6;
+  --fb-muted: #4a6358;
+  --fb-rule: #dce6df;
+  --fb-soft: #f6f9f7;
+  --fb-gold: #e9b949;
+  font-family: var(--font-carlito), Calibri, "Segoe UI", sans-serif;
+  color: var(--fb-ink);
+  background: #ffffff;
+}
+.fb-home .fb-display {
+  font-family: var(--font-inter-tight), "Inter", "Segoe UI", sans-serif;
+}
+.fb-home a:focus-visible,
+.fb-home button:focus-visible {
+  outline: 2px solid var(--fb-green-600);
+  outline-offset: 3px;
+}
+
+/* hero mesh */
+@keyframes fbmesh {
+  0% { background-position: 0% 50%, 100% 0%, 50% 100%, 0 0; }
+  50% { background-position: 100% 50%, 0% 100%, 0% 0%, 0 0; }
+  100% { background-position: 0% 50%, 100% 0%, 50% 100%, 0 0; }
+}
+.fb-mesh {
+  background-image:
+    radial-gradient(circle at 20% 30%, #00d048 0, transparent 42%),
+    radial-gradient(circle at 80% 20%, #e9b949 0, transparent 35%),
+    radial-gradient(circle at 60% 80%, #18a0a0 0, transparent 40%),
+    linear-gradient(120deg, #0b2e1f, #0f5c36);
+  background-size: 180% 180%, 180% 180%, 180% 180%, 100% 100%;
+  animation: fbmesh 14s ease-in-out infinite;
+}
+
+@keyframes fbfloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+.fb-f1 { animation: fbfloat 6s ease-in-out infinite; }
+.fb-f2 { animation: fbfloat 7s ease-in-out -2s infinite; }
+.fb-f3 { animation: fbfloat 5.5s ease-in-out -4s infinite; }
+
+@keyframes fbdraw { 0% { stroke-dashoffset: 520; } 55%, 100% { stroke-dashoffset: 0; } }
+.fb-draw { stroke-dasharray: 520; animation: fbdraw 4s ease-out infinite; }
+
+@keyframes fbping { 0% { transform: scale(1); opacity: .6; } 100% { transform: scale(1.9); opacity: 0; } }
+.fb-ping { animation: fbping 1.6s ease-out infinite; }
+
+@keyframes fbin { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.fb-in { animation: fbin .45s ease both; }
+
+@keyframes fbrise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+.fb-rise { animation: fbrise .5s ease both; }
+
+@keyframes fblive { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+.fb-live { animation: fblive 1.4s ease-in-out infinite; }
+
+.fb-arrow .fb-chev { display: inline-block; transition: transform .2s; }
+.fb-arrow:hover .fb-chev { transform: translateX(4px); }
+
+.fb-lift { transition: transform .25s ease, box-shadow .25s ease; }
+.fb-lift:hover { transform: translateY(-3px); box-shadow: 0 30px 60px -12px #0b2e1f33; }
+
+/* buyer category cards */
+@keyframes fbsheen { 0% { background-position: 160% 0; } 60%, 100% { background-position: -60% 0; } }
+@keyframes fborb { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-14px, 12px) scale(1.12); } }
+@keyframes fbbob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+.fb-sheen {
+  background: linear-gradient(110deg, transparent 35%, #ffffff26 50%, transparent 65%);
+  background-size: 250% 100%;
+  animation: fbsheen 5s ease-in-out infinite;
+}
+.fb-orb { animation: fborb 7s ease-in-out infinite; }
+.fb-orb2 { animation: fborb 9s ease-in-out -3s infinite; }
+.fb-bob { animation: fbbob 2.4s ease-in-out infinite; }
+@keyframes fbtilt { 0%, 100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
+@keyframes fbbub { 0% { transform: translateY(2px); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(-8px); opacity: 0; } }
+@keyframes fbsteam { 0% { transform: translateY(2px); opacity: 0; } 40% { opacity: 1; } 100% { transform: translateY(-4px); opacity: 0; } }
+@keyframes fbdrive { 0%, 100% { transform: translateX(-2px); } 50% { transform: translateX(2px); } }
+.fb-tilt { transform-box: fill-box; transform-origin: 50% 90%; animation: fbtilt 2.6s ease-in-out infinite; }
+.fb-bub { transform-box: fill-box; animation: fbbub 1.8s ease-out infinite; }
+.fb-bub2 { animation-delay: -.6s; }
+.fb-bub3 { animation-delay: -1.2s; }
+.fb-steam { transform-box: fill-box; animation: fbsteam 2s ease-out infinite; }
+.fb-steam2 { animation-delay: -1s; }
+.fb-drive { animation: fbdrive 1.6s ease-in-out infinite; }
+.fb-cat { transition: transform .25s ease, box-shadow .25s ease; }
+.fb-cat:hover { transform: translateY(-4px) scale(1.01); box-shadow: 0 30px 60px -18px #0b2e1f80; }
+
+@keyframes fbbelt { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes fbtruck { 0% { left: -80px; } 100% { left: 100%; } }
+@keyframes fbwheel { to { transform: rotate(360deg); } }
+@keyframes fbroad { from { background-position: 0 0; } to { background-position: -24px 0; } }
+.fb-belt { animation: fbbelt 16s linear infinite; }
+.fb-truck { animation: fbtruck 6.5s linear infinite; }
+.fb-wheel { transform-box: fill-box; transform-origin: center; animation: fbwheel .6s linear infinite; }
+.fb-road {
+  background: repeating-linear-gradient(90deg, #ffffff66 0 12px, transparent 12px 24px);
+  animation: fbroad .5s linear infinite;
+}
+
+/* distribution engine globe */
+@keyframes fbspin { from { transform: translateX(0); } to { transform: translateX(-360px); } }
+.fb-spin { animation: fbspin 40s linear infinite; }
+@keyframes fbdot { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+.fb-dot { animation: fbdot 1.6s ease-in-out infinite; }
+
+/* values */
+@keyframes fbwave1 { from { transform: translateX(0); } to { transform: translateX(-150px); } }
+@keyframes fbwave2 { from { transform: translateX(0); } to { transform: translateX(-100px); } }
+.fb-wave1 { animation: fbwave1 3.2s linear infinite; }
+.fb-wave2 { animation: fbwave2 2.1s linear infinite; }
+@keyframes fbdrop { 0% { top: 30px; opacity: 0; } 15% { opacity: 1; } 80% { opacity: 1; } 100% { top: 130px; opacity: 0; } }
+.fb-drop { animation: fbdrop 2.4s ease-in infinite; }
+.fb-dd1 { animation-delay: -.8s; }
+.fb-dd2 { animation-delay: -1.6s; }
+@keyframes fbstock { 0% { stroke-dashoffset: 160; } 70%, 100% { stroke-dashoffset: 0; } }
+.fb-stock { stroke-dasharray: 160; animation: fbstock 3.6s ease-out infinite; }
+
+/* food courts */
+@keyframes fbgo { 0% { left: -2%; opacity: 0; } 6% { opacity: 1; } 94% { opacity: 1; } 100% { left: 98%; opacity: 0; } }
+.fb-go { animation: fbgo 9s linear infinite; }
+
+/* "Packed into one bundle": produce drops into the crate, the lid closes,
+   the crate rides off. Borrowed from the Harvest Gift Box animation. */
+.fb-crate .fb-cscene,
+.fb-crate .fb-citem,
+.fb-crate .fb-clid,
+.fb-crate .fb-cride {
+  animation-duration: 12s;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-out;
+}
+.fb-crate .fb-cscene { animation-name: fbCScene; }
+.fb-crate .fb-ci1 { animation-name: fbCI1; }
+.fb-crate .fb-ci2 { animation-name: fbCI2; }
+.fb-crate .fb-ci3 { animation-name: fbCI3; }
+.fb-crate .fb-ci4 { animation-name: fbCI4; }
+.fb-crate .fb-ci5 { animation-name: fbCI5; }
+.fb-crate .fb-clid { animation-name: fbCLid; animation-timing-function: ease-in-out; }
+.fb-crate .fb-cride { animation-name: fbCRide; animation-timing-function: ease-in-out; }
+.fb-crate.fb-paused * { animation-play-state: paused; }
+@keyframes fbCScene { 0% { opacity: 0; } 4%, 90% { opacity: 1; } 95%, 100% { opacity: 0; } }
+@keyframes fbCI1 { 0%, 5% { transform: translateY(-260px); opacity: 0; } 6% { opacity: 1; } 13% { transform: translateY(5px); } 15%, 92% { transform: none; opacity: 1; } 96%, 100% { transform: translateY(-260px); opacity: 0; } }
+@keyframes fbCI2 { 0%, 14% { transform: translateY(-260px); opacity: 0; } 15% { opacity: 1; } 22% { transform: translateY(5px); } 24%, 92% { transform: none; opacity: 1; } 96%, 100% { transform: translateY(-260px); opacity: 0; } }
+@keyframes fbCI3 { 0%, 23% { transform: translateY(-260px); opacity: 0; } 24% { opacity: 1; } 31% { transform: translateY(5px); } 33%, 92% { transform: none; opacity: 1; } 96%, 100% { transform: translateY(-260px); opacity: 0; } }
+@keyframes fbCI4 { 0%, 32% { transform: translateY(-260px); opacity: 0; } 33% { opacity: 1; } 40% { transform: translateY(5px); } 42%, 92% { transform: none; opacity: 1; } 96%, 100% { transform: translateY(-260px); opacity: 0; } }
+@keyframes fbCI5 { 0%, 41% { transform: translateY(-260px); opacity: 0; } 42% { opacity: 1; } 49% { transform: translateY(5px); } 51%, 92% { transform: none; opacity: 1; } 96%, 100% { transform: translateY(-260px); opacity: 0; } }
+@keyframes fbCLid { 0%, 55% { transform: translateY(-280px); } 65%, 92% { transform: none; } 96%, 100% { transform: translateY(-280px); } }
+@keyframes fbCRide { 0%, 70% { transform: none; } 84%, 88% { transform: translateX(560px); } 89%, 100% { transform: none; } }
+
+/* Partner kitchens turning on a 3D ring. Borrowed from the Harvest Line
+   globe carousel; positions are set from script. */
+.fb-ring { perspective: 1100px; }
+.fb-ring-item { position: absolute; left: 50%; top: 0; transform-style: preserve-3d; will-change: transform, opacity; }
+@keyframes fbringspin {
+  from { transform: translateZ(calc(var(--fb-r) * -1)) rotateY(0deg); }
+  to { transform: translateZ(calc(var(--fb-r) * -1)) rotateY(-360deg); }
+}
+.fb-ring-spin {
+  transform: translateZ(calc(var(--fb-r) * -1));
+  animation: fbringspin 48s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fb-home *, .fb-home *::before, .fb-home *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .fb-crate .fb-clid { transform: translateY(-280px); }
+}

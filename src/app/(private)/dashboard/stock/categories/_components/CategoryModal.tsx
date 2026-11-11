@@ -18,6 +18,7 @@ interface CategoryFormData {
   name: string;
   description?: string;
   isActive: boolean;
+  showToGuests: boolean;
 }
 
 interface CategoryModalProps {
@@ -37,6 +38,7 @@ export function CategoryModal({
     name: "",
     description: "",
     isActive: true,
+    showToGuests: true,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -46,12 +48,14 @@ export function CategoryModal({
         name: category.name,
         description: category.description || "",
         isActive: category.isActive ?? true,
+        showToGuests: category.showToGuests ?? true,
       });
     } else {
       setFormData({
         name: "",
         description: "",
         isActive: true,
+        showToGuests: true,
       });
     }
   }, [category, open]);
@@ -118,6 +122,24 @@ export function CategoryModal({
               }
             />
             <Label htmlFor="isActive">Active</Label>
+          </div>
+
+          <div className="flex items-start gap-3 rounded-lg border border-gray-200 p-3">
+            <Switch
+              id="showToGuests"
+              checked={formData.showToGuests}
+              onCheckedChange={(checked) =>
+                setFormData((prev) => ({ ...prev, showToGuests: checked }))
+              }
+              className="mt-0.5"
+            />
+            <div className="space-y-0.5">
+              <Label htmlFor="showToGuests">Show to visitors (not logged in)</Label>
+              <p className="text-xs text-gray-500">
+                Turn off for categories only some customers may buy, like BRALIRWA.
+                Logged-in customers always see the categories set on their customer type.
+              </p>
+            </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
