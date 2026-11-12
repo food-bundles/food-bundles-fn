@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { OptimizedImage } from "@/components/OptimizedImage";
+import Image from "next/image";
+import { useEffect, useState } from "react";
 import { PRODUCE } from "./produce-icons";
+import { restaurantShowcaseService } from "@/app/services/restaurantShowcaseService";
 
 // Produce that drops into the crate, left to right: [produce index, x, y, rotation]
 const DROPS: [number, number, number, number][] = [
@@ -120,25 +121,67 @@ export function BundleSection() {
   );
 }
 
-const KITCHENS = [
-  { name: "Imboni", image: "/restaurants/rest3.png" },
-  { name: "Laza", image: "/restaurants/laza-girl.png" },
-  { name: "Mr Chip's", image: "/restaurants/rest8.png" },
-  { name: "Tugende Hostel", image: "/restaurants/Tugende Hostel.jpg" },
-  { name: "Food & Stuff", image: "/restaurants/rest7.png" },
-  { name: "Sole Luna", image: "/restaurants/sole-luna.png" },
-  { name: "Petit Marché", image: "/restaurants/rest4.png" },
-  { name: "Simple by Inki", image: "/restaurants/rest13.png" },
-  { name: "Ewaka", image: "/restaurants/rest1.png" },
-  { name: "Bicu Lounge", image: "/restaurants/rest9.png" },
-  { name: "Mukati na Butta", image: "/restaurants/rest12.png" },
-  { name: "Country Roots", image: "/restaurants/Untitled design (9).png" },
-];
+// Stand-in photos for featured customers who have not uploaded a business
+// photo yet: people cooking, kitchen tools and food in kitchens (free photos,
+// Unsplash License) kept in public/home/kitchens. Never another restaurant's picture.
+const STOCK_PHOTOS = Array.from({ length: 10 }, (_, i) => `/home/kitchens/kitchen-${i + 1}.jpg`);
 
-// Partner kitchens on a slowly turning 3D ring, like the Harvest Line carousel.
+// The ring reads as a ring from about this many cards; fewer customers repeat
+const MIN_RING_CARDS = 10;
+
+type Kitchen = { id: string; name: string; photo: string | null; stock: string };
+
+// Distance from the ring's centre: at least the original ring's size, wider
+// when many cards need room to clear each other
+const ringRadius = (count: number, cardWidth: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, Math.round((cardWidth + 28) / (2 * Math.tan(Math.PI / count)))));
+
+function KitchenCard({ k }: { k: Kitchen }) {
+  return (
+    <>
+      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-white shadow-[0_20px_40px_-20px_#0B2E1F80]">
+        <Image src={k.photo || k.stock} alt="" fill sizes="150px" className="object-cover" />
+      </div>
+      <figcaption className="line-clamp-2 text-sm font-bold text-[#0B2E1F]">{k.name}</figcaption>
+    </>
+  );
+}
+
+// Customers an admin featured, on a slowly turning 3D ring like the Harvest
+// Line carousel. Hidden until at least one customer is featured.
 export function PartnerRing() {
   const [paused, setPaused] = useState(false);
-  const step = 360 / KITCHENS.length;
+  const [kitchens, setKitchens] = useState<Kitchen[]>([]);
+
+  useEffect(() => {
+    restaurantShowcaseService
+      .getFeatured()
+      .then((list) =>
+        setKitchens(
+          list.map((r, i) => ({
+            id: r.id,
+            name: r.name,
+            photo: r.businessImage,
+            stock: STOCK_PHOTOS[i % STOCK_PHOTOS.length],
+          }))
+        )
+      )
+      .catch(() => setKitchens([]));
+  }, []);
+
+  if (!kitchens.length) return null;
+
+  // Few customers: repeat them around the ring so it turns like before
+  const cards = Array.from(
+    { length: Math.max(MIN_RING_CARDS, kitchens.length) },
+    (_, i) => ({ ...kitchens[i % kitchens.length], stock: STOCK_PHOTOS[i % STOCK_PHOTOS.length] }),
+  );
+  const count = cards.length;
+  const step = 360 / count;
+  const ringVars = {
+    "--fb-r-sm": `${ringRadius(count, 118, 250, 300)}px`,
+    "--fb-r-lg": `${ringRadius(count, 150, 380, 430)}px`,
+  } as React.CSSProperties;
 
   return (
     <section aria-labelledby="partners-h" className="overflow-hidden bg-[#F6F9F7] px-4 py-16 sm:px-8">
@@ -151,14 +194,17 @@ export function PartnerRing() {
           Restaurants, hotels and cafés that stock their kitchens with Food Bundles.
         </p>
 
-        <div className="fb-ring relative mt-4 h-[230px] w-full max-w-[900px] [--fb-r:250px] [--fb-w:118px] sm:h-[270px] sm:[--fb-r:380px] sm:[--fb-w:150px]">
+        <div
+          className="fb-ring relative mt-4 h-[230px] w-full max-w-[900px] [--fb-r:var(--fb-r-sm)] [--fb-w:118px] sm:h-[270px] sm:[--fb-r:var(--fb-r-lg)] sm:[--fb-w:150px]"
+          style={ringVars}
+        >
           <div
             className="fb-ring-spin absolute inset-0 [transform-style:preserve-3d]"
             style={{ animationPlayState: paused ? "paused" : "running" }}
           >
-            {KITCHENS.map((k, i) => (
+            {cards.map((k, i) => (
               <figure
-                key={k.name}
+                key={`${k.id}-${i}`}
                 className="fb-ring-item m-0 flex flex-col items-center gap-2 [backface-visibility:hidden]"
                 style={{
                   width: "var(--fb-w)",
@@ -166,10 +212,7 @@ export function PartnerRing() {
                   transform: `rotateY(${i * step}deg) translateZ(var(--fb-r))`,
                 }}
               >
-                <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-white shadow-[0_20px_40px_-20px_#0B2E1F80]">
-                  <OptimizedImage src={k.image} alt="" fill sizes="150px" className="object-cover" />
-                </div>
-                <figcaption className="text-sm font-bold text-[#0B2E1F]">{k.name}</figcaption>
+                <KitchenCard k={k} />
               </figure>
             ))}
           </div>
@@ -182,7 +225,7 @@ export function PartnerRing() {
         >
           {paused ? "Play" : "Pause"}
         </button>
-        <p className="sr-only">Partner kitchens: {KITCHENS.map((k) => k.name).join(", ")}.</p>
+        <p className="sr-only">Customers: {kitchens.map((k) => k.name).join(", ")}.</p>
       </div>
     </section>
   );

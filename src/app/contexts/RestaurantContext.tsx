@@ -26,6 +26,10 @@ export interface Restaurant {
   /** Product categories hidden from this specific customer */
   categoryExclusions?: { categoryId: string; category: { id: string; name: string } }[];
   categoryExclusionIds?: string[];
+  /** Business photo the customer uploaded */
+  businessImage?: string | null;
+  /** Shown on the homepage ("Trusted by Kigali's kitchens") */
+  featuredOnWebsite?: boolean;
 }
 
 export interface RestaurantsResponse {
@@ -88,6 +92,8 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
             totalSpent: totalSpent,
             status: "active" as const, // Default to active
             customerType: restaurant.customerType ?? null,
+            businessImage: restaurant.businessImage ?? null,
+            featuredOnWebsite: restaurant.featuredOnWebsite ?? false,
             categoryExclusions: restaurant.categoryExclusions ?? [],
             categoryExclusionIds:
               restaurant.categoryExclusionIds ??
