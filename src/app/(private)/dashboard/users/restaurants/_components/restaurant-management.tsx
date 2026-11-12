@@ -28,6 +28,7 @@ export const RESTAURANT_COLUMNS: ExportColumnDef[] = [
   { id: "totalSubscriptions", label: "Total Subscriptions", description: "Active & past subscriptions" },
 ];
 import { Plus } from "lucide-react";
+import { useAdminAccess } from "@/app/hooks/useAdminAccess";
 
 interface RestaurantManagementProps {
   restaurants: Restaurant[];
@@ -115,15 +116,19 @@ export function RestaurantManagement({
   };
 
   // Get columns with handlers
+  const { can } = useAdminAccess();
+  const canFeature = can("restaurants", "feature_on_website");
   const columns = useMemo(() => {
     return getRestaurantColumns(
       handleManageRestaurant,
       (restaurantId: string) => {
         setSelectedUserId(restaurantId);
         setIsDetailsSheetOpen(true);
-      }
+      },
+      { canFeature, onChanged: onRefresh }
     );
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canFeature]);
 
   const handleRowClick = (restaurant: Restaurant) => {
     setSelectedUserId(restaurant.id);

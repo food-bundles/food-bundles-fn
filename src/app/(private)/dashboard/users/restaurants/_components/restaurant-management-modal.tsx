@@ -20,6 +20,8 @@ import { toast } from "sonner";
 import { useAdminAccess } from "@/app/hooks/useAdminAccess";
 import { useActiveCategories } from "@/app/contexts/category-context";
 import { restaurantService } from "@/app/services/restaurantService";
+import { restaurantShowcaseService } from "@/app/services/restaurantShowcaseService";
+import { Switch } from "@/components/ui/switch";
 
 // Backend message when there is one (e.g. "Another account already uses this email")
 const errorMessage = (error: any, fallback: string) =>
@@ -52,6 +54,26 @@ export function RestaurantManagementModal({
   const { can, isSuperAdmin } = useAdminAccess();
   const canEdit = can("restaurants", "edit");
   const canExcludeCategories = can("restaurants", "exclude_categories");
+  const canFeature = can("restaurants", "feature_on_website");
+  const [featured, setFeatured] = useState(false);
+  const [isSavingFeatured, setIsSavingFeatured] = useState(false);
+
+  // Show or hide this customer in the homepage "Trusted by Kigali's kitchens"
+  const toggleFeatured = async (next: boolean) => {
+    if (!restaurant) return;
+    setIsSavingFeatured(true);
+    setFeatured(next);
+    try {
+      const res = await restaurantShowcaseService.setFeatured(restaurant.id, next);
+      toast.success(res?.message || (next ? "Shown on the website" : "Removed from the website"));
+      onUpdate();
+    } catch (error: any) {
+      setFeatured(!next);
+      toast.error(errorMessage(error, "Could not update website visibility"));
+    } finally {
+      setIsSavingFeatured(false);
+    }
+  };
   const { activeCategories } = useActiveCategories();
 
   // Edit form state
@@ -76,6 +98,7 @@ export function RestaurantManagementModal({
         location: restaurant.location,
       });
       setExcludedCategoryIds(exclusionsFor(restaurant));
+      setFeatured(!!restaurant.featuredOnWebsite);
     }
   }, [restaurant]);
 
@@ -349,6 +372,26 @@ export function RestaurantManagementModal({
                           .join(", ")}
                       </span>
                     )}
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="text-sm font-medium text-gray-600">On website:</div>
+                  <div className="col-span-2 flex items-start gap-3">
+                    {canFeature ? (
+                      <Switch
+                        id="featuredOnWebsite"
+                        checked={featured}
+                        onCheckedChange={toggleFeatured}
+                        disabled={isSavingFeatured}
+                        aria-label="Show this customer on the homepage"
+                      />
+                    ) : null}
+                    <div className="text-sm">
+                      <span className="text-gray-900">{featured ? "Shown" : "Not shown"}</span>
+                      <p className="m-0 text-[11px] text-gray-500">
+                        Name and business photo in &quot;Trusted by Kigali&apos;s kitchens&quot; on the homepage.
+                      </p>
+                    </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">

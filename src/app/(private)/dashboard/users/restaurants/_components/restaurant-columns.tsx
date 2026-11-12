@@ -6,6 +6,54 @@ import {
   ShoppingCart,
 } from "lucide-react";
 import { format } from "date-fns";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
+import { restaurantShowcaseService } from "@/app/services/restaurantShowcaseService";
+
+// Show or hide a customer in the homepage "Trusted by Kigali's kitchens".
+// An admin decides; it saves at once.
+function FeaturedSwitch({
+  restaurant,
+  canFeature,
+  onChanged,
+}: {
+  restaurant: Restaurant;
+  canFeature: boolean;
+  onChanged?: () => void;
+}) {
+  const [on, setOn] = useState(!!restaurant.featuredOnWebsite);
+  const [saving, setSaving] = useState(false);
+  useEffect(() => setOn(!!restaurant.featuredOnWebsite), [restaurant.featuredOnWebsite]);
+
+  if (!canFeature) {
+    return <span className="text-sm text-gray-600">{on ? "Shown" : "—"}</span>;
+  }
+  return (
+    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+      <Switch
+        checked={on}
+        disabled={saving}
+        aria-label={`Show ${restaurant.name} on the website`}
+        onCheckedChange={async (next) => {
+          setOn(next);
+          setSaving(true);
+          try {
+            await restaurantShowcaseService.setFeatured(restaurant.id, next);
+            toast.success(next ? `${restaurant.name} is now on the website` : `${restaurant.name} removed from the website`);
+            onChanged?.();
+          } catch (error: any) {
+            setOn(!next);
+            toast.error(error?.response?.data?.message || "Could not update website visibility");
+          } finally {
+            setSaving(false);
+          }
+        }}
+      />
+      <span className="text-xs text-gray-600">{on ? "Shown" : "Hidden"}</span>
+    </div>
+  );
+}
 
 export type Restaurant = {
   id: string;
@@ -23,11 +71,16 @@ export type Restaurant = {
   /** Product categories hidden from this specific customer */
   categoryExclusions?: { categoryId: string; category: { id: string; name: string } }[];
   categoryExclusionIds?: string[];
+  /** Business photo the customer uploaded */
+  businessImage?: string | null;
+  /** Shown on the homepage ("Trusted by Kigali's kitchens") */
+  featuredOnWebsite?: boolean;
 };
 
 export const getRestaurantColumns = (
   onManage: (restaurant: Restaurant) => void,
-  onViewDetails: (restaurantId: string) => void
+  onViewDetails: (restaurantId: string) => void,
+  website: { canFeature: boolean; onChanged?: () => void } = { canFeature: false },
 ): ColumnDef<Restaurant>[] => [
   {
     id: "select",
@@ -69,6 +122,14 @@ export const getRestaurantColumns = (
       const shortName = fullName.split(" - ")[0];
       return <div className="">{shortName}</div>;
     },
+  },
+  {
+    id: "featuredOnWebsite",
+    header: "On website",
+    cell: ({ row }) => (
+      <FeaturedSwitch restaurant={row.original} canFeature={website.canFeature} onChanged={website.onChanged} />
+    ),
+    enableSorting: false,
   },
   {
     id: "customerType",

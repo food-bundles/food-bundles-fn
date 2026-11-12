@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Nunito_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { CombinedProvider } from "./contexts/combined-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -8,9 +8,11 @@ import { ImageKitProvider } from "@/components/ImageKitProvider";
 import Chatbot from "@/components/Chatbot";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
-const nunitoSans = Nunito_Sans({
-  weight: ["400", "500", "600", "700"],
-  subsets: ["latin"],
+// Self-hosted (src/fonts): builds no longer download from Google Fonts, whose
+// new "&skey=" font links break Turbopack's next/font/google loader.
+const nunitoSans = localFont({
+  src: "../fonts/nunito-sans-latin-var.woff2",
+  weight: "200 1000",
   variable: "--font-nunito-sans",
   display: "swap",
   fallback: ["system-ui", "arial", "sans-serif"],
