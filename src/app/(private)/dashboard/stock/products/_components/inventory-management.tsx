@@ -13,6 +13,7 @@ import {
 import { ProductManagementModal } from "./product-management-modal";
 import { ProductStatusModal } from "./product-status-modal";
 import { PricingCalculator } from "./pricing-calculator";
+import { EbmRegisterModal } from "./EbmRegisterModal";
 import type { Product } from "@/app/contexts/product-context";
 import { toast } from "sonner";
 import { productService } from "@/app/services/productService";
@@ -95,11 +96,18 @@ export function InventoryManagement({
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [statusProduct, setStatusProduct] = useState<Product | null>(null);
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
+  const [ebmProduct, setEbmProduct] = useState<Product | null>(null);
+  const [isEbmModalOpen, setIsEbmModalOpen] = useState(false);
 
   // Modal handlers
   const handleManageProduct = (product: Product) => {
     setSelectedProduct(product);
     setIsManagementOpen(true);
+  };
+
+  const handleRegisterEbm = (product: Product) => {
+    setEbmProduct(product);
+    setIsEbmModalOpen(true);
   };
 
   const handleStatusClick = (product: Product) => {
@@ -161,7 +169,7 @@ export function InventoryManagement({
 
   // Get columns with handlers
   const columns = useMemo(() => {
-    return getInventoryColumns(handleManageProduct, handleStatusClick);
+    return getInventoryColumns(handleManageProduct, handleStatusClick, handleRegisterEbm);
   }, []);
 
   // Remove client-side search filtering since we're using backend search
@@ -317,6 +325,13 @@ export function InventoryManagement({
       <PricingCalculator
         open={isCalculatorOpen}
         onOpenChange={setIsCalculatorOpen}
+      />
+
+      <EbmRegisterModal
+        product={ebmProduct}
+        open={isEbmModalOpen}
+        onOpenChange={setIsEbmModalOpen}
+        onSuccess={onRefresh}
       />
     </>
   );

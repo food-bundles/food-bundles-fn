@@ -104,12 +104,12 @@ export function RestaurantManagement({
   const handleCreateRestaurant = async (data: any) => {
     try {
       await restaurantService.createRestaurantByAdmin(data);
-      toast.success("Restaurant created successfully. Password sent via SMS.");
+      toast.success("Customer created successfully. Password sent via SMS.");
       onRefresh();
       setIsCreateOpen(false);
     } catch (error: any) {
       throw new Error(
-        error.response?.data?.message || "Failed to create restaurant"
+        error.response?.data?.message || "Failed to create customer"
       );
     }
   };
@@ -159,7 +159,7 @@ export function RestaurantManagement({
     createCommonFilters.search(
       searchValue,
       onSearchChange,
-      "Search restaurants..."
+      "Search customers..."
     ),
     createCommonFilters.dateRange(dateRange, setDateRange, "Joined Date Range"),
   ];
@@ -213,7 +213,7 @@ export function RestaurantManagement({
       <DataTable
         columns={columns}
         data={filteredData}
-        title="Restaurants Management"
+        title="Customers Management"
         description={
           <div className="flex items-center gap-4 mt-2">
             <button
@@ -221,7 +221,7 @@ export function RestaurantManagement({
               className="bg-green-700 hover:bg-green-600 text-xs px-2 sm:px-3 py-2 text-white rounded cursor-pointer flex items-center gap-1 sm:gap-2 whitespace-nowrap"
             >
               <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span>Add Restaurant</span>
+              <span>Add Customer</span>
             </button>
             
           </div>

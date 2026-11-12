@@ -6,7 +6,7 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
-import { useCart } from "@/app/contexts/cart-context";
+import { useCart, GUEST_CHECKOUT_HREF } from "@/app/contexts/cart-context";
 import { Spinner } from "./ui/shadcn-io/spinner";
 
 interface CartDrawerProps {
@@ -24,6 +24,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     isLoading,
     totalItems,
     totalAmount,
+    isGuestCart,
   } = useCart();
 
   // Check subscription benefits
@@ -58,25 +59,26 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     <>
       {/* Backdrop */}
       {isOpen && (
-        <div className="fixed inset-0 bg-opacity-50 z-40" onClick={onClose} />
+        <div className="fixed inset-0 z-[55] bg-black/30" onClick={onClose} />
       )}
 
       {/* Drawer */}
       <div
-        className={`fixed top-0 right-0 h-full bg-white text-gray-900 z-50 transform transition-all duration-300 ease-in-out overflow-y-auto shadow-2xl  scrollbar-hide
+        className={`fixed top-0 right-0 h-full bg-white text-gray-900 z-[60] transform transition-all duration-300 ease-in-out overflow-y-auto shadow-2xl  scrollbar-hide
           w-[90vw] sm:w-[300px] md:w-[350px] lg:w-[400px]
           ${isOpen ? "translate-x-0" : "translate-x-full"}`}
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-green-700  flex justify-between items-center px-4 sm:px-6 py-4">
+        <div className="sticky top-0 z-10 bg-[#0B2E1F] flex justify-between items-center px-4 sm:px-6 py-4">
           <div className="flex items-center gap-2">
-            <span className="text-lg sm:text-base font-medium text-white">
-              My Cart
+            <span className="text-lg font-bold text-white">
+              My cart
             </span>
           </div>
           <button
             onClick={onClose}
-            className="text-white transition-colors hover:rotate-90 transform duration-200"
+            aria-label="Close cart"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-white transition-colors hover:bg-white/10"
           >
             <X className="w-6 h-6 sm:w-5 sm:h-5" />
           </button>
@@ -89,7 +91,7 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
             <div className="flex justify-between items-center">
               <p className="text-gray-600 text-sm sm:text-xs lg:text-sm">
                 You have{" "}
-                <span className="text-green-500 font-bold">{totalItems}</span>{" "}
+                <span className="text-[#007A35] font-bold">{totalItems}</span>{" "}
                 items in your cart
               </p>
               <button
@@ -135,16 +137,29 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
             <div className="sticky bottom-0 bg-white border-t border-gray-200 pt-4 pb-6 px-2 sm:px-1">
               <div className="flex justify-between items-center mb-2 sm:mb-1">
                 <span className="text-lg sm:text-sm font-semibold">Total:</span>
-                <span className="text-lg sm:text-sm font-bold">
-                  {totalAmount} Rwf
+                <span className="text-lg font-bold text-[#0B2E1F]">
+                  {totalAmount.toLocaleString()} Rwf
                 </span>
               </div>
 
-              <a href="/restaurant/checkout">
-                <Button className="w-full sm:py-2 py-1 text-sm sm:text-xs bg-green-700 hover:bg-green-800 rounded-none cursor-pointer">
-                  Buy Now
-                </Button>
-              </a>
+              {isGuestCart ? (
+                <>
+                  <p className="mb-3 text-sm text-[#4A6358]">
+                    Log in or create an account to check out. Your cart comes with you.
+                  </p>
+                  <a href={GUEST_CHECKOUT_HREF}>
+                    <Button className="h-12 w-full cursor-pointer rounded-full bg-[#0B2E1F] text-base font-bold hover:bg-[#0F5C36]">
+                      Log in to check out
+                    </Button>
+                  </a>
+                </>
+              ) : (
+                <a href="/restaurant/checkout">
+                  <Button className="h-12 w-full cursor-pointer rounded-full bg-[#0B2E1F] text-base font-bold hover:bg-[#0F5C36]">
+                    Checkout
+                  </Button>
+                </a>
+              )}
             </div>
           )}
         </div>
@@ -256,13 +271,13 @@ function CartItem({
                 "Unknown Product"}
             </h3>
             <p className="lg:text-sm text-xs text-gray-600">
-              {item.unitPrice}
+              {Number(item.unitPrice).toLocaleString()}
               <span className="ml-1 text-xs">
                 Rwf ({item.product?.unit || item.unit || "unit"})
               </span>
             </p>
             <p className="text-green-700 font-medium lg:text-sm text-xs">
-              {totalAmount}
+              {totalAmount.toLocaleString()}
               <span className="ml-1 text-xs">Rwf (Total)</span>
             </p>
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { voucherService } from "@/app/services/voucherService";
 import { CardStatus, IVoucherCard } from "@/lib/types";
@@ -491,26 +491,49 @@ function KycModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () =
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export default function VoucherCardDisplay() {
+interface VoucherCardDisplayProps {
+  onApplicationComplete?: () => void;
+}
+
+export default function VoucherCardDisplay({
+  onApplicationComplete,
+}: VoucherCardDisplayProps) {
   const [card, setCard] = useState<IVoucherCard | null>(null);
   const [loading, setLoading] = useState(true);
   const [requestPending, setRequestPending] = useState(false);
   const [showKycModal, setShowKycModal] = useState(false);
+  const applyIntentRef = useRef(false);
+  const autoOpenedRef = useRef(false);
 
-  const load = () => {
+  const load = useCallback(() => {
     setLoading(true);
     Promise.all([
       voucherService.getMyVoucherCard().catch(() => null),
       voucherService.getMyCardEnrollmentRequest().catch(() => null),
     ])
       .then(([cardRes, reqRes]) => {
+        const hasCard = Boolean(cardRes?.data);
+        const isPending = reqRes?.data?.status === "PENDING";
         setCard(cardRes?.data ?? null);
-        setRequestPending(reqRes?.data?.status === "PENDING");
+        setRequestPending(isPending);
+
+        if (applyIntentRef.current && !autoOpenedRef.current) {
+          autoOpenedRef.current = true;
+          if (hasCard) {
+            onApplicationComplete?.();
+          } else if (!isPending) {
+            setShowKycModal(true);
+          }
+        }
       })
       .finally(() => setLoading(false));
-  };
+  }, [onApplicationComplete]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    applyIntentRef.current =
+      new URLSearchParams(window.location.search).get("apply") === "1";
+    load();
+  }, [load]);
 
   const statusConfig: Record<CardStatus, { label: string; color: string; icon: React.ReactNode }> = {
     [CardStatus.ACTIVE]: { label: "Active", color: "bg-green-500", icon: <ShieldCheck className="w-3 h-3" /> },
@@ -542,7 +565,21 @@ export default function VoucherCardDisplay() {
       {showKycModal && (
         <KycModal
           onClose={() => setShowKycModal(false)}
-          onSuccess={() => { setShowKycModal(false); setTimeout(load, 800); }}
+          onSuccess={() => {
+            setShowKycModal(false);
+            const params = new URLSearchParams(window.location.search);
+            if (params.has("apply")) {
+              params.delete("apply");
+              const query = params.toString();
+              window.history.replaceState(
+                {},
+                "",
+                `${window.location.pathname}${query ? `?${query}` : ""}`
+              );
+            }
+            onApplicationComplete?.();
+            setTimeout(load, 800);
+          }}
         />
       )}
 

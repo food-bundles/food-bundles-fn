@@ -19,6 +19,8 @@ export interface Category {
   name: string;
   description?: string;
   isActive?: boolean;
+  /** Shown in the public shop to visitors who are not logged in */
+  showToGuests?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { X, Trash2, CheckCheck, BellOff } from "lucide-react";
 import { notificationService, Notification } from "@/app/services/notificationService";
 import { formatDistanceToNow } from "date-fns";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
@@ -36,7 +33,6 @@ export default function NotificationsDrawer({
     try {
       setLoading(true);
       const response = await notificationService.getNotifications(1, 20);
-      console.log("Fetched notifications:", response.data);
       setNotifications(response.data);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
@@ -105,177 +101,156 @@ export default function NotificationsDrawer({
     }
   };
 
-  const getNotificationBg = (notification: Notification) => {
-    if (!notification.isRead) {
-      return "bg-yellow-50 border-yellow-200";
-    }
-    return "bg-green-50 border-green-200";
-  };
-
   const getEventTypeColor = (eventType: string) => {
     switch (eventType) {
-      case 'VOUCHER_ISSUED': return 'bg-green-200 text-green-800';
-      case 'NEW_ORDER_PLACED': return 'bg-blue-200 text-blue-800';
-      case 'ORDER_COMPLETED': return 'bg-purple-200 text-purple-800';
-      default: return 'bg-gray-200 text-gray-800';
+      case "VOUCHER_ISSUED": return "bg-[#E3F3E8] text-[#007A35]";
+      case "NEW_ORDER_PLACED": return "bg-[#E4EEF7] text-[#1B4F7A]";
+      case "ORDER_COMPLETED": return "bg-[#FFF3D1] text-[#7A5200]";
+      default: return "bg-[#EEF3EF] text-[#4A6358]";
     }
   };
 
-  const getStatusBadge = (notification: Notification) => {
-    if (!notification.isRead) {
-      return (
-        <span className="px-3 py-1 bg-yellow-200 text-yellow-800 text-xs font-medium rounded-full">
-          New
-        </span>
-      );
-    }
-    return (
-      <span className="px-3 py-1 bg-gray-200 text-gray-600 text-xs font-medium rounded-full">
-        Read
-      </span>
-    );
+  const counts = {
+    all: notifications.length,
+    unread: notifications.filter((n) => !n.isRead).length,
+    read: notifications.filter((n) => n.isRead).length,
   };
 
   return (
     <>
       {/* Backdrop */}
-      {isOpen && (
-        <div className="fixed inset-0  bg-opacity-50 z-40" onClick={onClose} />
-      )}
+      {isOpen && <div className="fixed inset-0 z-[55] bg-black/30" onClick={onClose} />}
 
-      <div
-        className={`fixed top-0 right-0 h-full bg-white text-gray-900 z-50 transform transition-all duration-300 ease-in-out overflow-y-auto shadow-2xl border-l border-gray-200 scrollbar-hide
-          w-[90vw] sm:w-[400px] md:w-[440px]
-          ${isOpen ? "translate-x-0" : "translate-x-full"
-          }`}
+      <aside
+        aria-label="Notifications"
+        inert={!isOpen}
+        className={`fixed top-0 right-0 z-[60] flex h-full w-[92vw] flex-col bg-[#F6F9F7] text-[#0B2E1F] shadow-2xl transition-transform duration-300 ease-in-out sm:w-[420px] md:w-[440px]
+          ${isOpen ? "translate-x-0" : "translate-x-full"}`}
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-green-700 border-b border-gray-200 flex justify-between items-center px-6 py-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xl text-white font-bold">
-              Notifications
-            </span>
+        <div className="flex items-center justify-between bg-[#0B2E1F] px-5 py-4 text-white">
+          <div className="flex items-center gap-2.5">
+            <span className="text-lg font-bold [font-family:var(--font-inter-tight),sans-serif]">Notifications</span>
             {unreadCount > 0 && (
-              <Badge className="bg-green-500 text-white text-xs">
-                {unreadCount}
-              </Badge>
+              <span className="rounded-full bg-[#00D048] px-2 py-0.5 text-xs font-bold text-[#0B2E1F]">{unreadCount} new</span>
             )}
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 transition-colors hover:rotate-90 transform duration-200"
+            aria-label="Close notifications"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-white hover:bg-white/10 cursor-pointer"
           >
-            <X className="w-6 h-6 text-white cursor-pointer" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-6">
-          {/* Mark all read button */}
-          <div className="flex justify-between items-center">
-            <p className="text-gray-600 text-sm">
-              You have {unreadCount} unread notifications
-            </p>
-            <Button
-              onClick={handleMarkAllRead}
-              size="sm"
-              className="bg-green-700 hover:bg-green-600 text-white"
-            >
-              Mark all read
-            </Button>
-          </div>
-
-          {/* Filter tabs */}
-          <div className="flex items-center gap-6 border-b border-gray-200">
-            {[
-              { key: "all", label: "All" },
-              { key: "read", label: "Read" },
-              { key: "unread", label: "Unread" },
-            ].map((filter) => (
-              <button
-                key={filter.key}
-                onClick={() =>
-                  setActiveFilter(filter.key as "all" | "read" | "unread")
-                }
-                className={`pb-3 text-sm font-medium transition-colors ${activeFilter === filter.key
-                    ? "text-gray-900 border-b-2 border-gray-900"
-                    : "text-gray-500 hover:text-gray-700"
+        {/* Filters and mark-all */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#DCE6DF] bg-white px-5 py-3">
+          <div className="flex gap-1.5" role="group" aria-label="Filter notifications">
+            {(["all", "unread", "read"] as const).map((key) => {
+              const on = activeFilter === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setActiveFilter(key)}
+                  className={`min-h-9 rounded-full px-3.5 text-[13px] font-bold capitalize transition-colors cursor-pointer ${
+                    on ? "bg-[#0B2E1F] text-white" : "border border-[#DCE6DF] bg-white text-[#0B2E1F] hover:border-[#00A43A]"
                   }`}
-              >
-                {filter.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Notifications list */}
-          <div className="space-y-4">
-            {loading ? (
-              <div className="flex justify-center items-center h-32">
-                <Spinner variant="ring" />
-              </div>
-            ) : filteredNotifications.length === 0 ? (
-              <Card className="">
-                <CardContent className="p-8 text-center">
-                  <p className="text-gray-500">No notifications found</p>
-                </CardContent>
-              </Card>
-            ) : (
-              filteredNotifications.map((notification) => (
-                <Card
-                  key={notification.id}
-                  className={`${getNotificationBg(
-                    notification
-                  )} transition-colors rounded py-1 ${!notification.isRead ? "cursor-pointer hover:shadow-md" : ""
-                    }`}
-                  onClick={() =>
-                    !notification.isRead && handleMarkAsRead(notification.id)
-                  }
                 >
-                  <CardContent className="p-4 ">
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between">
-                        <h3 className="font-semibold text-gray-900 text-sm">
-                          {notification.title}
-                        </h3>
-                        <div
-                          className="flex items-center gap-2"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {getStatusBadge(notification)}
+                  {key} <span className={on ? "text-[#7CF2A6]" : "text-[#4A6358]"}>{counts[key]}</span>
+                </button>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            onClick={handleMarkAllRead}
+            disabled={unreadCount === 0}
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-2 text-[13px] font-bold text-[#007A35] hover:text-[#0B2E1F] disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+          >
+            <CheckCheck className="h-4 w-4" /> Mark all read
+          </button>
+        </div>
+
+        {/* Notifications list */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 scrollbar-hide">
+          {loading ? (
+            <div className="flex h-32 items-center justify-center">
+              <Spinner variant="ring" />
+            </div>
+          ) : filteredNotifications.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 px-6 py-16 text-center">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#E3F3E8]">
+                <BellOff className="h-5 w-5 text-[#007A35]" />
+              </span>
+              <p className="m-0 font-bold">You’re all caught up</p>
+              <p className="m-0 text-sm text-[#4A6358]">
+                {activeFilter === "unread" ? "No unread notifications." : "Nothing here yet."}
+              </p>
+            </div>
+          ) : (
+            <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
+              {filteredNotifications.map((notification) => {
+                const unread = !notification.isRead;
+                return (
+                  <li
+                    key={notification.id}
+                    className={`group relative rounded-2xl border p-4 transition-colors ${
+                      unread ? "border-[#BFE6CB] bg-white shadow-[0_10px_24px_-18px_#0B2E1F80]" : "border-[#E6EEE9] bg-white/60"
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span
+                        aria-hidden="true"
+                        className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${unread ? "bg-[#00A43A]" : "bg-[#C5D1C6]"}`}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className={`m-0 text-[15px] leading-snug ${unread ? "font-bold" : "font-semibold text-[#4A6358]"}`}>
+                            {unread && <span className="sr-only">Unread: </span>}
+                            {notification.title}
+                          </h3>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(notification.id)}
+                            aria-label={`Delete notification: ${notification.title}`}
+                            className="-mr-1 -mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#4A6358] hover:bg-red-50 hover:text-red-600 cursor-pointer"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
-                      </div>
-                      <p className="text-gray-700 text-sm">
-                        {notification.message}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className={`px-2 py-1 text-xs rounded-full ${getEventTypeColor(notification.eventType)}`}>
-                            {notification.eventType.replace('_', ' ')}
-                          </span>
-                          <p className="text-xs text-gray-500">
-                            {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
-                          </p>
+                        <p className="m-0 mt-1 text-[14px] leading-relaxed text-[#2E4A3B]">{notification.message}</p>
+                        <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${getEventTypeColor(notification.eventType)}`}>
+                              {notification.eventType.replace(/_/g, " ").toLowerCase()}
+                            </span>
+                            <span className="text-xs text-[#4A6358]">
+                              {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                            </span>
+                          </div>
+                          {unread && (
+                            <button
+                              type="button"
+                              onClick={() => handleMarkAsRead(notification.id)}
+                              className="rounded-full px-2 py-1 text-[12px] font-bold text-[#007A35] hover:bg-[#E3F3E8] cursor-pointer"
+                            >
+                              Mark as read
+                            </button>
+                          )}
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDelete(notification.id);
-                          }}
-                          className="px-2 py-1 bg-red-200 text-red-800 text-xs font-medium rounded-full hover:bg-red-300 transition-colors"
-                        >
-                          Delete
-                        </button>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-
-          <div className="h-8"></div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
-      </div>
+      </aside>
     </>
   );
 }

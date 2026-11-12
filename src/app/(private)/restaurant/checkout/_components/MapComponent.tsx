@@ -25,6 +25,12 @@ interface MapComponentProps {
   onLocationSelect: (location: LocationData) => void;
   /** Show a "Use my current location" button (browser GPS). */
   showLocateButton?: boolean;
+  /** Pan the map to an area without placing a pin. Pass a new object to move it again. */
+  focus?: MapFocus | null;
+}
+
+interface MapFocus extends LocationData {
+  zoom?: number;
 }
 
 function LocationMarker({ onLocationSelect }: { onLocationSelect: (location: LocationData) => void }) {
@@ -50,10 +56,20 @@ function MapSync({ location }: { location: LocationData | null }) {
   return null;
 }
 
+// Moves the view to an area (e.g. a chosen district) without placing a pin
+function FocusSync({ focus }: { focus: MapFocus | null | undefined }) {
+  const map = useMap();
+  useEffect(() => {
+    if (focus) map.flyTo([focus.lat, focus.lng], focus.zoom ?? 12);
+  }, [map, focus]);
+  return null;
+}
+
 export default function MapComponent({
   tempLocation,
   onLocationSelect,
   showLocateButton = false,
+  focus,
 }: MapComponentProps) {
   const [locating, setLocating] = useState(false);
   const [locateError, setLocateError] = useState("");
@@ -93,6 +109,7 @@ export default function MapComponent({
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <LocationMarker onLocationSelect={onLocationSelect} />
         <MapSync location={tempLocation} />
+        <FocusSync focus={focus} />
         {tempLocation && <Marker position={[tempLocation.lat, tempLocation.lng]} />}
       </MapContainer>
 

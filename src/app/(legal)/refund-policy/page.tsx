@@ -5,7 +5,7 @@ import { Wallet, RefreshCcw, ShieldCheck, Clock, Mail, Phone } from "lucide-reac
 const { SectionHeading, SubHeading, Paragraph, List } = LegalContent;
 
 export const metadata = {
-  title: "Refund Policy | Food Bundles",
+  title: "Refund Policy",
 };
 
 export default function RefundPolicyPage() {

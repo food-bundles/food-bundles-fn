@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { FoodBundlesCard } from "@/components/food-bundles-card";
 
@@ -16,6 +17,7 @@ interface DashboardStatCardProps {
   suffix?: string;
   loading?: boolean;
   subMetrics?: SubMetric[];
+  href?: string;
 }
 
 // Dashboard metric rendered as a FoodBundles card (same look as vouchers/deposits)
@@ -27,13 +29,14 @@ export function DashboardStatCard({
   suffix = "",
   loading = false,
   subMetrics = [],
+  href,
 }: DashboardStatCardProps) {
   const percentageChange = previousValue
     ? ((value - previousValue) / previousValue) * 100
     : 0;
   const isPositive = percentageChange >= 0;
 
-  return (
+  const card = (
     <FoodBundlesCard gradient={gradient}>
       <div className="relative flex-1 flex flex-col justify-center min-h-0">
         <p className="text-[9px] uppercase tracking-widest text-white/70">{title}</p>
@@ -78,5 +81,17 @@ export function DashboardStatCard({
         </div>
       )}
     </FoodBundlesCard>
+  );
+
+  if (!href) return card;
+
+  return (
+    <Link
+      href={href}
+      aria-label={`Open ${title}`}
+      className="group block rounded-2xl transition-transform duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+    >
+      {card}
+    </Link>
   );
 }

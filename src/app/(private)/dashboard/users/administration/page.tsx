@@ -12,6 +12,7 @@ import { CreateAdminModal } from "./_components/create-admin-modal";
 import { UpdateCommissionModal } from "./_components/update-commission-modal";
 import UserDetailsSheet from "../farmers/_components/UserDetailsSheet";
 import { ExportButton } from "@/components/ExportButton";
+import { AssignSiteDialog } from "../../aggregation-sites/_components/AssignSiteDialog";
 
 export default function AdministrationPage() {
   const [admins, setAdmins] = useState<Admin[]>([]);
@@ -29,6 +30,7 @@ export default function AdministrationPage() {
   const [isCommissionModalOpen, setIsCommissionModalOpen] = useState(false);
   const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [siteTarget, setSiteTarget] = useState<Admin | null>(null);
   const { getAllAdmins, createAdmin, updateAdmin, deleteAdmin } = useAdmins();
 
   const fetchAdmins = async (page = 1, limit = 5, isPagination = false) => {
@@ -80,7 +82,8 @@ export default function AdministrationPage() {
     (adminId: string) => {
       setSelectedUserId(adminId);
       setIsDetailsSheetOpen(true);
-    }
+    },
+    (admin: Admin) => setSiteTarget(admin)
   );
 
   const handleRowClick = (admin: Admin) => {
@@ -152,6 +155,12 @@ export default function AdministrationPage() {
         onUpdate={() => fetchAdmins(pagination.page, pagination.limit)}
       />
       
+      <AssignSiteDialog
+        target={siteTarget ? { kind: "aggregator", id: siteTarget.id, name: siteTarget.username } : null}
+        onClose={() => setSiteTarget(null)}
+        onSaved={() => fetchAdmins(pagination.page, pagination.limit)}
+      />
+
       <UserDetailsSheet
         isOpen={isDetailsSheetOpen}
         onClose={() => setIsDetailsSheetOpen(false)}

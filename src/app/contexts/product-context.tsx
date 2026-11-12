@@ -57,6 +57,15 @@ export interface Product {
   status: string;
   createdAt: string;
   updatedAt: string;
+  ebmItem?: {
+    id: string;
+    itemCode: string;
+    itemType: string;
+    taxType: string;
+    packagingUnit: string;
+    quantityUnit: string;
+    registeredAt: string;
+  } | null;
 }
 
 export interface ProductsResponse {

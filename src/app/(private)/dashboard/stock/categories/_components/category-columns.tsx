@@ -37,6 +37,18 @@ export const createCategoryColumns = (
     },
   },
   {
+    accessorKey: "showToGuests",
+    header: "Visitors",
+    cell: ({ row }) => {
+      const open = row.original.showToGuests ?? true;
+      return (
+        <Badge className={open ? "bg-green-100 text-green-800" : "bg-gray-200 text-gray-700"}>
+          {open ? "Shown" : "Hidden"}
+        </Badge>
+      );
+    },
+  },
+  {
     accessorKey: "createdAt",
     header: "Created",
     cell: ({ row }) => {
@@ -61,7 +73,7 @@ export const createCategoryColumns = (
           <Button
             size="sm"
             variant="outline"
-            onClick={() => onDelete(category.id)}
+            onClick={() => onDelete(category.id)} 
           >
             <Trash2 className="h-4 w-4" />
           </Button>

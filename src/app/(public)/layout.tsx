@@ -1,7 +1,5 @@
 import React from "react";
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
-import QuickTalkSection from "@/components/quck-talk-section";
+import { SiteShell } from "@/components/home/site-shell";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -9,13 +7,8 @@ interface LayoutProps {
 
 export default async function RestaurantLayout({ children }: LayoutProps) {
   return (
-    <div className="flex flex-col min-h-screen">
-      <Header />
-      <main className="grow container mx-auto">{children}</main>
-      <div id="ask-help">
-        <QuickTalkSection />
-      </div>
-      <Footer />
-    </div>
+    <SiteShell>
+      <div className="container mx-auto">{children}</div>
+    </SiteShell>
   );
 }

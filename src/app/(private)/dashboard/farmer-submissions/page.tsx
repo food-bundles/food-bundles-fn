@@ -7,6 +7,8 @@ import {
   createCommonFilters,
   TableFilters,
 } from "../../../../components/filters";
+import { AssignAggregatorDialog } from "./_components/AssignAggregatorDialog";
+import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/data-table";
 import { toast } from "sonner";
 import {
@@ -66,6 +68,9 @@ export default function FarmerSubmissionsPage() {
   // State for filters
   const [searchValue, setSearchValue] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
+  // Submissions whose aggregator is being chosen (one from its row, or the selected rows)
+  const [assignTargets, setAssignTargets] = useState<FarmerSubmission[] | null>(null);
+  const [selectedRows, setSelectedRows] = useState<FarmerSubmission[]>([]);
   const [selectedFeedbackStatus, setSelectedFeedbackStatus] = useState("all");
   const [selectedProvince, setSelectedProvince] = useState("all");
   const [selectedDateRange, setSelectedDateRange] = useState<{
@@ -323,11 +328,13 @@ export default function FarmerSubmissionsPage() {
       onDelete: setDeleteTarget,
       onReverseStatus: setReverseStatusTarget,
       onViewHistory: setHistoryTarget,
+      onAssignAggregator: (submission: FarmerSubmission) => setAssignTargets([submission]),
       // Each menu action follows its own farmer submissions permission
       can: (action: string) => can("farmer_submissions", action),
+      currentUserId: accessUser?.id ?? user?.id,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [permissionsKey]);
+  }, [permissionsKey, accessUser?.id, user?.id]);
 
   // Clear date range filter
   const clearDateRange = () => {
@@ -412,9 +419,24 @@ export default function FarmerSubmissionsPage() {
   return (
     <>
       <div className="p-6">
+        {/* Many farmers to one aggregator: assign the selected rows together */}
+        {can("farmer_submissions", "assign_aggregator") && selectedRows.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2.5">
+            <p className="text-sm text-green-900">
+              {selectedRows.length} submission{selectedRows.length === 1 ? "" : "s"} selected from{" "}
+              {new Set(selectedRows.map((s) => s.farmerId)).size} farmer
+              {new Set(selectedRows.map((s) => s.farmerId)).size === 1 ? "" : "s"}
+            </p>
+            <Button variant="green" size="sm" onClick={() => setAssignTargets(selectedRows)}>
+              Assign to an aggregator
+            </Button>
+          </div>
+        )}
+
         <DataTable
           columns={columns}
           data={submissions}
+          onSelectionChange={setSelectedRows}
           title="All Farmer Submissions"
           showExport={true}
           onExport={handleExport}
@@ -432,6 +454,12 @@ export default function FarmerSubmissionsPage() {
           pagination={pagination}
           onPaginationChange={handlePaginationChange}
           isLoading={loading}
+        />
+
+        <AssignAggregatorDialog
+          submissions={assignTargets}
+          onClose={() => setAssignTargets(null)}
+          onDone={() => fetchSubmissions(pagination.page, pagination.limit)}
         />
 
         {/* REMOVED: Old loading overlay */}
