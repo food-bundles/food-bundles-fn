@@ -31,6 +31,8 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [redirectTarget, setRedirectTarget] = useState("");
+  // Came from the aggregator QR code: offer the agreement and application too
+  const [forAggregator, setForAggregator] = useState(false);
   
   // Verification modal states
   const [showVerificationModal, setShowVerificationModal] = useState(false);
@@ -49,12 +51,13 @@ function LoginForm() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const reason = params.get("reason");
+    setForAggregator(params.get("for") === "aggregator");
     const redirect = sanitizeRedirect(params.get("redirect"));
 
     if (redirect) setRedirectTarget(redirect);
     if (reason === "expired") {
       setInfoMessage("Your session has expired. Please log in again to continue.");
-    } else if (redirect) {
+    } else if (redirect && params.get("for") !== "aggregator") {
       setInfoMessage("Please log in to continue.");
     }
   }, []);
@@ -398,6 +401,20 @@ function LoginForm() {
             </div>
           )}
 
+          {forAggregator && (
+            <div className="mb-6 rounded-2xl border border-[#BFE6CB] bg-[#EFFAF3] p-4">
+              <p className="m-0 text-[16px] font-bold text-[#0B2E1F]">Uri umukusanyi mushya? (New aggregator?)</p>
+              <p className="m-0 mt-1 text-[14px] text-[#4A6358]">
+                Nta konti ufite? Soma amasezerano y&apos;ibanze, hanyuma wohereze ubusabe. Already an aggregator? Sign in below.
+              </p>
+              <Link
+                href="/become-aggregator/apply"
+                className="mt-3 inline-flex h-11 items-center rounded-full bg-[#00A43A] px-5 text-[15px] font-bold text-white hover:bg-[#007A35]"
+              >
+                Soma amasezerano, wiyandikishe (Apply) ›
+              </Link>
+            </div>
+          )}
           <h2 className="fb-display text-[28px] font-bold tracking-[-0.6px] text-[#0B2E1F] mb-1">
             Sign in
           </h2>

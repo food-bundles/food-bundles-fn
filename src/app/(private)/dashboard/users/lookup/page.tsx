@@ -81,8 +81,8 @@ export default function UserLookupPage() {
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6">
       {/* Search */}
-      <section className="rounded-2xl bg-white p-5 text- sm:p-7">
-        <h2 className="m-0 text-[22px] font-bold [font-family:var(--font-inter-tight),sans-serif]">Find anyone on Food Bundles</h2>
+      <section className="rounded-2xl border border-[#DCE6DF] bg-white p-5 sm:p-7">
+        <h2 className="m-0 text-[22px] font-bold text-[#0B2E1F] [font-family:var(--font-inter-tight),sans-serif]">Find anyone on Food Bundles</h2>
         <p className="m-0 mt-1 text-[15px] text-[#4A6358]">
           Type anything you remember: a name, phone (any format), email, TIN, ID, district or sector, customer type or staff role.
         </p>

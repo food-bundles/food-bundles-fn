@@ -80,7 +80,7 @@ const searchKeywords: Record<string, string[]> = {
   "/dashboard/vouchers": ["loans", "credit", "card", "bnpl", "repayment", "lending"],
   "/dashboard/deposits": ["wallet", "money", "top up", "balance", "transactions", "payments"],
   "/dashboard/newsletter": ["email", "subscribers", "campaign", "mail"],
-  "/dashboard/invitations": ["invite", "onboarding", "join", "referral"],
+  "/dashboard/invitations": ["aggregator applications", "umukusanyi", "qr", "agreement", "collector", "invite", "onboarding", "join", "referral"],
   "/dashboard/users/lookup": ["find", "search", "user", "account", "phone"],
   "/dashboard/users/farmers": ["growers", "suppliers"],
   "/dashboard/users/restaurants": ["clients", "restaurants", "hotels", "schools", "buyers"],
