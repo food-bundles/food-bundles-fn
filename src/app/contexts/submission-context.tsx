@@ -10,9 +10,14 @@ import {
 // Types based on your backend response
 export interface FarmerInfo {
   id: string;
-  phone: string;
-  email: string;
+  name?: string | null;
+  phone: string | null;
+  email: string | null; // optional for farmers
 }
+
+/** Best label for a farmer: name, else the part of the email before @, else phone. */
+export const farmerDisplayName = (farmer?: FarmerInfo | null) =>
+  farmer?.name?.trim() || farmer?.email?.split("@")[0] || farmer?.phone || "Unknown farmer";
 
 export interface FarmerSubmission {
   aggregator: any;
@@ -23,7 +28,9 @@ export interface FarmerSubmission {
   acceptedQty: number | null;
   totalAmount: number | null;
   categoryId: string;
-  status: "PENDING" | "VERIFIED" | "APPROVED" | "PAID";
+  // Flow: PENDING → APPROVED → VERIFIED → PAID; NEGOTIATING = counter-offer
+  // sent to the farmer; REJECTED = closed without buying
+  status: SubmissionStage;
   farmerFeedbackStatus: "PENDING" | "ACCEPTED" | "REJECTED" | "EXTENDED" | null;
   farmerFeedbackAt: string | null;
   farmerFeedbackNotes: string | null;
@@ -45,7 +52,35 @@ export interface FarmerSubmission {
   village: string;
   farmer: FarmerInfo;
   payouts?: SubmissionPayout[];
+  /** Food Bundles buying price when the price was decided */
+  foodBundlesPrice?: number | null;
+  /** Price Food Bundles offered (waits for the farmer) */
+  counterOfferPrice?: number | null;
+  /** Price both sides agreed at approval */
+  agreedPrice?: number | null;
+  rejectionReason?: string | null;
+  rejectedAt?: string | null;
+  /** Aggregator matched automatically (nearest site to the farmer) when the farmer supplied a request */
+  assignedAggregatorId?: string | null;
+  assignedAggregator?: { id: string; username: string; phone: string | null } | null;
+  aggregatorAssignedAt?: string | null;
+  /** No aggregator could be matched: an admin should pick one */
+  needsAssignmentReview?: boolean;
+  /** The supply request line this submission answers */
+  supplyRequestItem?: { id: string; weekday: number; quantity: number; request: { id: string; title: string | null } } | null;
 }
+
+export type SubmissionStage = "PENDING" | "NEGOTIATING" | "APPROVED" | "VERIFIED" | "PAID" | "REJECTED";
+
+/** Price both sides agreed. Submissions approved before the new flow kept it in
+ *  acceptedPrice (or only the farmer's price), so fall back to those. */
+export const agreedPriceOf = (
+  s: Pick<FarmerSubmission, "agreedPrice" | "acceptedPrice" | "farmerCounterOffer" | "wishedPrice">
+) => s.agreedPrice ?? s.acceptedPrice ?? s.farmerCounterOffer ?? s.wishedPrice ?? 0;
+
+/** What the farmer currently asks per unit (their latest counter, else the original). */
+export const askedPriceOf = (s: Pick<FarmerSubmission, "wishedPrice" | "farmerCounterOffer">) =>
+  s.farmerCounterOffer ?? s.wishedPrice ?? 0;
 
 export interface SubmissionPayout {
   id: string;
@@ -56,6 +91,7 @@ export interface SubmissionPayout {
   paypackStatus: string | null;
   status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | "CANCELLED" | "REFUNDED" | "VOUCHER_CREDIT";
   initiatedBy: string;
+  method?: "MOMO" | "CASH";
   confirmedAt: string | null;
   createdAt: string;
   updatedAt: string;

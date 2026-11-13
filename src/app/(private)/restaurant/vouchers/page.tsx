@@ -10,6 +10,14 @@ export default function VouchersPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const handleSuccess = () => setRefreshKey((prev) => prev + 1);
 
+  const handleCardApplicationComplete = () => {
+    window.setTimeout(() => {
+      document
+        .getElementById("loan-request")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 400);
+  };
+
   return (
     <div className="p-3 sm:p-4 lg:p-6 max-w-7xl mx-auto bg-gray-100 min-h-screen">
       {/* Header */}
@@ -24,7 +32,10 @@ export default function VouchersPage() {
         {/* Top row: Card identity | Finance form | Active session */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
           {/* 1 — Permanent voucher card (PAN identity) */}
-          <VoucherCardDisplay key={`card-${refreshKey}`} />
+          <VoucherCardDisplay
+            key={`card-${refreshKey}`}
+            onApplicationComplete={handleCardApplicationComplete}
+          />
 
           {/* 2 — Finance on voucher (request a loan) */}
           <LoanRequestForm onSuccess={handleSuccess} />

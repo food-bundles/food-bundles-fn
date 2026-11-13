@@ -19,11 +19,16 @@ export interface ISessionData {
 }
 
 export interface ICreateFarmerData {
+  name: string;
   location: string;
+  province?: string;
+  district?: string;
+  sector?: string;
+  cell?: string;
+  village?: string;
   phone?: string;
-  email?: string;
+  email?: string; // optional for farmers
   password?: string;
-  tin: string;
   agreed?: boolean;
 }
 
@@ -35,7 +40,7 @@ export interface ICreateRestaurantData {
   password: string;
   tin: string;
   role?: "RESTAURANT" | "HOTEL";
-  // Customer type picked at signup (decides the prices the customer pays)
+  // Customer type picked at signup (decides the prices and categories the customer sees)
   customerTypeId?: string;
   agreed?: boolean;
 }

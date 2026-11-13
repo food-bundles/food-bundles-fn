@@ -3,9 +3,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import jwt from "jsonwebtoken";
-import { ROLE_ROUTES, sanitizeRedirect } from "@/lib/navigations";
-import { canOpenPage } from "@/lib/admin-permissions";
-
+import { MOVED_APPS, ROLE_ROUTES, sanitizeRedirect } from "@/lib/navigations";
+import { canOpenPage, firstDashboardPage } from "@/lib/admin-permissions";
 // Send to login, remembering the page (with its query) to return to afterwards
 const redirectToLogin = (req: NextRequest, reason?: string) => {
   const loginUrl = new URL("/login", req.url);
@@ -21,16 +20,19 @@ export async function middleware(req: NextRequest) {
   const token = req.cookies.get("auth-token")?.value;
   const pathname = req.nextUrl.pathname;
 
+  // Aggregator and logistics apps moved into the dashboard
+  const moved = Object.keys(MOVED_APPS).find(
+    (app) => pathname === app || pathname.startsWith(app + "/"),
+  );
+  if (moved) {
+    return NextResponse.redirect(new URL(MOVED_APPS[moved], req.url));
+  }
+
   // Role-based route protection
   const roleRoutes = ROLE_ROUTES;
 
   const protectedRoutes = Object.keys(roleRoutes);
   const isProtectedRoute = protectedRoutes.some((route) =>
-    pathname.startsWith(route),
-  );
-
-  const guestOnlyRoutes = ["/guest"];
-  const isGuestOnlyRoute = guestOnlyRoutes.some((route) =>
     pathname.startsWith(route),
   );
 
@@ -55,24 +57,6 @@ export async function middleware(req: NextRequest) {
         const target =
           sanitizeRedirect(req.nextUrl.searchParams.get("redirect")) || "/";
         return NextResponse.redirect(new URL(target, req.url));
-      } catch (error) {
-        return NextResponse.next();
-      }
-    }
-    return NextResponse.next();
-  }
-
-  // Handle guest-only routes
-  if (isGuestOnlyRoute) {
-    if (token) {
-      try {
-        const decoded: any = jwt.decode(token);
-        if (decoded.exp && decoded.exp * 1000 < Date.now()) {
-          return NextResponse.next();
-        }
-        const redirectUrl = new URL("/", req.url);
-        redirectUrl.searchParams.set("showGuestToast", "true");
-        return NextResponse.redirect(redirectUrl);
       } catch (error) {
         return NextResponse.next();
       }
@@ -154,7 +138,9 @@ export async function middleware(req: NextRequest) {
       // enforces permissions on every request.
       const meUser = userData?.user || userData?.data?.user;
       if (pathname.startsWith("/dashboard") && meUser && !canOpenPage(meUser, pathname)) {
-        return NextResponse.redirect(new URL("/unauthorized", req.url));
+        // The home page sends people to the first page their role opens
+        const target = pathname === "/dashboard" ? firstDashboardPage(meUser) : "/unauthorized";
+        return NextResponse.redirect(new URL(target, req.url));
       }
 
       if (userRole === "TRADER" && pathname.startsWith("/traders")) {
@@ -186,7 +172,6 @@ export const config = {
     "/restaurant/:path*",
     "/farmers/:path*",
     "/traders/:path*",
-    "/guest/:path*",
     "/login",
     "/signup",
     "/forgot-password",

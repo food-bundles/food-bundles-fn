@@ -22,6 +22,8 @@ export interface Product {
   paidDate?: string
   acceptedQty: number | null
   acceptedPrice: number | null
+  counterOfferPrice?: number | null
+  agreedPrice?: number | null
   farmerFeedbackStatus: "PENDING" | "ACCEPTED" | "REJECTED" | "EXTENDED" | null
   feedbackDeadline: string | null
 }

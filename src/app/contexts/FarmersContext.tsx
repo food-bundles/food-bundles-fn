@@ -5,6 +5,7 @@ import { farmersService } from "@/app/services/farmersService";
 
 export interface Farmer {
   id: string;
+  name?: string | null;
   province: string;
   district: string;
   sector: string;
@@ -16,6 +17,9 @@ export interface Farmer {
   createdAt: string;
   submissions: any[];
   status?: "active" | "inactive" | "pending";
+  /** The aggregation site the farmer delivers to */
+  aggregationSite?: { id: string; name: string } | null;
+  siteAssignedByAdmin?: boolean;
 }
 
 interface FarmersContextType {

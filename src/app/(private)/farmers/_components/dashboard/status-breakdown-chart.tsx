@@ -1,9 +1,16 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label, Pie, PieChart } from "recharts";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import type { Product } from "../product-context";
+import { chartCardClass } from "@/app/(private)/dashboard/_components/ChartShared";
 import { DashboardEmptyState } from "./dashboard-empty-state";
 
 interface StatusBreakdownChartProps {
@@ -11,85 +18,89 @@ interface StatusBreakdownChartProps {
   loading?: boolean;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  Pending: "#F59E0B",
-  Approved: "#10B981",
-  Rejected: "#EF4444",
-  Paid: "#3B82F6",
-};
+const chartConfig = {
+  pending: { label: "Pending", color: "#f59e0b" },
+  approved: { label: "Approved", color: "#16a34a" },
+  paid: { label: "Paid", color: "#2563eb" },
+  rejected: { label: "Rejected", color: "#dc2626" },
+} satisfies ChartConfig;
 
-/** Donut chart of submission status breakdown, derived from already-fetched submissions. */
+type StatusKey = keyof typeof chartConfig;
+
+/** Donut of where the farmer's submissions stand (admin dashboard style). */
 export function StatusBreakdownChart({ products, loading }: StatusBreakdownChartProps) {
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-4 w-40" />
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-64 w-full" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const counts = {
-    Pending: products.filter(
-      (p) => (p.status === "PENDING" || p.status === "VERIFIED") && p.farmerFeedbackStatus !== "REJECTED",
+  const isRejected = (p: Product) => p.status === "REJECTED" || p.farmerFeedbackStatus === "REJECTED";
+  const counts: Record<StatusKey, number> = {
+    pending: products.filter(
+      (p) => (p.status === "PENDING" || p.status === "NEGOTIATING") && !isRejected(p),
     ).length,
-    Approved: products.filter((p) => p.status === "APPROVED").length,
-    Rejected: products.filter((p) => p.farmerFeedbackStatus === "REJECTED").length,
-    Paid: products.filter((p) => p.status === "PAID").length,
+    approved: products.filter((p) => p.status === "APPROVED" || p.status === "VERIFIED").length,
+    paid: products.filter((p) => p.status === "PAID").length,
+    rejected: products.filter(isRejected).length,
   };
-
-  const data = Object.entries(counts)
-    .map(([name, value]) => ({ name, value }))
+  const data = (Object.keys(counts) as StatusKey[])
+    .map((status) => ({ status, value: counts[status], fill: `var(--color-${status})` }))
     .filter((d) => d.value > 0);
-
-  const isSingleCategory = data.length === 1;
+  const total = data.reduce((sum, d) => sum + d.value, 0);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-sm font-semibold">Submission Status Breakdown</CardTitle>
+    <Card className={chartCardClass}>
+      <CardHeader className="border-b border-emerald-100/80 px-6 py-5">
+        <CardTitle className="text-sm font-semibold">Submission status</CardTitle>
+        <CardDescription className="text-xs">Where your submissions stand</CardDescription>
       </CardHeader>
-      <CardContent>
-        {data.length === 0 ? (
+      <CardContent className="px-2 pt-4 pb-4 sm:px-6">
+        {loading ? (
+          <Skeleton className="h-[240px] w-full" />
+        ) : total === 0 ? (
           <DashboardEmptyState />
         ) : (
-          <div className="relative">
-            <ResponsiveContainer width="100%" height={260}>
+          <div className="flex flex-col items-center gap-3 sm:flex-row">
+            <ChartContainer config={chartConfig} className="aspect-square h-[200px]">
               <PieChart>
+                <ChartTooltip content={<ChartTooltipContent nameKey="status" hideLabel />} />
                 <Pie
                   data={data}
                   dataKey="value"
-                  nameKey="name"
-                  innerRadius={55}
-                  outerRadius={90}
-                  paddingAngle={isSingleCategory ? 0 : 2}
+                  nameKey="status"
+                  innerRadius={58}
+                  outerRadius={85}
+                  strokeWidth={4}
+                  paddingAngle={data.length > 1 ? 2 : 0}
                 >
-                  {data.map((entry) => (
-                    <Cell key={entry.name} fill={STATUS_COLORS[entry.name]} />
-                  ))}
+                  <Label
+                    content={({ viewBox }) =>
+                      viewBox && "cx" in viewBox && "cy" in viewBox ? (
+                        <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
+                          <tspan x={viewBox.cx} y={viewBox.cy} className="fill-foreground text-2xl font-bold">
+                            {total}
+                          </tspan>
+                          <tspan x={viewBox.cx} y={(viewBox.cy || 0) + 20} className="fill-muted-foreground text-xs">
+                            submissions
+                          </tspan>
+                        </text>
+                      ) : null
+                    }
+                  />
                 </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "white",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                    fontSize: "12px",
-                  }}
-                />
-                <Legend wrapperStyle={{ fontSize: "12px" }} />
               </PieChart>
-            </ResponsiveContainer>
-            {isSingleCategory && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none -translate-y-4">
-                <span className="text-xl font-bold text-gray-900">100%</span>
-                <span className="text-xs text-gray-500">{data[0].name}</span>
-              </div>
-            )}
+            </ChartContainer>
+            <ul className="w-full space-y-2 text-sm">
+              {(Object.keys(chartConfig) as StatusKey[]).map((status) => (
+                <li key={status} className="flex items-center justify-between gap-3">
+                  <span className="flex items-center gap-2 text-gray-600">
+                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: chartConfig[status].color }} />
+                    {chartConfig[status].label}
+                  </span>
+                  <span className="font-semibold text-gray-900">
+                    {counts[status]}
+                    <span className="ml-1 text-xs font-normal text-gray-500">
+                      {total > 0 ? Math.round((counts[status] / total) * 100) : 0}%
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </CardContent>

@@ -16,6 +16,7 @@ import { orderService } from "@/app/services/orderService";
 import { ViewOrderModal, CancelOrderModal } from "./_components/order-modals";
 import { EditOrderModal } from "./_components/edit-order-modal";
 import { CreateAdminOrderModal } from "./_components/create-admin-order-modal";
+import { EbmSalesModal } from "./_components/EbmSalesModal";
 import { useWebSocket } from "@/hooks/useOrderWebSocket";
 import { useAuth } from "@/app/contexts/auth-context";
 import { useAdminAccess } from "@/app/hooks/useAdminAccess";
@@ -78,6 +79,7 @@ export default function AdminOrdersPage() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [createOrderModalOpen, setCreateOrderModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [ebmSalesModalOpen, setEbmSalesModalOpen] = useState(false);
 
   // Filter states
   const [searchValue, setSearchValue] = useState("");
@@ -335,6 +337,11 @@ export default function AdminOrdersPage() {
     setEditModalOpen(true);
   };
 
+  const handleEbmSales = (order: Order) => {
+    setSelectedOrder(order);
+    setEbmSalesModalOpen(true);
+  };
+
   const handleSendPaymentLink = async (order: Order) => {
     try {
       const result = await orderService.sendPaymentLink(order.id);
@@ -531,7 +538,17 @@ export default function AdminOrdersPage() {
         )
       );
       
-      await orderService.updateOrder(orderId, { paymentStatus });
+      const response: any = await orderService.updateOrder(orderId, { paymentStatus });
+      // The backend may move the order status back to Pending when the
+      // payment is no longer completed — show what it saved
+      const savedStatus = response?.data?.status as Order['status'] | undefined;
+      if (savedStatus) {
+        setOrders(prevOrders =>
+          prevOrders.map(order =>
+            order.id === orderId ? { ...order, status: savedStatus } : order
+          )
+        );
+      }
       toast.success("Payment status updated successfully");
     } catch (error: any) {
       // Revert on error
@@ -552,7 +569,8 @@ export default function AdminOrdersPage() {
     onPaymentStatusUpdate: handlePaymentStatusUpdate,
     onEdit: handleEditOrder,
     onSendPaymentLink: handleSendPaymentLink,
-    canManage: can("orders", "manage"),
+    onEbmSales: handleEbmSales,
+    can: (action: string) => can("orders", action),
   });
 
   const filters = [
@@ -593,14 +611,16 @@ export default function AdminOrdersPage() {
           <h1 className="text-[16px] font-medium">Restaurant Orders</h1>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            onClick={() => setCreateOrderModalOpen(true)}
-            className="bg-green-600 hover:bg-green-700 text-white"
-          >
-            <PlusCircle className="h-4 w-4 mr-1" />
-            Create Order
-          </Button>
+          {can("orders", "create") && (
+            <Button
+              size="sm"
+              onClick={() => setCreateOrderModalOpen(true)}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              <PlusCircle className="h-4 w-4 mr-1" />
+              Create Order
+            </Button>
+          )}
           <ExportButton
             module="orders"
             filters={{
@@ -670,6 +690,16 @@ export default function AdminOrdersPage() {
         onClose={handleModalClose}
         onCreated={handleOrderUpdate}
       />
+
+      {selectedOrder && (
+        <EbmSalesModal
+          open={ebmSalesModalOpen}
+          onOpenChange={(open) => { if (!open) { setEbmSalesModalOpen(false); setSelectedOrder(null); } }}
+          orderId={selectedOrder.id}
+          orderNumber={selectedOrder.orderNumber}
+          paymentMethod={selectedOrder.paymentMethod}
+        />
+      )}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>

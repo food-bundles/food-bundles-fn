@@ -62,7 +62,11 @@ export const invitationService = {
     return response.data;
   },
 
-  async verifyInviteToken(token: string): Promise<{ message: string; data: { email: string; role: InvitationRole } }> {
+  async verifyInviteToken(token: string): Promise<{
+    message: string;
+    /** prefill: an aggregator approved from the QR application (name and phone they applied with) */
+    data: { email: string; role: InvitationRole; prefill?: { username: string; phone: string } };
+  }> {
     const response = await axiosClient.get(`/invites/verify/${token}`);
     return response.data;
   }

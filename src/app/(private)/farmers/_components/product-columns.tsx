@@ -1,5 +1,6 @@
 "use client"
 
+import { stageLabel } from "./status-helpers";
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -67,7 +68,7 @@ export const productColumns = (
     header: "Status",
     cell: ({ row }) => (
       <Badge className={`${row.original.statusColor} border-0 text-xs`}>
-        {row.original.displayStatus}
+        {stageLabel(row.original.displayStatus)}
       </Badge>
     ),
   },

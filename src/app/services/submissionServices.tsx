@@ -1,4 +1,4 @@
-import { PurchaseSubmissionPayload } from "../contexts/submission-context";
+import { PurchaseSubmissionPayload, type SubmissionStage } from "../contexts/submission-context";
 import createAxiosClient from "../hooks/axiosClient";
 
 export interface FarmerFeedbackPayload {
@@ -6,6 +6,29 @@ export interface FarmerFeedbackPayload {
   notes?: string;
   counterOffer?: number;
   counterQty?: number;
+}
+
+export interface AssignableAggregator {
+  id: string;
+  username: string;
+  phone: string | null;
+  aggregationSite: { id: string; name: string; district: string | null; isActive: boolean } | null;
+  /** Submissions still waiting on this aggregator */
+  openSubmissions: number;
+  /** Straight-line km from the farmer (one submission only); null when unknown */
+  distanceKm?: number | null;
+  /** The one the automatic rule picks for this submission */
+  automatic?: boolean;
+}
+
+export interface AssignAggregatorResult {
+  assigned: number;
+  /** Already with that aggregator */
+  unchanged: number;
+  /** Paid or rejected: left as they were */
+  skipped: number;
+  /** Handed back to the nearest rule but no aggregator was found */
+  unassigned: number;
 }
 
 export const submissionService = {
@@ -23,6 +46,30 @@ export const submissionService = {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.get("/submissions", { params });
     return response.data;
+  },
+
+  // GET /submissions/aggregators: aggregators a submission can be given to (assign_aggregator permission).
+  // With one submission: distances from that farmer, and the automatic (nearest) one first.
+  listAggregators: async (submissionId?: string): Promise<AssignableAggregator[]> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/submissions/aggregators", {
+      params: submissionId ? { submissionId } : undefined,
+    });
+    return response.data.data;
+  },
+
+  // PATCH /submissions/:id/aggregator: choose who handles one submission; null = the nearest again
+  assignAggregator: async (submissionId: string, aggregatorId: string | null): Promise<AssignAggregatorResult> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(`/submissions/${submissionId}/aggregator`, { aggregatorId });
+    return response.data.data;
+  },
+
+  // POST /submissions/assign-aggregator: many farmers' submissions to one aggregator; null = the nearest again
+  assignAggregatorBulk: async (submissionIds: string[], aggregatorId: string | null): Promise<AssignAggregatorResult> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/submissions/assign-aggregator", { submissionIds, aggregatorId });
+    return response.data.data;
   },
 
   getSubmissionById: async (submissionId: string) => {
@@ -77,11 +124,45 @@ export const submissionService = {
     return response.data;
   },
 
-  approveSubmission: async (submissionId: string) => {
+  /** Stage 2: approve at the price, or send a counter offer when it is below what the farmer asks.
+   *  Omit price to use the Food Bundles price (only "Set price" users may send another one). */
+  approveSubmission: async (submissionId: string, price?: number) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.patch(
-      `/submissions/${submissionId}/approve`
+      `/submissions/${submissionId}/approve`,
+      price !== undefined ? { price } : {}
     );
+    return response.data;
+  },
+
+  /** Asked price, Food Bundles price, and whether the user may change it */
+  getSubmissionPrice: async (submissionId: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get(`/submissions/${submissionId}/price`);
+    return response.data as {
+      success: boolean;
+      data: {
+        askedPrice: number;
+        originalPrice: number | null;
+        foodBundlesPrice: number | null;
+        agreedPrice: number | null;
+        counterOfferPrice: number | null;
+        canSetPrice: boolean;
+      };
+    };
+  },
+
+  /** Stage 4: pay by MoMo (PayPack cashout) to the given number */
+  paySubmissionMomo: async (submissionId: string, phoneNumber: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(`/submissions/${submissionId}/payout`, { phoneNumber });
+    return response.data;
+  },
+
+  /** Stage 4: the farmer was paid in cash */
+  paySubmissionCash: async (submissionId: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(`/submissions/${submissionId}/pay-cash`);
     return response.data;
   },
 
@@ -182,7 +263,7 @@ export const submissionService = {
 
   reverseSubmissionStatus: async (
     submissionId: string,
-    payload: { toStatus: "PENDING" | "VERIFIED" | "APPROVED" | "PAID"; reason?: string }
+    payload: { toStatus: SubmissionStage; reason?: string }
   ) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.patch(

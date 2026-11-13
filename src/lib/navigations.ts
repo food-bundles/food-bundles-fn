@@ -4,12 +4,18 @@ const TraderAppUrl = process.env.NEXT_PUBLIC_TRADER_APP_URL as string;
 
 // Protected route prefixes and the roles allowed on them (used by middleware too)
 export const ROLE_ROUTES: Record<string, string | string[]> = {
-  "/dashboard": ["ADMIN", "SUPERUSER", "MARKET_PRICES", "STAFF"],
+  // Office staff and field roles (aggregators, logistics) all use the dashboard;
+  // what each sees is decided by their role's permissions
+  "/dashboard": ["ADMIN", "SUPERUSER", "MARKET_PRICES", "STAFF", "AGGREGATOR", "LOGISTICS"],
   "/restaurant": "RESTAURANT",
   "/farmers": "FARMER",
-  "/aggregator": "AGGREGATOR",
-  "/logistics": "LOGISTICS",
   "/traders": "TRADER",
+};
+
+// Old field-role apps, now pages inside the dashboard (kept so links still work)
+export const MOVED_APPS: Record<string, string> = {
+  "/aggregator": "/dashboard/submission-verification",
+  "/logistics": "/dashboard/deliveries",
 };
 
 export function isRoleAllowedOnPath(role: string, pathname: string): boolean {
@@ -67,13 +73,13 @@ export function getRedirectPath(userRole: UserRole): string {
     case UserRole.AFFILIATOR:
       return "/restaurant";
     case UserRole.AGGREGATOR:
-      return "/aggregator";
+      return "/dashboard";
     case UserRole.ADMIN:
       return "/dashboard";
     case UserRole.TRADER:
       return TraderAppUrl;
     case UserRole.LOGISTICS:
-      return "/logistics";
+      return "/dashboard";
     case UserRole.SUPERUSER:
       return "/dashboard";
     case UserRole.MARKET_PRICES:

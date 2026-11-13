@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { RestaurantProvider } from "@/app/contexts/RestaurantContext";
 import { NotificationRecipientProvider } from "@/app/contexts/NotificationRecipientContext";
 import { PaymentMethodProvider } from "@/app/contexts/paymentMethodContext";
+import { siteFontVariables } from "@/components/home/fonts";
 
 export default function AdminLayout({
   children,
@@ -38,7 +39,7 @@ export default function AdminLayout({
           <ProductProvider>
             <PaymentMethodProvider>
             <NotificationRecipientProvider>
-              <div className="flex h-screen bg-white">
+              <div className={`flex h-screen bg-[#F6F9F7] ${siteFontVariables}`}>
               {/* Sidebar */}
               <div
                 className={`${
@@ -54,20 +55,20 @@ export default function AdminLayout({
               {/* Mobile overlay */}
               {sidebarOpen && (
                 <div
-                  className="fixed inset-0 z-40 md:hidden"
+                  className="fixed inset-0 z-40 bg-black/40 md:hidden"
                   onClick={() => setSidebarOpen(false)}
                 />
               )}
 
               <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-                <div className="bg-green-500 w-full shrink-0">
+                <div className="sticky top-0 z-30 w-full shrink-0">
                   <AdminHeader
                     onMenuClick={() => setSidebarOpen(!sidebarOpen)}
                     sidebarOpen={sidebarOpen}
                   />
                 </div>
 
-                <main className="flex-1 bg-gray-100 overflow-y-auto">
+                <main className="flex-1 bg-[#F6F9F7] overflow-y-auto">
                   <div className="min-h-full py-0">{children}</div>
                 </main>
               </div>

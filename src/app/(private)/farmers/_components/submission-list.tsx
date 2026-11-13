@@ -1,5 +1,6 @@
 "use client";
 
+import { stageLabel } from "./status-helpers";
 import { motion } from "motion/react";
 import { ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -46,7 +47,7 @@ export function SubmissionList({ products, onViewDetails }: SubmissionListProps)
             <span className="text-gray-600 hidden sm:inline">{product.quantity} {product.unit}</span>
             <span className="font-semibold text-gray-900">{product.price}</span>
             <span className="text-xs text-gray-400 hidden md:inline">{product.submittedDate}</span>
-            <Badge className={`${product.statusColor} border-0 text-xs`}>{product.displayStatus}</Badge>
+            <Badge className={`${product.statusColor} border-0 text-xs`}>{stageLabel(product.displayStatus)}</Badge>
             <ChevronRight className="w-4 h-4 text-gray-400" />
           </div>
         </motion.button>

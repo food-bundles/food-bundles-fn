@@ -3,10 +3,16 @@ import createAxiosClient from "@/app/hooks/axiosClient";
 
 const axiosClient = createAxiosClient();
 
+export interface PermissionAction {
+  key: string; // "view", "create", "update_payment_status"…
+  label: string;
+}
+
 export interface PermissionModuleInfo {
   key: string;
   label: string;
   group: string;
+  actions: PermissionAction[];
 }
 
 export interface AdminRole {
@@ -14,6 +20,8 @@ export interface AdminRole {
   name: string;
   description?: string | null;
   permissions: string[];
+  /** Customer types this role works with; empty = all */
+  customerTypeIds?: string[];
   isSystem: boolean;
   locked: boolean; // Administrator: always full access, not editable
   adminCount: number;
@@ -37,10 +45,13 @@ export const adminRoleService = {
 
   getRoles: () => run<AdminRole[]>(() => axiosClient.get("/admin-roles"), "Failed to load roles"),
 
-  createRole: (data: { name: string; description?: string; permissions: string[] }) =>
+  createRole: (data: { name: string; description?: string; permissions: string[]; customerTypeIds?: string[] }) =>
     run<AdminRole>(() => axiosClient.post("/admin-roles", data), "Failed to create role"),
 
-  updateRole: (id: string, data: { name?: string; description?: string; permissions?: string[] }) =>
+  updateRole: (
+    id: string,
+    data: { name?: string; description?: string; permissions?: string[]; customerTypeIds?: string[] }
+  ) =>
     run<AdminRole>(() => axiosClient.patch(`/admin-roles/${id}`, data), "Failed to update role"),
 
   deleteRole: (id: string) =>

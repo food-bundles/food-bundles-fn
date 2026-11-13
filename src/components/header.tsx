@@ -106,13 +106,12 @@ export function Header() {
         return "/farmers";
       case UserRole.RESTAURANT:
         return "#";
+      // Dashboard users: the dashboard sends each to the first page their role opens
       case UserRole.AGGREGATOR:
-        return "/aggregator";
       case UserRole.ADMIN:
       case UserRole.LOGISTICS:
-        return "/dashboard";
       case UserRole.MARKET_PRICES:
-        return "/dashboard/markets";
+        return "/dashboard";
       default:
         console.warn(
           `Unknown user role: ${userRole}. Redirecting to default settings.`

@@ -1,500 +1,228 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
-import { Search, User, Mail, Phone, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { userLookupService, UserLookupResult } from "@/app/services/userLookupService";
-import { toast } from "sonner";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Loader2, Search, UserSearch, X } from "lucide-react";
+import { userLookupService, type UserKind, type UserSearchResult } from "@/app/services/userLookupService";
+import { UserProfilePanel } from "./_components/user-profile-panel";
+
+const KINDS: { key: "ALL" | UserKind; label: string }[] = [
+  { key: "ALL", label: "All" },
+  { key: "CUSTOMER", label: "Customers" },
+  { key: "FARMER", label: "Farmers" },
+  { key: "AFFILIATOR", label: "Affiliators" },
+  { key: "STAFF", label: "Staff" },
+];
+
+const KIND_STYLE: Record<UserKind, { label: string; avatar: string }> = {
+  CUSTOMER: { label: "Customer", avatar: "bg-[#0B2E1F] text-[#00D048]" },
+  FARMER: { label: "Farmer", avatar: "bg-[#E3F3E8] text-[#007A35]" },
+  AFFILIATOR: { label: "Affiliator", avatar: "bg-[#FFF3D1] text-[#7A5200]" },
+  STAFF: { label: "Staff", avatar: "bg-[#E4EEF7] text-[#1B4F7A]" },
+};
+
+const roleLabel = (r: UserSearchResult) =>
+  r.kind === "STAFF" || r.kind === "CUSTOMER" ? r.role.replace(/_/g, " ").toLowerCase() : null;
 
 export default function UserLookupPage() {
-  const [searchType, setSearchType] = useState<"id" | "email" | "phone">("id");
-  const [searchValue, setSearchValue] = useState("");
-  const [searchError, setSearchError] = useState("");
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<UserSearchResult[]>([]);
+  const [searched, setSearched] = useState("");
   const [loading, setLoading] = useState(false);
-  const [userData, setUserData] = useState<UserLookupResult | null>(null);
-  const [ordersPage, setOrdersPage] = useState(1);
-  const [vouchersPage, setVouchersPage] = useState(1);
-  const [activeTab, setActiveTab] = useState("basic");
-  const ordersPerPage = 5;
-  const vouchersPerPage = 5;
+  const [error, setError] = useState("");
+  const [kind, setKind] = useState<"ALL" | UserKind>("ALL");
+  const [selected, setSelected] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const detailsRef = useRef<HTMLDivElement>(null);
 
-  const validate = () => {
-    if (!searchValue.trim()) {
-      setSearchError("This field is required");
-      return false;
+  // Search as you type, after a short pause
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) {
+      setResults([]);
+      setSearched("");
+      setError("");
+      return;
     }
-    if (searchType === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(searchValue.trim())) {
-      setSearchError("Enter a valid email address");
-      return false;
-    }
-    if (searchType === "phone" && !/^\+?[0-9]{9,15}$/.test(searchValue.trim())) {
-      setSearchError("Enter a valid phone number (9-15 digits)");
-      return false;
-    }
-    setSearchError("");
-    return true;
-  };
-
-  const handleSearch = async () => {
-    if (!validate()) return;
-
-    setLoading(true);
-    try {
-      let result;
-      if (searchType === "id") {
-        result = await userLookupService.getUserById(searchValue.trim());
-      } else if (searchType === "email") {
-        result = await userLookupService.getUserByEmail(searchValue.trim());
-      } else {
-        result = await userLookupService.getUserByPhone(searchValue.trim());
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const data = await userLookupService.search(q);
+        if (cancelled) return;
+        setResults(data);
+        setSearched(q);
+      } catch (e: any) {
+        if (!cancelled) setError(e?.response?.data?.message || "Search failed. Try again.");
+      } finally {
+        if (!cancelled) setLoading(false);
       }
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [query]);
 
-      if (result.success && result.data) {
-        setUserData(result.data);
-        toast.success("User found successfully");
-      } else {
-        setUserData(null);
-        toast.error("User not found");
-      }
-    } catch (error: any) {
-      setUserData(null);
-      toast.error(error.response?.data?.message || "Failed to fetch user");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const counts = useMemo(() => {
+    const c: Record<string, number> = { ALL: results.length };
+    results.forEach((r) => (c[r.kind] = (c[r.kind] ?? 0) + 1));
+    return c;
+  }, [results]);
+  const shown = kind === "ALL" ? results : results.filter((r) => r.kind === kind);
 
-  const getUserTypeColor = (type: string) => {
-    switch (type) {
-      case "FARMER":
-        return "bg-green-500";
-      case "RESTAURANT":
-        return "bg-blue-500";
-      case "AFFILIATOR":
-        return "bg-purple-500";
-      case "ADMIN":
-        return "bg-red-500";
-      default:
-        return "bg-gray-500";
-    }
+  const open = (id: string) => {
+    setSelected(id);
+    // On narrow screens the details sit below the list
+    if (window.innerWidth < 1024) setTimeout(() => detailsRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">User Lookup</h1>
-        <p className="text-sm text-muted-foreground">Search for users by ID, email, or phone number</p>
-      </div>
+    <div className="flex flex-col gap-5 p-4 sm:p-6">
+      {/* Search */}
+      <section className="rounded-2xl border border-[#DCE6DF] bg-white p-5 sm:p-7">
+        <h2 className="m-0 text-[22px] font-bold text-[#0B2E1F] [font-family:var(--font-inter-tight),sans-serif]">Find anyone on Food Bundles</h2>
+        <p className="m-0 mt-1 text-[15px] text-[#4A6358]">
+          Type anything you remember: a name, phone (any format), email, TIN, ID, district or sector, customer type or staff role.
+        </p>
+        <div className="relative mt-4">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#4A6358]" />
+          <input
+            ref={inputRef}
+            type="search"
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="e.g. Imboni, 0788 123 456, Gasabo, hotel, aggregator…"
+            aria-label="Search users"
+            className="h-14 w-full rounded-full border border-[#DCE6DF] bg-white pl-12 pr-12 text-[16px] text-[#0B2E1F] placeholder:text-[#7A8E83] focus:outline-none focus:ring-4 focus:ring-[#00D048]/40 focus:border-[#00A43A]"
+          />
+          {loading ? (
+            <Loader2 className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 animate-spin text-[#4A6358]" />
+          ) : query ? (
+            <button
+              type="button"
+              aria-label="Clear search"
+              onClick={() => {
+                setQuery("");
+                setSelected(null);
+                inputRef.current?.focus();
+              }}
+              className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-[#4A6358] hover:bg-[#F6F9F7] cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          ) : null}
+        </div>
+      </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Search User</CardTitle>
-          <CardDescription className="text-sm">Enter user ID, email, or phone number to find user information</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <nav className="-mb-px flex space-x-8 ">
-            <button
-              type="button"
-              onClick={() => { setSearchType("id"); setSearchValue(""); setSearchError(""); }}
-              className={`py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap flex items-center gap-2 ${
-                searchType === "id"
-                  ? "border-green-500 text-green-600"
-                  : "border-transparent text-gray-700 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              <User className="w-4 h-4" />
-              User ID
-            </button>
-            <button
-              type="button"
-              onClick={() => { setSearchType("email"); setSearchValue(""); setSearchError(""); }}
-              className={`py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap flex items-center gap-2 ${
-                searchType === "email"
-                  ? "border-green-500 text-green-600"
-                  : "border-transparent text-gray-700 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              <Mail className="w-4 h-4" />
-              Email
-            </button>
-            <button
-              type="button"
-              onClick={() => { setSearchType("phone"); setSearchValue(""); setSearchError(""); }}
-              className={`py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap flex items-center gap-2 ${
-                searchType === "phone"
-                  ? "border-green-500 text-green-600"
-                  : "border-transparent text-gray-700 hover:text-gray-700 hover:border-gray-300"
-              }`}
-            >
-              <Phone className="w-4 h-4" />
-              Phone
-            </button>
-          </nav>
-
-          <div className="space-y-1">
-            <div className="flex gap-2">
-              <Input
-                placeholder={
-                  searchType === "id"
-                    ? "Enter user ID..."
-                    : searchType === "email"
-                    ? "Enter email address..."
-                    : "Enter phone number..."
-                }
-                value={searchValue}
-                onChange={(e) => { setSearchValue(e.target.value); setSearchError(""); }}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                className={`text-sm max-w-md ${searchError ? "border-red-500" : ""}`}
-              />
-              <Button onClick={handleSearch} disabled={loading} className="bg-green-700 hover:bg-green-600 text-sm">
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                Search
-              </Button>
+      {/* Results + details */}
+      {query.trim().length < 2 ? (
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-[#C5D1C6] bg-white px-6 py-14 text-center">
+          <UserSearch className="h-8 w-8 text-[#00A43A]" />
+          <p className="m-0 font-bold text-[#0B2E1F]">Search across every account</p>
+          <p className="m-0 max-w-md text-sm text-[#4A6358]">Customers, farmers, affiliators and staff. Results appear as you type.</p>
+        </div>
+      ) : (
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
+          <section className="flex min-w-0 flex-col gap-3" aria-label="Search results">
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by account type">
+              {KINDS.map((k) => {
+                const on = kind === k.key;
+                const n = counts[k.key] ?? 0;
+                return (
+                  <button
+                    key={k.key}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => setKind(k.key)}
+                    disabled={k.key !== "ALL" && n === 0}
+                    className={`min-h-9 rounded-full px-3.5 text-[13px] font-bold transition-colors disabled:opacity-40 cursor-pointer ${
+                      on ? "bg-[#0B2E1F] text-white" : "border border-[#DCE6DF] bg-white text-[#0B2E1F] hover:border-[#00A43A]"
+                    }`}
+                  >
+                    {k.label} <span className={on ? "text-[#7CF2A6]" : "text-[#4A6358]"}>{n}</span>
+                  </button>
+                );
+              })}
             </div>
-            {searchError && <p className="text-xs text-red-500">{searchError}</p>}
-          </div>
-        </CardContent>
-      </Card>
 
-      {userData && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-lg">{userData.name}</CardTitle>
-                <CardDescription className="text-sm">User Information</CardDescription>
-              </div>
-              <Badge className={getUserTypeColor(userData.userType)}>{userData.userType}</Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <nav className="-mb-px flex space-x-8 border-b border-gray-200">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("basic")}
-                  className={`py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                    activeTab === "basic"
-                      ? "border-green-500 text-green-600"
-                      : "border-transparent text-gray-700 hover:text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  Basic Info
-                </button>
-                {userData.orders && userData.orders.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("orders")}
-                    className={`py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                      activeTab === "orders"
-                        ? "border-green-500 text-green-600"
-                        : "border-transparent text-gray-700 hover:text-gray-700 hover:border-gray-300"
-                    }`}
-                  >
-                    Orders
-                  </button>
-                )}
-                {userData.Voucher && userData.Voucher.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("vouchers")}
-                    className={`py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                      activeTab === "vouchers"
-                        ? "border-green-500 text-green-600"
-                        : "border-transparent text-gray-700 hover:text-gray-700 hover:border-gray-300"
-                    }`}
-                  >
-                    Vouchers
-                  </button>
-                )}
-                {userData.Wallet && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("wallet")}
-                    className={`py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                      activeTab === "wallet"
-                        ? "border-green-500 text-green-600"
-                        : "border-transparent text-gray-700 hover:text-gray-700 hover:border-gray-300"
-                    }`}
-                  >
-                    Wallet
-                  </button>
-                )}
-              </nav>
+            {error ? (
+              <p className="m-0 rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}</p>
+            ) : searched && !loading && shown.length === 0 ? (
+              <p className="m-0 rounded-xl bg-white p-6 text-center text-sm text-[#4A6358]">
+                No one matches “{searched}”. Try part of the name, the last digits of the phone, or the district.
+              </p>
+            ) : (
+              <ul className="m-0 flex list-none flex-col gap-2 p-0">
+                {shown.map((r) => {
+                  const on = r.id === selected;
+                  const style = KIND_STYLE[r.kind];
+                  return (
+                    <li key={`${r.kind}-${r.id}`}>
+                      <button
+                        type="button"
+                        onClick={() => open(r.id)}
+                        aria-current={on ? "true" : undefined}
+                        className={`flex w-full items-start gap-3 rounded-2xl border bg-white p-3.5 text-left transition-colors cursor-pointer ${
+                          on ? "border-[#00A43A] ring-2 ring-[#00A43A]/20" : "border-[#DCE6DF] hover:border-[#00A43A]"
+                        }`}
+                      >
+                        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[14px] font-bold ${style.avatar}`}>
+                          {r.name.trim().slice(0, 2).toUpperCase()}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="flex flex-wrap items-center gap-1.5">
+                            <span className="truncate text-[15px] font-bold text-[#0B2E1F]">{r.name}</span>
+                            <span className="rounded-full bg-[#F6F9F7] px-2 py-0.5 text-[11px] font-bold text-[#4A6358]">
+                              {style.label}
+                              {roleLabel(r) ? ` · ${roleLabel(r)}` : ""}
+                            </span>
+                            {r.deleted && <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-700">In trash</span>}
+                          </span>
+                          <span className="mt-0.5 block truncate text-[13px] text-[#4A6358]">
+                            {[r.phone, r.email, r.location].filter(Boolean).join(" · ") || "No contact details"}
+                          </span>
+                          {(r.details.length > 0 || r.matchedOn.length > 0) && (
+                            <span className="mt-1.5 flex flex-wrap gap-1">
+                              {r.details.slice(0, 3).map((d) => (
+                                <span key={d.label} className="rounded-md bg-[#F6F9F7] px-1.5 py-0.5 text-[11px] text-[#2E4A3B]">
+                                  {d.label}: <b>{d.value}</b>
+                                </span>
+                              ))}
+                              {r.matchedOn.length > 0 && (
+                                <span className="rounded-md bg-[#E3F3E8] px-1.5 py-0.5 text-[11px] font-bold text-[#007A35]">
+                                  Matched: {r.matchedOn.join(", ")}
+                                </span>
+                              )}
+                            </span>
+                          )}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {results.length >= 60 && (
+              <p className="m-0 text-xs text-[#4A6358]">Showing the first 60 matches. Add more detail to narrow the search.</p>
+            )}
+          </section>
 
-              <TabsList className="hidden">
-                <TabsTrigger value="basic">Basic Info</TabsTrigger>
-                {userData.orders && userData.orders.length > 0 && (
-                  <TabsTrigger value="orders">Orders</TabsTrigger>
-                )}
-                {userData.Voucher && userData.Voucher.length > 0 && (
-                  <TabsTrigger value="vouchers">Vouchers</TabsTrigger>
-                )}
-                {userData.Wallet && (
-                  <TabsTrigger value="wallet">Wallet</TabsTrigger>
-                )}
-              </TabsList>
-
-              <TabsContent value="basic" className="space-y-4 mt-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground">User ID</p>
-                    <p className="text-sm">{userData.id}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground">User Type</p>
-                    <p className="text-sm">{userData.userType}</p>
-                  </div>
-                  {userData.email && (
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground">Email</p>
-                      <p className="text-sm">{userData.email}</p>
-                    </div>
-                  )}
-                  {userData.phone && (
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground">Phone</p>
-                      <p className="text-sm">{userData.phone}</p>
-                    </div>
-                  )}
-                  {userData.location && (
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground">Location</p>
-                      <p className="text-sm">{userData.location}</p>
-                    </div>
-                  )}
-                  {userData.province && (
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground">Province</p>
-                      <p className="text-sm">{userData.province}</p>
-                    </div>
-                  )}
-                  {userData.district && (
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground">District</p>
-                      <p className="text-sm">{userData.district}</p>
-                    </div>
-                  )}
-                  {userData.createdAt && (
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground">Created At</p>
-                      <p className="text-sm">{new Date(userData.createdAt).toLocaleString()}</p>
-                    </div>
-                  )}
+          <section ref={detailsRef} aria-label="User details" className="min-w-0 lg:sticky lg:top-24 lg:self-start">
+            <div className="rounded-2xl border border-[#DCE6DF] bg-white p-4 sm:p-6">
+              {selected ? (
+                <UserProfilePanel userId={selected} onClose={() => setSelected(null)} />
+              ) : (
+                <div className="flex flex-col items-center gap-2 py-16 text-center">
+                  <UserSearch className="h-8 w-8 text-[#C5D1C6]" />
+                  <p className="m-0 text-sm text-[#4A6358]">Pick someone from the results to see their account, orders, payments and history.</p>
                 </div>
-              </TabsContent>
-
-              {userData.orders && userData.orders.length > 0 && (
-                <TabsContent value="orders" className="space-y-4 mt-4">
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="p-4 rounded-lg border bg-blue-50 transition-all duration-200 hover:shadow-md">
-                      <div className="space-y-1">
-                        <p className="text-xs text-gray-600 font-medium">Total Orders</p>
-                        <p className="text-sm font-bold text-blue-600">{userData.orders.length}</p>
-                      </div>
-                    </div>
-                    <div className="p-4 rounded-lg border bg-green-50 transition-all duration-200 hover:shadow-md">
-                      <div className="space-y-1">
-                        <p className="text-xs text-gray-600 font-medium">Total Amount</p>
-                        <p className="text-sm font-bold text-green-600">
-                          {userData.orders.reduce((sum: number, order: any) => sum + (order.totalAmount || 0), 0).toLocaleString()} RWF
-                        </p>
-                      </div>
-                    </div>
-                    <div className="p-4 rounded-lg border bg-purple-50 transition-all duration-200 hover:shadow-md">
-                      <div className="space-y-1">
-                        <p className="text-xs text-gray-600 font-medium">Delivered</p>
-                        <p className="text-sm font-bold text-purple-600">
-                          {userData.orders.filter((order: any) => order.status === 'DELIVERED').length}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="space-y-3">
-                        {userData.orders.slice((ordersPage - 1) * ordersPerPage, ordersPage * ordersPerPage).map((order: any) => (
-                          <div key={order.id} className="border-b pb-3 last:border-0">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <p className="text-sm font-medium text-gray-900">{order.orderNumber}</p>
-                                <p className="text-xs text-gray-500">{new Date(order.createdAt).toLocaleDateString()}</p>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-sm font-medium text-gray-900">{order.totalAmount?.toLocaleString()} RWF</p>
-                                <span className={`text-xs px-2 py-1 rounded-full ${
-                                  order.status === 'DELIVERED' ? 'bg-green-100 text-green-700' :
-                                  order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
-                                  'bg-gray-100 text-gray-700'
-                                }`}>
-                                  {order.status}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                        {userData.orders.length > ordersPerPage && (
-                          <div className="flex items-center justify-between pt-3">
-                            <p className="text-xs text-gray-500">
-                              Showing {((ordersPage - 1) * ordersPerPage) + 1}-{Math.min(ordersPage * ordersPerPage, userData.orders.length)} of {userData.orders.length} orders
-                            </p>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setOrdersPage(p => Math.max(1, p - 1))}
-                                disabled={ordersPage === 1}
-                                className="h-7 w-7 p-0"
-                              >
-                                <ChevronLeft className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setOrdersPage(p => Math.min(Math.ceil(userData.orders.length / ordersPerPage), p + 1))}
-                                disabled={ordersPage >= Math.ceil(userData.orders.length / ordersPerPage)}
-                                className="h-7 w-7 p-0"
-                              >
-                                <ChevronRight className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
               )}
-
-              {userData.Voucher && userData.Voucher.length > 0 && (
-                <TabsContent value="vouchers" className="space-y-4 mt-4">
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="p-4 rounded-lg border bg-blue-50 transition-all duration-200 hover:shadow-md">
-                      <div className="space-y-1">
-                        <p className="text-xs text-gray-600 font-medium">Total Vouchers</p>
-                        <p className="text-sm font-bold text-blue-600">{userData.Voucher.length}</p>
-                      </div>
-                    </div>
-                    <div className="p-4 rounded-lg border bg-green-50 transition-all duration-200 hover:shadow-md">
-                      <div className="space-y-1">
-                        <p className="text-xs text-gray-600 font-medium">Total Credit</p>
-                        <p className="text-sm font-bold text-green-600">
-                          {userData.Voucher.reduce((sum: number, voucher: any) => sum + (voucher.creditLimit || 0), 0).toLocaleString()} RWF
-                        </p>
-                      </div>
-                    </div>
-                    <div className="p-4 rounded-lg border bg-purple-50 transition-all duration-200 hover:shadow-md">
-                      <div className="space-y-1">
-                        <p className="text-xs text-gray-600 font-medium">Active</p>
-                        <p className="text-sm font-bold text-purple-600">
-                          {userData.Voucher.filter((voucher: any) => voucher.status === 'ACTIVE').length}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="space-y-3">
-                        {userData.Voucher.slice((vouchersPage - 1) * vouchersPerPage, vouchersPage * vouchersPerPage).map((voucher: any) => (
-                          <div key={voucher.id} className="border-b pb-3 last:border-0">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <p className="text-sm font-medium text-gray-900">{voucher.voucherCode}</p>
-                                <p className="text-xs text-gray-500">{voucher.voucherType}</p>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-sm font-medium text-gray-900">{voucher.creditLimit?.toLocaleString()} RWF</p>
-                                <span className={`text-xs px-2 py-1 rounded-full ${
-                                  voucher.status === 'ACTIVE' ? 'bg-green-100 text-green-700' :
-                                  voucher.status === 'USED' ? 'bg-gray-100 text-gray-700' :
-                                  'bg-red-100 text-red-700'
-                                }`}>
-                                  {voucher.status}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                        {userData.Voucher.length > vouchersPerPage && (
-                          <div className="flex items-center justify-between pt-3">
-                            <p className="text-xs text-gray-500">
-                              Showing {((vouchersPage - 1) * vouchersPerPage) + 1}-{Math.min(vouchersPage * vouchersPerPage, userData.Voucher.length)} of {userData.Voucher.length} vouchers
-                            </p>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setVouchersPage(p => Math.max(1, p - 1))}
-                                disabled={vouchersPage === 1}
-                                className="h-7 w-7 p-0"
-                              >
-                                <ChevronLeft className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setVouchersPage(p => Math.min(Math.ceil(userData.Voucher.length / vouchersPerPage), p + 1))}
-                                disabled={vouchersPage >= Math.ceil(userData.Voucher.length / vouchersPerPage)}
-                                className="h-7 w-7 p-0"
-                              >
-                                <ChevronRight className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              )}
-
-              {userData.Wallet && (
-                <TabsContent value="wallet" className="space-y-4 mt-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 rounded-lg border bg-green-50 transition-all duration-200 hover:shadow-md">
-                      <div className="space-y-1">
-                        <p className="text-xs text-gray-600 font-medium">Balance</p>
-                        <p className="text-sm font-bold text-green-600">{userData.Wallet.balance?.toLocaleString()} RWF</p>
-                      </div>
-                    </div>
-                    <div className="p-4 rounded-lg border bg-blue-50 transition-all duration-200 hover:shadow-md">
-                      <div className="space-y-1">
-                        <p className="text-xs text-gray-600 font-medium">Total Deposited</p>
-                        <p className="text-sm font-bold text-blue-600">{userData.Wallet.totalDeposited?.toLocaleString()} RWF</p>
-                      </div>
-                    </div>
-                  </div>
-                  {userData.Wallet.transactions && userData.Wallet.transactions.length > 0 && (
-                    <Card>
-                      <CardContent className="p-4">
-                        <div className="space-y-2">
-                          <p className="text-xs font-medium text-gray-700">Recent Transactions</p>
-                          {userData.Wallet.transactions.slice(0, 5).map((transaction: any) => (
-                            <div key={transaction.id} className="flex justify-between items-center border-b pb-2 last:border-0">
-                              <div>
-                                <p className="text-xs font-medium text-gray-900">{transaction.type}</p>
-                                <p className="text-xs text-gray-500">{new Date(transaction.createdAt).toLocaleDateString()}</p>
-                              </div>
-                              <p className={`text-sm font-medium ${
-                                transaction.amount > 0 ? 'text-green-600' : 'text-red-600'
-                              }`}>
-                                {transaction.amount > 0 ? '+' : ''}{transaction.amount?.toLocaleString()} RWF
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </TabsContent>
-              )}
-            </Tabs>
-          </CardContent>
-        </Card>
+            </div>
+          </section>
+        </div>
       )}
     </div>
   );

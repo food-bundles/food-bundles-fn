@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { GoogleLogin } from "@react-oauth/google";
+import { AuthPanel, authInput, authPrimaryButton, authSecondaryButton } from "@/components/home/auth-panel";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LegalContent } from "@/components/legal-page";
@@ -41,7 +42,7 @@ import {
 import { authService } from "@/app/services/authService";
 import { locationService } from "@/app/services/locationService";
 import { customerTypeService, CustomerType } from "@/app/services/customerTypeService";
-import { getRedirectPath } from "@/lib/navigations";
+import { getRedirectPath, sanitizeRedirect } from "@/lib/navigations";
 
 interface ValidationErrors {
   name?: string;
@@ -76,6 +77,14 @@ function SignupSearchParamsHandler({
       setSelectedRole(UserRole.RESTAURANT);
     } else if (role === "farmer") {
       setSelectedRole(UserRole.FARMER);
+    }
+
+    const redirect = sanitizeRedirect(searchParams?.get("redirect"));
+    if (redirect) {
+      localStorage.setItem("pendingRedirect", redirect);
+      if (redirect.startsWith("/restaurant")) {
+        setSelectedRole(UserRole.RESTAURANT);
+      }
     }
   }, [searchParams, setSelectedRole]);
 
@@ -593,6 +602,7 @@ function AboutUsContent() {
 
       <LegalSection>What We Offer</LegalSection>
       <LegalList
+        variant="bullets"
         items={[
           <>
             <span className="font-medium text-gray-900">Fresh product sourcing:</span>{" "}
@@ -629,6 +639,7 @@ function AboutUsContent() {
 
       <LegalSection>Company Information</LegalSection>
       <LegalList
+        variant="bullets"
         items={[
           <>
             <span className="font-medium text-gray-900">Company:</span> Food
@@ -1186,8 +1197,20 @@ function SignupForm() {
       return "Business name must be at least 2 characters";
     if (name.trim().length > 100)
       return "Business name is too long (max 100 characters)";
-    if (!/^[a-zA-Z0-9\s\-'&.]+$/.test(name.trim())) {
+    // Letters in any language (Café), numbers and common punctuation
+    if (!/^[\p{L}\p{N}\s\-'’&.,()/]+$/u.test(name.trim())) {
       return "Business name contains invalid characters";
+    }
+    return null;
+  }
+
+  // Farmer's full name (required by the backend; at least 2 characters)
+  function validatePersonName(name: string): string | null {
+    if (!name || !name.trim()) return "Your full name is required";
+    if (name.trim().length < 2) return "Name must be at least 2 characters";
+    if (name.trim().length > 100) return "Name is too long (max 100 characters)";
+    if (!/^[\p{L}\s\-'’.]+$/u.test(name.trim())) {
+      return "Name can only contain letters, spaces, hyphens and apostrophes";
     }
     return null;
   }
@@ -1217,6 +1240,11 @@ function SignupForm() {
     const phone = formData.get("phone") as string;
     const password = formData.get("password") as string;
     const name = formData.get("name") as string;
+
+    if (selectedRole === UserRole.FARMER) {
+      const nameError = validatePersonName(name);
+      if (nameError) errors.name = nameError;
+    }
 
     if (selectedRole === UserRole.RESTAURANT) {
       const nameError = validateRestaurantName(name);
@@ -1309,11 +1337,21 @@ function SignupForm() {
 
     try {
       if (selectedRole === UserRole.FARMER) {
+        // Email is optional for farmers; the location picked in the modal is
+        // sent as its parts (validated by the backend) plus a readable address
+        const { province, district, sector, cell, village } = locationData;
         const farmerData: ICreateFarmerData = {
-          email: email || undefined,
+          name: name.trim(),
+          email: email?.trim() || undefined,
           password,
-          tin: formData.get("tin") as string,
-          location: locationToSave,
+          location:
+            locationToSave ||
+            [village, cell, sector, district, province].filter(Boolean).join(", "),
+          province,
+          district,
+          sector,
+          cell,
+          village,
           phone,
           agreed,
         };
@@ -1492,8 +1530,8 @@ function SignupForm() {
 
   return (
     <div
-      className={`flex flex-col md:flex-row items-center w-full max-w-3xl ${
-        activeDoc ? "md:max-w-5xl" : ""
+      className={`flex w-full flex-col overflow-hidden rounded-[24px] bg-white shadow-[0_40px_80px_-30px_#0B2E1F66] md:flex-row ${
+        activeDoc ? "max-w-5xl" : "max-w-[1040px]"
       }`}
     >
       <Suspense fallback={null}>
@@ -1502,9 +1540,9 @@ function SignupForm() {
 
       {/* Left side: role selection / legal documents */}
       <div
-        className={`w-full ${
-          activeDoc ? "md:w-full" : "md:w-1/2"
-        } p-6 md:p-8 flex flex-col justify-center bg-white`}
+        className={`flex w-full ${
+          activeDoc ? "md:w-full p-6 md:p-8 flex-col bg-white" : "md:w-1/2"
+        }`}
       >
         {activeDoc ? (
           <div className="flex flex-col md:mx-auto w-full md:max-w-3xl">
@@ -1538,84 +1576,93 @@ function SignupForm() {
             </div>
           </div>
         ) : (
-          <>
-            <p className="text-gray-900 text-[14px] mb-6">
-              Thank you for choosing Food Bundles.
+          <AuthPanel
+            kicker="JOIN THE MARKET"
+            title="Join the members market."
+            text="Every member is verified. Applying takes about three minutes."
+          >
+            <p className="m-0 mt-2 text-sm font-bold tracking-[1px] text-[#7CF2A6]">
+              I AM…
             </p>
-            <p className="text-xs font-medium text-black mb-4">
-              Choose Your Role
-            </p>
-
-            <div className="flex flex-col space-y-4">
+            <div className="flex flex-col gap-3">
               <button
+                type="button"
                 onClick={() => setSelectedRole(UserRole.RESTAURANT)}
-                className={`w-full h-12 border transition-all relative rounded px-2 text-[14px] cursor-pointer ${
+                aria-pressed={selectedRole === UserRole.RESTAURANT}
+                className={`relative flex w-full flex-col gap-1 rounded-2xl border px-5 py-4 text-left transition-colors cursor-pointer ${
                   selectedRole === UserRole.RESTAURANT
-                    ? "border-green-500 bg-white"
-                    : "border-gray-200 hover:border-green-500"
+                    ? "border-white bg-white text-[#0B2E1F]"
+                    : "border-white/25 bg-white/10 text-white hover:bg-white/15"
                 }`}
                 disabled={!isBackendAvailable}
               >
-                <h3 className="text-left text-gray-900">
-                  I'm a Customer
-                </h3>
+                <span className="fb-display text-[19px] font-bold">A customer</span>
+                <span className={`text-[15px] ${selectedRole === UserRole.RESTAURANT ? "text-[#4A6358]" : "text-[#C9DCD0]"}`}>
+                  Restaurant, hotel, school, bar or caterer buying fresh supply
+                </span>
                 {selectedRole === UserRole.RESTAURANT && (
-                  <UserRoundCheck className="absolute top-3 right-3 h-5 w-5 text-green-600" />
+                  <UserRoundCheck className="absolute right-4 top-4 h-5 w-5 text-[#00A43A]" />
                 )}
               </button>
-
               <button
+                type="button"
                 onClick={() => setSelectedRole(UserRole.FARMER)}
-                className={`w-full h-12 border transition-all relative shadow-none rounded px-2 text-[14px] cursor-pointer ${
+                aria-pressed={selectedRole === UserRole.FARMER}
+                className={`relative flex w-full flex-col gap-1 rounded-2xl border px-5 py-4 text-left transition-colors cursor-pointer ${
                   selectedRole === UserRole.FARMER
-                    ? "border-green-500 bg-white"
-                    : "border-gray-200 hover:border-green-200"
+                    ? "border-white bg-white text-[#0B2E1F]"
+                    : "border-white/25 bg-white/10 text-white hover:bg-white/15"
                 }`}
                 disabled={!isBackendAvailable}
               >
-                <h3 className="text-left text-gray-900">I'm a Farmer</h3>
+                <span className="fb-display text-[19px] font-bold">A farmer</span>
+                <span className={`text-[15px] ${selectedRole === UserRole.FARMER ? "text-[#4A6358]" : "text-[#C9DCD0]"}`}>
+                  Farmer or cooperative selling my harvest
+                </span>
                 {selectedRole === UserRole.FARMER && (
-                  <UserRoundCheck className="absolute top-3 right-3 h-5 w-5 text-green-600" />
+                  <UserRoundCheck className="absolute right-4 top-4 h-5 w-5 text-[#00A43A]" />
                 )}
               </button>
             </div>
-          </>
+          </AuthPanel>
         )}
       </div>
 
       {/* Vertical divider */}
-      {!activeDoc && (
-        <div className="hidden md:block w-[.5px] bg-gray-300 h-100" />
-      )}
 
       {/* Right side: form */}
-      <div className={`w-full ${activeDoc ? "hidden" : "md:w-1/2"} p-6 md:p-8`}>
+      <div className={`w-full ${activeDoc ? "hidden" : "md:w-1/2"} p-6 sm:p-10`}>
         {!isBackendAvailable && (
-          <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-md text-sm mb-4">
+          <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded-xl text-sm mb-4">
             {backendMessage}
           </div>
         )}
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm mb-4">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm mb-4">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md text-sm mb-4">
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm mb-4">
             {success}
           </div>
         )}
 
         <div>
-          <div className="mt-6 lg:mt-20"></div>
+          <h2 className="fb-display text-[28px] font-bold tracking-[-0.6px] text-[#0B2E1F] mb-1">
+            Create your account
+          </h2>
+          <p className="text-[15px] text-[#4A6358] mb-6">
+            {selectedRole === UserRole.FARMER ? "Sell your harvest to Food Bundles." : "Order fresh supply for your kitchen."}
+          </p>
 
           <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
             {isCustomer && (
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-medium text-gray-900">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-bold text-[#0B2E1F]">
                     {CUSTOMER_STEPS[step - 1].title}
                   </span>
                   <span className="text-gray-500">
@@ -1627,11 +1674,32 @@ function SignupForm() {
                     <span
                       key={customerStep.title}
                       className={`h-1 flex-1 rounded-full ${
-                        index < step ? "bg-green-600" : "bg-gray-200"
+                        index < step ? "bg-[#00A43A]" : "bg-[#E6EEE9]"
                       }`}
                     />
                   ))}
                 </div>
+              </div>
+            )}
+
+            {selectedRole === UserRole.FARMER && (
+              <div className="relative">
+                <Input
+                  type="text"
+                  name="name"
+                  placeholder="Full name"
+                  autoComplete="name"
+                  className={`${authInput} ${
+                    validationErrors.name
+                      ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                      : ""
+                  }`}
+                  disabled={!isBackendAvailable || isLoading}
+                  onChange={() => handleInputChange("name")}
+                />
+                {validationErrors.name && (
+                  <p className="text-red-600 text-xs mt-1">{validationErrors.name}</p>
+                )}
               </div>
             )}
 
@@ -1651,7 +1719,7 @@ function SignupForm() {
                     >
                       <SelectTrigger
                         aria-label="Business type"
-                        className={`w-full h-10! rounded-none shadow-none border-gray-300 text-sm text-gray-900 focus:border-green-500 focus:ring-green-500 ${
+                        className={`w-full h-12! rounded-xl shadow-none border-[#DCE6DF] text-base text-[#0B2E1F] focus:border-[#00A43A] focus:ring-[#00A43A]/25 ${
                           validationErrors.businessType ? "border-red-500" : ""
                         }`}
                       >
@@ -1678,7 +1746,7 @@ function SignupForm() {
                     type="text"
                     name="name"
                     placeholder={`${businessLabel} Name`}
-                    className={` h-10 border-gray-300 text-gray-900 focus:border-green-500 focus:ring-green-500 rounded-none ${
+                    className={`${authInput} ${
                       validationErrors.name
                         ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                         : ""
@@ -1701,9 +1769,9 @@ function SignupForm() {
                 type="email"
                 name="email"
                 placeholder={
-                  selectedRole === UserRole.FARMER ? "Email" : "Email Address"
+                  selectedRole === UserRole.FARMER ? "Email (optional)" : "Email Address"
                 }
-                className={` h-10 border-gray-300 text-gray-900 focus:border-green-500 focus:ring-green-500 rounded-none ${
+                className={`${authInput} ${
                   validationErrors.email
                     ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                     : ""
@@ -1724,7 +1792,7 @@ function SignupForm() {
                   type="text"
                   name="tin"
                   placeholder="TIN Number"
-                  className={` h-10 border-gray-300 text-gray-900 focus:border-green-500 focus:ring-green-500 rounded-none ${
+                  className={`${authInput} ${
                     validationErrors.tin
                       ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                       : ""
@@ -1745,7 +1813,7 @@ function SignupForm() {
                 type="tel"
                 name="phone"
                 placeholder="Phone Number"
-                className={` h-10 border-gray-300 text-gray-900 focus:border-green-500 focus:ring-green-500 rounded-none ${
+                className={`${authInput} ${
                   validationErrors.phone
                     ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                     : ""
@@ -1770,7 +1838,7 @@ function SignupForm() {
                     readOnly
                     onClick={() => setIsLocationModalOpen(true)}
                     placeholder="Click to select location"
-                    className={`h-10 border-gray-300 text-gray-900 cursor-pointer rounded-none ${
+                    className={`${authInput} cursor-pointer ${
                       validationErrors.location
                         ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                         : ""
@@ -1805,7 +1873,7 @@ function SignupForm() {
                       textAddress: e.target.value,
                     })
                   }
-                  className={`h-10 border-gray-300 text-gray-900 focus:border-green-500 focus:ring-green-500 rounded-none ${
+                  className={`${authInput} ${
                     validationErrors.location
                       ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                       : ""
@@ -1825,7 +1893,7 @@ function SignupForm() {
                 type={showPassword ? "text" : "password"}
                 name="password"
                 placeholder="Password"
-                className={`h-10 border-gray-300 text-gray-900 focus:border-green-500 focus:ring-green-500 rounded-none ${
+                className={`${authInput} ${
                   validationErrors.password
                     ? "border-red-500 focus:border-red-500 focus:ring-red-500"
                     : ""
@@ -1836,7 +1904,8 @@ function SignupForm() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3 text-gray-900 hover:text-gray-800 cursor-pointer"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute right-1 top-1 flex h-10 w-10 items-center justify-center rounded-full text-[#4A6358] hover:text-[#0B2E1F] cursor-pointer"
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4" />
@@ -1862,7 +1931,7 @@ function SignupForm() {
                 disabled={isLoading || !isBackendAvailable}
                 className="mt-0.5 h-4 w-4 text-green-700 border-gray-300 rounded focus:ring-green-700"
               />
-              <span className="text-xs text-gray-600 leading-relaxed">
+              <span className="text-sm text-[#4A6358] leading-relaxed">
                 I have read and agree to the Terms &amp; Conditions, Privacy
                 Policy, and Refund Policy.
               </span>
@@ -1876,7 +1945,7 @@ function SignupForm() {
                 <button
                   type="button"
                   onClick={() => setStep((current) => current - 1)}
-                  className="h-10 px-4 border border-gray-300 text-gray-800 text-[14px] font-medium hover:bg-gray-50 cursor-pointer flex items-center gap-1"
+                  className={`px-5 cursor-pointer flex items-center gap-1 ${authSecondaryButton}`}
                   disabled={isLoading}
                 >
                   <ArrowLeft className="h-4 w-4" />
@@ -1887,7 +1956,7 @@ function SignupForm() {
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="flex-1 h-10 bg-green-700 hover:bg-green-800 text-white text-[14px] font-medium cursor-pointer flex items-center justify-center gap-1"
+                  className={`flex-1 cursor-pointer flex items-center justify-center gap-1 ${authPrimaryButton}`}
                   disabled={!isBackendAvailable}
                 >
                   Next
@@ -1896,7 +1965,7 @@ function SignupForm() {
               )}
             <button
               type="submit"
-              className={`flex-1 h-10 bg-green-700 hover:bg-green-800 text-white text-[14px] font-medium cursor-pointer ${
+              className={`flex-1 cursor-pointer ${authPrimaryButton} ${
                 isLastStep ? "" : "hidden"
               }`}
               disabled={isLoading || !isBackendAvailable || !agreed}
@@ -1918,7 +1987,7 @@ function SignupForm() {
                 <div className="w-full border-t border-gray-300"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">
+                <span className="px-3 bg-white text-[#4A6358]">
                   Or continue with
                 </span>
               </div>
@@ -1944,12 +2013,12 @@ function SignupForm() {
             </div>
 
             <div className={`mt-4 text-center ${onStep(1)}`}>
-              <p className="text-xs text-gray-500 leading-relaxed">
+              <p className="text-[13px] text-[#4A6358] leading-relaxed">
                 By creating an account, you agree to our{" "}
                 <button
                   type="button"
                   onClick={() => setActiveDoc("terms")}
-                  className="text-green-600 hover:text-green-700 underline underline-offset-2 cursor-pointer"
+                  className="text-[#007A35] hover:text-[#0B2E1F] underline underline-offset-2 cursor-pointer"
                 >
                   Terms &amp; Conditions
                 </button>
@@ -1957,7 +2026,7 @@ function SignupForm() {
                 <button
                   type="button"
                   onClick={() => setActiveDoc("privacy")}
-                  className="text-green-600 hover:text-green-700 underline underline-offset-2 cursor-pointer"
+                  className="text-[#007A35] hover:text-[#0B2E1F] underline underline-offset-2 cursor-pointer"
                 >
                   Privacy Policy
                 </button>{" "}
@@ -1965,18 +2034,18 @@ function SignupForm() {
                 <button
                   type="button"
                   onClick={() => setActiveDoc("refund")}
-                  className="text-green-600 hover:text-green-700 underline underline-offset-2 cursor-pointer"
+                  className="text-[#007A35] hover:text-[#0B2E1F] underline underline-offset-2 cursor-pointer"
                 >
                   Refund Policy
                 </button>
                 .
               </p>
-              <p className="mt-1.5 text-xs text-gray-500">
+              <p className="mt-1.5 text-[13px] text-[#4A6358]">
                 Learn more:{" "}
                 <button
                   type="button"
                   onClick={() => setActiveDoc("about")}
-                  className="text-green-600 hover:text-green-700 underline underline-offset-2 cursor-pointer"
+                  className="text-[#007A35] hover:text-[#0B2E1F] underline underline-offset-2 cursor-pointer"
                 >
                   About Us
                 </button>
@@ -1985,11 +2054,11 @@ function SignupForm() {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-[13px] text-gray-900">
+            <p className="text-[15px] text-[#4A6358]">
               Already have an account?{" "}
               <Link
                 href="/login"
-                className="text-green-600 hover:text-green-700 font-medium"
+                className="font-bold text-[#007A35] hover:text-[#0B2E1F]"
               >
                 Sign in
               </Link>
@@ -2001,10 +2070,10 @@ function SignupForm() {
       {/* OTP Verification Modal */}
       {showOTPModal && (
         <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded w-full max-w-md flex flex-col">
+          <div className="bg-white rounded-[20px] w-full max-w-md flex flex-col shadow-[0_50px_100px_-20px_#00000066]">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h3 className="text-[16px] font-medium text-gray-900">
-                Verify Account
+              <h3 className="fb-display text-[22px] font-bold text-[#0B2E1F]">
+                Verify your account
               </h3>
             </div>
 
@@ -2034,14 +2103,14 @@ function SignupForm() {
               <div className="flex gap-3">
                 <button
                   onClick={handleResendOTP}
-                  className="flex-1 h-10 border border-gray-300 hover:border-green-500 text-gray-900 hover:text-green-600 text-sm font-medium transition-colors cursor-pointer"
+                  className={`flex-1 cursor-pointer ${authSecondaryButton}`}
                   disabled={isVerifyingOTP}
                 >
                   Resend OTP
                 </button>
                 <button
                   onClick={handleVerifyOTP}
-                  className="flex-1 h-10 bg-green-700 hover:bg-green-800 text-white text-sm font-medium cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className={`flex-1 cursor-pointer flex items-center justify-center gap-2 ${authPrimaryButton}`}
                   disabled={isVerifyingOTP || !otpCode.trim()}
                 >
                   {isVerifyingOTP && (
@@ -2060,7 +2129,7 @@ function SignupForm() {
 
 export default function SignupPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center pt-4 px-6 lg:px-8">
+    <div className="flex items-center justify-center px-4 py-10 sm:px-8 sm:py-16">
       <Suspense
         fallback={
           <div className="flex items-center w-full max-w-3xl">

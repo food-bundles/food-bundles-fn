@@ -10,6 +10,8 @@ export function getStatusColor(status: string): string {
     case "VERIFIED":
     case "Verified":
       return "bg-blue-100 text-blue-800";
+    case "NEGOTIATING":
+      return "bg-amber-100 text-amber-800";
     case "REJECTED":
     case "Rejected":
       return "bg-red-100 text-red-800";
@@ -18,12 +20,23 @@ export function getStatusColor(status: string): string {
   }
 }
 
-/** The submission's real DB status never becomes "REJECTED" — a farmer's rejection of a
- * verified offer lives on farmerFeedbackStatus while status itself stays VERIFIED. This
- * derives the label the farmer should actually see, without touching the real status. */
+/** Status shown to the farmer. Submissions are now REJECTED in their own
+ * status; older ones only carried the rejection on farmerFeedbackStatus. */
 export function deriveDisplayStatus(
   status: string,
   farmerFeedbackStatus: string | null
 ): string {
   return farmerFeedbackStatus === "REJECTED" ? "REJECTED" : status;
 }
+
+/** Plain words for each stage: submit → approve → verify → pay. */
+export const STAGE_LABELS: Record<string, string> = {
+  PENDING: "Submitted",
+  NEGOTIATING: "Offer waiting for you",
+  APPROVED: "Approved",
+  VERIFIED: "Received, to be paid",
+  PAID: "Paid",
+  REJECTED: "Rejected",
+};
+
+export const stageLabel = (status: string) => STAGE_LABELS[status] ?? status;

@@ -33,6 +33,7 @@ import { toast } from "sonner";
 import {
   FarmerSubmission,
   useSubmissions,
+  farmerDisplayName,
 } from "@/app/contexts/submission-context";
 import { formatDateTime } from "@/lib/reusableFunctions";
 import { submissionService } from "@/app/services/submissionServices";
@@ -174,8 +175,8 @@ export function ProductVerificationModal({
     }
   };
 
-  const farmerName =
-    submission.farmer.email.split("@")[0] || submission.farmer.phone;
+  // Farmers may have no email (optional at signup)
+  const farmerName = farmerDisplayName(submission.farmer);
   const totalAmount = acceptedPrice * acceptedQuantity;
 
   return (
@@ -243,9 +244,11 @@ export function ProductVerificationModal({
                   <p className="text-sm text-gray-500">
                     {submission.farmer.phone}
                   </p>
-                  <p className="text-sm text-gray-500">
-                    {submission.farmer.email}
-                  </p>
+                  {submission.farmer.email && (
+                    <p className="text-sm text-gray-500">
+                      {submission.farmer.email}
+                    </p>
+                  )}
                 </div>
               </div>
 

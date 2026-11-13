@@ -193,6 +193,13 @@ export function DataTable<TData, TValue>({
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     ...(pagination ? {} : { getPaginationRowModel: getPaginationRowModel() }),
+    // Server-side pagination: the server already sent one page, and the page
+    // number lives in the parent. Without this the table schedules its own
+    // "back to page 1" when data or columns change, which can fire before the
+    // table has mounted ("Can't perform a React state update on a component
+    // that hasn't mounted yet").
+    manualPagination: !!pagination,
+    autoResetPageIndex: !pagination,
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,

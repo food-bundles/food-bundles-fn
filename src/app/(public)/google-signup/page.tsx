@@ -7,7 +7,7 @@ import { Loader2, UserRoundCheck, MapPin } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { authService } from "@/app/services/authService";
-import { getRedirectPath } from "@/lib/navigations";
+import { getPostLoginPath } from "@/lib/navigations";
 import { UserRole } from "@/lib/types";
 
 function GoogleSignupForm() {
@@ -197,9 +197,11 @@ function GoogleSignupForm() {
         }
       }
 
-      // Redirect based on role
+      // Redirect based on role, returning to the page that started signup
       if (userRole) {
-        const redirectPath = getRedirectPath(userRole as UserRole);
+        const pendingRedirect = localStorage.getItem("pendingRedirect");
+        if (pendingRedirect) localStorage.removeItem("pendingRedirect");
+        const redirectPath = getPostLoginPath(userRole as UserRole, pendingRedirect);
         window.location.href = redirectPath;
       } else {
         window.location.href = "/login";

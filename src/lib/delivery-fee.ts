@@ -15,6 +15,13 @@ export interface DeliverySettings {
   freeDeliveryMinDaysAhead: number; // 0 same day, 1 next day, 2…
 }
 
+/** Default rules plus rules for customer types that have their own */
+export interface DeliveryConfig {
+  default: DeliverySettings;
+  byCustomerType: Record<string, DeliverySettings>;
+  customerTypes: Array<{ id: string; name: string; isActive: boolean }>;
+}
+
 export const DEFAULT_DELIVERY_SETTINGS: DeliverySettings = {
   enabled: true,
   deliveryFee: 5000,
@@ -31,9 +38,26 @@ export const deliverySettingsService = {
       return DEFAULT_DELIVERY_SETTINGS;
     }
   },
-  update: async (data: Partial<DeliverySettings>): Promise<DeliverySettings> => {
+  /** Save the default rules, or one customer type's own rules (customerTypeId) */
+  update: async (
+    data: Partial<DeliverySettings> & { customerTypeId?: string }
+  ): Promise<DeliverySettings> => {
     const response = await createAxiosClient().put("/delivery-settings", data);
     return response.data?.data;
+  },
+  /** Default rules, each customer type's own rules, and the customer types */
+  getConfig: async (): Promise<DeliveryConfig> => {
+    const response = await createAxiosClient().get("/delivery-settings/config");
+    const data = response.data?.data ?? {};
+    return {
+      default: { ...DEFAULT_DELIVERY_SETTINGS, ...(data.default ?? {}) },
+      byCustomerType: data.byCustomerType ?? {},
+      customerTypes: data.customerTypes ?? [],
+    };
+  },
+  /** That customer type goes back to the default rules */
+  useDefaultFor: async (customerTypeId: string) => {
+    await createAxiosClient().delete(`/delivery-settings/customer-type/${customerTypeId}`);
   },
   // Delete the saved settings: back to the defaults
   reset: async (): Promise<DeliverySettings> => {

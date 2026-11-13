@@ -8,6 +8,8 @@ type AdminUser = PermissionUser & {
   id?: string;
   username?: string;
   adminRole?: { id: string; name: string } | null;
+  /** Customer types this user works with (null = all) */
+  customerTypeScope?: string[] | null;
 };
 
 /** Current dashboard user with permission helpers (from GET /me). */
@@ -31,6 +33,6 @@ export function useAdminAccess() {
     user,
     loading,
     isSuperAdmin: isSuperAdmin(user),
-    can: (module: string, action: "view" | "manage" = "view") => can(user, module, action),
+    can: (module: string, action: string = "view") => can(user, module, action),
   };
 }

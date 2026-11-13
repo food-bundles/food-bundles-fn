@@ -21,6 +21,15 @@ export interface Restaurant {
   ordersCount: number;
   totalSpent: number;
   status: "active" | "inactive" | "suspended";
+  /** Customer type (school, hotel, restaurant…) */
+  customerType?: { id: string; name: string } | null;
+  /** Product categories hidden from this specific customer */
+  categoryExclusions?: { categoryId: string; category: { id: string; name: string } }[];
+  categoryExclusionIds?: string[];
+  /** Business photo the customer uploaded */
+  businessImage?: string | null;
+  /** Shown on the homepage ("Trusted by Kigali's kitchens") */
+  featuredOnWebsite?: boolean;
 }
 
 export interface RestaurantsResponse {
@@ -37,6 +46,7 @@ interface RestaurantContextType {
     status?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    customerTypeId?: string;
   }) => Promise<RestaurantsResponse & { pagination?: any }>;
 }
 
@@ -50,6 +60,7 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
     status?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    customerTypeId?: string;
   }): Promise<RestaurantsResponse & { pagination?: any }> => {
     try {
       const response = await restaurantService.getAllRestaurants(params);
@@ -80,6 +91,15 @@ export function RestaurantProvider({ children }: { children: React.ReactNode }) 
             ordersCount: ordersCount,
             totalSpent: totalSpent,
             status: "active" as const, // Default to active
+            customerType: restaurant.customerType ?? null,
+            businessImage: restaurant.businessImage ?? null,
+            featuredOnWebsite: restaurant.featuredOnWebsite ?? false,
+            categoryExclusions: restaurant.categoryExclusions ?? [],
+            categoryExclusionIds:
+              restaurant.categoryExclusionIds ??
+              (restaurant.categoryExclusions ?? []).map(
+                (row: { categoryId: string }) => row.categoryId,
+              ),
           };
         });
 

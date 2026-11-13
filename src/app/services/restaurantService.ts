@@ -12,6 +12,8 @@ export const restaurantService = {
     status?: string;
     sortBy?: string;
     sortOrder?: "asc" | "desc";
+    /** Only customers of this type (schools, hotels…) */
+    customerTypeId?: string;
   }) => {
     try {
       const response = await axiosClient.get("/restaurants", { params });
@@ -100,6 +102,39 @@ export const restaurantService = {
       };
     } catch (error: any) {
       console.error("Accept agreement error:", error);
+      throw error;
+    }
+  },
+
+  // Category exclusions for a customer
+  getCategoryExclusions: async (restaurantId: string) => {
+    try {
+      const response = await axiosClient.get(
+        `/restaurants/${restaurantId}/category-exclusions`
+      );
+      return {
+        success: true,
+        data: response.data.data,
+      };
+    } catch (error: any) {
+      console.error("Get category exclusions error:", error);
+      throw error;
+    }
+  },
+
+  setCategoryExclusions: async (restaurantId: string, categoryIds: string[]) => {
+    try {
+      const response = await axiosClient.put(
+        `/restaurants/${restaurantId}/category-exclusions`,
+        { categoryIds }
+      );
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error: any) {
+      console.error("Set category exclusions error:", error);
       throw error;
     }
   },
