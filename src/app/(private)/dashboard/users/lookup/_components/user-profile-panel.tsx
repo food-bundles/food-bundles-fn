@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Check, Copy, Loader2, X } from "lucide-react";
 import { userLookupService } from "@/app/services/userLookupService";
+import { PersonRolesSection } from "./person-roles-section";
 
 // ── formatting ────────────────────────────────────────────────────────────
 const rwf = (n: any) => (typeof n === "number" ? `${Math.round(n).toLocaleString()} RWF` : "—");
@@ -308,6 +309,8 @@ export function UserProfilePanel({ userId, onClose }: { userId: string; onClose?
         <h3 className="m-0 mb-3 text-[15px] font-bold text-[#0B2E1F]">Account</h3>
         <Facts items={view.facts} />
       </section>
+
+      <PersonRolesSection profileId={user.id} />
 
       {view.tabs.length > 0 && (
         <section className="flex flex-col gap-3">

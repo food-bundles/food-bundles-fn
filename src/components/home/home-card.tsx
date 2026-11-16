@@ -39,9 +39,11 @@ export function CardSection() {
   const [flipped, setFlipped] = useState(false);
   const [auto, setAuto] = useState(true);
   const [applyUrl, setApplyUrl] = useState("");
+  const [aggregatorUrl, setAggregatorUrl] = useState("");
 
   useEffect(() => {
     setApplyUrl(process.env.NEXT_PUBLIC_VOUCHER_APPLY_URL || `${window.location.origin}/apply-voucher`);
+    setAggregatorUrl(process.env.NEXT_PUBLIC_AGGREGATOR_APPLY_URL || `${window.location.origin}/become-aggregator`);
   }, []);
 
   useEffect(() => {
@@ -188,6 +190,24 @@ export function CardSection() {
                 </span>
                 <Link href="/apply-voucher" className="fb-arrow inline-flex min-h-[52px] items-center gap-1 self-start rounded-full bg-[#0B2E1F] px-7 text-lg font-bold text-white">
                   Apply for the card <span className="fb-chev">›</span>
+                </Link>
+              </div>
+            </div>
+            <div id="aggregator" className="flex flex-wrap items-center gap-5 rounded-[18px] bg-white p-5 shadow-[0_20px_40px_-24px_#0B2E1F40]">
+              <div className="rounded-xl border border-[#DCE6DF] p-2">
+                {aggregatorUrl ? (
+                  <QRCode value={aggregatorUrl} size={104} level="M" fgColor="#007A35" aria-label="QR code to become a Food Bundles aggregator" />
+                ) : (
+                  <div className="h-[104px] w-[104px] animate-pulse rounded bg-[#EFF4F1]" />
+                )}
+              </div>
+              <div className="flex min-w-[200px] flex-1 flex-col gap-2">
+                <span className="text-[13px] font-bold uppercase tracking-[1px] text-[#00A43A]">Become an aggregator · Ba umukusanyi</span>
+                <span className="text-[15px] leading-snug text-[#4A6358]">
+                  Live near farmers? Collect produce for Food Bundles and earn 4% to 7% commission. Scan to log in or apply.
+                </span>
+                <Link href="/become-aggregator" className="fb-arrow inline-flex min-h-[48px] items-center gap-1 self-start rounded-full bg-[#00A43A] px-6 text-[17px] font-bold text-white hover:bg-[#007A35]">
+                  Become an aggregator <span className="fb-chev">›</span>
                 </Link>
               </div>
             </div>

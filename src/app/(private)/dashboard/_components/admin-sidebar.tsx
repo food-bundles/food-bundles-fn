@@ -54,6 +54,7 @@ import Image from "next/image";
 import { MdSystemSecurityUpdate } from "react-icons/md";
 import { canOpenPage } from "@/lib/admin-permissions";
 import { highlightParts, searchLinks, SearchableLink } from "./sidebar-search";
+import { RoleSwitchButtons } from "@/components/role-switcher";
 
 // Extra words people may type when looking for a page, so search finds related links
 const searchKeywords: Record<string, string[]> = {
@@ -80,7 +81,7 @@ const searchKeywords: Record<string, string[]> = {
   "/dashboard/vouchers": ["loans", "credit", "card", "bnpl", "repayment", "lending"],
   "/dashboard/deposits": ["wallet", "money", "top up", "balance", "transactions", "payments"],
   "/dashboard/newsletter": ["email", "subscribers", "campaign", "mail"],
-  "/dashboard/invitations": ["invite", "onboarding", "join", "referral"],
+  "/dashboard/invitations": ["aggregator applications", "umukusanyi", "qr", "agreement", "collector", "invite", "onboarding", "join", "referral"],
   "/dashboard/users/lookup": ["find", "search", "user", "account", "phone"],
   "/dashboard/users/farmers": ["growers", "suppliers"],
   "/dashboard/users/restaurants": ["clients", "restaurants", "hotels", "schools", "buyers"],
@@ -686,6 +687,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                   </p>
                 )}
               </div>
+              <RoleSwitchButtons className="border-b border-[#DCE6DF]" />
               <Link
                 href="/"
                 className="flex min-h-10 items-center gap-2 px-3 text-[14px] hover:bg-[#F6F9F7]"

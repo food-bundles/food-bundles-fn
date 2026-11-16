@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, UserPlus } from "lucide-react";
 import { CreateInvitationData, InvitationRole } from "@/app/services/invitationService";
 import { RolePicker, toRolePayload } from "../../_components/role-picker";
+import { personAdminService } from "@/app/services/roleService";
+
+type Existing = Awaited<ReturnType<typeof personAdminService.byEmail>>;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 interface InviteModalProps {
   isOpen: boolean;
@@ -19,6 +23,32 @@ export function InviteModal({ isOpen, onClose, onSubmit, isLoading }: InviteModa
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("");
   const [errors, setErrors] = useState<{ email?: string; role?: string }>({});
+  // The account this email already belongs to: the invitation adds a role to it
+  const [existing, setExisting] = useState<Existing>(null);
+
+  useEffect(() => {
+    const value = email.trim();
+    if (!EMAIL_RE.test(value)) {
+      setExisting(null);
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      personAdminService
+        .byEmail(value)
+        .then((r) => !cancelled && setExisting(r))
+        .catch(() => !cancelled && setExisting(null));
+    }, 400);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [email]);
+
+  // A role they already have (a dashboard role counts as Staff)
+  const picked = role ? toRolePayload(role) : null;
+  const pickedRole = picked ? picked.role ?? "STAFF" : null;
+  const alreadyHeld = existing?.roles.find((r) => r.role === pickedRole);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +63,8 @@ export function InviteModal({ isOpen, onClose, onSubmit, isLoading }: InviteModa
     
     if (!role) {
       newErrors.role = "Role is required";
+    } else if (alreadyHeld) {
+      newErrors.role = alreadyHeld.status === "PENDING" ? `They already asked for ${alreadyHeld.label}: approve it in Role requests` : `They already have the ${alreadyHeld.label} role`;
     }
     
     if (Object.keys(newErrors).length > 0) {
@@ -57,6 +89,7 @@ export function InviteModal({ isOpen, onClose, onSubmit, isLoading }: InviteModa
   };
 
   const handleClose = () => {
+    setExisting(null);
     setEmail("");
     setRole("");
     setErrors({});
@@ -88,6 +121,18 @@ export function InviteModal({ isOpen, onClose, onSubmit, isLoading }: InviteModa
               disabled={isLoading}
             />
             {errors.email && <p className="text-red-600 text-xs mt-1">{errors.email}</p>}
+            {existing && !existing.unlinked && (
+              <p className="mt-2 rounded-lg bg-[#EFFAF3] p-2.5 text-xs text-[#0B2E1F]">
+                This email already belongs to <b>{existing.name || "a Food Bundles user"}</b>
+                {existing.roles.length > 0 && <> ({existing.roles.map((r) => (r.status === "ACTIVE" ? r.label : `${r.label}, ${r.status.toLowerCase()}`)).join(", ")})</>}. The
+                invitation adds the new role to that account; they keep their password.
+              </p>
+            )}
+            {existing?.unlinked && (
+              <p className="mt-2 rounded-lg bg-[#FFF4DD] p-2.5 text-xs text-[#9A6400]">
+                This email is used by an account that hasn&apos;t been imported into people yet.
+              </p>
+            )}
           </div>
 
           <div>
@@ -120,7 +165,7 @@ export function InviteModal({ isOpen, onClose, onSubmit, isLoading }: InviteModa
               disabled={isLoading}
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Send Invitation
+              {existing && !existing.unlinked ? "Invite to add role" : "Send Invitation"}
             </Button>
           </div>
         </form>

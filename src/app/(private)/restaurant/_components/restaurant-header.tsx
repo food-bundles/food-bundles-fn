@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useNotifications } from "@/app/contexts/NotificationContext";
 import { menuGroups, isMenuItemActive } from "./restaurant-sidebar";
+import { RoleSwitchMenuItems } from "@/components/role-switcher";
 
 interface RestaurantHeaderProps {
   onMenuClick: () => void;
@@ -180,6 +181,7 @@ export function RestaurantHeader({ onMenuClick, sidebarOpen }: RestaurantHeaderP
                     <Home className="h-4 w-4" /> Food Bundles website
                   </Link>
                 </DropdownMenuItem>
+                <RoleSwitchMenuItems />
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={handleLogout}

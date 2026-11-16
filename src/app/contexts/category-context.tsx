@@ -118,13 +118,23 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
     }
   }, []);
 
+  // After any change: every screen using categories (this table, shop, product
+  // forms…) gets the new lists, without the person reloading the page
+  const refreshAll = useCallback(() => {
+    void refreshCategories(false);
+    void refreshActiveCategories();
+  }, [refreshCategories, refreshActiveCategories]);
+
   const createCategory = useCallback(
     async (categoryData: CreateCategoryData): Promise<boolean> => {
       try {
         setError(null);
         const response = await categoryService.createCategory(categoryData);
 
-        if (response.success) {
+        // A 2xx reply is a success; some category endpoints don't send a success flag
+        if (response?.success !== false) {
+          if (response?.data) setCategories((prev) => [response.data, ...prev]);
+          refreshAll();
           return true;
         } else {
           setError(response.message || "Failed to create category");
@@ -136,7 +146,7 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
         return false;
       }
     },
-    []
+    [refreshAll]
   );
 
   const updateCategory = useCallback(
@@ -151,7 +161,13 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
           categoryData
         );
 
-        if (response.success) {
+        // A 2xx reply is a success; some category endpoints don't send a success flag
+        if (response?.success !== false) {
+          // Show the change right away, then reload in the background
+          if (response?.data) {
+            setCategories((prev) => prev.map((c) => (c.id === categoryId ? { ...c, ...response.data } : c)));
+          }
+          refreshAll();
           return true;
         } else {
           setError(response.message || "Failed to update category");
@@ -163,7 +179,7 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
         return false;
       }
     },
-    []
+    [refreshAll]
   );
 
   const deleteCategory = useCallback(
@@ -172,7 +188,10 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
         setError(null);
         const response = await categoryService.deleteCategory(categoryId);
 
-        if (response.success) {
+        // A 2xx reply is a success; some category endpoints don't send a success flag
+        if (response?.success !== false) {
+          setCategories((prev) => prev.filter((c) => c.id !== categoryId));
+          refreshAll();
           return true;
         } else {
           setError(response.message || "Failed to delete category");
@@ -184,7 +203,7 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
         return false;
       }
     },
-    []
+    [refreshAll]
   );
 
   const getCategoryById = useCallback(
@@ -193,10 +212,10 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
         setError(null);
         const response = await categoryService.getCategoryById(categoryId);
 
-        if (response.success && response.data) {
+        if (response?.data) {
           return response.data;
         } else {
-          setError(response.message || "Category not found");
+          setError(response?.message || "Category not found");
           return null;
         }
       } catch (error) {
@@ -217,7 +236,8 @@ export function CategoryProvider({ children }: CategoryProviderProps) {
           isActive,
         });
 
-        if (response.success) {
+        // A 2xx reply is a success; some category endpoints don't send a success flag
+        if (response?.success !== false) {
           await refreshCategories(false);
           await refreshActiveCategories();
           return true;

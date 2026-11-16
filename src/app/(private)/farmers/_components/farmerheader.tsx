@@ -32,6 +32,7 @@ import { OptimizedImage } from "@/components/OptimizedImage";
 import { MdSystemSecurityUpdate } from "react-icons/md";
 import { redirect } from "next/navigation";
 import { useNotifications } from "@/app/contexts/NotificationContext";
+import { RoleSwitchMenuItems } from "@/components/role-switcher";
 
 interface DashboardHeaderProps {
   /** Toggles the sidebar (visible only below the md breakpoint). */
@@ -244,6 +245,7 @@ export default function DashboardHeader({
                     <MdSystemSecurityUpdate className="mr-3 h-4 w-4" />
                     <span>Authenticator</span>
                   </DropdownMenuItem>
+                  <RoleSwitchMenuItems />
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="cursor-pointer text-red-600 focus:text-red-600"
