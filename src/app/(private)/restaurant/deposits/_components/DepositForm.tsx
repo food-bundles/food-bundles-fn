@@ -60,6 +60,20 @@ export function DepositForm({
     return map[name] ?? name;
   };
 
+  const methodIcon = (name: string) => {
+    if (name === "MOBILE_MONEY") {
+      return (
+        <img
+          src="https://res.cloudinary.com/kapkga1t/image/upload/v1793977428/mtn.jpg"
+          alt="MTN MoMo"
+          className="h-4 w-4 rounded-full object-cover inline-block mr-1"
+        />
+      );
+    }
+    return null;
+  };
+
+
   const methodColor = (name: string) => {
     const map: Record<string, string> = {
       MOBILE_MONEY: "bg-green-100 text-green-800",
@@ -107,6 +121,7 @@ export function DepositForm({
               {paymentMethods.map((method) => (
                 <SelectItem key={method.id} value={method.id}>
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${methodColor(method.name)}`}>
+                    {methodIcon(method.name)}
                     {methodLabel(method.name)}
                   </span>
                 </SelectItem>
@@ -118,7 +133,17 @@ export function DepositForm({
 
       {selectedMethod?.name === "MOBILE_MONEY" && (
         <div>
-          <label className="block text-gray-800 text-sm mb-2">Phone Number</label>
+          <label className="flex items-center gap-2 text-gray-800 text-sm mb-2">
+            Phone Number
+            <span className="flex items-center gap-1 ml-auto">
+              <img
+                src="https://res.cloudinary.com/kapkga1t/image/upload/v1793977428/mtn.jpg"
+                alt="MTN MoMo"
+                className="h-4 w-4 rounded-full object-cover"
+              />
+              <span className="text-xs text-yellow-600 font-semibold">MTN MoMo</span>
+            </span>
+          </label>
           <input
             type="tel"
             placeholder="250788123456"
@@ -126,6 +151,9 @@ export function DepositForm({
             onChange={(e) => onPhoneNumberChange(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded focus:border-green-500 focus:outline-none text-gray-800"
           />
+          <p className="text-xs text-gray-500 mt-1">
+            MTN numbers (078x / 079x) are processed via MTN MoMo directly.
+          </p>
         </div>
       )}
 
