@@ -7,6 +7,7 @@ import { ChevronDown, LayoutGrid, LogOut, Menu, X } from "lucide-react";
 import { useAuth } from "@/app/contexts/auth-context";
 import { getRedirectPath } from "@/lib/navigations";
 import { UserRole } from "@/lib/types";
+import { RoleSwitchMenuItems } from "@/components/role-switcher";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -89,6 +90,8 @@ export function HomeNav({ variant = "overlay" }: { variant?: "overlay" | "solid"
                     <LayoutGrid className="mr-2 h-4 w-4" /> My account
                   </Link>
                 </DropdownMenuItem>
+                <RoleSwitchMenuItems />
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:text-red-600">
                   <LogOut className="mr-2 h-4 w-4" /> Log out
                 </DropdownMenuItem>

@@ -65,12 +65,14 @@ export default function UserLookupPage() {
     };
   }, [query]);
 
+  // One result per person: counted under every kind of account they have
+  const kindsOf = (r: UserSearchResult) => new Set((r.accounts?.length ? r.accounts : [r]).map((a) => a.kind));
   const counts = useMemo(() => {
     const c: Record<string, number> = { ALL: results.length };
-    results.forEach((r) => (c[r.kind] = (c[r.kind] ?? 0) + 1));
+    results.forEach((r) => kindsOf(r).forEach((k) => (c[k] = (c[k] ?? 0) + 1)));
     return c;
   }, [results]);
-  const shown = kind === "ALL" ? results : results.filter((r) => r.kind === kind);
+  const shown = kind === "ALL" ? results : results.filter((r) => kindsOf(r).has(kind));
 
   const open = (id: string) => {
     setSelected(id);
@@ -157,17 +159,21 @@ export default function UserLookupPage() {
             ) : (
               <ul className="m-0 flex list-none flex-col gap-2 p-0">
                 {shown.map((r) => {
-                  const on = r.id === selected;
+                  const accounts = r.accounts?.length ? r.accounts : [{ id: r.id, kind: r.kind, role: r.role, deleted: r.deleted }];
+                  const on = accounts.some((a) => a.id === selected);
                   const style = KIND_STYLE[r.kind];
                   return (
-                    <li key={`${r.kind}-${r.id}`}>
+                    <li
+                      key={r.userId ?? r.id}
+                      className={`overflow-hidden rounded-2xl border bg-white transition-colors ${
+                        on ? "border-[#00A43A] ring-2 ring-[#00A43A]/20" : "border-[#DCE6DF] hover:border-[#00A43A]"
+                      }`}
+                    >
                       <button
                         type="button"
                         onClick={() => open(r.id)}
                         aria-current={on ? "true" : undefined}
-                        className={`flex w-full items-start gap-3 rounded-2xl border bg-white p-3.5 text-left transition-colors cursor-pointer ${
-                          on ? "border-[#00A43A] ring-2 ring-[#00A43A]/20" : "border-[#DCE6DF] hover:border-[#00A43A]"
-                        }`}
+                        className="flex w-full items-start gap-3 p-3.5 text-left cursor-pointer"
                       >
                         <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[14px] font-bold ${style.avatar}`}>
                           {r.name.trim().slice(0, 2).toUpperCase()}
@@ -175,11 +181,16 @@ export default function UserLookupPage() {
                         <span className="min-w-0 flex-1">
                           <span className="flex flex-wrap items-center gap-1.5">
                             <span className="truncate text-[15px] font-bold text-[#0B2E1F]">{r.name}</span>
-                            <span className="rounded-full bg-[#F6F9F7] px-2 py-0.5 text-[11px] font-bold text-[#4A6358]">
-                              {style.label}
-                              {roleLabel(r) ? ` · ${roleLabel(r)}` : ""}
-                            </span>
-                            {r.deleted && <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-700">In trash</span>}
+                            {accounts.length === 1 && (
+                              <span className="rounded-full bg-[#F6F9F7] px-2 py-0.5 text-[11px] font-bold text-[#4A6358]">
+                                {style.label}
+                                {roleLabel(r) ? ` · ${roleLabel(r)}` : ""}
+                              </span>
+                            )}
+                            {accounts.length > 1 && (
+                              <span className="rounded-full bg-[#0B2E1F] px-2 py-0.5 text-[11px] font-bold text-white">{accounts.length} accounts</span>
+                            )}
+                            {accounts.length === 1 && r.deleted && <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-700">In trash</span>}
                           </span>
                           <span className="mt-0.5 block truncate text-[13px] text-[#4A6358]">
                             {[r.phone, r.email, r.location].filter(Boolean).join(" · ") || "No contact details"}
@@ -200,6 +211,33 @@ export default function UserLookupPage() {
                           )}
                         </span>
                       </button>
+                      {accounts.length > 1 && (
+                        // One person, several accounts: open any of them
+                        <div className="flex flex-wrap gap-1.5 border-t border-[#EEF3EF] px-3.5 py-2.5">
+                          {accounts.map((a) => {
+                            const active = a.id === selected;
+                            const label = KIND_STYLE[a.kind].label + (a.kind === "STAFF" ? ` · ${a.role.replace(/_/g, " ").toLowerCase()}` : "");
+                            return (
+                              <button
+                                key={a.id}
+                                type="button"
+                                onClick={() => open(a.id)}
+                                aria-pressed={active}
+                                className={`min-h-8 rounded-full px-3 text-[12px] font-bold transition-colors cursor-pointer ${
+                                  active
+                                    ? "bg-[#0B2E1F] text-white"
+                                    : a.deleted
+                                      ? "border border-red-200 bg-red-50 text-red-700"
+                                      : "border border-[#DCE6DF] bg-white text-[#0B2E1F] hover:border-[#00A43A]"
+                                }`}
+                              >
+                                {label}
+                                {a.deleted ? " · trash" : ""}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
                     </li>
                   );
                 })}

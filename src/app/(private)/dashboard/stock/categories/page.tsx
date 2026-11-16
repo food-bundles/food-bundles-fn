@@ -25,7 +25,6 @@ export default function StockCategoriesPage() {
     createCategory,
     updateCategory,
     deleteCategory,
-    refreshCategories,
   } = useCategory();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -48,7 +47,6 @@ export default function StockCategoriesPage() {
       try {
         await deleteCategory(categoryToDelete);
         toast.success("Category deleted successfully");
-        await refreshCategories();
       } catch (error) {
         toast.error("Failed to delete category");
       }
@@ -63,7 +61,6 @@ export default function StockCategoriesPage() {
         const success = await updateCategory(editingCategory.id, data);
         if (success) {
           toast.success("Category updated successfully");
-          await refreshCategories();
           setEditingCategory(null);
         } else {
           toast.error("Failed to update category. Please try again.");
@@ -72,7 +69,6 @@ export default function StockCategoriesPage() {
         const success = await createCategory(data);
         if (success) {
           toast.success("Category created successfully");
-          await refreshCategories();
           setEditingCategory(null);
         } else {
           toast.error("Failed to create category. Please try again.");

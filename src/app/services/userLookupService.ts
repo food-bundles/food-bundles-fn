@@ -24,6 +24,10 @@ export interface UserSearchResult {
   deleted: boolean;
   details: { label: string; value: string }[];
   matchedOn: string[];
+  /** The person this account belongs to */
+  userId?: string | null;
+  /** All of the person's accounts found: one result per person */
+  accounts?: { id: string; kind: UserKind; role: string; deleted: boolean }[];
 }
 
 export const userLookupService = {
