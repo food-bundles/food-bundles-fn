@@ -1,4 +1,5 @@
 import { SettingsContent } from "./_components/settings-content";
+import { DefaultAccountSetting } from "@/components/default-account";
 
 type RestaurantSettings = {
   accountInfo: {
@@ -131,6 +132,8 @@ export default async function SettingsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="container mx-auto px-6 py-8">
+        {/* Only shown to people with more than one account */}
+        <DefaultAccountSetting className="mb-6" />
         <SettingsContent settings={settings} />
       </main>
     </div>

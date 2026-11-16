@@ -23,9 +23,10 @@ export interface CreateInvitationData {
 
 export interface AcceptInvitationData {
   token: string;
-  username: string;
-  phone: string;
-  password: string;
+  /** Not needed when the email already has an account: the role is added to it */
+  username?: string;
+  phone?: string;
+  password?: string;
   loanTermsAndConditions?: string;
 }
 
@@ -65,7 +66,13 @@ export const invitationService = {
   async verifyInviteToken(token: string): Promise<{
     message: string;
     /** prefill: an aggregator approved from the QR application (name and phone they applied with) */
-    data: { email: string; role: InvitationRole; prefill?: { username: string; phone: string } };
+    data: {
+      email: string;
+      role: InvitationRole;
+      prefill?: { username: string; phone: string };
+      /** This email already has an account: accepting only adds the role */
+      existingAccount?: { name: string | null; roles: string[] };
+    };
   }> {
     const response = await axiosClient.get(`/invites/verify/${token}`);
     return response.data;

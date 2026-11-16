@@ -16,12 +16,31 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { GoogleLogin } from "@react-oauth/google";
+import { FirstLoginAccountChooser } from "@/components/default-account";
+import { openSession } from "@/components/role-switcher";
+import { roleService } from "@/app/services/roleService";
 import { AuthPanel, authInput, authPrimaryButton, authSecondaryButton } from "@/components/home/auth-panel";
 
 function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  // Several accounts and no default yet: asked once before opening the dashboard
+  const [chooser, setChooser] = useState<null | { roles: any[]; activeRole: string; userRole: string; token: string }>(null);
   const [error, setError] = useState("");
+
+  // Open the dashboard of the account login opened (or the page the person came from)
+  const goToDashboard = (userRole: string, token: string) => {
+    if (userRole === "TRADER") {
+      window.location.href = `${process.env.NEXT_PUBLIC_TRADER_APP_URL}?token=${encodeURIComponent(token)}`;
+      return;
+    }
+    const pendingRedirect = localStorage.getItem("pendingRedirect");
+    if (pendingRedirect) localStorage.removeItem("pendingRedirect");
+    window.location.href = getPostLoginPath(
+      userRole as UserRole,
+      new URLSearchParams(window.location.search).get("redirect") || pendingRedirect
+    );
+  };
   const [infoMessage, setInfoMessage] = useState("");
   const [identifierError, setIdentifierError] = useState("");
   const [passwordError, setPasswordError] = useState("");
@@ -62,33 +81,27 @@ function LoginForm() {
     }
   }, []);
 
-  // Load saved credentials on mount
+  // "Remember me" keeps only the email / phone / TIN, never the password.
+  // A password saved by an older version of this page is deleted here.
   useEffect(() => {
+    localStorage.removeItem('loginPassword');
     const savedIdentifier = localStorage.getItem('loginIdentifier');
-    const savedPassword = localStorage.getItem('loginPassword');
     const savedRememberMe = localStorage.getItem('rememberMe') === 'true';
-    
     if (savedIdentifier && savedRememberMe) {
       setIdentifier(savedIdentifier);
       setRememberMe(true);
     }
-    if (savedPassword && savedRememberMe) {
-      setPassword(savedPassword);
-    }
   }, []);
 
-  // Save credentials when remember me is checked
   useEffect(() => {
     if (rememberMe) {
       localStorage.setItem('loginIdentifier', identifier);
-      localStorage.setItem('loginPassword', password);
       localStorage.setItem('rememberMe', 'true');
     } else {
       localStorage.removeItem('loginIdentifier');
-      localStorage.removeItem('loginPassword');
       localStorage.removeItem('rememberMe');
     }
-  }, [identifier, password, rememberMe]);
+  }, [identifier, rememberMe]);
 
 
   useEffect(() => {
@@ -210,19 +223,12 @@ function LoginForm() {
       }
 
       if (userRole) {
-        if (userRole === "TRADER") {
-          const traderUrl = `${process.env.NEXT_PUBLIC_TRADER_APP_URL}?token=${encodeURIComponent(token)}`;
-          window.location.href = traderUrl;
-        } else {
-          const pendingRedirect = localStorage.getItem("pendingRedirect");
-          if (pendingRedirect) localStorage.removeItem("pendingRedirect");
-          const redirectPath = getPostLoginPath(
-            userRole as UserRole,
-            new URLSearchParams(window.location.search).get("redirect") ||
-              pendingRedirect
-          );
-          window.location.href = redirectPath;
+        const result = response.data?.data ?? response.data;
+        if (result?.askDefaultRole) {
+          setChooser({ roles: result.roles ?? [], activeRole: result.activeRole ?? userRole, userRole, token });
+          return;
         }
+        goToDashboard(userRole, token);
       } else {
         setError("User role not found. Please contact support.");
       }
@@ -314,19 +320,12 @@ function LoginForm() {
       }
       
       if (userRole) {
-        if (userRole === "TRADER") {
-          const traderUrl = `${process.env.NEXT_PUBLIC_TRADER_APP_URL}?token=${encodeURIComponent(token)}`;
-          window.location.href = traderUrl;
-        } else {
-          const pendingRedirect = localStorage.getItem("pendingRedirect");
-          if (pendingRedirect) localStorage.removeItem("pendingRedirect");
-          const redirectPath = getPostLoginPath(
-            userRole as UserRole,
-            new URLSearchParams(window.location.search).get("redirect") ||
-              pendingRedirect
-          );
-          window.location.href = redirectPath;
+        const result = response.data?.data ?? response.data;
+        if (result?.askDefaultRole) {
+          setChooser({ roles: result.roles ?? [], activeRole: result.activeRole ?? userRole, userRole, token });
+          return;
         }
+        goToDashboard(userRole, token);
       } else {
         setError("User role not found. Please contact support.");
         setIsLoading(false);
@@ -369,6 +368,22 @@ function LoginForm() {
 
   return (
     <>
+      {chooser && (
+        <FirstLoginAccountChooser
+          roles={chooser.roles}
+          activeRole={chooser.activeRole}
+          onDone={async (chosen) => {
+            if (!chosen) return goToDashboard(chooser.userRole, chooser.token);
+            // Another account than the one login opened: open that one now
+            try {
+              const res = await roleService.switchRole(chosen);
+              openSession(res.token, res.data.user, res.data.activeRole);
+            } catch {
+              goToDashboard(chooser.userRole, chooser.token);
+            }
+          }}
+        />
+      )}
       <div className="grid w-full max-w-[1040px] overflow-hidden rounded-[24px] bg-white shadow-[0_40px_80px_-30px_#0B2E1F66] lg:grid-cols-2">
         <div className="hidden lg:flex">
           <AuthPanel

@@ -54,6 +54,7 @@ import Image from "next/image";
 import { MdSystemSecurityUpdate } from "react-icons/md";
 import { canOpenPage } from "@/lib/admin-permissions";
 import { highlightParts, searchLinks, SearchableLink } from "./sidebar-search";
+import { RoleSwitchButtons } from "@/components/role-switcher";
 
 // Extra words people may type when looking for a page, so search finds related links
 const searchKeywords: Record<string, string[]> = {
@@ -686,6 +687,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                   </p>
                 )}
               </div>
+              <RoleSwitchButtons className="border-b border-[#DCE6DF]" />
               <Link
                 href="/"
                 className="flex min-h-10 items-center gap-2 px-3 text-[14px] hover:bg-[#F6F9F7]"

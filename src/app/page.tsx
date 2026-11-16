@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import "@/components/home/home.css";
 import { siteFontVariables } from "@/components/home/fonts";
 import { HomeNav } from "@/components/home/home-nav";
 import { BuyerCategories, HomeHero } from "@/components/home/home-hero";

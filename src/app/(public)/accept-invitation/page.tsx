@@ -44,6 +44,8 @@ function AcceptInvitationForm() {
   const [checking, setChecking] = useState(true);
   // Aggregators approved from the QR application: name and phone are already known
   const [prefilled, setPrefilled] = useState(false);
+  // The email already has an account: accepting adds the role, no new password
+  const [existing, setExisting] = useState<{ name: string | null; roles: string[] } | null>(null);
   const [editDetails, setEditDetails] = useState(false);
 
   const router = useRouter();
@@ -62,6 +64,7 @@ function AcceptInvitationForm() {
       .verifyInviteToken(tokenParam)
       .then((res) => {
         setInvite({ email: res.data.email, role: res.data.role });
+        if (res.data.existingAccount) setExisting(res.data.existingAccount);
         if (res.data.prefill) {
           setFormData((f) => ({ ...f, username: res.data.prefill!.username, phone: res.data.prefill!.phone }));
           setPrefilled(true);
@@ -75,6 +78,15 @@ function AcceptInvitationForm() {
 
   const validateForm = (): boolean => {
     const newErrors: ValidationErrors = {};
+
+    if (existing) {
+      if (inviteRole === "TRADER" && !formData.loanTermsAndConditions.trim()) {
+        newErrors.loanTermsAndConditions =
+          "Loan terms & conditions are required (restaurants will sign them when requesting a loan)";
+      }
+      setErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
+    }
 
     if (!formData.username.trim()) newErrors.username = "Name is required";
     else if (formData.username.trim().length < 3) newErrors.username = "Name must be at least 3 characters";
@@ -105,13 +117,21 @@ function AcceptInvitationForm() {
     try {
       const acceptData: AcceptInvitationData = {
         token,
-        username: formData.username.trim(),
-        phone: formData.phone.replace(/\s/g, ""),
-        password: formData.password,
+        ...(existing
+          ? {}
+          : {
+              username: formData.username.trim(),
+              phone: formData.phone.replace(/\s/g, ""),
+              password: formData.password,
+            }),
         ...(inviteRole === "TRADER" ? { loanTermsAndConditions: formData.loanTermsAndConditions.trim() } : {}),
       };
       await invitationService.acceptInvitation(acceptData);
-      toast.success("Account created. Please log in.");
+      toast.success(
+        existing
+          ? `${roleLabel} role added. Log in with your usual password, then switch to it from your account menu.`
+          : "Account created. Please log in.",
+      );
       router.push("/login");
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to create account");
@@ -126,7 +146,7 @@ function AcceptInvitationForm() {
   };
 
   const roleLabel = inviteRole ? ROLE_LABEL[inviteRole] ?? inviteRole : "";
-  const showDetailFields = !prefilled || editDetails;
+  const showDetailFields = !existing && (!prefilled || editDetails);
 
   return (
     <div className="grid w-full max-w-[1040px] overflow-hidden rounded-[24px] bg-white shadow-[0_40px_80px_-30px_#0B2E1F66] lg:grid-cols-2">
@@ -163,10 +183,20 @@ function AcceptInvitationForm() {
         ) : (
           <>
             <h2 className="mb-1 text-[28px] font-bold tracking-[-0.6px] text-[#0B2E1F] [font-family:var(--font-inter-tight),sans-serif]">
-              {prefilled ? `Welcome, ${formData.username.split(" ")[0]}` : "Create your account"}
+              {existing
+                ? `Add the ${roleLabel} role`
+                : prefilled
+                  ? `Welcome, ${formData.username.split(" ")[0]}`
+                  : "Create your account"}
             </h2>
             <p className="mb-6 text-[15px] text-[#4A6358]">
-              {prefilled ? "Only your password is left." : `You're joining as ${roleLabel}.`}
+              {existing
+                ? `${existing.name ? `${existing.name}, you` : "You"} already have a Food Bundles account${
+                    existing.roles.length ? ` (${existing.roles.join(", ")})` : ""
+                  }. Accepting adds ${roleLabel} to it: you keep your password and switch roles from your account menu.`
+                : prefilled
+                  ? "Only your password is left."
+                  : `You're joining as ${roleLabel}.`}
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -240,6 +270,8 @@ function AcceptInvitationForm() {
                 </div>
               )}
 
+              {!existing && (
+              <>
               <div className="relative">
                 <Input
                   type={showPassword ? "text" : "password"}
@@ -273,10 +305,14 @@ function AcceptInvitationForm() {
                 />
                 {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password}</p>}
               </div>
+              </>
+              )}
 
               <button type="submit" className={`flex w-full items-center justify-center gap-2 ${authPrimaryButton}`} disabled={isLoading}>
                 {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {isLoading ? "Creating account…" : prefilled ? "Open my account" : "Complete registration"}
+                {isLoading
+                  ? existing ? "Adding role…" : "Creating account…"
+                  : existing ? `Add ${roleLabel} to my account` : prefilled ? "Open my account" : "Complete registration"}
               </button>
             </form>
           </>
