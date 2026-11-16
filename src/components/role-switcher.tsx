@@ -169,7 +169,7 @@ export function RoleSwitchButtons({ className = "" }: { className?: string }) {
     <div className={className}>
       {others.map((r) => (
         <button key={r.role} type="button" disabled={!!switching} onClick={() => switchTo(r.role)} className={row}>
-          {icon(r.role, ArrowLeftRight)}
+          {icon(r.role, ArrowLeftRight)} 
           Switch to {r.label}
         </button>
       ))}
