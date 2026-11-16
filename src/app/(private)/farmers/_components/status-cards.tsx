@@ -66,8 +66,8 @@ export default function StatusCards({ products, onStatusClick, selectedStatus }:
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-600">{stat.label}</p>
-                  <h3 className="text-2xl font-bold text-gray-900">{count}</h3>
+                  <p className="text-sm font-medium text-[#4A6358]">{stat.label}</p>
+                  <h3 className="text-2xl font-bold text-[#0B2E1F]">{count}</h3>
                 </div>
                 <div className={`p-3 rounded-full bg-gradient-to-br ${stat.color}`}>
                   <stat.icon className="h-6 w-6 text-white" />

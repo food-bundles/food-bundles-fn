@@ -69,19 +69,19 @@ export default function StatsCards() {
         {stats.map((stat, index) => (
           <Card
             key={index}
-            className={`border border-white/50 shadow-lg ${stat.gradient} ${stat.glowColor} bg-green-100 backdrop-blur-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02] relative overflow-hidden group`}
+            className={`border border-white/50 shadow-lg ${stat.gradient} ${stat.glowColor} bg-[#E3F3E8] backdrop-blur-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02] relative overflow-hidden group`}
           >
-            <div className="absolute inset-0 bg-green-100 from-white/0 via-white/20 to-white/0 -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+            <div className="absolute inset-0 bg-[#E3F3E8] from-white/0 via-white/20 to-white/0 -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
 
             <CardContent className=" relative z-10">
               <div className="flex items-start justify-between mb-2">
                 <div className="flex-1">
                   <div className="flex items-center gap-1 mb-1">
-                    <p className="text-sm font-semibold text-gray-700">{stat.title}</p>
-                    <Sparkles className="w-3 h-3 text-gray-500 animate-pulse" />
+                    <p className="text-sm font-semibold text-[#2E4A3B]">{stat.title}</p>
+                    <Sparkles className="w-3 h-3 text-[#4A6358] animate-pulse" />
                   </div>
                   <p className={`text-2xl font-bold ${stat.textColor} mb-1 tracking-tight`}>{stat.value}</p>
-                  <p className="text-sm text-gray-600 font-medium">{stat.subtitle}</p>
+                  <p className="text-sm text-[#4A6358] font-medium">{stat.subtitle}</p>
                 </div>
                 <div
                   className={`w-10 h-10 rounded-xl ${stat.iconBg} border flex items-center justify-center shadow-md ml-2 group-hover:scale-110 transition-all duration-300`}

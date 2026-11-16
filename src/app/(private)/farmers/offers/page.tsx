@@ -5,11 +5,11 @@ import { BuyingOffers } from "../_components/dashboard/buying-offers";
 // Buying offers: products Food Bundles offers to buy from farmers (for schools, hotels…)
 export default function BuyingOffersPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F6F9F7]">
       <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Buying offers</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h1 className="text-xl sm:text-2xl font-bold text-[#0B2E1F]">Buying offers</h1>
+          <p className="text-sm text-[#4A6358] mt-0.5">
             Food Bundles offers to buy these products. Tap Supply to send what you have; you can supply one
             product, several, or all.
           </p>

@@ -149,7 +149,7 @@ export function RoleSwitchMenuItems() {
           className="cursor-pointer text-[14px]"
         >
           <LogIn className="h-4 w-4" />
-          Account opened at login…
+          Default Login Account…
         </DropdownMenuItem>
       )}
       <DefaultAccountDialog open={defaultOpen} onOpenChange={setDefaultOpen} />
@@ -196,7 +196,7 @@ export function RoleSwitchButtons({ className = "" }: { className?: string }) {
       {others.length > 0 && (
         <button type="button" onClick={() => setDefaultOpen(true)} className={row}>
           <LogIn className="h-4 w-4" />
-          Account opened at login…
+          Default Login Account…
         </button>
       )}
       <DefaultAccountDialog open={defaultOpen} onOpenChange={setDefaultOpen} />

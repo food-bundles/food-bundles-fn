@@ -1,5 +1,6 @@
 "use client";
 
+import { CustomerTypeAvatar } from "@/components/customer-type-avatar";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Power } from "lucide-react";
@@ -23,7 +24,10 @@ export const createCustomerTypeColumns = (
     accessorKey: "name",
     header: "Name",
     cell: ({ row }) => (
-      <span className="font-medium text-gray-900">{row.original.name}</span>
+      <span className="flex items-center gap-2.5">
+        <CustomerTypeAvatar name={row.original.name} imageUrl={row.original.imageUrl} size={36} />
+        <span className="font-medium text-gray-900">{row.original.name}</span>
+      </span>
     ),
   },
   {

@@ -95,7 +95,7 @@ export function RestaurantSidebar({ isOpen, onClose }: RestaurantSidebarProps) {
       <div className="relative z-10 flex h-full flex-col">
         <div className="px-5 pb-4 pt-5">
           <Link href="/" className="inline-flex items-center gap-2.5 rounded-full bg-white py-1 pl-1.5 pr-3.5" aria-label="Food Bundles home">
-            <Image src="/home/food-bundles-logo.png" alt="" width={28} height={28} className="h-7 w-auto" />
+            <Image src="/home/food-bundles-logo.png" alt="" width={33} height={28} className="h-7 w-auto" />
             <span className="text-[15px] font-bold tracking-tight text-[#0B2E1F] [font-family:var(--font-inter-tight),sans-serif]">
               Food Bundles
             </span>

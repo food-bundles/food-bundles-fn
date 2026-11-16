@@ -29,7 +29,7 @@ const DETAIL_ROWS = (
 ): Array<{ icon: typeof Package; iconBg: string; iconColor: string; label: string; value: string }> => [
   { icon: Package, iconBg: "bg-blue-100", iconColor: "text-blue-600", label: "Name", value: product.name },
   { icon: Tag, iconBg: "bg-purple-100", iconColor: "text-purple-600", label: "Category", value: product.category.name },
-  { icon: Hash, iconBg: "bg-green-100", iconColor: "text-green-600", label: "Quantity", value: product.quantity },
+  { icon: Hash, iconBg: "bg-[#E3F3E8]", iconColor: "text-[#007A35]", label: "Quantity", value: product.quantity },
   { icon: MapPin, iconBg: "bg-red-100", iconColor: "text-red-600", label: "Location", value: product.location },
   { icon: Calendar, iconBg: "bg-indigo-100", iconColor: "text-indigo-600", label: "Submitted", value: product.submittedDate },
 ];
@@ -105,13 +105,13 @@ export function SubmissionDetailsModal({
       <DialogContent className="sm:max-w-md bg-white">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Package className="w-5 h-5 text-green-600" />
+            <Package className="w-5 h-5 text-[#007A35]" />
             Product Details
           </DialogTitle>
         </DialogHeader>
 
         {product && (
-          <div className="flex flex-col gap-3 text-sm text-gray-700 mt-2">
+          <div className="flex flex-col gap-3 text-sm text-[#2E4A3B] mt-2">
             {DETAIL_ROWS(product).map((row) => (
               <div key={row.label} className="flex items-start justify-between gap-2">
                 <div className="flex items-center space-x-2">
@@ -136,7 +136,7 @@ export function SubmissionDetailsModal({
 
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                <div className="w-6 h-6 rounded-lg bg-[#F6F9F7] flex items-center justify-center shrink-0">
                   <div className="w-2 h-2 rounded-full bg-gray-600" />
                 </div>
                 <span className="font-medium">Status:</span>
@@ -153,7 +153,7 @@ export function SubmissionDetailsModal({
               </div>
             )}
             {product.agreedPrice != null && ["APPROVED", "VERIFIED", "PAID"].includes(product.status) && (
-              <div className="rounded-lg bg-green-50 border border-green-100 p-3 text-xs text-green-900">
+              <div className="rounded-lg bg-[#EFFAF3] border border-green-100 p-3 text-xs text-green-900">
                 Agreed price: RWF {product.agreedPrice.toLocaleString()} per unit
                 {product.acceptedQty != null && ` · received ${product.acceptedQty} units`}
               </div>
@@ -161,9 +161,9 @@ export function SubmissionDetailsModal({
 
             {awaitingFeedback && !action && (
               <div className="flex flex-col gap-2 pt-2 border-t border-gray-100">
-                <p className="text-xs text-gray-500">Respond to this offer:</p>
+                <p className="text-xs text-[#4A6358]">Respond to this offer:</p>
                 <div className="flex gap-2">
-                  <Button size="sm" className="bg-green-600 hover:bg-green-700 flex-1" onClick={() => setAction("ACCEPTED")}>
+                  <Button size="sm" className="bg-[#0B2E1F] hover:bg-[#0F5C36] flex-1" onClick={() => setAction("ACCEPTED")}>
                     Accept
                   </Button>
                   <Button size="sm" variant="outline" className="flex-1" onClick={() => setAction("EXTENDED")}>
@@ -196,7 +196,7 @@ export function SubmissionDetailsModal({
                 <div className="flex gap-2">
                   <Button
                     size="sm"
-                    className="bg-green-600 hover:bg-green-700 flex-1"
+                    className="bg-[#0B2E1F] hover:bg-[#0F5C36] flex-1"
                     onClick={handleSubmitFeedback}
                     disabled={submitting}
                   >

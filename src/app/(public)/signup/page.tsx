@@ -20,15 +20,10 @@ import {
   ArrowLeft,
   ArrowRight,
   Briefcase,
+  Check,
 } from "lucide-react";
+import { CustomerTypeAvatar } from "@/components/customer-type-avatar";
 import { OTPInput } from "@/components/ui/otp-input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { GoogleLogin } from "@react-oauth/google";
 import { AuthPanel, authInput, authPrimaryButton, authSecondaryButton } from "@/components/home/auth-panel";
 import Link from "next/link";
@@ -1709,30 +1704,52 @@ function SignupForm() {
                     Shown only when the admin has active customer types. */}
                 {customerTypes.length > 0 && (
                   <div className={`relative ${onStep(1)}`}>
-                    <Select
-                      value={selectedCustomerTypeId}
-                      onValueChange={(value) => {
-                        setSelectedCustomerTypeId(value);
-                        handleInputChange("businessType");
-                      }}
-                      disabled={!isBackendAvailable || isLoading}
+                    {/* Each business type as a big picture: people recognise theirs at a glance */}
+                    <p className="m-0 mb-2.5 text-[15px] font-bold text-[#0B2E1F]">What kind of business are you?</p>
+                    <div
+                      role="radiogroup"
+                      aria-label="Business type"
+                      className={`grid grid-cols-3 gap-2 sm:gap-3 ${
+                        validationErrors.businessType ? "rounded-2xl ring-2 ring-red-400 ring-offset-2" : ""
+                      }`}
                     >
-                      <SelectTrigger
-                        aria-label="Business type"
-                        className={`w-full h-12! rounded-xl shadow-none border-[#DCE6DF] text-base text-[#0B2E1F] focus:border-[#00A43A] focus:ring-[#00A43A]/25 ${
-                          validationErrors.businessType ? "border-red-500" : ""
-                        }`}
-                      >
-                        <SelectValue placeholder="Select business type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {customerTypes.map((type) => (
-                          <SelectItem key={type.id} value={type.id}>
-                            {formatTypeName(type.name)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      {customerTypes.map((type) => {
+                        const on = type.id === selectedCustomerTypeId;
+                        return (
+                          <button
+                            key={type.id}
+                            type="button"
+                            role="radio"
+                            aria-checked={on}
+                            disabled={!isBackendAvailable || isLoading}
+                            onClick={() => {
+                              setSelectedCustomerTypeId(type.id);
+                              handleInputChange("businessType");
+                            }}
+                            className={`group flex flex-col items-center gap-2 rounded-2xl border px-1.5 pb-3 pt-3.5 text-center transition-all disabled:opacity-60 cursor-pointer ${
+                              on
+                                ? "border-[#00A43A] bg-[#EFFAF3] ring-2 ring-[#00A43A]"
+                                : "border-[#DCE6DF] bg-white hover:border-[#00A43A] hover:shadow-[0_10px_24px_-16px_#0B2E1F66]"
+                            }`}
+                          >
+                            <span className="relative">
+                              <CustomerTypeAvatar
+                                name={type.name}
+                                imageUrl={type.imageUrl}
+                                size={76}
+                                className={`ring-4 transition-transform group-hover:scale-[1.04] ${on ? "ring-[#00A43A]/40" : "ring-white"}`}
+                              />
+                              {on && (
+                                <span className="absolute -right-0.5 -top-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-[#00A43A] text-white ring-2 ring-white">
+                                  <Check className="h-3.5 w-3.5" />
+                                </span>
+                              )}
+                            </span>
+                            <span className="text-[14px] font-bold leading-tight text-[#0B2E1F]">{formatTypeName(type.name)}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                     {validationErrors.businessType && (
                       <p className="text-red-600 text-xs mt-1">
                         {validationErrors.businessType}

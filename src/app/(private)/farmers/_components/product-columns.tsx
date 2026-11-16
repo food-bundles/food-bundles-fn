@@ -41,8 +41,8 @@ export const productColumns = (
   accessorKey: "location",
   header: "Location",
   cell: ({ row }) => (
-    <div className="flex items-start text-gray-600">
-      <MapPin className="w-4 h-4 mr-1 text-gray-400 mt-0.5" />
+    <div className="flex items-start text-[#4A6358]">
+      <MapPin className="w-4 h-4 mr-1 text-[#7A8E83] mt-0.5" />
       <span className="text-xs sm:text-sm leading-tight line-clamp-2">
         {row.original.location}
       </span>

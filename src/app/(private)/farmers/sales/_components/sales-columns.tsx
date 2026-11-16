@@ -10,7 +10,7 @@ const getStatusColor = (status: string): string => {
   switch (status.toUpperCase()) {
     case "ACCEPTED":
     case "APPROVED":
-      return "bg-green-100 text-green-800 hover:bg-green-100";
+      return "bg-[#E3F3E8] text-[#0B2E1F] hover:bg-green-100";
     case "REJECTED":
       return "bg-red-100 text-red-800 hover:bg-red-100";
     case "PENDING":
@@ -20,7 +20,7 @@ const getStatusColor = (status: string): string => {
     case "PAID":
       return "bg-purple-100 text-purple-800 hover:bg-purple-100";
     default:
-      return "bg-gray-100 text-gray-800 hover:bg-gray-100";
+      return "bg-[#F6F9F7] text-[#0B2E1F] hover:bg-[#F6F9F7]";
   }
 };
 
@@ -61,7 +61,7 @@ export const salesColumns: ColumnDef<FarmerSubmission>[] = [
           Submitted: <span className="font-medium">{row.original.submittedQty}</span>
         </span>
         {row.original.acceptedQty !== null && (
-          <span className="text-green-700">
+          <span className="text-[#007A35]">
             Accepted: <span className="font-medium">{row.original.acceptedQty}</span>
           </span>
         )}

@@ -91,7 +91,7 @@ export function SubmissionsTable({
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 sm:p-6 space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h2 className="text-base font-semibold text-gray-900">{title}</h2>
+        <h2 className="text-base font-semibold text-[#0B2E1F]">{title}</h2>
         <div className="flex items-center gap-2">
           <ViewModeToggle
             value={viewMode}
@@ -101,11 +101,11 @@ export function SubmissionsTable({
           {showCreateButton && onCreateSubmission && (
             <Button
               onClick={onCreateSubmission}
-              className="bg-green-600 hover:bg-green-700 text-white"
+              className="rounded-full bg-[#0B2E1F] font-bold text-white hover:bg-[#0F5C36]"
               disabled={loading}
             >
               <Plus className="w-4 h-4 mr-2" />
-              Create Submission
+              Submit produce
             </Button>
           )}
         </div>
@@ -149,7 +149,7 @@ export function SubmissionsTable({
 
       {filteredProducts.length === 0 && !loading && (
         <div className="text-center py-8">
-          <p className="text-gray-600">No products found.</p>
+          <p className="text-[#4A6358]">No products found.</p>
           <Button onClick={handleClearFilters} variant="outline" className="mt-4">
             Clear Filters
           </Button>

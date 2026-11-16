@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { FarmerSidebar } from "./_components/farmer-sidebar";
 import DashboardHeader from "./_components/farmerheader";
 import { SubmissionProvider } from "@/app/contexts/submission-context";
+import { siteFontVariables } from "@/components/home/fonts";
 
 interface FarmerLayoutProps {
   children: React.ReactNode;
@@ -28,7 +29,7 @@ export default function FarmerLayout({ children }: FarmerLayoutProps) {
 
   return (
     <SubmissionProvider>
-      <div className="flex h-screen bg-white">
+      <div className={`flex h-screen bg-[#F6F9F7] text-[#0B2E1F] ${siteFontVariables}`}>
         {/* Sidebar */}
         <div
           className={`${
@@ -41,17 +42,19 @@ export default function FarmerLayout({ children }: FarmerLayoutProps) {
         {/* Mobile overlay */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 z-40 md:hidden"
+            className="fixed inset-0 z-40 bg-[#0B2E1F]/40 md:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
 
         <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-          <DashboardHeader
-            onMenuClick={() => setSidebarOpen((prev) => !prev)}
-            sidebarOpen={sidebarOpen}
-          />
-          <main className="flex-1 bg-gray-50 overflow-y-auto">{children}</main>
+          <div className="sticky top-0 z-30 w-full shrink-0">
+            <DashboardHeader
+              onMenuClick={() => setSidebarOpen((prev) => !prev)}
+              sidebarOpen={sidebarOpen}
+            />
+          </div>
+          <main className="flex-1 bg-[#F6F9F7]">{children}</main>
         </div>
       </div>
     </SubmissionProvider>

@@ -88,13 +88,13 @@ export function StatusBreakdownChart({ products, loading }: StatusBreakdownChart
             <ul className="w-full space-y-2 text-sm">
               {(Object.keys(chartConfig) as StatusKey[]).map((status) => (
                 <li key={status} className="flex items-center justify-between gap-3">
-                  <span className="flex items-center gap-2 text-gray-600">
+                  <span className="flex items-center gap-2 text-[#4A6358]">
                     <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: chartConfig[status].color }} />
                     {chartConfig[status].label}
                   </span>
-                  <span className="font-semibold text-gray-900">
+                  <span className="font-semibold text-[#0B2E1F]">
                     {counts[status]}
-                    <span className="ml-1 text-xs font-normal text-gray-500">
+                    <span className="ml-1 text-xs font-normal text-[#4A6358]">
                       {total > 0 ? Math.round((counts[status] / total) * 100) : 0}%
                     </span>
                   </span>

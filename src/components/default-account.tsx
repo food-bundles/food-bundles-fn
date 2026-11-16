@@ -105,7 +105,7 @@ export function DefaultAccountSetting({ className = "" }: { className?: string }
   return (
     <section className={`rounded-2xl border border-[#DCE6DF] bg-white p-5 ${className}`}>
       <h2 className="m-0 flex items-center gap-2 text-[17px] font-bold text-[#0B2E1F]">
-        <LogIn className="h-5 w-5 text-[#00A43A]" /> Account opened at login
+        <LogIn className="h-5 w-5 text-[#00A43A]" /> Default Login Account
       </h2>
       <p className="m-0 mb-4 mt-1 text-[14px] text-[#4A6358]">
         You have {roles.length} accounts with one email and password. Choose which one opens every time you log in;
@@ -151,7 +151,7 @@ export function DefaultAccountDialog({ open, onOpenChange }: { open: boolean; on
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Account opened at login</DialogTitle>
+          <DialogTitle>Default Login Account</DialogTitle>
           <DialogDescription>Choose which of your accounts opens every time you log in.</DialogDescription>
         </DialogHeader>
         <Choices roles={roles} value={value} onChange={setValue} includeLastUsed />

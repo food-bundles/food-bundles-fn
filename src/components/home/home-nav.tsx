@@ -66,7 +66,7 @@ export function HomeNav({ variant = "overlay" }: { variant?: "overlay" | "solid"
     >
       <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-4 px-4 py-3 sm:px-8">
         <Link href="/" className="flex items-center gap-2.5 rounded-full bg-white/95 py-1 pl-1.5 pr-3.5" aria-label="Food Bundles home">
-          <Image src="/home/food-bundles-logo.png" alt="" width={28} height={28} className="h-7 w-auto" priority />
+          <Image src="/home/food-bundles-logo.png" alt="" width={33} height={28} className="h-7 w-auto" priority />
           <span className="fb-display text-[15px] font-bold tracking-tight text-[#0B2E1F]">Food Bundles</span>
         </Link>
 

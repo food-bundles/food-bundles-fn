@@ -37,18 +37,18 @@ export function DashboardStatTile({
   const styles = ACCENT_STYLES[accent];
   const TrendIcon = trend?.direction === "up" ? TrendingUp : trend?.direction === "down" ? TrendingDown : Minus;
   const trendColor =
-    trend?.direction === "up" ? "text-emerald-600" : trend?.direction === "down" ? "text-red-600" : "text-gray-500";
+    trend?.direction === "up" ? "text-emerald-600" : trend?.direction === "down" ? "text-red-600" : "text-[#4A6358]";
 
   return (
     <motion.div variants={gridItemVariants}>
-      <Card className="relative overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow duration-300">
+      <Card className="relative overflow-hidden border border-[#DCE6DF] hover:shadow-lg transition-shadow duration-300">
         <div className={cn("absolute inset-0 bg-linear-to-br opacity-5", styles.gradient)} />
         <CardContent className="p-5 relative">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-600">{title}</p>
+              <p className="text-sm font-medium text-[#4A6358]">{title}</p>
               <p className={cn("text-2xl font-bold mt-1.5 tracking-tight break-words", styles.value)}>{value}</p>
-              {subtitle && <p className="text-xs text-gray-500 mt-1">{subtitle}</p>}
+              {subtitle && <p className="text-xs text-[#4A6358] mt-1">{subtitle}</p>}
               {trend && (
                 <div className={cn("flex items-center gap-1 mt-1.5 text-xs font-medium", trendColor)}>
                   <TrendIcon className="w-3 h-3" />

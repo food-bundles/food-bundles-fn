@@ -11,12 +11,14 @@ import {
   ChevronDown,
   Mail,
   ShoppingBasket,
+  Plus,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { authService } from "@/app/services/authService";
-import { OptimizedImage } from "@/components/OptimizedImage";
+import { RoleSwitchButtons } from "@/components/role-switcher";
 
 /** A single sidebar navigation entry. */
 interface MenuItem {
@@ -28,8 +30,8 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/farmers" },
   // Buying offers from aggregators' supply requests (schools, hotels…)
-  { icon: ShoppingBasket, label: "Buying Offers", href: "/farmers/offers" },
-  { icon: ClipboardList, label: "Submissions", href: "/farmers/submissions" },
+  { icon: ShoppingBasket, label: "Buying offers", href: "/farmers/offers" },
+  { icon: ClipboardList, label: "My submissions", href: "/farmers/submissions" },
   { icon: Wallet, label: "Sales", href: "/farmers/sales" },
   { icon: User, label: "Profile", href: "/farmers/profile" },
   { icon: Settings, label: "Settings", href: "/farmers/setting/authenticator" },
@@ -44,166 +46,159 @@ interface CurrentUser {
   name?: string;
   username?: string;
   email?: string;
+  phone?: string;
 }
 
 /**
- * Farmer-facing sidebar navigation, shown on md+ screens and as a
- * slide-over on mobile. Mirrors the trader/restaurant sidebar pattern
- * for visual and behavioral consistency across role areas.
+ * Farmer navigation, same look as the other food.rw dashboards: dark green,
+ * soft glows, pill links. "Submit produce" sits on top: it's what farmers do most.
  */
 export function FarmerSidebar({ isOpen, onClose }: FarmerSidebarProps) {
   const pathname = usePathname();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [userData, setUserData] = useState<CurrentUser | null>(null);
+  const accountRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    let isMounted = true;
-
-    const fetchUserData = async () => {
-      try {
-        const response = await authService.getCurrentUser();
-        if (isMounted) {
-          setUserData(response?.user ?? null);
-        }
-      } catch (error) {
-        console.error("Failed to fetch user data:", error);
-      }
-    };
-
-    fetchUserData();
-
-    return () => {
-      isMounted = false;
-    };
+    authService
+      .getCurrentUser()
+      .then((response) => setUserData(response?.user ?? null))
+      .catch(() => setUserData(null));
   }, []);
 
-  const isItemActive = (item: MenuItem) => pathname === item.href;
+  // Close the account menu on an outside click or Escape
+  useEffect(() => {
+    if (!accountOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (accountRef.current && !accountRef.current.contains(e.target as Node)) setAccountOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setAccountOpen(false);
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [accountOpen]);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
       await authService.logout();
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      window.location.href = "/";
-    } catch (error) {
-      console.error("Logout error:", error);
+    } finally {
+      // Full reload clears every context holding the farmer's data
       window.location.href = "/";
     }
   };
 
+  const userName = userData?.name || userData?.username || userData?.phone || "";
+
   return (
-    <div className="relative w-60 min-w-60 h-screen overflow-hidden bg-green-800">
+    <div className="relative h-screen w-60 min-w-60 overflow-hidden bg-[#0B2E1F] text-white">
+      {/* Soft glows from the food.rw hero */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 opacity-60"
+        style={{
+          background:
+            "radial-gradient(circle at 0% 0%, #00D04833 0, transparent 45%), radial-gradient(circle at 100% 100%, #18A0A033 0, transparent 45%)",
+        }}
+      />
       <div
         className={cn(
-          "fixed md:relative",
+          "relative z-10 flex h-screen w-60 min-w-60 shrink-0 flex-col transition-transform duration-300 ease-in-out",
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
-          "z-50 md:z-auto w-60 min-w-60 h-screen border-r border-gray-200 flex flex-col shrink-0 transition-transform duration-300 ease-in-out",
         )}
-        style={{ backgroundColor: "transparent" }}
       >
         {/* Logo */}
-        <div className="p-3 md:p-4 flex items-center justify-between shrink-0 relative z-10 bg-green-900 backdrop-blur-sm">
-          <Link href="/">
-            <div className="flex items-center gap-2">
-              <OptimizedImage
-                src="/imgs/Food_bundle_logo.png"
-                alt="Logo"
-                width={40}
-                height={40}
-                className="w-7 h-7 md:w-8 md:h-8 rounded-full object-cover"
-              />
-              <h1 className="text-sm font-bold text-green-100">
-                Food Bundles Ltd
-              </h1>
-            </div>
+        <div className="shrink-0 px-4 pb-3 pt-4">
+          <Link href="/" className="inline-flex items-center gap-2.5 rounded-full bg-white py-1 pl-1.5 pr-3.5" aria-label="Food Bundles home">
+            <Image src="/home/food-bundles-logo.png" alt="" width={33} height={28} className="h-7 w-auto" />
+            <span className="text-[15px] font-bold tracking-tight text-[#0B2E1F] [font-family:var(--font-inter-tight),sans-serif]">
+              Food Bundles
+            </span>
+          </Link>
+          <p className="m-0 mt-2 px-1 text-[11px] font-bold uppercase tracking-[1.4px] text-[#7CF2A6]/80">Farmer account</p>
+        </div>
+
+        {/* What farmers do most: submit produce */}
+        <div className="shrink-0 px-3 pt-1">
+          <Link
+            href="/farmers?submit=1"
+            onClick={onClose}
+            className="flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#00D048] px-4 text-[15px] font-bold text-[#0B2E1F] shadow-[0_10px_24px_-12px_#00D048] transition-colors hover:bg-[#7CF2A6]"
+          >
+            <Plus className="h-4 w-4" /> Submit produce
           </Link>
         </div>
 
         {/* Navigation */}
-        <nav
-          className="flex-1 py-2 md:py-4 mb-10 overflow-auto scrollbar-hide relative z-10"
-          aria-label="Farmer navigation"
-        >
-          <ul className="space-y-1 px-2 md:px-3 pb-4">
+        <nav aria-label="Farmer" className="scrollbar-hide flex-1 overflow-auto py-3">
+          <ul className="space-y-0.5 px-3 pb-4">
             {menuItems.map((item) => {
-              const isActive = isItemActive(item);
+              const isActive = item.href === "/farmers" ? pathname === "/farmers" : pathname.startsWith(item.href);
               return (
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    onClick={() => onClose()}
+                    onClick={onClose}
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "flex items-center px-2 md:px-3 py-2 text-xs transition-colors whitespace-nowrap rounded-md",
-                      isActive
-                        ? "bg-green-700 hover:bg-green-700 text-white"
-                        : "text-green-200 hover:bg-green-700 hover:text-white",
+                      "flex min-h-10 items-center whitespace-nowrap rounded-xl px-3 text-[14px] font-semibold transition-colors",
+                      isActive ? "bg-white/15 text-white" : "text-white/80 hover:bg-white/10 hover:text-white",
                     )}
                   >
-                    <item.icon
-                      className={cn(
-                        "mr-2 md:mr-3 h-4 w-4 md:h-5 md:w-5",
-                        isActive ? "text-white" : "text-green-500",
-                      )}
-                    />
+                    <item.icon className={cn("mr-3 h-[18px] w-[18px] shrink-0", isActive && "text-[#00D048]")} />
                     <span className="truncate">{item.label}</span>
                   </Link>
                 </li>
               );
             })}
-
-            {/* My Account */}
-            <li className="relative">
-              <button
-                type="button"
-                onClick={() => setUserDropdownOpen((prev) => !prev)}
-                aria-expanded={userDropdownOpen}
-                className="w-full flex items-center px-3 py-2 rounded-md text-xs transition-colors whitespace-nowrap text-green-200 hover:bg-green-700 hover:text-white"
-              >
-                <User className="mr-3 h-5 w-5 text-green-500" />
-                <div className="flex-1 text-left mr-2">
-                  <div className="text-xs">My Account</div>
-                </div>
-                <ChevronDown
-                  className={cn(
-                    "h-4 w-4 transition-transform",
-                    userDropdownOpen && "rotate-180",
-                  )}
-                />
-              </button>
-
-              {userDropdownOpen && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-green-800 border border-green-600 rounded-md shadow-lg z-50">
-                  <div className="p-3 border-b border-green-600">
-                    <div className="text-xs text-green-200 font-medium truncate">
-                      {userData?.name || userData?.username || "Farmer"}
-                    </div>
-                    {userData?.email && (
-                      <div className="flex items-center mt-2 text-[10px] text-green-300">
-                        <Mail className="mr-1 h-3 w-3" />
-                        <span className="truncate">{userData.email}</span>
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    disabled={isLoggingOut}
-                    className={cn(
-                      "w-full flex items-center px-3 py-2 text-xs transition-colors",
-                      "text-red-300 hover:text-red-400 hover:bg-green-700",
-                      isLoggingOut && "opacity-50 cursor-not-allowed",
-                    )}
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    {isLoggingOut ? "Logging out..." : "Logout"}
-                  </button>
-                </div>
-              )}
-            </li>
           </ul>
         </nav>
+
+        {/* Account */}
+        <div ref={accountRef} className="relative shrink-0 border-t border-white/10 p-3">
+          {accountOpen && (
+            <div className="absolute bottom-full left-3 right-3 mb-2 overflow-hidden rounded-xl bg-white text-[#0B2E1F] shadow-[0_20px_40px_-12px_#000]">
+              <div className="border-b border-[#DCE6DF] px-3 py-2.5">
+                <p className="m-0 truncate text-[14px] font-bold">{userName || "—"}</p>
+                {(userData?.email || userData?.phone) && (
+                  <p className="m-0 mt-0.5 flex items-center truncate text-[12px] text-[#4A6358]">
+                    <Mail className="mr-1.5 h-3 w-3 shrink-0" />
+                    <span className="truncate">{userData?.email || userData?.phone}</span>
+                  </p>
+                )}
+              </div>
+              <RoleSwitchButtons className="border-b border-[#DCE6DF]" />
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="flex min-h-10 w-full items-center gap-2 px-3 text-[14px] text-red-600 hover:bg-red-50 disabled:opacity-60 cursor-pointer"
+              >
+                <LogOut className="h-4 w-4" />
+                {isLoggingOut ? "Logging out…" : "Log out"}
+              </button>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => setAccountOpen((o) => !o)}
+            aria-expanded={accountOpen}
+            className="flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left transition-colors hover:bg-white/10 cursor-pointer"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#00D048] text-[13px] font-bold text-[#0B2E1F]">
+              {userName ? userName.substring(0, 2).toUpperCase() : <User className="h-4 w-4" />}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[14px] font-bold">{userName || "…"}</span>
+              <span className="block truncate text-[11px] text-white/60">Farmer</span>
+            </span>
+            <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform", accountOpen && "rotate-180")} />
+          </button>
+        </div>
       </div>
     </div>
   );

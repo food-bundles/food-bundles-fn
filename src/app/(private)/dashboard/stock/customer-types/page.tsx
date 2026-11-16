@@ -17,7 +17,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Users, UserCheck, UserX, ArrowLeftRight, BarChart3 } from "lucide-react";
 import { createCustomerTypeColumns } from "./_components/customer-type-columns";
-import { CustomerTypeModal } from "./_components/CustomerTypeModal";
+import { CustomerTypeModal, type CustomerTypeImageChange } from "./_components/CustomerTypeModal";
 import { PriceUsage } from "./_components/PriceUsage";
 import { SwapPricingDialog } from "./_components/SwapPricingDialog";
 import { toast } from "sonner";
@@ -104,6 +104,7 @@ export default function CustomerTypesPage() {
   const handleSubmit = async (
     data: CustomerTypeFormData,
     categoryIds: string[],
+    image: CustomerTypeImageChange,
   ) => {
     try {
       let customerTypeId = editingType?.id;
@@ -120,6 +121,17 @@ export default function CustomerTypesPage() {
           customerTypeId,
           categoryIds,
         );
+      }
+
+      // The sign-up picture (after saving: a new type needs its id first)
+      if (customerTypeId && image.file) {
+        try {
+          await customerTypeService.uploadImage(customerTypeId, image.file);
+        } catch {
+          toast.warning("Saved, but the picture could not be uploaded. Try again from Edit.");
+        }
+      } else if (customerTypeId && image.remove) {
+        await customerTypeService.removeImage(customerTypeId).catch(() => undefined);
       }
 
       toast.success(

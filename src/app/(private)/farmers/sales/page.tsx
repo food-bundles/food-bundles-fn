@@ -135,7 +135,7 @@ export default function FarmerSalesPage() {
   return (
     <div className="w-full max-w-[1600px] mx-auto px-3 sm:px-4 md:px-6 lg:px-8 xl:px-10 py-3 sm:py-4 md:py-6 lg:py-8">
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <h1 className="text-[16px] font-bold text-gray-900 mb-6">My Sales</h1>
+        <h1 className="text-[16px] font-bold text-[#0B2E1F] mb-6">My Sales</h1>
 
         {/* Summary tiles */}
         {loading ? (
@@ -147,15 +147,15 @@ export default function FarmerSalesPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             {summaryTiles.map((tile) => (
-              <Card key={tile.title} className="border border-gray-200 shadow-sm">
+              <Card key={tile.title} className="border border-[#DCE6DF] shadow-sm">
                 <CardContent className="flex items-start justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">{tile.title}</p>
-                    <p className="text-xl font-bold text-gray-900 mt-1">{tile.value}</p>
-                    <p className="text-xs text-gray-500 mt-1">{tile.subtitle}</p>
+                    <p className="text-sm font-medium text-[#4A6358]">{tile.title}</p>
+                    <p className="text-xl font-bold text-[#0B2E1F] mt-1">{tile.value}</p>
+                    <p className="text-xs text-[#4A6358] mt-1">{tile.subtitle}</p>
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
-                    <tile.icon className="w-5 h-5 text-green-700" />
+                  <div className="w-10 h-10 rounded-xl bg-[#E3F3E8] flex items-center justify-center shrink-0">
+                    <tile.icon className="w-5 h-5 text-[#007A35]" />
                   </div>
                 </CardContent>
               </Card>
@@ -204,7 +204,7 @@ export default function FarmerSalesPage() {
 
             {filteredSubmissions.length === 0 && (
               <div className="text-center py-8">
-                <p className="text-gray-600">
+                <p className="text-[#4A6358]">
                   {submissions.length === 0
                     ? "You have no submissions yet. Submit a product to see your sales here."
                     : "No sales match your current filters."}
