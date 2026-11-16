@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+// The home page styles (hero background, ring, fonts…): required, see src/types/css.d.ts
+import "@/components/home/home.css";
 import { siteFontVariables } from "@/components/home/fonts";
 import { HomeNav } from "@/components/home/home-nav";
 import { BuyerCategories, HomeHero } from "@/components/home/home-hero";
