@@ -14,6 +14,8 @@ export interface CustomerType {
   id: string;
   name: string;
   description?: string;
+  /** Picture shown in a circle on sign-up */
+  imageUrl?: string | null;
   isActive: boolean;
   createdAt: string;
   visibleCategories?: CustomerTypeCategory[];
@@ -79,6 +81,23 @@ export const customerTypeService = {
   createCustomerType: async (data: CustomerTypeFormData) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.post("/customer-types", data);
+    return response.data;
+  },
+
+  /** Upload the picture shown in a circle on sign-up */
+  uploadImage: async (id: string, file: File) => {
+    const axiosClient = createAxiosClient();
+    const form = new FormData();
+    form.append("image", file);
+    const response = await axiosClient.put(`/customer-types/${id}/image`, form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  },
+
+  removeImage: async (id: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.delete(`/customer-types/${id}/image`);
     return response.data;
   },
 

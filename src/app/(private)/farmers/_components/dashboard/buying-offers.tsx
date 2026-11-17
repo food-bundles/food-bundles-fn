@@ -112,20 +112,20 @@ export function BuyingOffers({
     <div className="rounded-xl border border-emerald-100 bg-gradient-to-br from-white to-emerald-50/70 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-emerald-100 px-5 py-4">
         <div>
-          <p className="flex items-center gap-2 text-sm font-semibold text-gray-900">
-            <ClipboardList className="h-4 w-4 text-green-600" />
+          <p className="flex items-center gap-2 text-sm font-semibold text-[#0B2E1F]">
+            <ClipboardList className="h-4 w-4 text-[#007A35]" />
             Buying offers
             {lineCount > 0 && (
-              <span className="rounded-full bg-green-600 px-2 py-0.5 text-[11px] font-semibold text-white">{lineCount}</span>
+              <span className="rounded-full bg-[#0B2E1F] px-2 py-0.5 text-[11px] font-semibold text-white">{lineCount}</span>
             )}
           </p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-[#4A6358]">
             Food Bundles offers to buy these products. Supply one or as many as you have.
           </p>
         </div>
         {lineCount > 0 && (
           <div className="relative w-full sm:w-64">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7A8E83]" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -136,17 +136,17 @@ export function BuyingOffers({
         )}
       </div>
       {requests.length === 0 ? (
-        <p className="px-5 py-8 text-center text-sm text-gray-500">
+        <p className="px-5 py-8 text-center text-sm text-[#4A6358]">
           No buying offers right now. Check back soon.
         </p>
       ) : visible.length === 0 ? (
-        <p className="px-5 py-8 text-center text-sm text-gray-500">Nothing matches “{search}”.</p>
+        <p className="px-5 py-8 text-center text-sm text-[#4A6358]">Nothing matches “{search}”.</p>
       ) : (
       <div className="divide-y divide-emerald-100">
         {visible.map((request) => (
           <div key={request.id} className="px-5 py-3">
-            <p className="mb-2 flex flex-wrap items-center gap-2 text-xs text-gray-600">
-              <span className="rounded-full bg-green-100 px-2 py-0.5 font-medium capitalize text-green-800">
+            <p className="mb-2 flex flex-wrap items-center gap-2 text-xs text-[#4A6358]">
+              <span className="rounded-full bg-[#E3F3E8] px-2 py-0.5 font-medium capitalize text-[#0B2E1F]">
                 {request.customerType.toLowerCase()}
               </span>
               {request.district && (
@@ -164,15 +164,15 @@ export function BuyingOffers({
                   className="flex items-center justify-between gap-3 rounded-lg border bg-white px-3 py-2"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-gray-900">{line.productName}</p>
-                    <p className="text-xs text-gray-600">
+                    <p className="truncate text-sm font-medium text-[#0B2E1F]">{line.productName}</p>
+                    <p className="text-xs text-[#4A6358]">
                       {formatDay(line.date)} · needs <span className="font-semibold">{line.missing}</span> {line.unit} ·{" "}
                       {Math.round(line.price).toLocaleString()} RWF/{line.unit}
                     </p>
                   </div>
                   <Button
                     size="sm"
-                    className="h-8 shrink-0 bg-green-600 text-xs hover:bg-green-700"
+                    className="h-8 shrink-0 bg-[#0B2E1F] text-xs hover:bg-green-700"
                     onClick={() => openSupply({ ...line, customerType: request.customerType })}
                   >
                     Supply
@@ -201,7 +201,7 @@ export function BuyingOffers({
             <div className="space-y-1.5">
               <Label htmlFor="supply-price">Your price per {target?.unit} (RWF)</Label>
               <Input id="supply-price" type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} />
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-[#4A6358]">
                 Offered: {Math.round(target?.price ?? 0).toLocaleString()} RWF. Asking more starts a negotiation.
               </p>
             </div>
@@ -213,7 +213,7 @@ export function BuyingOffers({
             <Button
               onClick={submit}
               disabled={saving || !(Number(quantity) > 0) || !(Number(price) > 0)}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-[#0B2E1F] hover:bg-[#0F5C36]"
             >
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Submit

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Plus, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect, useMemo, useSyncExternalStore } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Plus, AlertCircle, Sprout } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import ProductSubmissionModal from "./product-submission-modal";
+import { recentFromProducts } from "./recent-submissions";
 import { Product } from "./product-context";
 import { SubmissionDetailsModal } from "./submission-details-modal";
 import { SubmissionsTable } from "./SubmissionsTable";
@@ -72,6 +73,16 @@ export default function ProductManagement() {
   const [error, setError] = useState<string | null>(null);
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
   const [viewProduct, setViewProduct] = useState<Product | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // "Submit produce" in the sidebar opens the form: /farmers?submit=1
+  useEffect(() => {
+    if (searchParams.get("submit") === "1") {
+      setShowSubmissionModal(true);
+      router.replace("/farmers", { scroll: false });
+    }
+  }, [searchParams, router]);
 
   // Dashboard analytics state
   const [earnings, setEarnings] = useState<EarningsSummary | null>(null);
@@ -135,30 +146,56 @@ export default function ProductManagement() {
     setViewProduct(product);
   };
 
-  const firstName = user?.name?.split(" ")[0];
+  // The user comes from the browser: use their name only once the page runs there
+  const inBrowser = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+  const firstName = inBrowser ? user?.name?.split(" ")[0] : undefined;
+
+  // "Submit again": the farmer's latest different products, newest first
+  const recent = useMemo(() => recentFromProducts(products), [products]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
-        {/* Page header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-              {firstName ? `Welcome back, ${firstName}` : "Your dashboard"}
-            </h1>
-            <p className="text-sm text-gray-500 mt-0.5">
-              Track your submissions, offers, and earnings in one place.
-            </p>
+    <div>
+      <main className="space-y-6">
+        {/* Sell your produce: the main thing farmers come to do */}
+        <section className="relative overflow-hidden rounded-[22px] bg-[#0B2E1F] p-5 text-white sm:p-7">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0"
+            style={{ background: "radial-gradient(circle at 0% 0%, #00D04855 0, transparent 50%), radial-gradient(circle at 100% 100%, #18A0A044 0, transparent 50%)" }}
+          />
+          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="m-0 text-[13px] font-bold uppercase tracking-[1.2px] text-[#7CF2A6]">
+                {firstName ? `Welcome back, ${firstName}` : "Welcome"}
+              </p>
+              <h2 className="m-0 mt-2 text-[clamp(26px,3.4vw,36px)] font-bold leading-tight tracking-[-0.8px] [font-family:var(--font-inter-tight),sans-serif]">
+                Have produce to sell?
+              </h2>
+              <p className="m-0 mt-1.5 max-w-[520px] text-[15px] text-[#E4F5EA]">
+                Tell us what you have and your price. We buy it at the farm gate and pay you by Mobile Money.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2.5 lg:items-end">
+              <button
+                type="button"
+                onClick={() => setShowSubmissionModal(true)}
+                disabled={loading}
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#00D048] px-6 text-[16px] font-bold text-[#0B2E1F] shadow-[0_12px_30px_-12px_#00D048] transition-colors hover:bg-[#7CF2A6] disabled:opacity-60 cursor-pointer"
+              >
+                <Plus className="h-5 w-5" /> Submit produce
+              </button>
+              {recent.length > 0 && (
+                <p className="m-0 flex items-center gap-1.5 text-[13px] text-white/70">
+                  <Sprout className="h-3.5 w-3.5" /> Last time: {recent.slice(0, 3).map((r) => r.productName).join(", ")}
+                </p>
+              )}
+            </div>
           </div>
-          <Button
-            onClick={() => setShowSubmissionModal(true)}
-            className="bg-green-600 hover:bg-green-700 text-white"
-            disabled={loading}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Submit Product
-          </Button>
-        </div>
+        </section>
 
         {error && (
           <Alert variant="destructive">
@@ -206,6 +243,7 @@ export default function ProductManagement() {
         isOpen={showSubmissionModal}
         onClose={() => setShowSubmissionModal(false)}
         onSubmit={handleProductSubmit}
+        recent={recent}
       />
 
       {/* Product Details Modal */}

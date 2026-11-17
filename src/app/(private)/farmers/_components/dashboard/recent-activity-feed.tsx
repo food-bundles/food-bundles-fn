@@ -53,14 +53,14 @@ export function RecentActivityFeed({ items, loading }: RecentActivityFeedProps) 
                   <XCircle className="w-4 h-4 text-red-500 shrink-0" />
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm text-gray-800">
+                  <p className="text-sm text-[#0B2E1F]">
                     {item.successful ? "Successful login" : "Failed login attempt"}
                   </p>
                   {item.deviceInfo && (
-                    <p className="text-xs text-gray-500 truncate">{item.deviceInfo}</p>
+                    <p className="text-xs text-[#4A6358] truncate">{item.deviceInfo}</p>
                   )}
                 </div>
-                <span className="text-xs text-gray-400 shrink-0">
+                <span className="text-xs text-[#7A8E83] shrink-0">
                   {formatDistanceToNow(new Date(item.attemptTime), { addSuffix: true })}
                 </span>
               </motion.li>

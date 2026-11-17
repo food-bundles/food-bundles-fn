@@ -25,28 +25,28 @@ export function SubmissionCardGrid({ products, onViewDetails }: SubmissionCardGr
     >
       {products.map((product) => (
         <motion.div key={product.id} variants={gridItemVariants}>
-          <Card className="h-full border border-gray-200 hover:shadow-md transition-shadow">
+          <Card className="h-full border border-[#DCE6DF] hover:shadow-md transition-shadow">
             <CardContent className="p-4 flex flex-col gap-2 h-full">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="font-semibold text-gray-900 truncate">{product.name}</p>
-                  <p className="text-xs text-gray-500">{product.category.name}</p>
+                  <p className="font-semibold text-[#0B2E1F] truncate">{product.name}</p>
+                  <p className="text-xs text-[#4A6358]">{product.category.name}</p>
                 </div>
                 <Badge className={`${product.statusColor} border-0 text-xs shrink-0`}>{stageLabel(product.displayStatus)}</Badge>
               </div>
 
-              <div className="flex items-center text-xs text-gray-600 gap-1">
-                <MapPin className="w-3 h-3 text-gray-400 shrink-0" />
+              <div className="flex items-center text-xs text-[#4A6358] gap-1">
+                <MapPin className="w-3 h-3 text-[#7A8E83] shrink-0" />
                 <span className="line-clamp-1">{product.location}</span>
               </div>
 
               <div className="flex items-center justify-between text-sm mt-1">
-                <span className="text-gray-600">{product.quantity} {product.unit}</span>
-                <span className="font-semibold text-gray-900">{product.price}</span>
+                <span className="text-[#4A6358]">{product.quantity} {product.unit}</span>
+                <span className="font-semibold text-[#0B2E1F]">{product.price}</span>
               </div>
 
               <div className="flex items-center justify-between mt-auto pt-2">
-                <span className="text-xs text-gray-400">{product.submittedDate}</span>
+                <span className="text-xs text-[#7A8E83]">{product.submittedDate}</span>
                 <Button
                   variant="outline"
                   size="sm"

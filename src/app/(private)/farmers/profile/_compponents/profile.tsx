@@ -209,8 +209,8 @@ export default function FarmerProfile() {
   return (
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">My Profile</h1>
-        <p className="text-gray-600 mt-2">View and edit your personal and farm information</p>
+        <h1 className="text-3xl font-bold text-[#0B2E1F]">My Profile</h1>
+        <p className="text-[#4A6358] mt-2">View and edit your personal and farm information</p>
       </div>
 
       <Card>
@@ -222,7 +222,7 @@ export default function FarmerProfile() {
           <Button
             onClick={() => (isEditing ? handleSaveProfile() : setIsEditing(true))}
             disabled={saving}
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-[#0B2E1F] hover:bg-[#0F5C36]"
           >
             {saving ? (
               <>
@@ -246,7 +246,7 @@ export default function FarmerProfile() {
           {/* Personal Information */}
           <div>
             <h4 className="text-lg font-semibold mb-6 flex items-center gap-2">
-              <User className="w-5 h-5 text-green-600" />
+              <User className="w-5 h-5 text-[#007A35]" />
               Personal Information
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -293,7 +293,7 @@ export default function FarmerProfile() {
           {/* Location */}
           <div>
             <h4 className="text-lg font-semibold mb-6 flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-green-600" />
+              <MapPin className="w-5 h-5 text-[#007A35]" />
               Registered Location
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -324,7 +324,7 @@ export default function FarmerProfile() {
           {/* Farming Profile */}
           <div>
             <h4 className="text-lg font-semibold mb-6 flex items-center gap-2">
-              <Sprout className="w-5 h-5 text-green-600" />
+              <Sprout className="w-5 h-5 text-[#007A35]" />
               Farming Profile
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -349,7 +349,7 @@ export default function FarmerProfile() {
                   value={farming.farmSizeUnit}
                   onChange={(e) => setFarming((f) => ({ ...f, farmSizeUnit: e.target.value as FarmSizeUnit }))}
                   disabled={!isEditing}
-                  className="mt-2 w-full h-10 px-3 border border-gray-300 rounded-md bg-white text-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
+                  className="mt-2 w-full h-10 px-3 border border-[#DCE6DF] rounded-md bg-white text-[#0B2E1F] disabled:bg-gray-50 disabled:text-gray-500"
                 >
                   <option value="">Select unit</option>
                   <option value="HECTARES">Hectares</option>
@@ -376,7 +376,7 @@ export default function FarmerProfile() {
                   value={farming.farmingMethod}
                   onChange={(e) => setFarming((f) => ({ ...f, farmingMethod: e.target.value as FarmingMethod }))}
                   disabled={!isEditing}
-                  className="mt-2 w-full h-10 px-3 border border-gray-300 rounded-md bg-white text-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
+                  className="mt-2 w-full h-10 px-3 border border-[#DCE6DF] rounded-md bg-white text-[#0B2E1F] disabled:bg-gray-50 disabled:text-gray-500"
                 >
                   <option value="">Select method</option>
                   <option value="ORGANIC">Organic</option>
@@ -387,7 +387,7 @@ export default function FarmerProfile() {
               <div className="md:col-span-2 flex items-center justify-between border rounded-lg px-4 py-3">
                 <div>
                   <Label htmlFor="cooperativeMember">Cooperative Member</Label>
-                  <p className="text-xs text-gray-500">Are you part of a farming cooperative?</p>
+                  <p className="text-xs text-[#4A6358]">Are you part of a farming cooperative?</p>
                 </div>
                 <Switch
                   id="cooperativeMember"
@@ -414,17 +414,17 @@ export default function FarmerProfile() {
 
           {/* Profile Completion Status */}
           {!isEditing && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="bg-[#EFFAF3] border border-green-200 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h5 className="font-medium text-green-800">Profile Status</h5>
-                  <p className="text-sm text-green-600 mt-1">
+                  <h5 className="font-medium text-[#0B2E1F]">Profile Status</h5>
+                  <p className="text-sm text-[#007A35] mt-1">
                     Your profile is {profileComplete ? "complete" : "incomplete"}
                   </p>
                 </div>
               </div>
               {!profileComplete && (
-                <p className="text-xs text-green-600 mt-2">
+                <p className="text-xs text-[#007A35] mt-2">
                   Add your farm size to complete your farming profile.
                 </p>
               )}

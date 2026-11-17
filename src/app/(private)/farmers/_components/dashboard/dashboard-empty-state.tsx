@@ -17,12 +17,12 @@ export function DashboardEmptyState({
   return (
     <div
       className={cn(
-        "h-[300px] flex flex-col items-center justify-center gap-2 text-center px-6 rounded-lg border border-dashed border-gray-200 bg-gray-50/50",
+        "h-[300px] flex flex-col items-center justify-center gap-2 text-center px-6 rounded-lg border border-dashed border-[#DCE6DF] bg-gray-50/50",
         className,
       )}
     >
       <Icon className="w-8 h-8 text-gray-300" />
-      <p className="text-sm text-gray-500 max-w-xs">{message}</p>
+      <p className="text-sm text-[#4A6358] max-w-xs">{message}</p>
     </div>
   );
 }

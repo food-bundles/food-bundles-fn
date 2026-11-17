@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import ProductSubmissionModal from "../_components/product-submission-modal";
+import { recentFromProducts } from "../_components/recent-submissions";
 import { Product } from "../_components/product-context";
 import { SubmissionDetailsModal } from "../_components/submission-details-modal";
 import { SubmissionsTable } from "../_components/SubmissionsTable";
@@ -55,6 +56,8 @@ export default function FarmerSubmissionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
   const [viewProduct, setViewProduct] = useState<Product | null>(null);
+  // "Submit again" in the form: the farmer's latest different products
+  const recent = useMemo(() => recentFromProducts(products), [products]);
 
   const fetchSubmissions = async () => {
     try {
@@ -84,13 +87,13 @@ export default function FarmerSubmissionsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F6F9F7]">
       <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+          <h1 className="text-xl sm:text-2xl font-bold text-[#0B2E1F]">
             Submissions
           </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-sm text-[#4A6358] mt-0.5">
             View and manage every product submission you have made.
           </p>
         </div>
@@ -115,6 +118,7 @@ export default function FarmerSubmissionsPage() {
         isOpen={showSubmissionModal}
         onClose={() => setShowSubmissionModal(false)}
         onSubmit={handleProductSubmit}
+        recent={recent}
       />
 
       <SubmissionDetailsModal

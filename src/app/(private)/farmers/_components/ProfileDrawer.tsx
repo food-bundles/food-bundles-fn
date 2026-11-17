@@ -119,7 +119,7 @@ export default function ProfileDrawer({
       )}
 
       <div
-        className={`fixed top-0 right-0  w-[85%] sm:w-[340px] md:w-[380px] bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 z-50 transform transition-transform duration-300 ease-out overflow-y-auto shadow-2xl border-l border-gray-200 dark:border-gray-800 ${
+        className={`fixed top-0 right-0  w-[85%] sm:w-[340px] md:w-[380px] bg-white dark:bg-gray-900 text-[#0B2E1F] dark:text-gray-100 z-50 transform transition-transform duration-300 ease-out overflow-y-auto shadow-2xl border-l border-[#DCE6DF] dark:border-gray-800 ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
         role="dialog"
@@ -127,16 +127,16 @@ export default function ProfileDrawer({
         aria-labelledby="profile-title"
       >
         {/* Header */}
-        <div className="sticky top-0 z-10 bg-white  border-b border-gray-200 flex justify-between items-center p-3 sm:p-4">
+        <div className="sticky top-0 z-10 bg-white  border-b border-[#DCE6DF] flex justify-between items-center p-3 sm:p-4">
           <div className="flex items-center gap-2">
-            <User className="w-4 h-4 text-gray-500 " />
+            <User className="w-4 h-4 text-[#4A6358] " />
             <span id="profile-title" className="text-[16px] sm:text-lg font-bold text-black-900 ">
               User Profile
             </span>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-all hover:rotate-90 transform duration-200 p-1"
+            className="text-[#4A6358] dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-all hover:rotate-90 transform duration-200 p-1"
             aria-label="Close profile"
           >
             <X className="w-5 h-5" />
@@ -146,17 +146,17 @@ export default function ProfileDrawer({
         {/* Content */}
         <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 pb-6">
           {/* Profile Photo Card */}
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="flex items-center gap-2 text-[14px] sm:text-[16px] font-semibold text-gray-900 dark:text-gray-100">
-                <User className="w-4 h-4 sm:w-5 sm:h-5 text-green-700  flex-shrink-0" />
+          <div className="bg-[#F6F9F7] dark:bg-gray-800 rounded-lg border border-[#DCE6DF] dark:border-gray-700 overflow-hidden">
+            <div className="p-4 sm:p-5 border-b border-[#DCE6DF] dark:border-gray-700">
+              <h2 className="flex items-center gap-2 text-[14px] sm:text-[16px] font-semibold text-[#0B2E1F] dark:text-gray-100">
+                <User className="w-4 h-4 sm:w-5 sm:h-5 text-[#007A35]  flex-shrink-0" />
                 Profile Photo
               </h2>
             </div>
             <div className="p-4 sm:p-5">
               <div className="flex items-center gap-3 sm:gap-4">
                 <div className="relative flex-shrink-0">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 border-2 border-[#DCE6DF] dark:border-gray-600">
                     {profilePhoto ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -166,11 +166,11 @@ export default function ProfileDrawer({
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.style.display = 'none';
-                          target.parentElement!.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-lg sm:text-xl font-semibold">${avatarLetter}</div>`;
+                          target.parentElement!.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-[#E3F3E8] dark:bg-green-900 text-[#007A35] dark:text-green-300 text-lg sm:text-xl font-semibold">${avatarLetter}</div>`;
                         }}
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-lg sm:text-xl font-semibold">
+                      <div className="w-full h-full flex items-center justify-center bg-[#E3F3E8] dark:bg-green-900 text-[#007A35] dark:text-green-300 text-lg sm:text-xl font-semibold">
                         {avatarLetter}
                       </div>
                     )}
@@ -186,10 +186,10 @@ export default function ProfileDrawer({
                   </label>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
+                  <h3 className="text-base sm:text-lg font-semibold text-[#0B2E1F] dark:text-gray-100 truncate">
                     {name || "Farmer"}
                   </h3>
-                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">
+                  <p className="text-xs sm:text-sm text-[#4A6358] dark:text-gray-400 truncate">
                     {email || (phone ? `Phone: ${phone}` : "No email provided")}
                   </p>
                 </div>
@@ -198,16 +198,16 @@ export default function ProfileDrawer({
           </div>
 
           {/* Personal Details Card */}
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+          <div className="bg-[#F6F9F7] dark:bg-gray-800 rounded-lg border border-[#DCE6DF] dark:border-gray-700 overflow-hidden">
+            <div className="p-3 border-b border-[#DCE6DF] dark:border-gray-700">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-gray-100">
+                <h2 className="text-sm sm:text-base font-semibold text-[#0B2E1F] dark:text-gray-100">
                   Personal Details
                 </h2>
                 {!isEditing && (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="text-xs px-2.5 py-1 border border-green-700 dark:border-green-600 text-green-700 dark:text-green-500 rounded-md hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors flex items-center gap-1"
+                    className="text-xs px-2.5 py-1 border border-green-700 dark:border-green-600 text-[#007A35] dark:text-green-500 rounded-md hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors flex items-center gap-1"
                   >
                     <Edit3 className="w-3 h-3" />
                     Edit
@@ -218,18 +218,18 @@ export default function ProfileDrawer({
             <div className="p-3 space-y-3">
               {/* Name Field */}
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-900 dark:text-gray-100 block">
+                <label className="text-xs font-medium text-[#0B2E1F] dark:text-gray-100 block">
                   Name
                 </label>
                 {isEditing ? (
                   <input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-gray-700 border border-[#DCE6DF] dark:border-gray-600 rounded-md text-[#0B2E1F] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent"
                     placeholder="Enter your name"
                   />
                 ) : (
-                  <p className="text-xs text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 p-2 rounded-md">
+                  <p className="text-xs text-[#2E4A3B] dark:text-gray-300 bg-[#F6F9F7] dark:bg-gray-700 p-2 rounded-md">
                     {name || "Farmer"}
                   </p>
                 )}
@@ -237,19 +237,19 @@ export default function ProfileDrawer({
 
               {/* Email Field */}
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-900 dark:text-gray-100 block">
+                <label className="text-xs font-medium text-[#0B2E1F] dark:text-gray-100 block">
                   Email account
                 </label>
                 {isEditing ? (
                   <input
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-gray-700 border border-[#DCE6DF] dark:border-gray-600 rounded-md text-[#0B2E1F] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent"
                     type="email"
                     placeholder="Enter your email"
                   />
                 ) : (
-                  <p className="text-xs text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 p-2 rounded-md break-all">
+                  <p className="text-xs text-[#2E4A3B] dark:text-gray-300 bg-[#F6F9F7] dark:bg-gray-700 p-2 rounded-md break-all">
                     {email || "No email provided"}
                   </p>
                 )}
@@ -257,19 +257,19 @@ export default function ProfileDrawer({
 
               {/* Phone Field */}
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-900 dark:text-gray-100 block">
+                <label className="text-xs font-medium text-[#0B2E1F] dark:text-gray-100 block">
                   Mobile number
                 </label>
                 {isEditing ? (
                   <input
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-gray-700 border border-[#DCE6DF] dark:border-gray-600 rounded-md text-[#0B2E1F] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent"
                     type="tel"
                     placeholder="Enter your phone number"
                   />
                 ) : (
-                  <p className="text-xs text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 p-2 rounded-md">
+                  <p className="text-xs text-[#2E4A3B] dark:text-gray-300 bg-[#F6F9F7] dark:bg-gray-700 p-2 rounded-md">
                     {phone || "No phone number"}
                   </p>
                 )}
@@ -277,18 +277,18 @@ export default function ProfileDrawer({
 
               {/* Location Field */}
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-900 dark:text-gray-100 block">
+                <label className="text-xs font-medium text-[#0B2E1F] dark:text-gray-100 block">
                   Location
                 </label>
                 {isEditing ? (
                   <input
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent"
+                    className="w-full px-2.5 py-1.5 text-xs bg-white dark:bg-gray-700 border border-[#DCE6DF] dark:border-gray-600 rounded-md text-[#0B2E1F] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-green-700 focus:border-transparent"
                     placeholder="Enter your location"
                   />
                 ) : (
-                  <p className="text-xs text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 p-2 rounded-md">
+                  <p className="text-xs text-[#2E4A3B] dark:text-gray-300 bg-[#F6F9F7] dark:bg-gray-700 p-2 rounded-md">
                     {location}
                   </p>
                 )}
@@ -298,13 +298,13 @@ export default function ProfileDrawer({
                 <div className="flex gap-2 pt-1">
                   <button
                     onClick={handleSaveAll}
-                    className="flex-1 bg-green-700 hover:bg-green-800 active:bg-green-900 text-white font-medium py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-green-700 focus:ring-offset-2 text-xs"
+                    className="flex-1 bg-[#0B2E1F] hover:bg-[#0F5C36] active:bg-green-900 text-white font-medium py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-green-700 focus:ring-offset-2 text-xs"
                   >
                     Save Changes
                   </button>
                   <button
                     onClick={handleCancel}
-                    className="flex-1 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 text-xs"
+                    className="flex-1 border border-[#DCE6DF] dark:border-gray-600 text-[#2E4A3B] dark:text-gray-300 hover:bg-[#F6F9F7] dark:hover:bg-gray-700 font-medium py-2 px-3 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 text-xs"
                   >
                     Cancel
                   </button>
