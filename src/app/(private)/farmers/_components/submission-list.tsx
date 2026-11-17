@@ -1,6 +1,6 @@
 "use client";
 
-import { stageLabel } from "./status-helpers";
+import { stageLabel, foodBundlesPriceNote } from "./status-helpers";
 import { motion } from "motion/react";
 import { ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -44,9 +44,14 @@ export function SubmissionList({ products, onViewDetails }: SubmissionListProps)
           </div>
 
           <div className="flex items-center gap-4 shrink-0 text-sm">
-            <span className="text-[#4A6358] hidden sm:inline">{product.quantity} {product.unit}</span>
-            <span className="font-semibold text-[#0B2E1F]">{product.price}</span>
-            <span className="text-xs text-[#7A8E83] hidden md:inline">{product.submittedDate}</span>
+            <span className="text-gray-600 hidden sm:inline">{product.quantity} {product.unit}</span>
+            <span className="font-semibold text-gray-900">{product.price}</span>
+            {foodBundlesPriceNote(product) && (
+              <span className="text-xs font-medium text-green-700 hidden sm:inline">
+                {foodBundlesPriceNote(product)!.label}: {foodBundlesPriceNote(product)!.value}
+              </span>
+            )}
+            <span className="text-xs text-gray-400 hidden md:inline">{product.submittedDate}</span>
             <Badge className={`${product.statusColor} border-0 text-xs`}>{stageLabel(product.displayStatus)}</Badge>
             <ChevronRight className="w-4 h-4 text-[#7A8E83]" />
           </div>

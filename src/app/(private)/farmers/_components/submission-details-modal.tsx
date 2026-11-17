@@ -1,8 +1,8 @@
 "use client";
 
 import { stageLabel } from "./status-helpers";
-import { useState } from "react";
-import { Package, Tag, Hash, MapPin, Calendar } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Package, Tag, Hash, MapPin, Calendar, Phone, UserRound, Wallet } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { useSubmissions } from "@/app/contexts/submission-context";
 import { showToast } from "@/lib/toast";
 import type { Product } from "./product-context";
+import { farmerDashboardService, type FarmerSubmissionDetail } from "@/app/services/farmerDashboardService";
 
 interface SubmissionDetailsModalProps {
   product: Product | null;
@@ -48,6 +49,26 @@ export function SubmissionDetailsModal({
   const [notes, setNotes] = useState("");
   const [counterOffer, setCounterOffer] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  // Payment details (the number it was paid to) and the drop-off site come with the submission's detail
+  const [detail, setDetail] = useState<FarmerSubmissionDetail | null>(null);
+
+  useEffect(() => {
+    setDetail(null);
+    const id = product?.submissionId ?? product?.id;
+    if (!id) return;
+    let active = true;
+    farmerDashboardService
+      .getSubmissionDetail(id)
+      .then((d) => active && setDetail(d))
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [product?.id, product?.submissionId]);
+
+  const aggregator = detail?.aggregator ?? product?.aggregator ?? null;
+  const payment = detail?.payment ?? null;
+  const paidBy = payment?.method ?? product?.paymentMethod ?? null;
 
   // A counter-offer from Food Bundles the farmer answers
   const awaitingFeedback = !!product && product.status === "NEGOTIATING" && !!product.counterOfferPrice;
@@ -145,6 +166,64 @@ export function SubmissionDetailsModal({
                 {stageLabel(product.displayStatus)}
               </Badge>
             </div>
+
+            {product.foodBundlesPrice != null && product.foodBundlesPrice > 0 && (
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center space-x-2">
+                  <div className="w-6 h-6 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
+                    <div className="w-2 h-2 rounded-full bg-green-600" />
+                  </div>
+                  <span className="font-medium">Food Bundles price:</span>
+                </div>
+                <span className="text-right font-semibold text-green-700">
+                  RWF {product.foodBundlesPrice.toLocaleString()} per {product.unit}
+                </span>
+              </div>
+            )}
+
+            {/* Who receives the harvest, with a number to call */}
+            <div className="rounded-lg border border-gray-100 p-3">
+              <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
+                <UserRound className="w-3.5 h-3.5 text-green-700" /> Your aggregator
+              </div>
+              {aggregator ? (
+                <div className="mt-1.5 flex items-center justify-between gap-2">
+                  <div>
+                    <p className="font-semibold text-gray-900">{aggregator.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {aggregator.phone ?? "No phone number yet. Call 8000 to get it."}
+                    </p>
+                  </div>
+                  <a
+                    href={`tel:${aggregator.phone || "8000"}`}
+                    className="inline-flex items-center gap-1 rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700"
+                  >
+                    <Phone className="w-3.5 h-3.5" /> Call
+                  </a>
+                </div>
+              ) : (
+                <p className="mt-1.5 text-xs text-gray-500">Not assigned yet. You will see their name and number here.</p>
+              )}
+              {detail?.deliverySite && (
+                <p className="mt-2 flex items-center gap-1 text-xs text-gray-600">
+                  <MapPin className="w-3.5 h-3.5 text-gray-400" /> Bring it to {detail.deliverySite.name}
+                </p>
+              )}
+            </div>
+
+            {/* How it was paid */}
+            {product.status === "PAID" && paidBy && (
+              <div className="rounded-lg bg-green-50 border border-green-100 p-3 text-xs text-green-900">
+                <div className="flex items-center gap-2 font-medium">
+                  <Wallet className="w-3.5 h-3.5" /> Paid by {paidBy === "MOMO" ? "Mobile Money (MoMo)" : "cash"}
+                </div>
+                <p className="mt-1">
+                  {payment ? `RWF ${payment.amount.toLocaleString()}` : ""}
+                  {payment?.paidTo ? ` to ••${payment.paidTo.slice(-3)}` : ""}
+                  {payment?.paidAt ? ` on ${new Date(payment.paidAt).toLocaleDateString()}` : ""}
+                </p>
+              </div>
+            )}
 
             {awaitingFeedback && (
               <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900">

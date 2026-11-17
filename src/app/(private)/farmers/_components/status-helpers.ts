@@ -39,4 +39,23 @@ export const STAGE_LABELS: Record<string, string> = {
   REJECTED: "Rejected",
 };
 
-export const stageLabel = (status: string) => STAGE_LABELS[status] ?? status;
+/** The price Food Bundles put on a submission, if any: agreed once approved, otherwise a pending offer. */
+export function foodBundlesPriceNote(p: {
+  status: string;
+  agreedPrice?: number | null;
+  counterOfferPrice?: number | null;
+  foodBundlesPrice?: number | null;
+}): { label: string; value: string } | null {
+  if (p.agreedPrice != null && ["APPROVED", "VERIFIED", "PAID"].includes(p.status)) {
+    return { label: "Agreed", value: `RWF ${p.agreedPrice.toLocaleString()}` };
+  }
+  if (p.counterOfferPrice != null) {
+    return { label: "Offer", value: `RWF ${p.counterOfferPrice.toLocaleString()}` };
+  }
+  if (p.foodBundlesPrice != null && p.foodBundlesPrice > 0) {
+    return { label: "Food Bundles", value: `RWF ${p.foodBundlesPrice.toLocaleString()}` };
+  }
+  return null;
+}
+
+export const stageLabel =(status: string) => STAGE_LABELS[status] ?? status;

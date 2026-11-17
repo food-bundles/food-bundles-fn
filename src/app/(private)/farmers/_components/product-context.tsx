@@ -24,6 +24,12 @@ export interface Product {
   acceptedPrice: number | null
   counterOfferPrice?: number | null
   agreedPrice?: number | null
+  /** What Food Bundles pays per unit for this product */
+  foodBundlesPrice?: number | null
   farmerFeedbackStatus: "PENDING" | "ACCEPTED" | "REJECTED" | "EXTENDED" | null
   feedbackDeadline: string | null
+  /** The aggregator who receives the harvest */
+  aggregator?: { name: string; phone: string | null } | null
+  /** How it was paid, once paid */
+  paymentMethod?: "MOMO" | "CASH" | null
 }

@@ -7,7 +7,7 @@ import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
 import dynamic from "next/dynamic"
-import { MapPin, Map as MapIcon, Loader2, Check, RotateCcw, Search, Sprout, X } from "lucide-react"
+import { DollarSign, Package, Tag, MapPin, Map as MapIcon, Loader2, Calendar } from "lucide-react"
 import "leaflet/dist/leaflet.css"
 import {
   Dialog,
@@ -59,6 +59,8 @@ export interface ProductSubmissionData {
   /** Optional GPS pin, captured via the map picker for delivery precision. */
   latitude?: number
   longitude?: number
+  /** When the farmer will bring the harvest (ISO, within the next 14 days) */
+  deliveryDate?: string
 }
 
 /** A past submission the farmer can send again in one tap */
@@ -76,6 +78,13 @@ interface ProductSubmissionModalProps {
   /** The farmer's latest different products, shown as "Submit again" */
   recent?: RecentSubmission[]
 }
+
+/** yyyy-mm-dd in local time, for <input type="date"> */
+const dayValue = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+
+/** The backend accepts a delivery moment between now and 14 days ahead */
+const MAX_DELIVERY_DAYS = 14
 
 const units = ["kg", "lb", "g", "oz", "bunch", "bag", "box", "crate", "dozen", "piece", "liter", "gallon"]
 // Shown as buttons; the others stay one tap away under "More"
@@ -99,6 +108,9 @@ export default function ProductSubmissionModal({ isOpen, onClose, onSubmit, rece
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  // Optional: the day and time the farmer will bring the harvest
+  const [deliveryDay, setDeliveryDay] = useState("")
+  const [deliveryTime, setDeliveryTime] = useState("09:00")
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [categories, setCategories] = useState<Category[]>([])
   const [availableProducts, setAvailableProducts] = useState<string[]>([])
@@ -468,6 +480,13 @@ const loadVillages = async (province: string, district: string, sector: string, 
     if (!formData.productName.trim()) newErrors.productName = "Product name is required"
     if (formData.quantity <= 0) newErrors.quantity = "Quantity must be greater than 0"
     if (formData.wishedPrice <= 0) newErrors.wishedPrice = "Price must be greater than 0"
+    if (deliveryDay) {
+      const when = new Date(`${deliveryDay}T${deliveryTime || "09:00"}`)
+      const latest = Date.now() + MAX_DELIVERY_DAYS * 24 * 60 * 60 * 1000
+      if (Number.isNaN(when.getTime()) || when.getTime() <= Date.now())
+        newErrors.deliveryDate = "Choose a day and time that has not passed yet"
+      else if (when.getTime() > latest) newErrors.deliveryDate = `Choose a day within the next ${MAX_DELIVERY_DAYS} days`
+    }
 
     // "At my farm" uses the saved place as-is; a map pin is enough on its own
     if (locationMode === "map" && !mapLocation) {
@@ -501,13 +520,15 @@ const loadVillages = async (province: string, district: string, sector: string, 
     try {
       
       // Same as signup: send the saved place (the backend also falls back to it)
-      const payload =
-        locationMode === "registered" && registeredLocation
+      const deliveryDate = deliveryDay
+        ? new Date(`${deliveryDay}T${deliveryTime || "09:00"}`).toISOString()
+        : undefined
+      const payload = {
+        ...(locationMode === "registered" && registeredLocation
           ? { ...formData, ...registeredLocation }
-          : locationMode === "map"
-            ? // The pin says where; the backend finds the nearest collection site from it
-              { ...formData, province: "", district: "", sector: "", cell: "", village: "" }
-            : formData
+          : formData),
+        deliveryDate,
+      }
       const response = await productSubmissionService.submitProduct(payload)
 
       // First place chosen by a farmer without a saved farm location: keep it as their farm
@@ -544,8 +565,8 @@ const loadVillages = async (province: string, district: string, sector: string, 
           streetNumber: "",
         })
         setErrors({})
-        setProductSearch("")
-        setShowAllUnits(false)
+        setDeliveryDay("")
+        setDeliveryTime("09:00")
         setUseMapPicker(false)
         setMapLocation(null)
         setUsedRegisteredLocation(false)
@@ -866,31 +887,359 @@ const loadVillages = async (province: string, district: string, sector: string, 
                     {errorText("quantity")}
                   </section>
 
-                  {/* 3. Price */}
-                  <section className="flex flex-col gap-3">
-                    {stepTitle(3, "Your price", formData.wishedPrice > 0)}
-                    <div className="flex flex-wrap items-center gap-3">
-                      <div className="relative w-full sm:w-64">
-                        <input
-                          type="number"
-                          inputMode="decimal"
-                          min="0"
-                          step="1"
-                          value={formData.wishedPrice || ""}
-                          onChange={(e) => handleInputChange("wishedPrice", Number.parseFloat(e.target.value) || 0)}
-                          placeholder="0"
-                          aria-label={`Price in RWF per ${formData.unit}`}
-                          className={`${field} pr-24 text-[20px] font-bold ${errors.wishedPrice ? "border-red-400" : "border-[#DCE6DF]"}`}
-                        />
-                        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[14px] font-bold text-[#4A6358]">
-                          RWF / {formData.unit}
-                        </span>
-                      </div>
-                      {total > 0 && (
-                        <p className="m-0 rounded-xl bg-[#EFFAF3] px-4 py-2.5 text-[15px] text-[#0B2E1F]">
-                          Total: <b className="text-[#007A35]">{rwf(total)}</b>
-                        </p>
-                      )}
+                  {errors.productName && <p className="text-red-500 text-sm">{errors.productName}</p>}
+
+                  {availableProducts.length > 0 && (
+                    <p className="text-sm text-gray-500">
+                      products available in {formData.category.replace(/_/g, " & ")}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Product Details */}
+            {formData.category && formData.productName && (
+              <div className="space-y-6">
+                <div className="flex items-center gap-2 text-lg font-semibold text-gray-800">
+                  <span className="w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-sm">
+                    3
+                  </span>
+                  Product Details
+                </div>
+
+                {/* Quantity and Unit */}
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="quantity" className="text-base font-semibold text-gray-900">
+                      Quantity *
+                    </Label>
+                    <Input
+                      id="quantity"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={formData.quantity || ""}
+                      onChange={(e) => handleInputChange("quantity", Number.parseFloat(e.target.value) || 0)}
+                      placeholder="0"
+                      className={`h-12 bg-white text-gray-900 ${errors.quantity ? "border-red-300" : ""}`}
+                    />
+                    {errors.quantity && <p className="text-red-500 text-sm">{errors.quantity}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="unit" className="text-base font-semibold text-gray-900">
+                      Unit
+                    </Label>
+                    <select
+                      id="unit"
+                      value={formData.unit}
+                      onChange={(e) => handleInputChange("unit", e.target.value)}
+                      className="w-full h-12 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-white text-gray-900"
+                    >
+                      {units.map((unit) => (
+                        <option key={unit} value={unit}>
+                          {unit}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="wishedPrice"
+                      className="text-base font-semibold flex items-center gap-2 text-gray-900"
+                    >
+                      <DollarSign className="w-4 h-4" />
+                      Wished Price * (per {formData.unit})
+                    </Label>
+                    <Input
+                      id="wishedPrice"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.wishedPrice || ""}
+                      onChange={(e) => handleInputChange("wishedPrice", Number.parseFloat(e.target.value) || 0)}
+                      placeholder="0.00"
+                      className={`h-12 bg-white text-gray-900 ${errors.wishedPrice ? "border-red-300" : ""}`}
+                    />
+                    {errors.wishedPrice && <p className="text-red-500 text-sm">{errors.wishedPrice}</p>}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* When the farmer will bring it (optional), so the aggregator can plan */}
+            {formData.category && formData.productName && (
+              <div className="space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <Label htmlFor="deliveryDay" className="text-base font-semibold flex items-center gap-2 text-gray-900">
+                  <Calendar className="w-4 h-4" />
+                  When will you bring it? (optional)
+                </Label>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Input
+                    id="deliveryDay"
+                    type="date"
+                    min={dayValue(new Date())}
+                    max={dayValue(new Date(Date.now() + MAX_DELIVERY_DAYS * 24 * 60 * 60 * 1000))}
+                    value={deliveryDay}
+                    onChange={(e) => {
+                      setDeliveryDay(e.target.value)
+                      setErrors((prev) => ({ ...prev, deliveryDate: "" }))
+                    }}
+                    className={`h-12 bg-white text-gray-900 ${errors.deliveryDate ? "border-red-300" : ""}`}
+                  />
+                  <Input
+                    id="deliveryTime"
+                    type="time"
+                    aria-label="Delivery time"
+                    value={deliveryTime}
+                    disabled={!deliveryDay}
+                    onChange={(e) => {
+                      setDeliveryTime(e.target.value)
+                      setErrors((prev) => ({ ...prev, deliveryDate: "" }))
+                    }}
+                    className="h-12 bg-white text-gray-900"
+                  />
+                </div>
+                {errors.deliveryDate ? (
+                  <p className="text-red-500 text-sm">{errors.deliveryDate}</p>
+                ) : (
+                  <p className="text-xs text-gray-500">Within the next {MAX_DELIVERY_DAYS} days. Your aggregator sees it.</p>
+                )}
+              </div>
+            )}
+
+            {/* Step 4: Location Details */}
+            {formData.category && formData.productName && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2 text-lg font-semibold text-gray-800">
+                    <span className="w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-sm">
+                      4
+                    </span>
+                    <MapPin className="w-5 h-5" />
+                    Location Details
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setUseMapPicker((prev) => !prev)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border transition-colors ${
+                      useMapPicker
+                        ? "bg-green-600 text-white border-green-600"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    <MapIcon className="w-4 h-4" />
+                    {useMapPicker ? "Hide map" : "Pin exact location on map"}
+                  </button>
+                </div>
+
+                {loadingFarmerLocation && !registeredLocation && (
+                  <p className="text-sm text-gray-500">Loading your registered location...</p>
+                )}
+
+                {/* Where is the produce? Same as signup (default) or somewhere else */}
+                {registeredLocation && (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => chooseLocationMode("registered")}
+                      className={`text-left rounded-lg border px-3 py-2.5 transition-colors cursor-pointer ${
+                        locationMode === "registered"
+                          ? "border-green-600 bg-green-50 ring-1 ring-green-600"
+                          : "border-gray-300 hover:border-green-300"
+                      }`}
+                    >
+                      <span className="block text-sm font-semibold text-gray-900">
+                        Same as my signup location
+                      </span>
+                      <span className="block text-xs text-gray-600 mt-0.5">
+                        {[
+                          registeredLocation.village,
+                          registeredLocation.cell,
+                          registeredLocation.sector,
+                          registeredLocation.district,
+                          registeredLocation.province,
+                        ].join(", ")}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => chooseLocationMode("other")}
+                      className={`text-left rounded-lg border px-3 py-2.5 transition-colors cursor-pointer ${
+                        locationMode === "other"
+                          ? "border-green-600 bg-green-50 ring-1 ring-green-600"
+                          : "border-gray-300 hover:border-green-300"
+                      }`}
+                    >
+                      <span className="block text-sm font-semibold text-gray-900">A different location</span>
+                      <span className="block text-xs text-gray-600 mt-0.5">
+                        Choose the province, district, sector, cell and village
+                      </span>
+                    </button>
+                  </div>
+                )}
+
+                {locationMode === "other" && (
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Province */}
+                  <div className="space-y-2">
+                    <Label htmlFor="province" className="text-base font-semibold text-gray-900">
+                      Province *
+                    </Label>
+                    <select
+                      id="province"
+                      value={formData.province}
+                      onChange={(e) => handleInputChange("province", e.target.value)}
+                      disabled={loadingLocation}
+                      className={`w-full h-12 px-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-white text-gray-900 ${
+                        errors.province ? "border-red-300" : "border-gray-300"
+                      }`}
+                    >
+                      <option value="">Select Province</option>
+                      {provinces.map((province) => (
+                        <option key={province} value={province}>
+                          {province}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.province && <p className="text-red-500 text-sm">{errors.province}</p>}
+                  </div>
+
+                  {/* District */}
+                  <div className="space-y-2">
+                    <Label htmlFor="district" className="text-base font-semibold text-gray-900">
+                      District *
+                    </Label>
+                    <select
+                      id="district"
+                      value={formData.district}
+                      onChange={(e) => handleInputChange("district", e.target.value)}
+                      disabled={!formData.province || districts.length === 0}
+                      className={`w-full h-12 px-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-white text-gray-900 ${
+                        errors.district ? "border-red-300" : "border-gray-300"
+                      }`}
+                    >
+                      <option value="">Select District</option>
+                      {districts.map((district) => (
+                        <option key={district} value={district}>
+                          {district}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.district && <p className="text-red-500 text-sm">{errors.district}</p>}
+                  </div>
+
+                  {/* Sector */}
+                  <div className="space-y-2">
+                    <Label htmlFor="sector" className="text-base font-semibold text-gray-900">
+                      Sector *
+                    </Label>
+                    <select
+                      id="sector"
+                      value={formData.sector}
+                      onChange={(e) => handleInputChange("sector", e.target.value)}
+                      disabled={!formData.district || sectors.length === 0}
+                      className={`w-full h-12 px-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-white text-gray-900 ${
+                        errors.sector ? "border-red-300" : "border-gray-300"
+                      }`}
+                    >
+                      <option value="">Select Sector</option>
+                      {sectors.map((sector) => (
+                        <option key={sector} value={sector}>
+                          {sector}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.sector && <p className="text-red-500 text-sm">{errors.sector}</p>}
+                  </div>
+
+                  {/* Cell */}
+                  <div className="space-y-2">
+                    <Label htmlFor="cell" className="text-base font-semibold text-gray-900">
+                      Cell *
+                    </Label>
+                    <select
+                      id="cell"
+                      value={formData.cell}
+                      onChange={(e) => handleInputChange("cell", e.target.value)}
+                      disabled={!formData.sector || cells.length === 0}
+                      className={`w-full h-12 px-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-white text-gray-900 ${
+                        errors.cell ? "border-red-300" : "border-gray-300"
+                      }`}
+                    >
+                      <option value="">Select Cell</option>
+                      {cells.map((cell) => (
+                        <option key={cell} value={cell}>
+                          {cell}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.cell && <p className="text-red-500 text-sm">{errors.cell}</p>}
+                  </div>
+
+                  {/* Village */}
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="village" className="text-base font-semibold text-gray-900">
+                      Village *
+                    </Label>
+                    <select
+                      id="village"
+                      value={formData.village}
+                      onChange={(e) => handleInputChange("village", e.target.value)}
+                      disabled={!formData.cell || villages.length === 0}
+                      className={`w-full h-12 px-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 bg-white text-gray-900 ${
+                        errors.village ? "border-red-300" : "border-gray-300"
+                      }`}
+                    >
+                      <option value="">Select Village</option>
+                      {villages.map((village) => (
+                        <option key={village} value={village}>
+                          {village}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.village && <p className="text-red-500 text-sm">{errors.village}</p>}
+                  </div>
+
+                  {/* Street number / landmark (optional precision aid) */}
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="streetNumber" className="text-base font-semibold text-gray-900">
+                      Street Number / Landmark (optional)
+                    </Label>
+                    <Input
+                      id="streetNumber"
+                      value={formData.streetNumber || ""}
+                      onChange={(e) => handleInputChange("streetNumber", e.target.value)}
+                      placeholder="e.g. Plot 12, near the market"
+                      className="h-12 bg-white text-gray-900"
+                    />
+                  </div>
+                </div>
+                )}
+
+                {/* Optional map picker for GPS precision, additive to the fields above */}
+                {useMapPicker && (
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-600">
+                      Tap <strong>Use my current location</strong> or tap the map to drop a pin. It helps us find
+                      the nearest market; it doesn&apos;t replace the location above.
+                    </p>
+                    <div className="h-64 flex">
+                      <MapComponent
+                        showLocateButton
+                        tempLocation={mapLocation}
+                        onLocationSelect={(location) => {
+                          setMapLocation(location)
+                          setFormData((prev) => ({
+                            ...prev,
+                            latitude: location.lat,
+                            longitude: location.lng,
+                          }))
+                        }}
+                      />
                     </div>
                     {errorText("wishedPrice")}
                   </section>

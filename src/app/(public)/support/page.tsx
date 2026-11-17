@@ -1,72 +1,25 @@
-"use client";
-
-import React, { useState } from "react";
 import { LifeBuoy } from "lucide-react";
-import { TicketForm } from "./_components/ticket-form";
-import { SupportAIChat } from "./_components/support-ai-chat";
-import { SupportFAQ } from "./_components/support-faq";
-import {
-  SupportSidebar,
-  type SupportSection,
-} from "./_components/support-sidebar";
+import { SupportCenter, SupportContactCards } from "./_components/support-center";
 
 export default function SupportPage() {
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [activeSection, setActiveSection] =
-    useState<SupportSection>("ticket");
-
-  const handleCategorySelect = (id: string) => {
-    setSelectedCategory(id);
-    setActiveSection("ticket");
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Green hero */}
-      <div className="bg-green-700 text-white">
-        <div className="max-w-6xl mx-auto px-4 pt-12 pb-12 md:pt-16 md:pb-16">
-          <span className="inline-flex items-center gap-2 bg-white/10 text-green-100 text-xs font-medium px-3 py-1 rounded-full">
-            <LifeBuoy className="h-3.5 w-3.5" />
-            Help Center  
+      <section className="bg-gradient-to-br from-green-700 to-green-800 text-white">
+        <div className="mx-auto max-w-5xl px-4 py-10 md:py-14">
+          <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-green-100">
+            <LifeBuoy className="h-3.5 w-3.5" /> Help center
           </span>
-          <span className="ml-4 text-green-100 text-lg font-bold mt-2">
-            +250 788 963 267
-          </span>
-          <h1 className="text-3xl md:text-4xl font-bold mt-4 leading-tight">
-            How can we help you today?
-          </h1>
-          <p className="text-green-100 mt-3 text-sm md:text-base max-w-2xl">
-            Get instant answers from our AI assistant, browse guides, or submit
-            a support ticket — our team responds within 24 hours.
+          <h1 className="mt-4 text-3xl font-bold leading-tight md:text-4xl">How can we help you?</h1>
+          <p className="mt-2 max-w-2xl text-sm text-green-100 md:text-base">
+            Call or WhatsApp us now, or send a message and our team answers within 24 hours.
           </p>
+          <div className="mt-6">
+            <SupportContactCards tone="dark" />
+          </div>
         </div>
-      </div>
-
-      {/* Support area — sidebar + content */}
-      <div className="max-w-6xl mx-auto px-4 py-10">
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
-          <aside className="w-full lg:w-56 shrink-0">
-            <div className="lg:sticky lg:top-6">
-              <SupportSidebar
-                active={activeSection}
-                onSelect={setActiveSection}
-              />
-            </div>
-          </aside>
-
-          <main className="flex-1 min-w-0">
-            {activeSection === "ai" && <SupportAIChat />}
-
-            {activeSection === "ticket" && (
-              <TicketForm
-                selectedCategory={selectedCategory}
-                onCategoryChange={setSelectedCategory}
-              />
-            )}
-
-            {activeSection === "faq" && <SupportFAQ />}
-          </main>
-        </div>
+      </section>
+      <div className="mx-auto max-w-5xl px-4 py-8 md:py-10">
+        <SupportCenter />
       </div>
     </div>
   );

@@ -45,8 +45,17 @@ function transformSubmissionToProduct(submission: Submission): Product {
     priceValue: submission.wishedPrice,
     acceptedQty: submission.acceptedQty,
     acceptedPrice: submission.acceptedPrice,
+    counterOfferPrice: submission.counterOfferPrice ?? null,
+    agreedPrice: submission.agreedPrice ?? null,
+    foodBundlesPrice: submission.foodBundlesPrice ?? null,
     farmerFeedbackStatus: submission.farmerFeedbackStatus,
     feedbackDeadline: submission.feedbackDeadline,
+    aggregator: submission.assignedAggregator
+      ? { name: submission.assignedAggregator.username, phone: submission.assignedAggregator.phone }
+      : null,
+    // Paid without a recorded method means Mobile Money (cash is always recorded)
+    paymentMethod:
+      submission.status === "PAID" ? (submission.paymentMethod === "CASH" ? "CASH" : "MOMO") : null,
   };
 }
 
