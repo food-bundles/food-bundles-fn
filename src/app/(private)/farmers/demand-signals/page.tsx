@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { MapPin, Search, ShoppingCart, Sprout, Tag, TrendingUp } from "lucide-react";
+import { Lock, MapPin, Search, ShoppingCart, Sprout, Tag, TrendingUp } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,13 +27,17 @@ export default function FarmerMarketPage() {
   const [search, setSearch] = useState("");
   const [selling, setSelling] = useState(false);
   const [error, setError] = useState(false);
+  // Food Bundles prices are shown after the farmer's first paid sale
+  const [pricesLocked, setPricesLocked] = useState(false);
 
   const load = () => {
     setError(false);
-    Promise.all([farmerDashboardService.getCropDemand(), farmerDashboardService.getPrices()])
-      .then(([d, p]) => {
-        setDemand(d);
-        setPrices(p);
+    farmerDashboardService
+      .getMarket()
+      .then((market) => {
+        setDemand(market.demand);
+        setPrices(market.prices);
+        setPricesLocked(market.pricesLocked);
       })
       .catch(() => {
         setError(true);
@@ -139,10 +143,12 @@ export default function FarmerMarketPage() {
                           Buyers need {d.neededKg.toLocaleString()} kg · {d.orderCount} order{d.orderCount === 1 ? "" : "s"}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-xl font-bold text-green-700">{rwf(d.ratePerKg)}</p>
-                        <p className="text-xs text-gray-500">per kg</p>
-                      </div>
+                      {d.ratePerKg != null && (
+                        <div className="text-right">
+                          <p className="text-xl font-bold text-green-700">{rwf(d.ratePerKg)}</p>
+                          <p className="text-xs text-gray-500">per kg</p>
+                        </div>
+                      )}
                     </div>
                     <p className="flex items-center gap-1.5 text-sm text-gray-600">
                       <MapPin className="h-4 w-4 text-gray-400" />
@@ -160,7 +166,24 @@ export default function FarmerMarketPage() {
             </div>
           ))}
 
-        {tab === "prices" && (
+        {tab === "prices" && pricesLocked && (
+          <Card className="overflow-hidden border-green-200">
+            <CardContent className="flex flex-col items-center gap-3 bg-gradient-to-b from-green-50 to-white px-6 py-12 text-center">
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-green-600 text-white">
+                <Lock className="h-6 w-6" />
+              </span>
+              <h2 className="text-lg font-bold text-gray-900">Sell to Food Bundles and start receiving market prices</h2>
+              <p className="max-w-md text-sm text-gray-600">
+                After your first sale is paid, you see what Food Bundles pays for every crop, so you always know your price.
+              </p>
+              <Button onClick={() => setSelling(true)} className="bg-green-600 text-white hover:bg-green-700">
+                <ShoppingCart className="mr-2 h-4 w-4" /> Sell my harvest
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {tab === "prices" && !pricesLocked && (
           <Card>
             <CardContent className="space-y-4 p-4 sm:p-6">
               <div className="relative w-full sm:max-w-xs">

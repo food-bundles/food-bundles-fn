@@ -73,7 +73,8 @@ export interface CropDemand {
   productId: string;
   cropName: string;
   neededKg: number;
-  ratePerKg: number;
+  /** Null while the farmer's prices are locked (no sale to Food Bundles yet) */
+  ratePerKg: number | null;
   orderCount: number;
   /** The farmer's aggregation site, where to bring it; null when unknown */
   deliveryPoint: string | null;
@@ -241,6 +242,22 @@ export const farmerDashboardService = {
   getPrices: async (): Promise<FarmerPrice[]> => {
     const response = await createAxiosClient().get<ApiEnvelope<FarmerPrice[]>>("/farmers/dashboard/prices");
     return response.data.data || [];
+  },
+
+  // Prices and buyer demand together, with whether prices are locked: Food Bundles prices are shown only
+  // after the farmer's first paid sale (the API leaves them out until then)
+  getMarket: async (): Promise<{ prices: FarmerPrice[]; demand: CropDemand[]; pricesLocked: boolean }> => {
+    type Locked<T> = ApiEnvelope<T> & { pricesLocked?: boolean };
+    const client = createAxiosClient();
+    const [prices, demand] = await Promise.all([
+      client.get<Locked<FarmerPrice[]>>("/farmers/dashboard/prices"),
+      client.get<Locked<CropDemand[]>>("/farmers/dashboard/crop-demand"),
+    ]);
+    return {
+      prices: prices.data.data || [],
+      demand: demand.data.data || [],
+      pricesLocked: !!prices.data.pricesLocked,
+    };
   },
 
   // GET /farmers/dashboard/crop-demand: buyers' open demand for the farmer's own crops

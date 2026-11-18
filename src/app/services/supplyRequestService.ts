@@ -3,6 +3,11 @@ import createAxiosClient from "@/app/hooks/axiosClient";
 /** Weekday numbers used by supply requests: 1 = Monday … 7 = Sunday */
 export const WEEKDAYS = ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
+/** When a request is needed: one date, every week on weekdays, or chosen dates */
+export type ScheduleType = "ONCE" | "WEEKLY" | "DATES";
+/** Who may supply it: farmers near it (automatic) or only farmers the creator chose */
+export type Audience = "NEARBY" | "SELECTED";
+
 export interface RequestCustomer {
   id: string;
   name: string;
@@ -13,9 +18,46 @@ export interface RequestCustomer {
 export interface SupplyRequestItemInput {
   id?: string;
   productId: string;
-  weekday: number;
+  /** WEEKLY: 1 = Monday … 7 = Sunday */
+  weekday?: number | null;
+  /** ONCE and DATES: YYYY-MM-DD */
+  date?: string | null;
   quantity: number;
   price?: number;
+}
+
+/** A farmer who can be chosen for a request */
+export interface ReachFarmer {
+  id: string;
+  name: string | null;
+  /** Masked (••123) unless the person manages farmers */
+  phone: string | null;
+  province: string | null;
+  district: string | null;
+  sector: string | null;
+  crops: { productId: string; productName: string }[];
+  hasSold: boolean;
+}
+
+/** Farmers reachable by place and crop, for the "choose farmers" step */
+export interface FarmerReach {
+  total: number;
+  soldBefore: number;
+  /** Set when the person may only choose farmers in this district */
+  limitedToDistrict: string | null;
+  byPlace: { province: string | null; district: string | null; sector: string | null; count: number }[];
+  byCrop: { productId: string; productName: string; count: number }[];
+  allIds: string[];
+  farmers: { items: ReachFarmer[]; total: number; page: number; pages: number };
+}
+
+export interface ChosenFarmer {
+  id: string;
+  name: string | null;
+  phone: string | null;
+  place: string | null;
+  addedAt: string;
+  submitted: boolean;
 }
 
 export interface SupplyRequestLine {
@@ -44,6 +86,11 @@ export interface SupplyRequest {
   status: "OPEN" | "CLOSED" | "CANCELLED";
   startDate: string;
   endDate: string;
+  scheduleType?: ScheduleType;
+  /** "HH:mm" the products are needed by */
+  neededTime?: string | null;
+  audience?: Audience;
+  chosenFarmers?: ChosenFarmer[];
   createdAt: string;
   restaurant: { id: string; name: string; district?: string | null; customerType?: { name: string } | null };
   createdBy: { id: string; username: string };
@@ -55,7 +102,8 @@ export interface SupplyRequest {
   items?: Array<{
     id: string;
     productId: string;
-    weekday: number;
+    weekday: number | null;
+    date: string | null;
     quantity: number;
     price: number;
     product: { id: string; productName: string; unit: string; purchasePrice: number };
@@ -78,6 +126,13 @@ export interface FarmerOpenRequest {
   district: string | null;
   startDate: string;
   endDate: string;
+  scheduleType?: ScheduleType;
+  neededTime?: string | null;
+  /** The farmer was chosen for this request */
+  chosen?: boolean;
+  /** No sale to Food Bundles yet: the price is hidden and the farmer gives their own */
+  priceHidden?: boolean;
+  deliveryPoint?: string | null;
   lines: Array<{
     itemId: string;
     date: string;
@@ -85,7 +140,8 @@ export interface FarmerOpenRequest {
     productName: string;
     unit: string;
     image: string | null;
-    price: number;
+    /** Null while the farmer's prices are locked */
+    price: number | null;
     needed: number;
     missing: number;
   }>;
@@ -124,14 +180,39 @@ export const supplyRequestService = {
     restaurantId: string;
     title?: string;
     notes?: string;
-    startDate: string;
-    endDate: string;
+    startDate?: string;
+    endDate?: string;
+    scheduleType: ScheduleType;
+    neededTime?: string | null;
+    audience: Audience;
+    farmerIds?: string[];
     items: SupplyRequestItemInput[];
   }) => data<SupplyRequest>(await createAxiosClient().post("/supply-requests", payload)),
 
+  // GET /supply-requests/farmer-reach: farmers by place and crop (counts + one page)
+  farmerReach: async (params: {
+    productIds: string[];
+    province?: string;
+    district?: string;
+    sector?: string;
+    search?: string;
+    page?: number;
+  }) =>
+    data<FarmerReach>(
+      await createAxiosClient().get("/supply-requests/farmer-reach", {
+        params: { ...params, productIds: params.productIds.join(",") },
+      })
+    ),
+
+  addFarmers: async (id: string, farmerIds: string[]) =>
+    data<SupplyRequest>(await createAxiosClient().post(`/supply-requests/${id}/farmers`, { farmerIds })),
+
+  removeFarmer: async (id: string, farmerId: string) =>
+    data<SupplyRequest>(await createAxiosClient().delete(`/supply-requests/${id}/farmers/${farmerId}`)),
+
   update: async (
     id: string,
-    payload: { title?: string; notes?: string; endDate?: string; items?: SupplyRequestItemInput[] },
+    payload: { title?: string; notes?: string; endDate?: string; neededTime?: string | null; items?: SupplyRequestItemInput[] },
   ) => data<SupplyRequest>(await createAxiosClient().patch(`/supply-requests/${id}`, payload)),
 
   // GET /supply-requests/place-options: active sites and aggregators

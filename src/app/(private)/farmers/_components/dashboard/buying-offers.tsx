@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ClipboardList, Loader2, MapPin, Search } from "lucide-react";
+import { ClipboardList, Clock, Loader2, MapPin, Search, Star } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,7 +21,7 @@ import {
   supplyRequestService,
 } from "@/app/services/supplyRequestService";
 
-type Line = FarmerOpenRequest["lines"][number] & { customerType: string };
+type Line = FarmerOpenRequest["lines"][number] & { customerType: string; neededTime?: string | null };
 
 const formatDay = (day: string) =>
   new Date(`${day}T00:00:00Z`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
@@ -61,7 +61,8 @@ export function BuyingOffers({
   const openSupply = (line: Line) => {
     setTarget(line);
     setQuantity(String(line.missing));
-    setPrice(String(line.price));
+    // No price shown yet (first sale not made): the farmer gives their own
+    setPrice(line.price != null ? String(line.price) : "");
   };
 
   const submit = async () => {
@@ -74,7 +75,7 @@ export function BuyingOffers({
         price: Number(price),
       });
       toast.success(
-        Number(price) > target.price
+        target.price != null && Number(price) > target.price
           ? "Submitted. You asked more than offered, so Food Bundles will reply with an offer."
           : "Submitted. Food Bundles will confirm soon.",
       );
@@ -156,6 +157,16 @@ export function BuyingOffers({
                 </span>
               )}
               {request.title && <span>· {request.title}</span>}
+              {request.chosen && (
+                <span className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 font-medium text-amber-800">
+                  <Star className="h-3 w-3" /> Chosen for you
+                </span>
+              )}
+              {request.neededTime && (
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" /> by {request.neededTime}
+                </span>
+              )}
             </p>
             <div className="grid gap-2 sm:grid-cols-2">
               {request.lines.map((line) => (
@@ -164,16 +175,16 @@ export function BuyingOffers({
                   className="flex items-center justify-between gap-3 rounded-lg border bg-white px-3 py-2"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-[#0B2E1F]">{line.productName}</p>
-                    <p className="text-xs text-[#4A6358]">
-                      {formatDay(line.date)} · needs <span className="font-semibold">{line.missing}</span> {line.unit} ·{" "}
-                      {Math.round(line.price).toLocaleString()} RWF/{line.unit}
+                    <p className="truncate text-sm font-medium text-gray-900">{line.productName}</p>
+                    <p className="text-xs text-gray-600">
+                      {formatDay(line.date)} · needs <span className="font-semibold">{line.missing}</span> {line.unit}
+                      {line.price != null ? ` · ${Math.round(line.price).toLocaleString()} RWF/${line.unit}` : ""}
                     </p>
                   </div>
                   <Button
                     size="sm"
-                    className="h-8 shrink-0 bg-[#0B2E1F] text-xs hover:bg-green-700"
-                    onClick={() => openSupply({ ...line, customerType: request.customerType })}
+                    className="h-8 shrink-0 bg-green-600 text-xs hover:bg-green-700"
+                    onClick={() => openSupply({ ...line, customerType: request.customerType, neededTime: request.neededTime })}
                   >
                     Supply
                   </Button>
@@ -190,7 +201,8 @@ export function BuyingOffers({
           <DialogHeader>
             <DialogTitle>Supply {target?.productName}</DialogTitle>
             <DialogDescription>
-              For {target ? formatDay(target.date) : ""}. Still needed: {target?.missing} {target?.unit}.
+              For {target ? formatDay(target.date) : ""}
+              {target?.neededTime ? `, by ${target.neededTime}` : ""}. Still needed: {target?.missing} {target?.unit}.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
@@ -201,8 +213,10 @@ export function BuyingOffers({
             <div className="space-y-1.5">
               <Label htmlFor="supply-price">Your price per {target?.unit} (RWF)</Label>
               <Input id="supply-price" type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} />
-              <p className="text-xs text-[#4A6358]">
-                Offered: {Math.round(target?.price ?? 0).toLocaleString()} RWF. Asking more starts a negotiation.
+              <p className="text-xs text-gray-500">
+                {target?.price != null
+                  ? `Offered: ${Math.round(target.price).toLocaleString()} RWF. Asking more starts a negotiation.`
+                  : "Give your price. After your first sale to Food Bundles you also see our prices."}
               </p>
             </div>
           </div>
