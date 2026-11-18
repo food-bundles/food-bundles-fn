@@ -186,6 +186,8 @@ export const supplyRequestService = {
     neededTime?: string | null;
     audience: Audience;
     farmerIds?: string[];
+    /** The aggregator who handles it; left out = the nearest one, automatically */
+    aggregatorId?: string;
     items: SupplyRequestItemInput[];
   }) => data<SupplyRequest>(await createAxiosClient().post("/supply-requests", payload)),
 
@@ -216,9 +218,12 @@ export const supplyRequestService = {
   ) => data<SupplyRequest>(await createAxiosClient().patch(`/supply-requests/${id}`, payload)),
 
   // GET /supply-requests/place-options: active sites and aggregators
-  placeOptions: async (requestId?: string) =>
+  // With restaurantId (a request being created): aggregators nearest the site that would serve that customer first
+  placeOptions: async (requestId?: string, restaurantId?: string) =>
     data<RequestPlaceOptions>(
-      await createAxiosClient().get("/supply-requests/place-options", { params: requestId ? { requestId } : undefined })
+      await createAxiosClient().get("/supply-requests/place-options", {
+        params: requestId ? { requestId } : restaurantId ? { restaurantId } : undefined,
+      })
     ),
 
   // PATCH /supply-requests/:id/place: where the request is served and who handles it (null clears)

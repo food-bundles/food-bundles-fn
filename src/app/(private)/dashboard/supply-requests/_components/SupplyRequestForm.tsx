@@ -46,6 +46,8 @@ import {
   WEEKDAYS,
 } from "@/app/services/supplyRequestService";
 import { ChooseFarmers } from "./ChooseFarmers";
+import { AggregatorChoice, ChooseAggregator } from "./ChooseAggregator";
+import { useAdminAccess } from "@/app/hooks/useAdminAccess";
 
 type ProductOption = { id: string; productName: string; unit: string; purchasePrice: number };
 
@@ -210,7 +212,8 @@ interface SupplyRequestFormProps {
  * 1. What: the customer and the products, with their usual quantity and price;
  * 2. When: once, every week, or on chosen dates; the days of each product (each can be removed or
  *    given its own quantity), and the time it is needed by;
- * 3. Who: farmers near it (automatic) or only the farmers chosen by place and crop;
+ * 3. Who: farmers near it (automatic) or only the farmers chosen by place and crop; and, for people who
+ *    are not aggregators, the aggregator who handles it (nearest, picked, or created here);
  * 4. Review.
  * Editing skips "Who": farmers of a request are managed on its page.
  */
@@ -233,6 +236,10 @@ export function SupplyRequestForm({ open, request, onClose, onSaved }: SupplyReq
   const [neededTime, setNeededTime] = useState("08:00");
   const [audience, setAudience] = useState<Audience>("NEARBY");
   const [chosen, setChosen] = useState<Set<string>>(new Set());
+  const [aggregator, setAggregator] = useState<AggregatorChoice>(null);
+  const { user: me, can } = useAdminAccess();
+  // An aggregator's own requests are theirs; everyone else says who handles it
+  const choosesAggregator = !editing && !!me && me.role !== "AGGREGATOR";
   const [shownProblem, setShownProblem] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -314,6 +321,7 @@ export function SupplyRequestForm({ open, request, onClose, onSaved }: SupplyReq
       setNeededTime("08:00");
       setAudience("NEARBY");
       setChosen(new Set());
+      setAggregator(null);
       setLines([newLine()]);
     }
   }, [open, request]);
@@ -540,6 +548,7 @@ export function SupplyRequestForm({ open, request, onClose, onSaved }: SupplyReq
             neededTime: neededTime || null,
             audience,
             ...(audience === "SELECTED" ? { farmerIds: [...chosen] } : {}),
+            ...(choosesAggregator && aggregator ? { aggregatorId: aggregator.id } : {}),
             items,
           });
       toast.success(
@@ -1093,6 +1102,21 @@ export function SupplyRequestForm({ open, request, onClose, onSaved }: SupplyReq
                   customer&apos;s aggregation site get a message and can submit.
                 </p>
               )}
+              {choosesAggregator && (
+                <Section
+                  title="Who handles it?"
+                  hint="The aggregator is told about the request, receives its farmers' submissions and checks them at the site."
+                >
+                  <ChooseAggregator
+                    restaurantId={restaurantId}
+                    customerDistrict={customer?.district}
+                    value={aggregator}
+                    onChange={setAggregator}
+                    canCreate={can("admins", "create")}
+                    disabled={saving}
+                  />
+                </Section>
+              )}
             </>
           )}
 
@@ -1131,6 +1155,15 @@ export function SupplyRequestForm({ open, request, onClose, onSaved }: SupplyReq
                           : "Nearby farmers, automatically",
                       step: "Who",
                     },
+                    ...(choosesAggregator
+                      ? [
+                          {
+                            label: "Handled by",
+                            value: aggregator ? aggregator.name : "The nearest aggregator, automatically",
+                            step: "Who" as StepName,
+                          },
+                        ]
+                      : []),
                   ] as { label: string; value: string | undefined; step: StepName }[]
                 ).map((row) => (
                   <div key={row.label} className="flex items-start justify-between gap-3 px-4 py-2.5">
