@@ -7,7 +7,7 @@ import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
 import dynamic from "next/dynamic"
-import { MapPin, Map as MapIcon, Loader2, Check, RotateCcw, Search, Sprout, X } from "lucide-react"
+import { MapPin, Map as MapIcon, Loader2, Calendar, Check, Sprout, RotateCcw, Search, X } from "lucide-react"
 import "leaflet/dist/leaflet.css"
 import {
   Dialog,
@@ -59,6 +59,8 @@ export interface ProductSubmissionData {
   /** Optional GPS pin, captured via the map picker for delivery precision. */
   latitude?: number
   longitude?: number
+  /** When the farmer will bring the harvest (ISO, within the next 14 days) */
+  deliveryDate?: string
 }
 
 /** A past submission the farmer can send again in one tap */
@@ -76,6 +78,13 @@ interface ProductSubmissionModalProps {
   /** The farmer's latest different products, shown as "Submit again" */
   recent?: RecentSubmission[]
 }
+
+/** yyyy-mm-dd in local time, for <input type="date"> */
+const dayValue = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+
+/** The backend accepts a delivery moment between now and 14 days ahead */
+const MAX_DELIVERY_DAYS = 14
 
 const units = ["kg", "lb", "g", "oz", "bunch", "bag", "box", "crate", "dozen", "piece", "liter", "gallon"]
 // Shown as buttons; the others stay one tap away under "More"
@@ -99,6 +108,9 @@ export default function ProductSubmissionModal({ isOpen, onClose, onSubmit, rece
   })
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  // Optional: the day and time the farmer will bring the harvest
+  const [deliveryDay, setDeliveryDay] = useState("")
+  const [deliveryTime, setDeliveryTime] = useState("09:00")
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [categories, setCategories] = useState<Category[]>([])
   const [availableProducts, setAvailableProducts] = useState<string[]>([])
@@ -468,6 +480,13 @@ const loadVillages = async (province: string, district: string, sector: string, 
     if (!formData.productName.trim()) newErrors.productName = "Product name is required"
     if (formData.quantity <= 0) newErrors.quantity = "Quantity must be greater than 0"
     if (formData.wishedPrice <= 0) newErrors.wishedPrice = "Price must be greater than 0"
+    if (deliveryDay) {
+      const when = new Date(`${deliveryDay}T${deliveryTime || "09:00"}`)
+      const latest = Date.now() + MAX_DELIVERY_DAYS * 24 * 60 * 60 * 1000
+      if (Number.isNaN(when.getTime()) || when.getTime() <= Date.now())
+        newErrors.deliveryDate = "Choose a day and time that has not passed yet"
+      else if (when.getTime() > latest) newErrors.deliveryDate = `Choose a day within the next ${MAX_DELIVERY_DAYS} days`
+    }
 
     // "At my farm" uses the saved place as-is; a map pin is enough on its own
     if (locationMode === "map" && !mapLocation) {
@@ -501,13 +520,15 @@ const loadVillages = async (province: string, district: string, sector: string, 
     try {
       
       // Same as signup: send the saved place (the backend also falls back to it)
-      const payload =
-        locationMode === "registered" && registeredLocation
+      const deliveryDate = deliveryDay
+        ? new Date(`${deliveryDay}T${deliveryTime || "09:00"}`).toISOString()
+        : undefined
+      const payload = {
+        ...(locationMode === "registered" && registeredLocation
           ? { ...formData, ...registeredLocation }
-          : locationMode === "map"
-            ? // The pin says where; the backend finds the nearest collection site from it
-              { ...formData, province: "", district: "", sector: "", cell: "", village: "" }
-            : formData
+          : formData),
+        deliveryDate,
+      }
       const response = await productSubmissionService.submitProduct(payload)
 
       // First place chosen by a farmer without a saved farm location: keep it as their farm
@@ -544,8 +565,8 @@ const loadVillages = async (province: string, district: string, sector: string, 
           streetNumber: "",
         })
         setErrors({})
-        setProductSearch("")
-        setShowAllUnits(false)
+        setDeliveryDay("")
+        setDeliveryTime("09:00")
         setUseMapPicker(false)
         setMapLocation(null)
         setUsedRegisteredLocation(false)
@@ -866,29 +887,64 @@ const loadVillages = async (province: string, district: string, sector: string, 
                     {errorText("quantity")}
                   </section>
 
-                  {/* 3. Price */}
+                  {/* 3. Price (and, optionally, when you bring it) */}
                   <section className="flex flex-col gap-3">
-                    {stepTitle(3, "Your price", formData.wishedPrice > 0)}
-                    <div className="flex flex-wrap items-center gap-3">
-                      <div className="relative w-full sm:w-64">
+                    {stepTitle(3, "What is your price?", formData.wishedPrice > 0)}
+                    <div className="relative w-full sm:w-72">
+                      <input
+                        id="wishedPrice"
+                        type="number"
+                        inputMode="decimal"
+                        min="0"
+                        step="0.01"
+                        value={formData.wishedPrice || ""}
+                        onChange={(e) => handleInputChange("wishedPrice", Number.parseFloat(e.target.value) || 0)}
+                        placeholder="0"
+                        aria-label={`Price per ${formData.unit}`}
+                        className={`${field} pr-24 text-[20px] font-bold ${errors.wishedPrice ? "border-red-400" : "border-[#DCE6DF]"}`}
+                      />
+                      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[14px] font-bold text-[#4A6358]">
+                        RWF / {formData.unit}
+                      </span>
+                    </div>
+
+                    {/* When the farmer will bring it (optional), so the aggregator can plan */}
+                    <div className="flex flex-col gap-2 rounded-2xl bg-[#F6F9F7] p-3.5">
+                      <label htmlFor="deliveryDay" className="flex items-center gap-2 text-[14px] font-bold text-[#0B2E1F]">
+                        <Calendar className="h-4 w-4" />
+                        When will you bring it? <span className="font-normal text-[#4A6358]">(optional)</span>
+                      </label>
+                      <div className="grid gap-3 sm:grid-cols-2">
                         <input
-                          type="number"
-                          inputMode="decimal"
-                          min="0"
-                          step="1"
-                          value={formData.wishedPrice || ""}
-                          onChange={(e) => handleInputChange("wishedPrice", Number.parseFloat(e.target.value) || 0)}
-                          placeholder="0"
-                          aria-label={`Price in RWF per ${formData.unit}`}
-                          className={`${field} pr-24 text-[20px] font-bold ${errors.wishedPrice ? "border-red-400" : "border-[#DCE6DF]"}`}
+                          id="deliveryDay"
+                          type="date"
+                          min={dayValue(new Date())}
+                          max={dayValue(new Date(Date.now() + MAX_DELIVERY_DAYS * 24 * 60 * 60 * 1000))}
+                          value={deliveryDay}
+                          onChange={(e) => {
+                            setDeliveryDay(e.target.value)
+                            setErrors((prev) => ({ ...prev, deliveryDate: "" }))
+                          }}
+                          className={`${field} ${errors.deliveryDate ? "border-red-400" : "border-[#DCE6DF]"}`}
                         />
-                        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[14px] font-bold text-[#4A6358]">
-                          RWF / {formData.unit}
-                        </span>
+                        <input
+                          id="deliveryTime"
+                          type="time"
+                          aria-label="Delivery time"
+                          value={deliveryTime}
+                          disabled={!deliveryDay}
+                          onChange={(e) => {
+                            setDeliveryTime(e.target.value)
+                            setErrors((prev) => ({ ...prev, deliveryDate: "" }))
+                          }}
+                          className={`${field} border-[#DCE6DF]`}
+                        />
                       </div>
-                      {total > 0 && (
-                        <p className="m-0 rounded-xl bg-[#EFFAF3] px-4 py-2.5 text-[15px] text-[#0B2E1F]">
-                          Total: <b className="text-[#007A35]">{rwf(total)}</b>
+                      {errors.deliveryDate ? (
+                        errorText("deliveryDate")
+                      ) : (
+                        <p className="m-0 text-[13px] text-[#4A6358]">
+                          Within the next {MAX_DELIVERY_DAYS} days. Your aggregator sees it.
                         </p>
                       )}
                     </div>

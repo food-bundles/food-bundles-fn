@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useMemo, useSyncExternalStore } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Plus, AlertCircle, Sprout } from "lucide-react";
+import Link from "next/link";
+import { Plus, AlertCircle, ChevronRight, Sprout } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import ProductSubmissionModal from "./product-submission-modal";
 import { recentFromProducts } from "./recent-submissions";
 import { Product } from "./product-context";
 import { SubmissionDetailsModal } from "./submission-details-modal";
-import { SubmissionsTable } from "./SubmissionsTable";
 import { FarmerSummaryCards } from "./dashboard/farmer-summary-cards";
 import { FarmerActivityChart } from "./dashboard/farmer-activity-chart";
 import { BuyingOffers } from "./dashboard/buying-offers";
@@ -61,6 +62,7 @@ const transformSubmissionToProduct = (submission: Submission): Product => {
     acceptedPrice: submission.acceptedPrice,
     counterOfferPrice: submission.counterOfferPrice ?? null,
     agreedPrice: submission.agreedPrice ?? null,
+    foodBundlesPrice: submission.foodBundlesPrice ?? null,
     farmerFeedbackStatus: submission.farmerFeedbackStatus,
     feedbackDeadline: submission.feedbackDeadline,
   };
@@ -231,11 +233,49 @@ export default function ProductManagement() {
           <RecentActivityFeed items={activity} loading={analyticsLoading} />
         </div>
 
-        <SubmissionsTable
-          products={products}
-          loading={loading}
-          onViewDetails={handleViewDetails}
-        />
+        {/* The latest few only; the full list with filters lives on the Submissions page */}
+        <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="text-base font-semibold text-gray-900">Recent harvests</h2>
+            <Link
+              href="/farmers/submissions"
+              className="inline-flex items-center gap-1 text-sm font-medium text-green-700 hover:underline"
+            >
+              See all <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+          {loading ? (
+            <p className="py-6 text-center text-sm text-gray-500">Loading…</p>
+          ) : products.length === 0 ? (
+            <p className="py-6 text-center text-sm text-gray-500">
+              No harvest yet. Use Submit Product to sell your first one.
+            </p>
+          ) : (
+            <ul className="divide-y">
+              {products.slice(0, 5).map((product) => (
+                <li key={product.id}>
+                  <button
+                    type="button"
+                    onClick={() => handleViewDetails(product)}
+                    className="flex w-full items-center justify-between gap-3 py-3 text-left hover:bg-gray-50"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate font-medium text-gray-900">{product.name}</span>
+                      <span className="block text-xs text-gray-500">
+                        {product.quantity} · {product.submittedDate}
+                      </span>
+                    </span>
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${getStatusColor(product.status)}`}
+                    >
+                      {product.status}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </main>
 
       {/* Product Submission Modal */}

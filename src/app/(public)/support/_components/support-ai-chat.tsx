@@ -18,14 +18,14 @@ declare global {
 
 const CHATBOT_ID = "oVtdXXauW9F6SW6q1JSir";
 
-const sampleQuestions = [
+const defaultQuestions = [
   "How do I place an order?",
   "What payment methods do you accept?",
   "How can I track my deliveries?",
   "What is your refund policy?",
 ];
 
-export function SupportAIChat() {
+export function SupportAIChat({ questions = defaultQuestions }: { questions?: string[] }) {
   const [ready, setReady] = useState(false);
 
   // Ensure the Chatbase embed script is loaded so window.chatbase('open') works
@@ -127,7 +127,7 @@ export function SupportAIChat() {
           Popular questions
         </p>
         <div className="flex flex-wrap gap-2">
-          {sampleQuestions.map((q) => (
+          {questions.map((q) => (
             <button
               key={q}
               onClick={openChat}

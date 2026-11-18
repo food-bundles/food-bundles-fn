@@ -1,6 +1,6 @@
 "use client";
 
-import { stageLabel } from "./status-helpers";
+import { stageLabel, foodBundlesPriceNote } from "./status-helpers";
 import { motion } from "motion/react";
 import { Eye, MapPin } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -44,6 +44,13 @@ export function SubmissionCardGrid({ products, onViewDetails }: SubmissionCardGr
                 <span className="text-[#4A6358]">{product.quantity} {product.unit}</span>
                 <span className="font-semibold text-[#0B2E1F]">{product.price}</span>
               </div>
+
+              {foodBundlesPriceNote(product) && (
+                <div className="flex items-center justify-between text-xs font-medium text-green-700">
+                  <span>{foodBundlesPriceNote(product)!.label} price</span>
+                  <span>{foodBundlesPriceNote(product)!.value}</span>
+                </div>
+              )}
 
               <div className="flex items-center justify-between mt-auto pt-2">
                 <span className="text-xs text-[#7A8E83]">{product.submittedDate}</span>

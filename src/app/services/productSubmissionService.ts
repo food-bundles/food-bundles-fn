@@ -17,6 +17,8 @@ export interface CreatProductSubmissionData {
   streetNumber?: string
   latitude?: number
   longitude?: number
+  /** When the farmer will bring the harvest (ISO, within the next 14 days) */
+  deliveryDate?: string
 }
 
 export interface SubmissionStats {
@@ -38,6 +40,8 @@ export interface Submission {
   counterOfferPrice?: number | null
   /** Price both sides agreed */
   agreedPrice?: number | null
+  /** What Food Bundles pays per unit for this product */
+  foodBundlesPrice?: number | null
   createdAt: string
   updatedAt: string
   farmerId: string
@@ -60,6 +64,11 @@ export interface Submission {
   farmerCounterOffer: number | null
   farmerCounterQty: number | null
   feedbackDeadline: string | null
+  /** The aggregator who receives this harvest (the nearest one, or chosen by an admin) */
+  assignedAggregator?: { id: string; username: string; phone: string | null } | null
+  /** How it was paid, once paid: MOMO or CASH */
+  paymentMethod?: string | null
+  paidAt?: string | null
 }
 
 
@@ -316,6 +325,7 @@ export const productSubmissionService = {
       ...(data.streetNumber ? { streetNumber: data.streetNumber } : {}),
       ...(data.latitude !== undefined ? { latitude: data.latitude } : {}),
       ...(data.longitude !== undefined ? { longitude: data.longitude } : {}),
+      ...(data.deliveryDate ? { deliveryDate: data.deliveryDate } : {}),
     }
     
     console.log("[submitProduct] Submitting to URL:", `/farmers/submit-product/${existingProduct.id}`)

@@ -5,6 +5,7 @@ import { X, Settings, Bell, Globe, Loader2 } from "lucide-react"
 import { useAuth } from "@/app/contexts/auth-context"
 import { farmersService } from "@/app/services/farmersService"
 import { showToast } from "@/lib/toast"
+import { farmerDashboardService, type FarmerLanguage } from "@/app/services/farmerDashboardService"
 
 interface SettingsDrawerProps {
   isOpen: boolean
@@ -14,13 +15,22 @@ interface SettingsDrawerProps {
 interface FarmerSettingsState {
   smsNotifications: boolean
   notificationFrequency: string
-  preferredLanguage: string
+  /** Language of SMS and messages, the same setting as in the mobile app */
+  preferredLanguage: FarmerLanguage
 }
 
 const DEFAULT_SETTINGS: FarmerSettingsState = {
   smsNotifications: false,
   notificationFrequency: "DAILY",
-  preferredLanguage: "en",
+  preferredLanguage: "KINY",
+}
+
+/** Older records may hold en/fr/rw; the backend uses KINY/ENG/FRE */
+const toLanguage = (value?: string | null): FarmerLanguage => {
+  const v = (value || "").toUpperCase()
+  if (v === "ENG" || v === "EN") return "ENG"
+  if (v === "FRE" || v === "FR") return "FRE"
+  return "KINY"
 }
 
 export default function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps) {
@@ -53,7 +63,7 @@ export default function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps)
         setSettings({
           smsNotifications: farmer.smsNotifications ?? false,
           notificationFrequency: farmer.notificationFrequency || "DAILY",
-          preferredLanguage: farmer.preferredLanguage || "en",
+          preferredLanguage: toLanguage(farmer.preferredLanguage),
         })
       } catch (error) {
         console.error("Failed to load settings:", error)
@@ -75,7 +85,15 @@ export default function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps)
 
     setSaving(true)
     try {
-      await farmersService.updateFarmer(user.id, settings)
+      await farmersService.updateFarmer(user.id, {
+        smsNotifications: settings.smsNotifications,
+        notificationFrequency: settings.notificationFrequency,
+      })
+      // SMS on/off and language go through the farmer's own preferences endpoint, which validates the language
+      await farmerDashboardService.updatePreferences({
+        smsNotifications: settings.smsNotifications,
+        preferredLanguage: settings.preferredLanguage,
+      })
       showToast("success", "Settings saved successfully!")
       onClose()
     } catch (error) {
@@ -167,20 +185,20 @@ export default function SettingsDrawer({ isOpen, onClose }: SettingsDrawerProps)
               </div>
 
               {/* Language */}
-              <div className="border border-[#DCE6DF] rounded-lg overflow-hidden">
-                <div className="flex items-center gap-2 p-3 bg-[#F6F9F7] border-b border-[#DCE6DF]">
-                  <Globe className="w-4 h-4 text-[#007A35]" />
-                  <h2 className="font-semibold text-sm">Language</h2>
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="flex items-center gap-2 p-3 bg-gray-50 border-b border-gray-200">
+                  <Globe className="w-4 h-4 text-green-700" />
+                  <h2 className="font-semibold text-sm">Language for SMS and messages</h2>
                 </div>
                 <div className="p-3">
                   <select
                     value={settings.preferredLanguage}
-                    onChange={(e) => handleSettingChange("preferredLanguage", e.target.value)}
-                    className="w-full px-3 py-2 text-sm bg-white border border-[#DCE6DF] rounded-md focus:outline-none focus:ring-2 focus:ring-green-700"
+                    onChange={(e) => handleSettingChange("preferredLanguage", e.target.value as FarmerLanguage)}
+                    className="w-full px-3 py-2 text-sm bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-700"
                   >
-                    <option value="en">English</option>
-                    <option value="fr">Français</option>
-                    <option value="rw">Kinyarwanda</option>
+                    <option value="KINY">Kinyarwanda</option>
+                    <option value="ENG">English</option>
+                    <option value="FRE">Français</option>
                   </select>
                 </div>
               </div>
