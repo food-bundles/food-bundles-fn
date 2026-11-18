@@ -1,4 +1,7 @@
+import Link from "next/link";
+import { lookupHref } from "@/lib/user-lookup";
 import type { ColumnDef } from "@tanstack/react-table";
+import { AccountStatusSwitch } from "@/components/account-status-switch";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -79,7 +82,6 @@ export type Restaurant = {
 
 export const getRestaurantColumns = (
   onManage: (restaurant: Restaurant) => void,
-  onViewDetails: (restaurantId: string) => void,
   website: { canFeature: boolean; onChanged?: () => void } = { canFeature: false },
 ): ColumnDef<Restaurant>[] => [
   {
@@ -225,29 +227,10 @@ export const getRestaurantColumns = (
   {
     accessorKey: "status",
     header: "Status",
-    cell: ({ row }) => {
-      const status = row.getValue("status") as string;
-      return (
-        <Badge
-          variant={
-            status === "active"
-              ? "default"
-              : status === "suspended"
-              ? "destructive"
-              : "secondary"
-          }
-          className={
-            status === "active"
-              ? "bg-green-100 text-green-800 hover:bg-green-200"
-              : status === "suspended"
-              ? "bg-red-100 text-red-800 hover:bg-red-200"
-              : "bg-gray-100 text-gray-800 hover:bg-gray-200"
-          }
-        >
-          {status.charAt(0).toUpperCase() + status.slice(1)}
-        </Badge>
-      );
-    },
+    // Active / deactivated: a deactivated account can't log in
+    cell: ({ row }) => (
+      <AccountStatusSwitch type="restaurant" id={row.original.id} name={row.original.name} />
+    ),
   },
   {
     accessorKey: "createdAt",
@@ -264,17 +247,21 @@ export const getRestaurantColumns = (
       const restaurant = row.original;
 
       return (
-        <Button 
-          variant="ghost" 
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            onManage(restaurant);
-          }}
-          className="flex items-center gap-2"
-        >
-          Manage
-        </Button>
+        <div className="flex items-center">
+          <Button asChild variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
+            <Link href={lookupHref(restaurant)}>Details</Link>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onManage(restaurant);
+            }}
+          >
+            Manage
+          </Button>
+        </div>
       );
     },
   },

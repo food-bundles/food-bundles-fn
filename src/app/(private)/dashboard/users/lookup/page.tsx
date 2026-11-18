@@ -35,6 +35,17 @@ export default function UserLookupPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const detailsRef = useRef<HTMLDivElement>(null);
 
+  // Opened from a list's "Details" (?q=…): search for that person right away,
+  // and open them when they're the only match
+  const autoOpen = useRef(false);
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("q");
+    if (q) {
+      autoOpen.current = true;
+      setQuery(q);
+    }
+  }, []);
+
   // Search as you type, after a short pause
   useEffect(() => {
     const q = query.trim();
@@ -53,6 +64,10 @@ export default function UserLookupPage() {
         if (cancelled) return;
         setResults(data);
         setSearched(q);
+        if (autoOpen.current) {
+          autoOpen.current = false;
+          if (data.length === 1) setSelected(data[0].id);
+        }
       } catch (e: any) {
         if (!cancelled) setError(e?.response?.data?.message || "Search failed. Try again.");
       } finally {

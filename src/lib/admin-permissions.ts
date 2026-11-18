@@ -36,6 +36,7 @@ const PAGE_MODULES: Array<[string, string]> = [
   ["/dashboard/newsletter", "newsletter"],
   ["/dashboard/invitations", "invitations"],
   ["/dashboard/users/lookup", "user_lookup"],
+  ["/dashboard/users/people", "user_lookup"],
   ["/dashboard/users/farmers", "farmers"],
   ["/dashboard/users/restaurants", "restaurants"],
   ["/dashboard/users/affiliators", "affiliators"],

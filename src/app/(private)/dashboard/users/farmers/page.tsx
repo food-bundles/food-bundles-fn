@@ -13,7 +13,6 @@ import dynamic from "next/dynamic";
 import { FarmerManagementModal } from "./_components/farmer-management-modal";
 import { CreateFarmerModal } from "./_components/create-farmer-modal";
 import { farmersService } from "@/app/services/farmersService";
-import UserDetailsSheet from "./_components/UserDetailsSheet";
 import { AssignSiteDialog } from "../../aggregation-sites/_components/AssignSiteDialog";
 
 function FarmersPageContent() {
@@ -25,8 +24,6 @@ function FarmersPageContent() {
   const [selectedFarmer, setSelectedFarmer] = useState<Farmer | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [siteTarget, setSiteTarget] = useState<Farmer | null>(null);
 
   // All hooks must be called before any conditional returns
@@ -71,18 +68,10 @@ function FarmersPageContent() {
         setSelectedFarmer(farmer);
         setIsModalOpen(true);
       },
-      (farmerId: string) => {
-        setSelectedUserId(farmerId);
-        setIsDetailsSheetOpen(true);
-      },
       (farmer: Farmer) => setSiteTarget(farmer)
     );
   }, []);
 
-  const handleRowClick = (farmer: Farmer) => {
-    setSelectedUserId(farmer.id);
-    setIsDetailsSheetOpen(true);
-  };
 
   const handleModalClose = () => {
     setIsModalOpen(false);
@@ -143,7 +132,6 @@ function FarmersPageContent() {
         showColumnVisibility={true}
         showPagination={true}
         showRowSelection={true}
-        onRowClick={handleRowClick}
       />
       
       <FarmerManagementModal
@@ -169,12 +157,6 @@ function FarmersPageContent() {
         }
         onClose={() => setSiteTarget(null)}
         onSaved={() => getAllFarmers()}
-      />
-
-      <UserDetailsSheet
-        isOpen={isDetailsSheetOpen}
-        onClose={() => setIsDetailsSheetOpen(false)}
-        userId={selectedUserId}
       />
     </div>
   );

@@ -1,5 +1,8 @@
+import Link from "next/link";
+import { lookupHref } from "@/lib/user-lookup";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { ColumnDef } from "@tanstack/react-table";
+import { AccountStatusSwitch } from "@/components/account-status-switch";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
@@ -7,7 +10,6 @@ import { Farmer } from "@/app/contexts/FarmersContext";
 
 export const getFarmerColumns = (
   onManage: (farmer: Farmer) => void,
-  onViewDetails: (farmerId: string) => void,
   onAssignSite?: (farmer: Farmer) => void
 ): ColumnDef<Farmer>[] => [
   {
@@ -96,30 +98,10 @@ export const getFarmerColumns = (
   {
     accessorKey: "status",
     header: "Status",
-    cell: ({ row }) => {
-      const status = row.getValue("status") as string;
-      const displayStatus = status || "active";
-      return (
-        <Badge
-          variant={
-            displayStatus === "active"
-              ? "default"
-              : displayStatus === "pending"
-              ? "secondary"
-              : "destructive"
-          }
-          className={
-            displayStatus === "active"
-              ? "bg-green-100 text-green-800 hover:bg-green-200"
-              : displayStatus === "pending"
-              ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
-              : "bg-red-100 text-red-800 hover:bg-red-200"
-          }
-        >
-          {displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
-        </Badge>
-      );
-    },
+    // Active / deactivated: a deactivated account can't log in
+    cell: ({ row }) => (
+      <AccountStatusSwitch type="farmer" id={row.original.id} name={row.original.name} />
+    ),
   },
   {
     accessorKey: "createdAt",
@@ -137,6 +119,9 @@ export const getFarmerColumns = (
 
       return (
         <div className="flex items-center">
+        <Button asChild variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
+            <Link href={lookupHref(farmer)}>Details</Link>
+          </Button>
         <Button 
           variant="ghost" 
           size="sm"

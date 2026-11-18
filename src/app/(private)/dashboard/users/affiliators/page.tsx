@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { lookupHref } from "@/lib/user-lookup";
 import { DataTable } from "@/components/data-table";
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
@@ -34,7 +36,6 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import UserDetailsSheet from "../farmers/_components/UserDetailsSheet";
 
 interface Affiliator {
     id: string;
@@ -62,8 +63,6 @@ export default function AdminAffiliatorsPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
-    const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
-    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
     const fetchAffiliators = async () => {
         try {
@@ -179,6 +178,10 @@ export default function AdminAffiliatorsPage() {
             cell: ({ row }: { row: any }) => {
                 const affiliator = row.original;
                 return (
+                    <div className="flex items-center">
+                    <Button asChild variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
+                        <Link href={lookupHref(affiliator)}>Details</Link>
+                    </Button>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
@@ -212,6 +215,7 @@ export default function AdminAffiliatorsPage() {
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
+                    </div>
                 );
             },
         },
@@ -234,10 +238,6 @@ export default function AdminAffiliatorsPage() {
                     showSearch
                     searchKey="name"
                     searchPlaceholder="Search by name..."
-                    onRowClick={(affiliator: Affiliator) => {
-                        setSelectedUserId(affiliator.id);
-                        setIsDetailsSheetOpen(true);
-                    }}
                 />
             </div>
 
@@ -359,12 +359,6 @@ export default function AdminAffiliatorsPage() {
                     </form>
                 </DialogContent>
             </Dialog>
-            
-            <UserDetailsSheet
-                isOpen={isDetailsSheetOpen}
-                onClose={() => setIsDetailsSheetOpen(false)}
-                userId={selectedUserId}
-            />
         </div>
     );
 }
