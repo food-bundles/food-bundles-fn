@@ -61,6 +61,8 @@ interface LoanSession {
   unlockedAt?: string;
   requestedAt: string;
   loanProviderType?: "TRADER" | "FOOD_BUNDLES" | string | null;
+  /** When the customer signed the provider's terms (needed before approval) */
+  termsSignedAt?: string | null;
   restaurant: { id: string; name: string; phone?: string };
   approver?: { id: string; username: string };
   fundingTrader?: { id: string; username: string; phone?: string };
@@ -121,6 +123,8 @@ export default function LoanSessionsAdminTable() {
   const [submitting, setSubmitting] = useState(false);
   const [traders, setTraders] = useState<LoanTrader[]>([]);
   const [selectedTraderId, setSelectedTraderId] = useState("");
+  // Who funds it: open to every trader (default), one trader, or Food Bundles
+  const [acceptTo, setAcceptTo] = useState<"open" | "trader" | "foodbundles">("open");
   const [approveOpen, setApproveOpen] = useState(false);
   const [isLoadingTraders, setIsLoadingTraders] = useState(false);
   const [traderCapacity, setTraderCapacity] = useState<{
@@ -177,6 +181,7 @@ export default function LoanSessionsAdminTable() {
   const openAccept = async (session: LoanSession) => {
     setSelected(session);
     setSelectedTraderId(session.fundingTrader?.id ?? "");
+    setAcceptTo(session.fundingTrader ? "trader" : session.loanProviderType === "FOOD_BUNDLES" ? "foodbundles" : "open");
     setApprovedAmount(session.requestedAmount.toString());
     setApprovalPct("100");
     setRepaymentDays(session.repaymentDays?.toString() ?? "30");
@@ -194,8 +199,12 @@ export default function LoanSessionsAdminTable() {
     if (!selected) return;
     setSubmitting(true);
     try {
-      // Prefer the trader the restaurant picked; otherwise the admin-selected trader.
-      const traderId = selected.fundingTrader?.id || selectedTraderId || undefined;
+      const traderId = acceptTo === "trader" ? selectedTraderId || selected.fundingTrader?.id || undefined : undefined;
+      if (acceptTo === "trader" && !traderId) {
+        toast.error("Choose the trader");
+        setSubmitting(false);
+        return;
+      }
       const approvedAmountValue =
         parseInt(approvedAmount) ||
         Math.round(
@@ -204,14 +213,17 @@ export default function LoanSessionsAdminTable() {
         );
       await voucherService.acceptLoanSession(selected.id, {
         fundingTraderId: traderId,
+        provider: acceptTo === "foodbundles" ? "FOOD_BUNDLES" : undefined,
         approvalPercentage: parseFloat(approvalPct),
         approvedAmount: approvedAmountValue,
         repaymentDays: parseInt(repaymentDays),
       });
       toast.success(
-        traderId
-          ? "Loan accepted and sent to the trader for approval"
-          : "Loan accepted — trader can now approve it",
+        acceptTo === "trader"
+          ? "Loan accepted and given to the trader. The customer signs their terms next."
+          : acceptTo === "foodbundles"
+            ? "Loan accepted for Food Bundles. The customer signs the terms next, then approve it."
+            : "Loan accepted: every trader can now see it and fund it",
       );
       setAcceptOpen(false);
       load();
@@ -239,7 +251,7 @@ export default function LoanSessionsAdminTable() {
 
   // Live trader-capacity check: whenever a trader is selected in the Accept
   // dialog, ask the backend if that trader can fund the amount.
-  const activeCapacityTraderId = acceptOpen ? selectedTraderId : "";
+  const activeCapacityTraderId = acceptOpen && acceptTo === "trader" ? selectedTraderId : "";
 
   useEffect(() => {
     if (!activeCapacityTraderId || !selected) {
@@ -303,22 +315,32 @@ export default function LoanSessionsAdminTable() {
       cell: ({ row }) => {
         const s = row.original;
         if (s.loanProviderType === "FOOD_BUNDLES") {
+          const waiting = ["REQUESTED", "ACCEPTED"].includes(s.status);
           return (
             <div>
               <p className="text-sm font-medium text-gray-800">Food Bundles</p>
-              <p className="text-xs text-gray-400">Platform lender</p>
+              <p className={`text-xs ${!waiting ? "text-gray-400" : s.termsSignedAt ? "text-green-600" : "text-amber-600"}`}>
+                {!waiting ? "Platform lender" : s.termsSignedAt ? "Terms signed: ready to approve" : "Waiting for customer signature"}
+              </p>
             </div>
           );
         }
         const t = s.fundingTrader;
+        const waiting = ["REQUESTED", "ACCEPTED"].includes(s.status);
         return t ? (
           <div>
             <p className="text-sm font-medium text-gray-800">{t.username}</p>
-            {t.phone && <p className="text-xs text-gray-400">{t.phone}</p>}
+            {waiting ? (
+              <p className={`text-xs ${s.termsSignedAt ? "text-green-600" : "text-amber-600"}`}>
+                {s.termsSignedAt ? "Terms signed: ready to approve" : "Waiting for customer signature"}
+              </p>
+            ) : (
+              t.phone && <p className="text-xs text-gray-400">{t.phone}</p>
+            )}
           </div>
         ) : (
-          <span className="text-xs text-gray-400">
-            {s.status === "REQUESTED" ? "Not assigned" : "—"}
+          <span className={`text-xs ${s.status === "ACCEPTED" ? "text-blue-600" : "text-gray-400"}`}>
+            {s.status === "REQUESTED" ? "Not assigned" : s.status === "ACCEPTED" ? "Open to all traders" : "—"}
           </span>
         );
       },
@@ -463,6 +485,7 @@ export default function LoanSessionsAdminTable() {
       cell: ({ row }) => {
         const s = row.original;
         const isPending = s.status === "REQUESTED";
+        const notApproved = s.status === "REQUESTED" || s.status === "ACCEPTED";
         // A voucher can be paid while it is running and still has money owed
         const canRepay =
           ["ACTIVE", "PARTIALLY_USED", "FULLY_USED", "OVERDUE"].includes(s.status) &&
@@ -477,17 +500,17 @@ export default function LoanSessionsAdminTable() {
             <DropdownMenuContent align="end">
               <DropdownMenuItem
                 disabled={!isPending}
-                onClick={() => openApprove(s)}
-              >
-                <CheckCircle className="mr-2 h-4 w-4 text-green-600" />
-                Approve
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={!isPending || s.loanProviderType === "FOOD_BUNDLES"}
                 onClick={() => openAccept(s)}
               >
                 <CheckCircle className="mr-2 h-4 w-4 text-blue-600" />
-                Accept (send to trader)
+                Accept
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={!notApproved || !s.termsSignedAt}
+                onClick={() => openApprove(s)}
+              >
+                <CheckCircle className="mr-2 h-4 w-4 text-green-600" />
+                Approve &amp; disburse{!s.termsSignedAt && notApproved ? " (after signature)" : ""}
               </DropdownMenuItem>
               <DropdownMenuItem disabled={!canRepay} onClick={() => setRepaySession(s)}>
                 <Banknote className="mr-2 h-4 w-4 text-green-600" />
@@ -495,7 +518,7 @@ export default function LoanSessionsAdminTable() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                disabled={!isPending}
+                disabled={!notApproved}
                 className="text-red-600"
                 onClick={() => openReject(s)}
               >
@@ -567,7 +590,7 @@ export default function LoanSessionsAdminTable() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-blue-600" />
-              Accept &amp; Send to Trader — {selected?.restaurant.name}
+              Accept loan — {selected?.restaurant.name}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
@@ -650,10 +673,32 @@ export default function LoanSessionsAdminTable() {
             </div>
 
             <div>
+              <p className="block text-sm font-medium mb-2">Who funds it?</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3" role="radiogroup">
+                {([
+                  ["open", "All traders", "Every trader sees it; the first to fund it takes it"],
+                  ["trader", "One trader", "Give it to a trader you choose"],
+                  ["foodbundles", "Food Bundles", "Food Bundles funds it; you approve"],
+                ] as const).map(([key, title, hint]) => (
+                  <label
+                    key={key}
+                    className={`cursor-pointer rounded-lg border p-3 text-sm ${acceptTo === key ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-gray-300"}`}
+                  >
+                    <input type="radio" name="accept-to" className="sr-only" checked={acceptTo === key} onChange={() => setAcceptTo(key)} />
+                    <span className="block font-medium text-gray-800">{title}</span>
+                    <span className="block text-xs text-gray-500">{hint}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 mb-2">The customer signs the provider&apos;s terms before the loan is approved and disbursed.</p>
+            </div>
+
+            {acceptTo === "trader" && (
+            <div>
               <label className="block text-sm font-medium mb-1">
                 {selected?.fundingTrader
                   ? "Confirm or change the trader"
-                  : "Select a trader to approve this loan"}
+                  : "Select the trader"}
               </label>
               {isLoadingTraders ? (
                 <div className="flex items-center gap-2 text-xs text-gray-500 py-2">
@@ -742,31 +787,32 @@ export default function LoanSessionsAdminTable() {
                   );
                 })()}
             </div>
+            )}
 
             <div className="flex gap-2 pt-1">
               <Button
                 onClick={handleAccept}
                 disabled={
                   submitting ||
-                  (!!selectedTraderId &&
-                    !!traderCapacity &&
-                    !traderCapacity.canFund)
+                  (acceptTo === "trader" &&
+                    (!selectedTraderId || (!!traderCapacity && !traderCapacity.canFund)))
                 }
                 className="flex-1 bg-blue-600 hover:bg-blue-700"
               >
                 {submitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                {submitting ? "Accepting..." : "Accept & Send to Trader"}
+                {submitting ? "Accepting..." : "Accept"}
               </Button>
               <Button variant="outline" onClick={() => setAcceptOpen(false)} disabled={submitting}>
                 Cancel
               </Button>
             </div>
-            {(selected?.fundingTrader || selectedTraderId) && (
-              <p className="text-xs text-gray-400">
-                The selected trader will be notified and must approve the loan
-                in their app.
-              </p>
-            )}
+            <p className="text-xs text-gray-400">
+              {acceptTo === "open"
+                ? "Every trader is notified and sees it in their app."
+                : acceptTo === "trader"
+                  ? "The trader is notified; they approve once the customer signs their terms."
+                  : "Approve it here once the customer signs the terms."}
+            </p>
           </div>
         </DialogContent>
       </Dialog>

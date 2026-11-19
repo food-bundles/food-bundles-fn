@@ -1,174 +1,48 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useState } from "react";
 import { CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { voucherService } from "@/app/services/voucherService";
 import { toast } from "sonner";
-import { Loader2, User, Building2, CheckCircle } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 interface LoanRequestFormProps {
   onSuccess: () => void;
 }
 
-interface Trader {
-  id: string;
-  name: string;
-  termsAndConditions?: string | null;
-  requiresSubscription?: boolean;
-}
+// What happens after the request, so the customer knows the next step
+const STEPS = [
+  "Food Bundles reviews your request",
+  "A trader takes it and offers the credit",
+  "You read and sign their terms",
+  "They approve: the credit is on your card at once",
+];
 
-const FOOD_BUNDLES_SHORT_TERMS = `Terms for Food Bundles financing:
-- Loan amount is credited to your voucher card after approval.
-- Repayment falls due per the repayment days agreed at request time.
-- A one-time unlock fee may apply before funds are made available.
-- Overdue loans must be settled before a new request is made.
-- Failure to repay may affect your future voucher financing.`;
-
+/**
+ * Ask for credit: just the amount. No provider is chosen here: once Food
+ * Bundles accepts the request, traders see it and one takes it; you then sign
+ * their terms before they approve.
+ */
 export default function LoanRequestForm({ onSuccess }: LoanRequestFormProps) {
-  const [step, setStep] = useState<"form" | "terms">("form");
   const [requestedAmount, setRequestedAmount] = useState("");
-  const [providerType, setProviderType] = useState<"TRADER" | "FOOD_BUNDLES" | "">("");
-  const [traders, setTraders] = useState<Trader[]>([]);
-  const [selectedTraderId, setSelectedTraderId] = useState("");
-  const [loadingTraders, setLoadingTraders] = useState(true);
-  const [termsData, setTermsData] = useState<{ terms: string; alreadyAccepted: boolean; providerId: string; providerName: string } | null>(null);
-  const [loadingTerms, setLoadingTerms] = useState(false);
+  const [purpose, setPurpose] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [subscriptionRequired, setSubscriptionRequired] = useState(false);
 
-  // Load traders up front: the Trader option only shows when at least one
-  // trader can finance loans. With none, Food Bundles is the only provider.
-  useEffect(() => {
-    let cancelled = false;
-    voucherService
-      .getLoanTraders()
-      .then((res) => {
-        if (cancelled) return;
-        const list: Trader[] = res?.data ?? [];
-        setTraders(list);
-        if (list.length === 0) setProviderType("FOOD_BUNDLES");
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setTraders([]);
-        setProviderType("FOOD_BUNDLES");
-      })
-      .finally(() => !cancelled && setLoadingTraders(false));
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const amount = parseFloat(requestedAmount);
+  const canSubmit = Number.isFinite(amount) && amount > 0 && !loading;
 
-  useEffect(() => {
-    setSubscriptionRequired(false);
-    setError(null);
-    if (providerType !== "TRADER") setSelectedTraderId("");
-  }, [providerType]);
-
-  const hasTraders = traders.length > 0;
-
-  const selectedTrader = traders.find((t) => t.id === selectedTraderId);
-
-  const canProceed =
-    !!requestedAmount &&
-    !!providerType &&
-    (providerType === "FOOD_BUNDLES" || !!selectedTraderId);
-
-  const handleProceed = async () => {
-    if (!canProceed) return;
-    setError(null);
-    setSubscriptionRequired(false);
-    setLoadingTerms(true);
-    try {
-      const params: Parameters<typeof voucherService.getLoanTerms>[0] = {
-        providerType: providerType as "TRADER" | "FOOD_BUNDLES",
-        ...(providerType === "TRADER" && selectedTraderId ? { fundingTraderId: selectedTraderId } : {}),
-      };
-      const res = await voucherService.getLoanTerms(params);
-      const data = res?.data;
-
-      // Trader requires an active subscription — stop and point to subscribe
-      if (data?.requiresSubscription && data?.hasActiveSubscription === false) {
-        setSubscriptionRequired(true);
-        setError(`${data.providerName} requires an active subscription to provide a loan. Please subscribe first.`);
-        return;
-      }
-
-      // If already accepted before, skip T&C modal and submit directly
-      if (data?.accepted) {
-        await submitLoan();
-      } else {
-        const terms =
-          data?.terms ||
-          (providerType === "FOOD_BUNDLES" ? FOOD_BUNDLES_SHORT_TERMS : "") ||
-          "No specific terms provided.";
-        setTermsData({
-          terms,
-          alreadyAccepted: false,
-          providerId: data?.providerId ?? (providerType === "FOOD_BUNDLES" ? "food-bundles" : selectedTraderId),
-          providerName: data?.providerName ?? (providerType === "FOOD_BUNDLES" ? "Food Bundles" : selectedTrader?.name ?? ""),
-        });
-        setStep("terms");
-      }
-    } catch {
-      // If terms endpoint fails, fall back to short Food Bundles terms then try again
-      if (providerType === "FOOD_BUNDLES") {
-        setTermsData({
-          terms: FOOD_BUNDLES_SHORT_TERMS,
-          alreadyAccepted: false,
-          providerId: "food-bundles",
-          providerName: "Food Bundles",
-        });
-        setStep("terms");
-      } else {
-        setError("Failed to load trader terms. Please try again.");
-      }
-    } finally {
-      setLoadingTerms(false);
-    }
-  };
-
-  const handleAcceptTerms = async () => {
-    if (!termsData) return;
+  const submit = async () => {
+    if (!canSubmit) return;
     setLoading(true);
+    setError(null);
     try {
-      await voucherService.acceptLoanTerms({
-        providerType: providerType as "TRADER" | "FOOD_BUNDLES",
-        providerId: termsData.providerId,
-        providerName: termsData.providerName,
-      });
-      await submitLoan();
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Failed to accept terms";
-      setError(msg);
-      setLoading(false);
-    }
-  };
-
-  const submitLoan = async () => {
-    setLoading(true);
-    try {
-      await voucherService.requestLoanSession({
-        requestedAmount: parseFloat(requestedAmount),
-        loanProviderType: providerType as "TRADER" | "FOOD_BUNDLES",
-        ...(providerType === "TRADER" && selectedTraderId ? { fundingTraderId: selectedTraderId } : {}),
-      });
-      toast.success("Loan request submitted successfully");
+      await voucherService.requestLoanSession({ requestedAmount: amount, purpose: purpose.trim() || undefined });
+      toast.success("Loan request sent. We'll tell you when a trader takes it.");
       setRequestedAmount("");
-      setProviderType(hasTraders ? "" : "FOOD_BUNDLES");
-      setSelectedTraderId("");
-      setStep("form");
-      setTermsData(null);
+      setPurpose("");
       onSuccess();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Failed to submit loan request";
@@ -185,175 +59,56 @@ export default function LoanRequestForm({ onSuccess }: LoanRequestFormProps) {
         <div className="w-80 flex flex-col p-6 border rounded shadow-none bg-white">
           <CardContent className="p-0 flex-1 flex flex-col">
             <div className="space-y-4 flex-1">
-              {/* Amount */}
               <div>
-                <label className="block text-sm text-gray-900 mb-2">
+                <label htmlFor="loan-amount" className="block text-sm text-gray-900 mb-2">
                   Requested Amount (RWF) *
                 </label>
                 <Input
+                  id="loan-amount"
                   type="number"
+                  min="1"
                   value={requestedAmount}
                   onChange={(e) => setRequestedAmount(e.target.value)}
                   placeholder="Enter amount"
                   className="w-full rounded text-sm h-10"
                 />
               </div>
-
-              {/* Loan Provider */}
               <div>
-                <label className="block text-sm text-gray-900 mb-2">Loan Provider *</label>
-                <div className="space-y-2">
-                  <button
-                    type="button"
-                    onClick={() => setProviderType("FOOD_BUNDLES")}
-                    className={`w-full flex items-center gap-3 p-3 border rounded-lg text-left transition-all ${
-                      providerType === "FOOD_BUNDLES"
-                        ? "border-green-600 bg-green-50"
-                        : "border-gray-200 hover:border-green-300"
-                    }`}
-                  >
-                    <Building2 className="h-4 w-4 text-green-600 shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium">Food Bundles</p>
-                      <p className="text-xs text-gray-400">Financed by Food Bundles</p>
-                    </div>
-                    {providerType === "FOOD_BUNDLES" && (
-                      <CheckCircle className="h-4 w-4 text-green-600 ml-auto" />
-                    )}
-                  </button>
-
-                  {/* Trader option only when a trader is available to finance */}
-                  {loadingTraders ? (
-                    <div className="h-[58px] rounded-lg border border-gray-200 bg-gray-50 animate-pulse" />
-                  ) : (
-                    hasTraders && (
-                      <button
-                        type="button"
-                        onClick={() => setProviderType("TRADER")}
-                        className={`w-full flex items-center gap-3 p-3 border rounded-lg text-left transition-all ${
-                          providerType === "TRADER"
-                            ? "border-green-600 bg-green-50"
-                            : "border-gray-200 hover:border-green-300"
-                        }`}
-                      >
-                        <User className="h-4 w-4 text-green-600 shrink-0" />
-                        <div>
-                          <p className="text-sm font-medium">Trader</p>
-                          <p className="text-xs text-gray-400">Financed by a trader</p>
-                        </div>
-                        {providerType === "TRADER" && (
-                          <CheckCircle className="h-4 w-4 text-green-600 ml-auto" />
-                        )}
-                      </button>
-                    )
-                  )}
-                </div>
+                <label htmlFor="loan-purpose" className="block text-sm text-gray-900 mb-2">
+                  What is it for? <span className="text-gray-400">(optional)</span>
+                </label>
+                <Input
+                  id="loan-purpose"
+                  value={purpose}
+                  onChange={(e) => setPurpose(e.target.value)}
+                  placeholder="e.g. weekly vegetables"
+                  className="w-full rounded text-sm h-10"
+                />
               </div>
 
-              {/* Trader picker */}
-              {providerType === "TRADER" && (
-                <div>
-                  <label className="block text-sm text-gray-900 mb-2">Select Trader *</label>
-                  <div className="space-y-2 max-h-40 overflow-y-auto">
-                    {traders.map((trader) => (
-                      <button
-                        key={trader.id}
-                        type="button"
-                        onClick={() => setSelectedTraderId(trader.id)}
-                        className={`w-full flex items-center gap-3 p-2.5 border rounded-lg text-left transition-all ${
-                          selectedTraderId === trader.id
-                            ? "border-green-600 bg-green-50"
-                            : "border-gray-200 hover:border-green-300"
-                        }`}
-                      >
-                        <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center shrink-0">
-                          <User className="h-3.5 w-3.5 text-green-600" />
-                        </div>
-                        <span className="text-sm font-medium">
-                          {trader.name}
-                        </span>
-                        {trader.requiresSubscription && (
-                          <span className="text-[10px] font-semibold text-white bg-amber-500 px-1.5 py-0.5 rounded-full">
-                            Requires subscription
-                          </span>
-                        )}
-                        {selectedTraderId === trader.id && (
-                          <CheckCircle className="h-4 w-4 text-green-600 ml-auto" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <ol className="space-y-1.5 rounded-lg bg-gray-50 p-3 text-xs text-gray-600">
+                {STEPS.map((s, i) => (
+                  <li key={s} className="flex gap-2">
+                    <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-green-600 text-[10px] font-semibold text-white">
+                      {i + 1}
+                    </span>
+                    {s}
+                  </li>
+                ))}
+              </ol>
 
-              {error && (
-                <div className="space-y-2">
-                  {subscriptionRequired ? (
-                    <>
-                      <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-2.5">
-                        {error}
-                      </p>
-                      <Link
-                        href="/restaurant/subscribe"
-                        className="block text-center text-xs font-medium text-green-700 underline underline-offset-2 hover:text-green-800"
-                      >
-                        Subscribe now to continue
-                      </Link>
-                    </>
-                  ) : (
-                    <p className="text-red-600 text-xs">{error}</p>
-                  )}
-                </div>
-              )}
+              {error && <p className="text-red-600 text-xs">{error}</p>}
             </div>
 
             <div className="mt-4">
-              <Button
-                onClick={handleProceed}
-                disabled={!canProceed || loadingTerms}
-                className="w-full bg-green-600 hover:bg-green-700 h-10 text-sm"
-              >
-                {loadingTerms && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                {loadingTerms ? "Checking..." : "Request Credit"}
+              <Button onClick={submit} disabled={!canSubmit} className="w-full bg-green-600 hover:bg-green-700 h-10 text-sm">
+                {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                {loading ? "Sending..." : "Request Credit"}
               </Button>
             </div>
           </CardContent>
         </div>
       </div>
-
-      {/* T&C Modal */}
-      <Dialog open={step === "terms"} onOpenChange={(open) => { if (!open) { setStep("form"); setTermsData(null); } }}>
-        <DialogContent className="sm:max-w-md bg-white">
-          <DialogHeader>
-            <DialogTitle>Terms & Conditions — {termsData?.providerName}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-xs text-gray-500">
-              Please read and accept the terms and conditions before proceeding with your loan request.
-            </p>
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-60 overflow-y-auto text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-              {termsData?.terms}
-            </div>
-            <div className="flex gap-2 pt-1">
-              <Button
-                onClick={handleAcceptTerms}
-                disabled={loading}
-                className="flex-1 bg-green-600 hover:bg-green-700"
-              >
-                {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                {loading ? "Submitting..." : "Accept & Submit"}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => { setStep("form"); setTermsData(null); }}
-                disabled={loading}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
