@@ -19,7 +19,7 @@ import { orderService } from "@/app/services/orderService";
 import { ViewOrderModal } from "./_components/view-order-modal";
 import { ReorderDrawer } from "./_components/ReorderDrawer";
 import CreateOrderModal from "./_components/CreateOrderModal";
-import PaymentLinkModal from "./_components/PaymentLinkModal";
+import PaymentLinkModal from "@/components/payment-link-modal";
 import { PaymentMethodProvider } from "@/app/contexts/paymentMethodContext";
 import { EditOrderModal } from "./_components/edit-order-modal";
 import { EbmSalesModal } from "./_components/EbmSalesModal";
@@ -476,6 +476,7 @@ export default function RestaurantOrdersPage() {
         onOpenChange={setPaymentLinkOpen}
         orderId={paymentLinkOrder?.id || null}
         orderNumber={paymentLinkOrder?.originalData?.orderNumber || paymentLinkOrder?.orderId}
+        paymentStatus={paymentLinkOrder?.paymentStatus}
       />
 
       {/* Edit Order Modal */}

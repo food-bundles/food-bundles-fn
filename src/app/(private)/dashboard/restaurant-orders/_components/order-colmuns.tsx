@@ -479,10 +479,10 @@ export const createOrdersColumns = (actions: {
                   Edit Order
                 </DropdownMenuItem>
               )}
-              {actions.onSendPaymentLink && (actions.can?.("send_payment_link") ?? true) && order.paymentStatus === "FAILED" && (
+              {actions.onSendPaymentLink && (actions.can?.("send_payment_link") ?? true) && (
                 <DropdownMenuItem onClick={() => actions.onSendPaymentLink!(order)}>
                   <Send className="mr-2 h-4 w-4" />
-                  Send Payment Link
+                  Payment link
                 </DropdownMenuItem>
               )}
               {actions.onEbmSales && (order.status === "DELIVERED" || order.paymentStatus === "COMPLETED" || order.paymentStatus === "VOUCHER_CREDIT") && (

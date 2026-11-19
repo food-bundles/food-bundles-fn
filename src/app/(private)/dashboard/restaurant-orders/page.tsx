@@ -31,6 +31,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ExportButton } from "@/components/ExportButton";
+import PaymentLinkModal from "@/components/payment-link-modal";
 import { Trash2, PlusCircle } from "lucide-react";
 
 const statusOptions = [
@@ -342,7 +343,12 @@ export default function AdminOrdersPage() {
     setEbmSalesModalOpen(true);
   };
 
-  const handleSendPaymentLink = async (order: Order) => {
+  // Payment link (copy / WhatsApp), for any payment status
+  const [paymentLinkOrder, setPaymentLinkOrder] = useState<Order | null>(null);
+  const handleSendPaymentLink = (order: Order) => setPaymentLinkOrder(order);
+
+  // Failed payment: ask the provider again on the billing phone
+  const resendPaymentRequest = async (order: Order) => {
     try {
       const result = await orderService.sendPaymentLink(order.id);
       if (result.success) {
@@ -700,6 +706,20 @@ export default function AdminOrdersPage() {
           paymentMethod={selectedOrder.paymentMethod}
         />
       )}
+
+      {/* Payment link: copy or send on WhatsApp (any payment status) */}
+      <PaymentLinkModal
+        open={!!paymentLinkOrder}
+        onOpenChange={(open) => !open && setPaymentLinkOrder(null)}
+        orderId={paymentLinkOrder?.id ?? null}
+        orderNumber={paymentLinkOrder?.orderNumber}
+        paymentStatus={paymentLinkOrder?.paymentStatus}
+        onResendPaymentRequest={
+          paymentLinkOrder && paymentLinkOrder.paymentMethod !== "VOUCHER"
+            ? () => resendPaymentRequest(paymentLinkOrder)
+            : undefined
+        }
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
