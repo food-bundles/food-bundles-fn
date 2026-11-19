@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { voucherService } from "@/app/services/voucherService";
 import { useRestaurants } from "@/app/contexts/RestaurantContext";
 import toast from "react-hot-toast";
+import CardApplicationReview, { applicationReady, type CardApplication } from "./CardApplicationReview";
 
 interface IssueVoucherCardModalProps {
   isOpen: boolean;
@@ -54,6 +55,9 @@ export default function IssueVoucherCardModal({
   const [loanLimit, setLoanLimit] = useState("500000");
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
+  // The customer's application; a card is issued only once it's reviewed
+  const [application, setApplication] = useState<CardApplication | null>(null);
+  const ready = applicationReady(application);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -95,7 +99,7 @@ export default function IssueVoucherCardModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md bg-white">
+      <DialogContent className="sm:max-w-lg bg-white max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CreditCard className="w-4 h-4 text-green-600" />
@@ -159,6 +163,9 @@ export default function IssueVoucherCardModal({
             </Popover>
           </div>
 
+          {/* The customer's application and the MTN statement */}
+          {selected && <CardApplicationReview key={selected.id} restaurantId={selected.id} onChange={setApplication} />}
+
           {/* Loan limit */}
           <div>
             <label className="block text-sm font-medium mb-1">
@@ -187,10 +194,17 @@ export default function IssueVoucherCardModal({
             </div>
           )}
 
+          {selected && application && !ready && (
+            <p className="text-xs text-amber-700">
+              {application.nidVerificationStatus === "FAILED"
+                ? "The owner's National ID was not confirmed: the card can't be issued."
+                : "Upload the MTN statement and enter its number of deductions to issue the card."}
+            </p>
+          )}
           <div className="flex gap-2 pt-1">
             <Button
               onClick={handleIssue}
-              disabled={!selected || loading || !loanLimit}
+              disabled={!selected || loading || !loanLimit || !ready}
               className="flex-1 bg-green-600 hover:bg-green-700"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}

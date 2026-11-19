@@ -6,12 +6,13 @@ import { voucherService } from "@/app/services/voucherService";
 import { CardStatus, IVoucherCard } from "@/lib/types";
 import {
   CreditCard, Copy, Check, ShieldCheck, ShieldOff,
-  AlertCircle, Loader2, X, Building2, RotateCw,
+  AlertCircle, Loader2, X, Building2, RotateCw, MapPin, Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import Image from "next/image";
 import createAxiosClient from "@/app/hooks/axiosClient";
+import { EMPTY_LOCATION, RwLocation, RwLocationFields } from "@/components/rw-location-fields";
 
 const FOOD_BUNDLES_LOGO =
   "https://res.cloudinary.com/dzxyelclu/image/upload/v1760111270/Food_bundle_logo_cfsnsw.png";
@@ -281,6 +282,16 @@ function KycModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () =
 
   const [consentAllPartners, setConsentAllPartners] = useState(false);
 
+  // Card application: location, MoMo history, RDB certificate
+  const [location, setLocation] = useState<RwLocation>(EMPTY_LOCATION);
+  const [pin, setPin] = useState<{ lat: number; lng: number } | null>(null);
+  const [momoPhone, setMomoPhone] = useState("");
+  const [momoOwner, setMomoOwner] = useState("");
+  const [statementSent, setStatementSent] = useState(false);
+  const [rdbFile, setRdbFile] = useState<File | null>(null);
+  const [hasRdbOnFile, setHasRdbOnFile] = useState(false);
+  const [info, setInfo] = useState({ email: "sales@food.rw", ussd: "*182*6*8*4*1#" });
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -290,12 +301,29 @@ function KycModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () =
     Promise.all([
       axiosClient.get("/me"),
       voucherService.getMyKycConsent().catch(() => null),
+      voucherService.getMyCardEnrollmentRequest().catch(() => null),
+      voucherService.getCardApplicationInfo().catch(() => null),
     ])
-      .then(([meRes, kycRes]) => {
-        setProfile(meRes.data.user as RestaurantProfile);
+      .then(([meRes, kycRes, appRes, infoRes]) => {
+        const me = meRes.data.user as RestaurantProfile;
+        setProfile(me);
+        const app = appRes?.data;
+        setLocation({
+          province: app?.province ?? me.province ?? "",
+          district: app?.district ?? me.district ?? "",
+          sector: app?.sector ?? me.sector ?? "",
+          cell: app?.cell ?? me.cell ?? "",
+          village: app?.village ?? me.village ?? "",
+        });
+        if (app?.latitude != null && app?.longitude != null) setPin({ lat: app.latitude, lng: app.longitude });
+        setMomoPhone(app?.momoPhone ?? me.phone ?? "");
+        if (app?.momoPhoneOwnerName) setMomoOwner(app.momoPhoneOwnerName);
+        setHasRdbOnFile(!!app?.rdbCertificateUrl);
+        if (infoRes?.data) setInfo({ email: infoRes.data.momoStatementEmail, ussd: infoRes.data.momoStatementUssd });
         const kyc = kycRes?.data;
         if (kyc) {
           setOwnerName(kyc.ownerName);
+          setMomoOwner((v) => v || kyc.ownerName);
           setOwnerNationalId(kyc.ownerNationalId);
           setYearsInOperation(String(kyc.yearsInOperation));
           setBusinessType(kyc.businessType);
@@ -309,7 +337,12 @@ function KycModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () =
   const validate = () => {
     const e: Record<string, string> = {};
     if (!ownerName.trim()) e.ownerName = "Required";
-    if (!ownerNationalId.trim()) e.ownerNationalId = "Required";
+    if (!/^\d{16}$/.test(ownerNationalId.replace(/\s+/g, ""))) e.ownerNationalId = "Enter the 16-digit National ID";
+    if (!location.province || !location.district || !location.sector) e.location = "Choose at least province, district and sector";
+    if (!/^(\+?250|0)?7[89]\d{7}$/.test(momoPhone.replace(/[\s-]/g, ""))) e.momoPhone = "An MTN number (078 / 079)";
+    if (momoOwner.trim().length < 3) e.momoOwner = "Required";
+    if (!statementSent) e.statement = "Send your MoMo history first (steps above)";
+    if (!rdbFile && !hasRdbOnFile) e.rdb = "Upload your RDB certificate";
     if (!yearsInOperation.trim()) e.yearsInOperation = "Required";
     if (!consentAllPartners)
       e.consent = "Grant consent to share your data with our partners";
@@ -328,8 +361,8 @@ function KycModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () =
         businessAddress: profile.location
           ? profile.location
           : [profile.village, profile.cell, profile.sector, profile.district, profile.province].filter(Boolean).join(", "),
-        district: profile.district ?? profile.location ?? "",
-        sector: profile.sector ?? "",
+        district: location.district || profile.district || profile.location || "",
+        sector: location.sector || profile.sector || "",
         ownerName,
         ownerNationalId,
         businessType,
@@ -338,8 +371,20 @@ function KycModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () =
         consentKayko: consentAllPartners,
         consentRRA: consentAllPartners,
       });
-      await voucherService.requestVoucherCard();
-      toast.success("KYC submitted — card request sent to admin for review");
+      const application = new FormData();
+      application.append("nationalId", ownerNationalId.replace(/\s+/g, ""));
+      application.append("ownerName", ownerName);
+      (Object.keys(location) as (keyof RwLocation)[]).forEach((k) => application.append(k, location[k]));
+      if (pin) {
+        application.append("latitude", String(pin.lat));
+        application.append("longitude", String(pin.lng));
+      }
+      application.append("momoPhone", momoPhone);
+      application.append("momoPhoneOwnerName", momoOwner);
+      application.append("momoStatementSent", String(statementSent));
+      if (rdbFile) application.append("rdbCertificate", rdbFile);
+      await voucherService.requestVoucherCard(application);
+      toast.success("Application sent. We'll review it and issue your card.");
       onSuccess();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Submission failed";
@@ -347,6 +392,15 @@ function KycModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () =
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const pinMyLocation = () => {
+    if (!navigator.geolocation) return toast.error("Your browser can't share your location");
+    navigator.geolocation.getCurrentPosition(
+      (p) => setPin({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      () => toast.error("Allow location access to pin your business"),
+      { enableHighAccuracy: true, timeout: 15000 },
+    );
   };
 
   const inputCls = (field: string) =>
@@ -419,7 +473,8 @@ function KycModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () =
                   <div>
                     <label className="text-xs font-medium text-gray-700 mb-1 block">Owner National ID *</label>
                     <input className={inputCls("ownerNationalId")} value={ownerNationalId}
-                      onChange={(e) => setOwnerNationalId(e.target.value)} placeholder="16-digit ID number" />
+                      onChange={(e) => setOwnerNationalId(e.target.value)} placeholder="16-digit ID number" inputMode="numeric" />
+                    <p className="text-[10px] text-gray-400 mt-0.5">We confirm it with the national ID system.</p>
                     {errors.ownerNationalId && <p className="text-red-500 text-[10px] mt-0.5">{errors.ownerNationalId}</p>}
                   </div>
                   <div className="grid grid-cols-2 gap-3">
@@ -442,6 +497,67 @@ function KycModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () =
                     </div>
                   </div>
                 </div>
+              </div>
+
+
+              {/* ── Business location ── */}
+              <div>
+                <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">Business Location</p>
+                <RwLocationFields value={location} onChange={setLocation} selectClassName={inputCls("location")} />
+                {errors.location && <p className="text-red-500 text-[10px] mt-1">{errors.location}</p>}
+                <button
+                  type="button"
+                  onClick={pinMyLocation}
+                  className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-green-700 hover:underline"
+                >
+                  <MapPin className="w-3.5 h-3.5" />
+                  {pin ? `Pinned: ${pin.lat.toFixed(5)}, ${pin.lng.toFixed(5)} (pin again)` : "Pin my exact location (optional)"}
+                </button>
+              </div>
+
+              {/* ── MoMo statement ── */}
+              <div>
+                <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">MoMo History (last 3 months)</p>
+                <p className="text-xs text-gray-500 mb-3">We use your MTN MoMo history to set your credit limit.</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-gray-700 mb-1 block">MoMo Number *</label>
+                    <input className={inputCls("momoPhone")} value={momoPhone} inputMode="tel"
+                      onChange={(e) => setMomoPhone(e.target.value)} placeholder="078 / 079…" />
+                    {errors.momoPhone && <p className="text-red-500 text-[10px] mt-0.5">{errors.momoPhone}</p>}
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-700 mb-1 block">Registered to (owner) *</label>
+                    <input className={inputCls("momoOwner")} value={momoOwner}
+                      onChange={(e) => setMomoOwner(e.target.value)} placeholder="Name on the MoMo account" />
+                    {errors.momoOwner && <p className="text-red-500 text-[10px] mt-0.5">{errors.momoOwner}</p>}
+                  </div>
+                </div>
+                <ol className="mt-3 space-y-1.5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-gray-700">
+                  <li><span className="font-semibold">1.</span> On the MoMo phone, dial <span className="font-mono font-semibold">{info.ussd}</span></li>
+                  <li><span className="font-semibold">2.</span> Enter the email <span className="font-semibold">{info.email}</span></li>
+                  <li><span className="font-semibold">3.</span> Enter your MoMo PIN: MTN emails your 3-month history to Food Bundles</li>
+                </ol>
+                <label className={`mt-2 flex items-start gap-2 rounded-lg border p-2.5 text-xs cursor-pointer ${statementSent ? "border-green-400 bg-green-50" : errors.statement ? "border-red-300" : "border-gray-200"}`}>
+                  <input type="checkbox" checked={statementSent} onChange={(e) => setStatementSent(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 accent-green-600 shrink-0" />
+                  <span>I have sent my 3-month MoMo history to {info.email}</span>
+                </label>
+                {errors.statement && <p className="text-red-500 text-[10px] mt-0.5">{errors.statement}</p>}
+              </div>
+
+              {/* ── RDB certificate ── */}
+              <div>
+                <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">RDB Certificate *</p>
+                <label className={`flex items-center gap-3 rounded-xl border-2 border-dashed p-3 cursor-pointer ${errors.rdb ? "border-red-300" : "border-gray-200 hover:border-green-300"}`}>
+                  <Upload className="w-5 h-5 text-green-600 shrink-0" />
+                  <span className="text-xs text-gray-600 min-w-0">
+                    {rdbFile ? <span className="font-medium text-gray-800 break-all">{rdbFile.name}</span> : hasRdbOnFile ? "Certificate on file (choose a file to replace it)" : "Upload your RDB registration certificate (PDF or photo, up to 10 MB)"}
+                  </span>
+                  <input type="file" accept="application/pdf,image/*" className="sr-only"
+                    onChange={(e) => setRdbFile(e.target.files?.[0] ?? null)} />
+                </label>
+                {errors.rdb && <p className="text-red-500 text-[10px] mt-0.5">{errors.rdb}</p>}
               </div>
 
               {/* ── Data sharing consent ── */}

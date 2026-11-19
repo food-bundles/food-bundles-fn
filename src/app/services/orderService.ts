@@ -97,6 +97,14 @@ export interface PaymentLinkResponse {
   data: {
     token: string;
     expiresAt: string;
+    /** The existing link was kept (still valid) */
+    reused?: boolean;
+    orderNumber: string;
+    totalAmount: number;
+    currency: string;
+    paymentStatus: string;
+    customerName: string | null;
+    customerPhone: string | null;
   };
 }
 
@@ -259,9 +267,10 @@ export const orderService = {
     return response.data;
   },
 
-  generatePaymentLink: async (orderId: string): Promise<PaymentLinkResponse> => {
+  /** The order's shareable payment link (kept while valid; regenerate makes a new one) */
+  generatePaymentLink: async (orderId: string, options: { regenerate?: boolean } = {}): Promise<PaymentLinkResponse> => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.post(`/orders/${orderId}/payment-link`);
+    const response = await axiosClient.post(`/orders/${orderId}/payment-link`, { regenerate: !!options.regenerate });
     return response.data;
   },
 
