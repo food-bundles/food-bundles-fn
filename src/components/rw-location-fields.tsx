@@ -74,13 +74,13 @@ export function RwLocationFields({
   };
 
   return (
-    <div className="grid grid-cols-2 gap-2">
+    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2">
       {LEVELS.map((l, i) => {
         const list = options[l.key];
         // Keep a saved value shown even before its list loads
         const shown = value[l.key] && !list.includes(value[l.key]) ? [value[l.key], ...list] : list;
         return (
-          <label key={l.key} className="block">
+          <label key={l.key} className="block min-w-0">
             <span className="mb-1 block text-xs font-medium text-gray-700">
               {l.label}
               {l.required ? " *" : ""}

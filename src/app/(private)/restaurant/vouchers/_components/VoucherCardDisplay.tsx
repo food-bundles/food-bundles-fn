@@ -6,13 +6,11 @@ import { voucherService } from "@/app/services/voucherService";
 import { CardStatus, IVoucherCard } from "@/lib/types";
 import {
   CreditCard, Copy, Check, ShieldCheck, ShieldOff,
-  AlertCircle, Loader2, X, Building2, RotateCw, MapPin, Upload,
+  AlertCircle, RotateCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 import Image from "next/image";
-import createAxiosClient from "@/app/hooks/axiosClient";
-import { EMPTY_LOCATION, RwLocation, RwLocationFields } from "@/components/rw-location-fields";
+import CardApplicationWizard from "./CardApplicationWizard";
 
 const FOOD_BUNDLES_LOGO =
   "https://res.cloudinary.com/dzxyelclu/image/upload/v1760111270/Food_bundle_logo_cfsnsw.png";
@@ -25,24 +23,6 @@ const deriveCvv = (pan: string) => {
   }
   return String(100 + (hash % 900));
 };
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface RestaurantProfile {
-  id: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  tin: string;
-  location?: string;
-  province?: string;
-  district?: string;
-  sector?: string;
-  cell?: string;
-  village?: string;
-}
-
-const CONSENT_TEXT =
-  "Granting access lets Food Bundles verify your payment history and revenue (Vuba Buba), business performance and growth (Kayko), and official tax compliance records (RRA) to assess your creditworthiness.";
 
 // ─── Physical card ────────────────────────────────────────────────────────────
 function PhysicalCard({ card }: { card: IVoucherCard }) {
@@ -269,343 +249,6 @@ function PhysicalCard({ card }: { card: IVoucherCard }) {
   );
 }
 
-// ─── KYC Modal ────────────────────────────────────────────────────────────────
-function KycModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
-  const [profile, setProfile] = useState<RestaurantProfile | null>(null);
-  const [loadingProfile, setLoadingProfile] = useState(true);
-
-  // Only 3 user-editable fields
-  const [ownerName, setOwnerName] = useState("");
-  const [ownerNationalId, setOwnerNationalId] = useState("");
-  const [yearsInOperation, setYearsInOperation] = useState("");
-  const [businessType, setBusinessType] = useState("RESTAURANT");
-
-  const [consentAllPartners, setConsentAllPartners] = useState(false);
-
-  // Card application: location, MoMo history, RDB certificate
-  const [location, setLocation] = useState<RwLocation>(EMPTY_LOCATION);
-  const [pin, setPin] = useState<{ lat: number; lng: number } | null>(null);
-  const [momoPhone, setMomoPhone] = useState("");
-  const [momoOwner, setMomoOwner] = useState("");
-  const [statementSent, setStatementSent] = useState(false);
-  const [rdbFile, setRdbFile] = useState<File | null>(null);
-  const [hasRdbOnFile, setHasRdbOnFile] = useState(false);
-  const [info, setInfo] = useState({ email: "sales@food.rw", ussd: "*182*6*8*4*1#" });
-
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [submitting, setSubmitting] = useState(false);
-
-  // Fetch restaurant profile + existing KYC consent on mount
-  useEffect(() => {
-    const axiosClient = createAxiosClient();
-    Promise.all([
-      axiosClient.get("/me"),
-      voucherService.getMyKycConsent().catch(() => null),
-      voucherService.getMyCardEnrollmentRequest().catch(() => null),
-      voucherService.getCardApplicationInfo().catch(() => null),
-    ])
-      .then(([meRes, kycRes, appRes, infoRes]) => {
-        const me = meRes.data.user as RestaurantProfile;
-        setProfile(me);
-        const app = appRes?.data;
-        setLocation({
-          province: app?.province ?? me.province ?? "",
-          district: app?.district ?? me.district ?? "",
-          sector: app?.sector ?? me.sector ?? "",
-          cell: app?.cell ?? me.cell ?? "",
-          village: app?.village ?? me.village ?? "",
-        });
-        if (app?.latitude != null && app?.longitude != null) setPin({ lat: app.latitude, lng: app.longitude });
-        setMomoPhone(app?.momoPhone ?? me.phone ?? "");
-        if (app?.momoPhoneOwnerName) setMomoOwner(app.momoPhoneOwnerName);
-        setHasRdbOnFile(!!app?.rdbCertificateUrl);
-        if (infoRes?.data) setInfo({ email: infoRes.data.momoStatementEmail, ussd: infoRes.data.momoStatementUssd });
-        const kyc = kycRes?.data;
-        if (kyc) {
-          setOwnerName(kyc.ownerName);
-          setMomoOwner((v) => v || kyc.ownerName);
-          setOwnerNationalId(kyc.ownerNationalId);
-          setYearsInOperation(String(kyc.yearsInOperation));
-          setBusinessType(kyc.businessType);
-          setConsentAllPartners(kyc.consentVubaBuba && kyc.consentKayko && kyc.consentRRA);
-        }
-      })
-      .catch(() => toast.error("Failed to load restaurant profile"))
-      .finally(() => setLoadingProfile(false));
-  }, []);
-
-  const validate = () => {
-    const e: Record<string, string> = {};
-    if (!ownerName.trim()) e.ownerName = "Required";
-    if (!/^\d{16}$/.test(ownerNationalId.replace(/\s+/g, ""))) e.ownerNationalId = "Enter the 16-digit National ID";
-    if (!location.province || !location.district || !location.sector) e.location = "Choose at least province, district and sector";
-    if (!/^(\+?250|0)?7[89]\d{7}$/.test(momoPhone.replace(/[\s-]/g, ""))) e.momoPhone = "An MTN number (078 / 079)";
-    if (momoOwner.trim().length < 3) e.momoOwner = "Required";
-    if (!statementSent) e.statement = "Send your MoMo history first (steps above)";
-    if (!rdbFile && !hasRdbOnFile) e.rdb = "Upload your RDB certificate";
-    if (!yearsInOperation.trim()) e.yearsInOperation = "Required";
-    if (!consentAllPartners)
-      e.consent = "Grant consent to share your data with our partners";
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const handleSubmit = async () => {
-    if (!validate() || !profile) return;
-    setSubmitting(true);
-    try {
-      await voucherService.submitKycConsent({
-        restaurantName: profile.name,
-        tinNumber: profile.tin,
-        phoneNumber: profile.phone ?? "",
-        businessAddress: profile.location
-          ? profile.location
-          : [profile.village, profile.cell, profile.sector, profile.district, profile.province].filter(Boolean).join(", "),
-        district: location.district || profile.district || profile.location || "",
-        sector: location.sector || profile.sector || "",
-        ownerName,
-        ownerNationalId,
-        businessType,
-        yearsInOperation,
-        consentVubaBuba: consentAllPartners,
-        consentKayko: consentAllPartners,
-        consentRRA: consentAllPartners,
-      });
-      const application = new FormData();
-      application.append("nationalId", ownerNationalId.replace(/\s+/g, ""));
-      application.append("ownerName", ownerName);
-      (Object.keys(location) as (keyof RwLocation)[]).forEach((k) => application.append(k, location[k]));
-      if (pin) {
-        application.append("latitude", String(pin.lat));
-        application.append("longitude", String(pin.lng));
-      }
-      application.append("momoPhone", momoPhone);
-      application.append("momoPhoneOwnerName", momoOwner);
-      application.append("momoStatementSent", String(statementSent));
-      if (rdbFile) application.append("rdbCertificate", rdbFile);
-      await voucherService.requestVoucherCard(application);
-      toast.success("Application sent. We'll review it and issue your card.");
-      onSuccess();
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Submission failed";
-      toast.error(msg);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const pinMyLocation = () => {
-    if (!navigator.geolocation) return toast.error("Your browser can't share your location");
-    navigator.geolocation.getCurrentPosition(
-      (p) => setPin({ lat: p.coords.latitude, lng: p.coords.longitude }),
-      () => toast.error("Allow location access to pin your business"),
-      { enableHighAccuracy: true, timeout: 15000 },
-    );
-  };
-
-  const inputCls = (field: string) =>
-    `w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 ${errors[field] ? "border-red-400" : "border-gray-300"}`;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b">
-          <div>
-            <h2 className="text-base font-semibold text-gray-900">Voucher Card Application</h2>
-            <p className="text-xs text-gray-500 mt-0.5">Confirm your details and grant data access for credit scoring</p>
-          </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        <div className="overflow-y-auto flex-1 px-6 py-4 space-y-5">
-          {loadingProfile ? (
-            <div className="space-y-3">
-              {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-8 w-full rounded" />)}
-            </div>
-          ) : (
-            <>
-              {/* ── Restaurant info from DB (read-only) ── */}
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <Building2 className="w-4 h-4 text-green-600" />
-                  <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Restaurant Information</p>
-                  <span className="text-[10px] text-gray-400 ml-1">(from your account)</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 bg-gray-50 rounded-xl p-3 border text-xs">
-                  {[
-                    { label: "Restaurant Name", value: profile?.name },
-                    { label: "TIN Number", value: profile?.tin },
-                    { label: "Phone", value: profile?.phone },
-                    ...(profile?.location
-                      ? [{ label: "Location", value: profile.location }]
-                      : profile?.district || profile?.province || profile?.sector || profile?.cell || profile?.village
-                      ? [
-                          { label: "Province", value: profile?.province },
-                          { label: "District", value: profile?.district },
-                          { label: "Sector", value: profile?.sector },
-                          { label: "Cell", value: profile?.cell },
-                          { label: "Village", value: profile?.village },
-                        ]
-                      : [{ label: "Location", value: undefined }]
-                    ),
-                  ].map(({ label, value }) => (
-                    <div key={label}>
-                      <p className="text-gray-400">{label}</p>
-                      <p className="font-medium text-gray-800 truncate">{value || <span className="text-gray-300 italic">Not set</span>}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* ── User-provided fields ── */}
-              <div>
-                <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">Additional Details</p>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-xs font-medium text-gray-700 mb-1 block">Owner Full Name *</label>
-                    <input className={inputCls("ownerName")} value={ownerName}
-                      onChange={(e) => setOwnerName(e.target.value)} placeholder="Full legal name" />
-                    {errors.ownerName && <p className="text-red-500 text-[10px] mt-0.5">{errors.ownerName}</p>}
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-gray-700 mb-1 block">Owner National ID *</label>
-                    <input className={inputCls("ownerNationalId")} value={ownerNationalId}
-                      onChange={(e) => setOwnerNationalId(e.target.value)} placeholder="16-digit ID number" inputMode="numeric" />
-                    <p className="text-[10px] text-gray-400 mt-0.5">We confirm it with the national ID system.</p>
-                    {errors.ownerNationalId && <p className="text-red-500 text-[10px] mt-0.5">{errors.ownerNationalId}</p>}
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-medium text-gray-700 mb-1 block">Years in Operation *</label>
-                      <input type="number" min="0" className={inputCls("yearsInOperation")} value={yearsInOperation}
-                        onChange={(e) => setYearsInOperation(e.target.value)} placeholder="e.g. 3" />
-                      {errors.yearsInOperation && <p className="text-red-500 text-[10px] mt-0.5">{errors.yearsInOperation}</p>}
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-gray-700 mb-1 block">Business Type</label>
-                      <select className={inputCls("businessType")} value={businessType}
-                        onChange={(e) => setBusinessType(e.target.value)}>
-                        <option value="RESTAURANT">Restaurant</option>
-                        <option value="HOTEL">Hotel</option>
-                        <option value="CATERING">Catering</option>
-                        <option value="FOOD_PROCESSING">Food Processing</option>
-                        <option value="OTHER">Other</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-
-              {/* ── Business location ── */}
-              <div>
-                <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-3">Business Location</p>
-                <RwLocationFields value={location} onChange={setLocation} selectClassName={inputCls("location")} />
-                {errors.location && <p className="text-red-500 text-[10px] mt-1">{errors.location}</p>}
-                <button
-                  type="button"
-                  onClick={pinMyLocation}
-                  className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-green-700 hover:underline"
-                >
-                  <MapPin className="w-3.5 h-3.5" />
-                  {pin ? `Pinned: ${pin.lat.toFixed(5)}, ${pin.lng.toFixed(5)} (pin again)` : "Pin my exact location (optional)"}
-                </button>
-              </div>
-
-              {/* ── MoMo statement ── */}
-              <div>
-                <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">MoMo History (last 3 months)</p>
-                <p className="text-xs text-gray-500 mb-3">We use your MTN MoMo history to set your credit limit.</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-medium text-gray-700 mb-1 block">MoMo Number *</label>
-                    <input className={inputCls("momoPhone")} value={momoPhone} inputMode="tel"
-                      onChange={(e) => setMomoPhone(e.target.value)} placeholder="078 / 079…" />
-                    {errors.momoPhone && <p className="text-red-500 text-[10px] mt-0.5">{errors.momoPhone}</p>}
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-gray-700 mb-1 block">Registered to (owner) *</label>
-                    <input className={inputCls("momoOwner")} value={momoOwner}
-                      onChange={(e) => setMomoOwner(e.target.value)} placeholder="Name on the MoMo account" />
-                    {errors.momoOwner && <p className="text-red-500 text-[10px] mt-0.5">{errors.momoOwner}</p>}
-                  </div>
-                </div>
-                <ol className="mt-3 space-y-1.5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-gray-700">
-                  <li><span className="font-semibold">1.</span> On the MoMo phone, dial <span className="font-mono font-semibold">{info.ussd}</span></li>
-                  <li><span className="font-semibold">2.</span> Enter the email <span className="font-semibold">{info.email}</span></li>
-                  <li><span className="font-semibold">3.</span> Enter your MoMo PIN: MTN emails your 3-month history to Food Bundles</li>
-                </ol>
-                <label className={`mt-2 flex items-start gap-2 rounded-lg border p-2.5 text-xs cursor-pointer ${statementSent ? "border-green-400 bg-green-50" : errors.statement ? "border-red-300" : "border-gray-200"}`}>
-                  <input type="checkbox" checked={statementSent} onChange={(e) => setStatementSent(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 accent-green-600 shrink-0" />
-                  <span>I have sent my 3-month MoMo history to {info.email}</span>
-                </label>
-                {errors.statement && <p className="text-red-500 text-[10px] mt-0.5">{errors.statement}</p>}
-              </div>
-
-              {/* ── RDB certificate ── */}
-              <div>
-                <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-2">RDB Certificate *</p>
-                <label className={`flex items-center gap-3 rounded-xl border-2 border-dashed p-3 cursor-pointer ${errors.rdb ? "border-red-300" : "border-gray-200 hover:border-green-300"}`}>
-                  <Upload className="w-5 h-5 text-green-600 shrink-0" />
-                  <span className="text-xs text-gray-600 min-w-0">
-                    {rdbFile ? <span className="font-medium text-gray-800 break-all">{rdbFile.name}</span> : hasRdbOnFile ? "Certificate on file (choose a file to replace it)" : "Upload your RDB registration certificate (PDF or photo, up to 10 MB)"}
-                  </span>
-                  <input type="file" accept="application/pdf,image/*" className="sr-only"
-                    onChange={(e) => setRdbFile(e.target.files?.[0] ?? null)} />
-                </label>
-                {errors.rdb && <p className="text-red-500 text-[10px] mt-0.5">{errors.rdb}</p>}
-              </div>
-
-              {/* ── Data sharing consent ── */}
-              <div>
-                <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1">Data Sharing Consent</p>
-                <p className="text-xs text-gray-500 mb-3">
-                  Food Bundles uses data from trusted partners to assess your creditworthiness.
-                </p>
-                {errors.consent && (
-                  <p className="text-red-500 text-xs mb-2 bg-red-50 border border-red-200 rounded px-3 py-1.5">{errors.consent}</p>
-                )}
-                <div
-                  className={`border rounded-xl p-3 transition-colors cursor-pointer ${consentAllPartners ? "border-green-400 bg-green-50" : "border-gray-200 hover:border-gray-300"}`}
-                  onClick={() => setConsentAllPartners(!consentAllPartners)}
-                >
-                  <div className="flex items-start gap-3">
-                    <input type="checkbox" checked={consentAllPartners} onChange={() => setConsentAllPartners(!consentAllPartners)}
-                      onClick={(e) => e.stopPropagation()}
-                      className="mt-0.5 h-4 w-4 accent-green-600 shrink-0" />
-                    <div>
-                      <p className="text-sm font-semibold text-gray-800">I agree to share my data with all partners</p>
-                      <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{CONSENT_TEXT}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 py-4 border-t flex gap-3">
-          <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
-          <Button
-            className="flex-1 bg-green-600 hover:bg-green-700"
-            onClick={handleSubmit}
-            disabled={submitting || loadingProfile}
-          >
-            {submitting
-              ? <><Loader2 className="w-3.5 h-3.5 animate-spin mr-2" />Submitting...</>
-              : "Submit & Request Card"}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Main component ───────────────────────────────────────────────────────────
 interface VoucherCardDisplayProps {
   onApplicationComplete?: () => void;
@@ -679,22 +322,19 @@ export default function VoucherCardDisplay({
       <h2 className="text-[16px] font-medium text-center mb-4">My Voucher Card</h2>
 
       {showKycModal && (
-        <KycModal
-          onClose={() => setShowKycModal(false)}
-          onSuccess={() => {
+        <CardApplicationWizard
+          onClose={() => {
             setShowKycModal(false);
+            setTimeout(load, 300);
+          }}
+          onSubmitted={() => {
             const params = new URLSearchParams(window.location.search);
             if (params.has("apply")) {
               params.delete("apply");
               const query = params.toString();
-              window.history.replaceState(
-                {},
-                "",
-                `${window.location.pathname}${query ? `?${query}` : ""}`
-              );
+              window.history.replaceState({}, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
             }
             onApplicationComplete?.();
-            setTimeout(load, 800);
           }}
         />
       )}

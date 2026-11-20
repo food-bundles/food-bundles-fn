@@ -5,13 +5,6 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import { toast } from "sonner";
 import { isAxiosError } from "axios";
@@ -31,9 +24,7 @@ export default function PayOrderPage({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [paymentMethod, setPaymentMethod] = useState<
-    "CASH" | "MOBILE_MONEY" | "CARD" | "BANK_TRANSFER"
-  >("MOBILE_MONEY");
+  // A payment link is paid with Mobile Money: the payer approves on their phone
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isPaying, setIsPaying] = useState(false);
   const [paid, setPaid] = useState(false);
@@ -57,18 +48,23 @@ export default function PayOrderPage({
   }, [token]);
 
   const handlePay = async () => {
-    if (paymentMethod === "MOBILE_MONEY" && !phoneNumber) {
-      toast.error("Please enter a phone number");
+    if (!phoneNumber.trim()) {
+      toast.error("Enter the Mobile Money number that will pay");
       return;
     }
 
     setIsPaying(true);
     try {
-      await orderService.payViaPaymentLink(token, {
-        paymentMethod,
-        phoneNumber: paymentMethod === "MOBILE_MONEY" ? phoneNumber : undefined,
+      const result = await orderService.payViaPaymentLink(token, {
+        paymentMethod: "MOBILE_MONEY",
+        phoneNumber: phoneNumber.trim(),
       });
-      toast.success("Payment submitted");
+      // Some providers confirm on their own page
+      if (result?.redirectUrl) {
+        window.location.href = result.redirectUrl;
+        return;
+      }
+      toast.success("Check your phone to approve the payment");
       setPaid(true);
     } catch (err) {
       const message = isAxiosError<{ message?: string }>(err)
@@ -132,42 +128,25 @@ export default function PayOrderPage({
         </div>
 
         {paid ? (
-          <p className="text-sm text-green-600 text-center">
-            Payment submitted successfully. Thank you!
-          </p>
+          <div className="space-y-1 text-center">
+            <p className="text-sm font-semibold text-green-700">Check your phone</p>
+            <p className="text-sm text-gray-600">
+              A Mobile Money request was sent to {phoneNumber}. Approve it with your PIN to complete the payment.
+            </p>
+          </div>
         ) : (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Payment Method</Label>
-              <Select
-                value={paymentMethod}
-                onValueChange={(value) =>
-                  setPaymentMethod(
-                    value as "CASH" | "MOBILE_MONEY" | "CARD" | "BANK_TRANSFER"
-                  )
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="MOBILE_MONEY">Mobile Money</SelectItem>
-                  <SelectItem value="CARD">Card</SelectItem>
-                  <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="momo-number">Mobile Money number</Label>
+              <Input
+                id="momo-number"
+                inputMode="tel"
+                placeholder="e.g. 0788123456"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+              />
+              <p className="text-xs text-gray-500">You&apos;ll get a request on this phone: approve it with your MoMo PIN.</p>
             </div>
-
-            {paymentMethod === "MOBILE_MONEY" && (
-              <div className="space-y-2">
-                <Label>Phone Number</Label>
-                <Input
-                  placeholder="e.g. 0788123456"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                />
-              </div>
-            )}
 
             <Button
               onClick={handlePay}

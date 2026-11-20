@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, Copy, Loader2, MessageCircle, RefreshCw, Send, Share2 } from "lucide-react";
+import { Check, Copy, Loader2, Mail, RefreshCw, Send } from "lucide-react";
 import { toast } from "sonner";
 import { isAxiosError } from "axios";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -14,21 +14,12 @@ type LinkData = PaymentLinkResponse["data"];
 const apiMessage = (error: unknown) =>
   isAxiosError<{ message?: string }>(error) ? error.response?.data?.message : undefined;
 
-/** Rwandan number for wa.me (2507XXXXXXXX), or null */
-const whatsappNumber = (phone?: string | null) => {
-  const digits = (phone ?? "").replace(/\D/g, "");
-  if (/^07\d{8}$/.test(digits)) return `25${digits}`;
-  if (/^2507\d{8}$/.test(digits)) return digits;
-  if (/^7\d{8}$/.test(digits)) return `250${digits}`;
-  return null;
-};
-
 const PAID = ["COMPLETED", "VOUCHER_CREDIT"];
 
 /**
- * An order's payment link: copy it, or send it on WhatsApp. Whoever opens it
- * pays the order on their phone (MoMo, card…). The same link is kept until it
- * expires or you make a new one, so a link already sent keeps working.
+ * An order's payment link: email it to the customer, or copy it. Whoever opens
+ * it pays the order with Mobile Money. The same link is kept until it expires
+ * or you make a new one, so a link already sent keeps working.
  */
 export default function PaymentLinkModal({
   open,
@@ -51,6 +42,9 @@ export default function PaymentLinkModal({
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [resending, setResending] = useState(false);
+  const [email, setEmail] = useState("");
+  const [emailing, setEmailing] = useState(false);
+  const [sentTo, setSentTo] = useState<string | null>(null);
 
   const isPaid = !!paymentStatus && PAID.includes(paymentStatus);
   const url = link && typeof window !== "undefined" ? `${window.location.origin}/pay/${link.token}` : "";
@@ -63,6 +57,7 @@ export default function PaymentLinkModal({
       try {
         const res = await orderService.generatePaymentLink(orderId, { regenerate });
         setLink(res.data);
+        setEmail((current) => current || res.data.customerEmail || "");
         if (regenerate) toast.success("New link made. The previous link no longer works.");
       } catch (e) {
         setError(apiMessage(e) || "Couldn't make the payment link");
@@ -80,13 +75,12 @@ export default function PaymentLinkModal({
       setLink(null);
       setError(null);
       setCopied(false);
+      setEmail("");
+      setSentTo(null);
     }
   }, [open, orderId, isPaid, load]);
 
   const amount = link ? `${link.totalAmount.toLocaleString()} ${link.currency}` : "";
-  const message = link
-    ? `Hello${link.customerName ? ` ${link.customerName}` : ""}, please pay ${amount} for your Food Bundles order ${link.orderNumber}. Tap to pay: ${url}`
-    : "";
 
   const copy = async () => {
     if (!url) return;
@@ -98,25 +92,26 @@ export default function PaymentLinkModal({
       document.execCommand?.("copy");
     }
     setCopied(true);
-    toast.success("Link copied. Paste it in WhatsApp or SMS.");
+    toast.success("Link copied");
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const sendWhatsApp = () => {
-    if (!link) return;
-    const to = whatsappNumber(link.customerPhone);
-    const wa = `https://wa.me/${to ?? ""}?text=${encodeURIComponent(message)}`;
-    window.open(wa, "_blank", "noopener,noreferrer");
-  };
-
-  const share = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: `Pay order ${link?.orderNumber ?? ""}`, text: message, url });
-      } catch {
-        // share sheet closed
-      }
-    } else copy();
+  const sendEmail = async () => {
+    if (!orderId) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      toast.error("Enter a valid email address");
+      return;
+    }
+    setEmailing(true);
+    try {
+      const res = await orderService.emailPaymentLink(orderId, email.trim());
+      setSentTo(res.data.sentTo);
+      toast.success(res.message);
+    } catch (e) {
+      toast.error(apiMessage(e) || "The email couldn't be sent");
+    } finally {
+      setEmailing(false);
+    }
   };
 
   const resend = async () => {
@@ -135,7 +130,7 @@ export default function PaymentLinkModal({
         <DialogHeader>
           <DialogTitle>Payment link{orderNumber ? ` — ${orderNumber}` : ""}</DialogTitle>
           <DialogDescription>
-            Send this link on WhatsApp or SMS. Whoever opens it pays the order on their phone.
+            Email this link to the customer. They open it and pay with Mobile Money.
           </DialogDescription>
         </DialogHeader>
 
@@ -181,21 +176,34 @@ export default function PaymentLinkModal({
               </Button>
             </div>
 
-            <Button onClick={sendWhatsApp} className="w-full bg-[#25D366] text-white hover:bg-[#1EBE5A]">
-              <MessageCircle className="mr-2 h-4 w-4" />
-              Send on WhatsApp{whatsappNumber(link.customerPhone) ? ` to ${link.customerPhone}` : ""}
-            </Button>
-
-            <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" onClick={share}>
-                <Share2 className="mr-2 h-4 w-4" />
-                Share
-              </Button>
-              <Button variant="outline" onClick={() => load(true)} disabled={loading} title="The old link stops working">
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                New link
-              </Button>
+            <div className="space-y-2 rounded-lg border border-gray-200 p-3">
+              <label htmlFor="payment-link-email" className="block text-sm font-medium text-gray-800">
+                Send by email
+              </label>
+              <div className="flex gap-2">
+                <Input
+                  id="payment-link-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setSentTo(null);
+                  }}
+                  placeholder="customer@example.com"
+                  className="text-sm"
+                />
+                <Button onClick={sendEmail} disabled={emailing || !email.trim()} className="shrink-0 bg-[#007A35] text-white hover:bg-[#0F5C36]">
+                  {emailing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mail className="mr-2 h-4 w-4" />}
+                  Send
+                </Button>
+              </div>
+              {sentTo && <p className="text-xs text-green-700">Sent to {sentTo}</p>}
             </div>
+
+            <Button variant="outline" onClick={() => load(true)} disabled={loading} title="The old link stops working" className="w-full">
+              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+              New link
+            </Button>
 
             {onResendPaymentRequest && paymentStatus === "FAILED" && (
               <Button variant="ghost" onClick={resend} disabled={resending} className="w-full text-sm">

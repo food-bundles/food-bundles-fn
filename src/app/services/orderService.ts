@@ -105,6 +105,7 @@ export interface PaymentLinkResponse {
     paymentStatus: string;
     customerName: string | null;
     customerPhone: string | null;
+    customerEmail: string | null;
   };
 }
 
@@ -129,8 +130,9 @@ export interface PublicOrderSummaryResponse {
   data: PublicOrderSummary;
 }
 
+/** A payment link is paid with Mobile Money only */
 export interface PayViaPaymentLinkData {
-  paymentMethod: "CASH" | "MOBILE_MONEY" | "CARD" | "BANK_TRANSFER";
+  paymentMethod: "MOBILE_MONEY";
   phoneNumber?: string;
   cardDetails?: {
     cardNumber: string;
@@ -279,6 +281,13 @@ export const orderService = {
   ): Promise<PublicOrderSummaryResponse> => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.get(`/orders/pay/${token}`);
+    return response.data;
+  },
+
+  /** Email the payment link to the customer (or to the address given) */
+  emailPaymentLink: async (orderId: string, email?: string): Promise<{ message: string; data: { sentTo: string } }> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(`/orders/${orderId}/payment-link/email`, { email: email || undefined });
     return response.data;
   },
 

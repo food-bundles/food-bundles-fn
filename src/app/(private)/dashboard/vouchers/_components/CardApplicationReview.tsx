@@ -28,7 +28,26 @@ export interface CardApplication {
   momoStatementUrl?: string | null;
   momoStatementUploadedAt?: string | null;
   momoDeductionsCount?: number | null;
+  businessName?: string | null;
+  tin?: string | null;
+  businessType?: string | null;
+  registeredSince?: string | null;
+  ownerName?: string | null;
+  ownerPhone?: string | null;
+  ownerPhoneVerifiedAt?: string | null;
+  consentAt?: string | null;
+  consentVersion?: string | null;
+  /** Things to look at (never an automatic rejection) */
+  reviewFlags?: string[];
 }
+
+const FLAG_TEXT: Record<string, string> = {
+  MOMO_NAME_DIFFERS: "The MoMo registered name differs from the owner's name",
+  MOMO_NUMBER_NOT_OWNER_PHONE: "The MoMo number isn't the owner's phone",
+  TIN_DIFFERS_FROM_ACCOUNT: "The TIN differs from the one on the customer's account",
+  NO_REGISTRATION_DATE: "No registration date given",
+  NID_NOT_VERIFIED: "National ID not checked automatically yet",
+};
 
 /** Ready to issue: MTN statement uploaded, deductions counted, National ID not rejected */
 export const applicationReady = (a: CardApplication | null) =>
@@ -143,6 +162,16 @@ export default function CardApplicationReview({
     <div className="space-y-3 text-sm">
       <div className="rounded-lg border border-gray-200 p-3">
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">Application</p>
+        {app.businessName && <Row label="Business">{app.businessName}{app.businessType ? ` · ${app.businessType.toLowerCase()}` : ""}</Row>}
+        {app.tin && <Row label="TIN">{app.tin}</Row>}
+        {app.registeredSince && <Row label="Registered since">{new Date(app.registeredSince).toLocaleDateString()}</Row>}
+        {app.ownerName && <Row label="Owner">{app.ownerName}</Row>}
+        {app.ownerPhone && (
+          <Row label="Owner phone">
+            {app.ownerPhone}
+            {app.ownerPhoneVerifiedAt && <span className="ml-1 rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-800">Code confirmed</span>}
+          </Row>
+        )}
         <Row label="National ID">
           <span className="font-mono">{app.nationalId ?? "—"}</span>{" "}
           <span className={`ml-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${nid.cls}`}>{nid.label}</span>
@@ -159,7 +188,7 @@ export default function CardApplicationReview({
           </div>
         )}
         <Row label="Location">
-          {place || "—"}
+          {place || (app.latitude != null ? "Pinned on the map" : "—")}
           {app.latitude != null && app.longitude != null && (
             <a
               href={`https://www.google.com/maps?q=${app.latitude},${app.longitude}`}
@@ -174,6 +203,12 @@ export default function CardApplicationReview({
         <Row label="MoMo number">{app.momoPhone ?? "—"}</Row>
         <Row label="Registered to">{app.momoPhoneOwnerName ?? "—"}</Row>
         <Row label="Statement sent">{app.momoStatementSentAt ? new Date(app.momoStatementSentAt).toLocaleDateString() : "Not confirmed"}</Row>
+        {app.consentAt && (
+          <Row label="Consent">
+            {new Date(app.consentAt).toLocaleString()}
+            {app.consentVersion && <span className="block text-[11px] text-gray-400">{app.consentVersion}</span>}
+          </Row>
+        )}
         <Row label="RDB certificate">
           {app.rdbCertificateUrl ? (
             <a href={app.rdbCertificateUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-blue-600 hover:underline">
@@ -184,6 +219,17 @@ export default function CardApplicationReview({
           )}
         </Row>
       </div>
+
+      {!!app.reviewFlags?.length && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-amber-800 mb-1">Check by hand</p>
+          <ul className="m-0 list-disc pl-5 text-xs text-amber-900 space-y-0.5">
+            {app.reviewFlags.map((f) => (
+              <li key={f}>{FLAG_TEXT[f] ?? f}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className={`rounded-lg border p-3 ${applicationReady(app) ? "border-green-300 bg-green-50" : "border-amber-300 bg-amber-50"}`}>
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1">MTN statement (received by email)</p>
