@@ -73,18 +73,6 @@ export default function LoanRequestForm({ onSuccess }: LoanRequestFormProps) {
                   className="w-full rounded text-sm h-10"
                 />
               </div>
-              <div>
-                <label htmlFor="loan-purpose" className="block text-sm text-gray-900 mb-2">
-                  What is it for? <span className="text-gray-400">(optional)</span>
-                </label>
-                <Input
-                  id="loan-purpose"
-                  value={purpose}
-                  onChange={(e) => setPurpose(e.target.value)}
-                  placeholder="e.g. weekly vegetables"
-                  className="w-full rounded text-sm h-10"
-                />
-              </div>
 
               <ol className="space-y-1.5 rounded-lg bg-gray-50 p-3 text-xs text-gray-600">
                 {STEPS.map((s, i) => (
