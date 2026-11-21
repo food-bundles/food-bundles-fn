@@ -27,6 +27,8 @@ export interface Admin {
   /** Aggregators: the aggregation site they work from */
   aggregationSite?: { id: string; name: string } | null;
   siteAssignedByAdmin?: boolean;
+  /** Every staff role this person holds (one staff account per person) */
+  staffRoles?: { role: string; label: string; status: string; dashboardRole: string | null }[];
 }
 
 export interface AdminsResponse {

@@ -1,4 +1,7 @@
+import Link from "next/link";
+import { lookupHref } from "@/lib/user-lookup";
 import type { ColumnDef } from "@tanstack/react-table";
+import { AccountStatusSwitch } from "@/components/account-status-switch";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
@@ -16,7 +19,6 @@ import { MoreHorizontal } from "lucide-react";
 export const getAdminColumns = (
   onManage: (admin: Admin) => void,
   onUpdateCommission: (admin: Admin) => void,
-  onViewDetails: (adminId: string) => void,
   onAssignSite?: (admin: Admin) => void
 ): ColumnDef<Admin>[] => [
     {
@@ -63,16 +65,23 @@ export const getAdminColumns = (
     {
       accessorKey: "role",
       header: "Role",
+      // One row per person: all their staff roles
       cell: ({ row }) => {
-        const role = row.getValue("role") as string;
+        const roles = row.original.staffRoles?.length
+          ? row.original.staffRoles
+          : [{ role: row.original.role, label: row.original.role, status: "ACTIVE", dashboardRole: null }];
         return (
-          <div className="flex items-center gap-2">
-            <Badge
-              variant="outline"
-              className="bg-orange-50 text-orange-400 text-[10px]"
-            >
-              {role}
-            </Badge>
+          <div className="flex max-w-[260px] flex-wrap items-center gap-1">
+            {roles.map((r) => (
+              <Badge
+                key={r.role}
+                variant="outline"
+                title={r.dashboardRole ? `Dashboard role: ${r.dashboardRole}` : undefined}
+                className={`text-[10px] ${r.status === "ACTIVE" ? "bg-orange-50 text-orange-500" : "bg-gray-100 text-gray-500 line-through"}`}
+              >
+                {r.label}
+              </Badge>
+            ))}
           </div>
         );
       },
@@ -101,8 +110,9 @@ export const getAdminColumns = (
       id: "aggregationSite",
       header: "Aggregation site",
       cell: ({ row }) => {
-        const { role, aggregationSite, siteAssignedByAdmin } = row.original;
-        if (role !== "AGGREGATOR") return <span className="text-gray-400">-</span>;
+        const { role, aggregationSite, siteAssignedByAdmin, staffRoles } = row.original;
+        const isAggregator = role === "AGGREGATOR" || !!staffRoles?.some((r) => r.role === "AGGREGATOR");
+        if (!isAggregator) return <span className="text-gray-400">-</span>;
         return aggregationSite ? (
           <div className="flex flex-col">
             <span>{aggregationSite.name}</span>
@@ -116,30 +126,10 @@ export const getAdminColumns = (
     {
       accessorKey: "status",
       header: "Status",
-      cell: ({ row }) => {
-        const status = row.getValue("status") as string;
-        const displayStatus = status || "active";
-        return (
-          <Badge
-            variant={
-              displayStatus === "active"
-                ? "default"
-                : displayStatus === "suspended"
-                  ? "destructive"
-                  : "secondary"
-            }
-            className={
-              displayStatus === "active"
-                ? "bg-green-100 text-green-800 hover:bg-green-200"
-                : displayStatus === "suspended"
-                  ? "bg-red-100 text-red-800 hover:bg-red-200"
-                  : "bg-gray-100 text-gray-800 hover:bg-gray-200"
-            }
-          >
-            {displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
-          </Badge>
-        );
-      },
+      // Active / deactivated: a deactivated account can't log in
+      cell: ({ row }) => (
+        <AccountStatusSwitch type="admin" id={row.original.id} name={row.original.username} />
+      ),
     },
     {
       accessorKey: "createdAt",
@@ -155,7 +145,13 @@ export const getAdminColumns = (
       cell: ({ row }) => {
         const admin = row.original;
 
+        const holds = (role: string) => admin.role === role || !!admin.staffRoles?.some((r) => r.role === role);
+
         return (
+          <div className="flex items-center">
+          <Button asChild variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
+            <Link href={lookupHref(admin)}>Details</Link>
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
@@ -171,7 +167,7 @@ export const getAdminColumns = (
               }}>
                 Manage User
               </DropdownMenuItem>
-              {admin.role === "AGGREGATOR" && onAssignSite && (
+              {holds("AGGREGATOR") && onAssignSite && (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={(e) => {
@@ -182,7 +178,7 @@ export const getAdminColumns = (
                   </DropdownMenuItem>
                 </>
               )}
-              {admin.role === "TRADER" && (
+              {holds("TRADER") && (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={(e) => {
@@ -195,6 +191,7 @@ export const getAdminColumns = (
               )}
             </DropdownMenuContent>
           </DropdownMenu>
+          </div>
         );
       },
     },

@@ -11,7 +11,6 @@ import type { Restaurant } from "@/app/contexts/RestaurantContext";
 import { toast } from "sonner";
 import { restaurantService } from "@/app/services/restaurantService";
 import { exportService, type ExportModuleType } from "@/app/services/exportService";
-import UserDetailsSheet from "../../farmers/_components/UserDetailsSheet";
 import { GenericExportModal, type GenericExportConfig, type ExportColumnDef } from "@/components/generic-export-modal";
 
 export const RESTAURANT_COLUMNS: ExportColumnDef[] = [
@@ -68,8 +67,6 @@ export function RestaurantManagement({
     useState<Restaurant | null>(null);
   const [isManagementOpen, setIsManagementOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [exportSelectedRows, setExportSelectedRows] = useState<Restaurant[]>([]);
 
@@ -121,19 +118,11 @@ export function RestaurantManagement({
   const columns = useMemo(() => {
     return getRestaurantColumns(
       handleManageRestaurant,
-      (restaurantId: string) => {
-        setSelectedUserId(restaurantId);
-        setIsDetailsSheetOpen(true);
-      },
       { canFeature, onChanged: onRefresh }
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canFeature]);
 
-  const handleRowClick = (restaurant: Restaurant) => {
-    setSelectedUserId(restaurant.id);
-    setIsDetailsSheetOpen(true);
-  };
 
   // Filter data (client-side filtering for date range only)
   const filteredData = useMemo(() => {
@@ -249,7 +238,6 @@ export function RestaurantManagement({
         pagination={pagination}
         onPaginationChange={onPaginationChange}
         isLoading={isLoading}
-        onRowClick={handleRowClick}
       />
 
       {/* Modals */}
@@ -266,12 +254,6 @@ export function RestaurantManagement({
         open={isCreateOpen}
         onOpenChange={setIsCreateOpen}
         onCreate={handleCreateRestaurant}
-      />
-      
-      <UserDetailsSheet
-        isOpen={isDetailsSheetOpen}
-        onClose={() => setIsDetailsSheetOpen(false)}
-        userId={selectedUserId}
       />
 
       <GenericExportModal

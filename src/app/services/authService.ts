@@ -158,13 +158,15 @@ export const authService = {
   },
 
   googleSignup: async (data: {
-    email: string;
+    /** Pass from Google login (proves the email); the email itself comes from it */
+    signupToken: string;
     name: string;
     role: string;
     phone?: string;
     tin?: string;
     location?: string;
     agreed?: boolean;
+    customerTypeId?: string;
   }) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.post("/google-signup", data);

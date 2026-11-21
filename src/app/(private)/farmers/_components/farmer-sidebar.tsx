@@ -11,6 +11,8 @@ import {
   ChevronDown,
   Mail,
   ShoppingBasket,
+  TrendingUp,
+  LifeBuoy,
   Plus,
 } from "lucide-react";
 import Image from "next/image";
@@ -29,12 +31,16 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/farmers" },
+  // What buyers want for the farmer's crops, and Food Bundles prices
+  { icon: TrendingUp, label: "Wanted & Prices", href: "/farmers/demand-signals" },
   // Buying offers from aggregators' supply requests (schools, hotels…)
-  { icon: ShoppingBasket, label: "Buying offers", href: "/farmers/offers" },
-  { icon: ClipboardList, label: "My submissions", href: "/farmers/submissions" },
-  { icon: Wallet, label: "Sales", href: "/farmers/sales" },
+  { icon: ShoppingBasket, label: "Buying Offers", href: "/farmers/offers" },
+  { icon: ClipboardList, label: "Submissions", href: "/farmers/submissions" },
+  // Money received, money coming and the statement (was two pages: Sales and Report)
+  { icon: Wallet, label: "Sales report", href: "/farmers/report" },
   { icon: User, label: "Profile", href: "/farmers/profile" },
   { icon: Settings, label: "Settings", href: "/farmers/setting/authenticator" },
+  { icon: LifeBuoy, label: "Help & support", href: "/farmers/help" },
 ];
 
 interface FarmerSidebarProps {

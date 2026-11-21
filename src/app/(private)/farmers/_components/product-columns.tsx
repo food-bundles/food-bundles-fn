@@ -1,10 +1,10 @@
 "use client"
 
-import { stageLabel } from "./status-helpers";
+import { stageLabel, foodBundlesPriceNote } from "./status-helpers";
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Eye, MapPin } from "lucide-react"
+import { Eye, MapPin, UserRound } from "lucide-react"
 import { Product } from "./product-context"
 
 export const productColumns = (
@@ -62,6 +62,19 @@ export const productColumns = (
   {
     accessorKey: "price",
     header: "Price",
+    cell: ({ row }) => {
+      const note = foodBundlesPriceNote(row.original);
+      return (
+        <div className="leading-tight">
+          <div>{row.original.price}</div>
+          {note && (
+            <div className="text-xs font-medium text-green-700">
+              {note.label}: {note.value}
+            </div>
+          )}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "displayStatus",
@@ -72,6 +85,35 @@ export const productColumns = (
       </Badge>
     ),
   },
+  // Who receives the harvest, and how it was paid once paid
+  {
+    id: "aggregator",
+    header: "Aggregator",
+    cell: ({ row }) => {
+      const { aggregator, paymentMethod } = row.original
+      return (
+        <div className="flex flex-col gap-1 text-xs">
+          {aggregator ? (
+            <span className="flex items-start gap-1 text-gray-700">
+              <UserRound className="w-3.5 h-3.5 mt-0.5 text-green-700 shrink-0" />
+              <span>
+                <span className="font-medium">{aggregator.name}</span>
+                {aggregator.phone && <span className="block text-gray-500">{aggregator.phone}</span>}
+              </span>
+            </span>
+          ) : (
+            <span className="text-gray-400">Not assigned yet</span>
+          )}
+          {paymentMethod && (
+            <Badge variant="outline" className="w-fit text-[10px]">
+              Paid by {paymentMethod === "MOMO" ? "MoMo" : "cash"}
+            </Badge>
+          )}
+        </div>
+      )
+    },
+  },
+
   {
     id: "actions",
     header: "Actions",

@@ -83,6 +83,7 @@ const searchKeywords: Record<string, string[]> = {
   "/dashboard/newsletter": ["email", "subscribers", "campaign", "mail"],
   "/dashboard/invitations": ["aggregator applications", "umukusanyi", "qr", "agreement", "collector", "invite", "onboarding", "join", "referral"],
   "/dashboard/users/lookup": ["find", "search", "user", "account", "phone"],
+  "/dashboard/users/people": ["people", "everyone", "persons", "users list"],
   "/dashboard/users/farmers": ["growers", "suppliers"],
   "/dashboard/users/restaurants": ["clients", "restaurants", "hotels", "schools", "buyers"],
   "/dashboard/users/affiliators": ["affiliates", "agents", "partners", "referral"],
@@ -260,6 +261,11 @@ const menuItems = [
     label: "Users",
     href: "/dashboard/users",
     subItems: [
+      {
+        icon: Users,
+        label: "All users",
+        href: "/dashboard/users/people",
+      },
       {
         icon: User,
         label: "User Lookup",

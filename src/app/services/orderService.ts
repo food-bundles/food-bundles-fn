@@ -97,6 +97,15 @@ export interface PaymentLinkResponse {
   data: {
     token: string;
     expiresAt: string;
+    /** The existing link was kept (still valid) */
+    reused?: boolean;
+    orderNumber: string;
+    totalAmount: number;
+    currency: string;
+    paymentStatus: string;
+    customerName: string | null;
+    customerPhone: string | null;
+    customerEmail: string | null;
   };
 }
 
@@ -121,8 +130,9 @@ export interface PublicOrderSummaryResponse {
   data: PublicOrderSummary;
 }
 
+/** A payment link is paid with Mobile Money only */
 export interface PayViaPaymentLinkData {
-  paymentMethod: "CASH" | "MOBILE_MONEY" | "CARD" | "BANK_TRANSFER";
+  paymentMethod: "MOBILE_MONEY";
   phoneNumber?: string;
   cardDetails?: {
     cardNumber: string;
@@ -259,9 +269,10 @@ export const orderService = {
     return response.data;
   },
 
-  generatePaymentLink: async (orderId: string): Promise<PaymentLinkResponse> => {
+  /** The order's shareable payment link (kept while valid; regenerate makes a new one) */
+  generatePaymentLink: async (orderId: string, options: { regenerate?: boolean } = {}): Promise<PaymentLinkResponse> => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.post(`/orders/${orderId}/payment-link`);
+    const response = await axiosClient.post(`/orders/${orderId}/payment-link`, { regenerate: !!options.regenerate });
     return response.data;
   },
 
@@ -270,6 +281,13 @@ export const orderService = {
   ): Promise<PublicOrderSummaryResponse> => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.get(`/orders/pay/${token}`);
+    return response.data;
+  },
+
+  /** Email the payment link to the customer (or to the address given) */
+  emailPaymentLink: async (orderId: string, email?: string): Promise<{ message: string; data: { sentTo: string } }> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(`/orders/${orderId}/payment-link/email`, { email: email || undefined });
     return response.data;
   },
 

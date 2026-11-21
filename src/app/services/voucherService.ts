@@ -311,9 +311,48 @@ export const voucherService = {
     return response.data;
   },
 
-  requestVoucherCard: async () => {
+  /** Card application: National ID, location, MoMo, RDB certificate (form data, file "rdbCertificate") */
+  requestVoucherCard: async (application: FormData) => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.post("/vouchers/card/request");
+    const response = await axiosClient.post("/vouchers/card/request", application, { headers: { "Content-Type": "multipart/form-data" } });
+    return response.data;
+  },
+
+  /** Where the customer sends their MoMo statement (MTN USSD + email) */
+  /** The card application form's starting values (from the account, or a previous try) */
+  getCardApplicationDraft: async (): Promise<{ data: CardApplicationDraft }> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/vouchers/card/application/draft");
+    return response.data;
+  },
+
+  /** Send the 6-digit code to the owner's phone */
+  sendCardOwnerCode: async (ownerPhone: string): Promise<{ message: string; data: { sentTo: string } }> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post("/vouchers/card/application/owner-code", { ownerPhone });
+    return response.data;
+  },
+
+  getCardApplicationInfo: async (): Promise<{ data: { momoStatementEmail: string; momoStatementUssd: string } }> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get("/vouchers/card/application-info");
+    return response.data;
+  },
+
+  /** Admin: the MTN statement received by email (file) and its number of deductions */
+  recordMomoStatement: async (restaurantId: string, data: { deductionsCount: number; statement?: File | null }) => {
+    const axiosClient = createAxiosClient();
+    const fd = new FormData();
+    fd.append("deductionsCount", String(data.deductionsCount));
+    if (data.statement) fd.append("statement", data.statement);
+    const response = await axiosClient.post(`/vouchers/card/enrollment-requests/${restaurantId}/momo-statement`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+    return response.data;
+  },
+
+  /** Admin: National ID checked by hand (while the MVend check isn't connected) */
+  setNationalIdVerified: async (restaurantId: string, verified: boolean) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.patch(`/vouchers/card/enrollment-requests/${restaurantId}/national-id`, { verified });
     return response.data;
   },
 
@@ -399,6 +438,8 @@ export const voucherService = {
     sessionId: string,
     data: {
       fundingTraderId?: string;
+      /** FOOD_BUNDLES: Food Bundles funds it; no trader and no provider = open to every trader */
+      provider?: "FOOD_BUNDLES";
       approvalPercentage?: number;
       approvedAmount?: number;
       repaymentDays?: number;
@@ -418,14 +459,31 @@ export const voucherService = {
     return response.data;
   },
 
-  requestLoanSession: async (data: {
-    requestedAmount: number;
-    purpose?: string;
-    loanProviderType: "TRADER" | "FOOD_BUNDLES";
-    fundingTraderId?: string;
-  }) => {
+  /** No provider: once accepted, every trader sees it and one takes it; the customer then signs their terms */
+  requestLoanSession: async (data: { requestedAmount: number; purpose?: string }) => {
     const axiosClient = createAxiosClient();
     const response = await axiosClient.post("/vouchers/sessions/request", data);
+    return response.data;
+  },
+
+  /** Terms of the provider who took this loan */
+  getSessionTerms: async (
+    sessionId: string,
+  ): Promise<{ data: { providerType: string; providerName: string; terms: string; signed: boolean } }> => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.get(`/vouchers/sessions/${sessionId}/terms`);
+    return response.data;
+  },
+
+  signSessionTerms: async (sessionId: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(`/vouchers/sessions/${sessionId}/sign-terms`);
+    return response.data;
+  },
+
+  declineSessionProvider: async (sessionId: string) => {
+    const axiosClient = createAxiosClient();
+    const response = await axiosClient.post(`/vouchers/sessions/${sessionId}/decline-provider`);
     return response.data;
   },
 
@@ -594,3 +652,27 @@ export const voucherService = {
     return response.data;
   },
 };
+/** The card application form's starting values */
+export interface CardApplicationDraft {
+  status: string | null;
+  businessName: string;
+  tin: string;
+  registeredSince: string | null;
+  businessType: string | null;
+  ownerName: string;
+  nationalId: string;
+  ownerPhone: string;
+  province: string;
+  district: string;
+  sector: string;
+  cell: string;
+  village: string;
+  latitude: number | null;
+  longitude: number | null;
+  momoPhone: string;
+  momoPhoneOwnerName: string;
+  hasRdbCertificate: boolean;
+  momoStatementEmail: string;
+  momoStatementUssd: string;
+  consentVersion: string;
+}

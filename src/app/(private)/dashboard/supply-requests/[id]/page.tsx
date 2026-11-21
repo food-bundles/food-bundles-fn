@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, CalendarDays, Pencil } from "lucide-react";
+import { ArrowLeft, CalendarDays, Clock, Pencil, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAdminAccess } from "@/app/hooks/useAdminAccess";
 import { errorMessage, SupplyRequest, supplyRequestService } from "@/app/services/supplyRequestService";
 import { SupplyRequestForm } from "../_components/SupplyRequestForm";
+import { ChosenFarmersPanel } from "../_components/ChosenFarmersPanel";
 
 const formatDay = (value: string) =>
   new Date(value.length === 10 ? `${value}T00:00:00Z` : value).toLocaleDateString("en-US", {
@@ -18,6 +19,8 @@ const formatDay = (value: string) =>
     day: "numeric",
     timeZone: "UTC",
   });
+
+const SCHEDULE_LABELS: Record<string, string> = { ONCE: "Once", WEEKLY: "Every week", DATES: "Specific dates" };
 
 const STAGE_LABELS: Record<string, string> = {
   PENDING: "Submitted",
@@ -88,8 +91,22 @@ export default function SupplyRequestDetailPage() {
           </h1>
           <p className="flex items-center gap-1.5 text-xs text-gray-600">
             <CalendarDays className="h-3.5 w-3.5" />
-            {formatDay(request.startDate)} – {formatDay(request.endDate)} · created by {request.createdBy.username} ·{" "}
-            <span className="font-medium">{request.status.toLowerCase()}</span>
+            {SCHEDULE_LABELS[request.scheduleType ?? "WEEKLY"]} ·{" "}
+            {request.startDate.slice(0, 10) === request.endDate.slice(0, 10)
+              ? formatDay(request.startDate)
+              : `${formatDay(request.startDate)} – ${formatDay(request.endDate)}`}{" "}
+            · created by {request.createdBy.username} · <span className="font-medium">{request.status.toLowerCase()}</span>
+          </p>
+          <p className="mt-0.5 flex flex-wrap items-center gap-3 text-xs text-gray-600">
+            {request.neededTime && (
+              <span className="flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" /> Needed by {request.neededTime}
+              </span>
+            )}
+            <span className="flex items-center gap-1">
+              <Users className="h-3.5 w-3.5" />
+              {request.audience === "SELECTED" ? "Only chosen farmers" : "Nearby farmers"}
+            </span>
           </p>
           {request.notes && <p className="mt-1 text-xs text-gray-500">{request.notes}</p>}
         </div>
@@ -130,14 +147,14 @@ export default function SupplyRequestDetailPage() {
           }`}
         >
           {totalMissing > 0
-            ? `${totalMissing} product line${totalMissing === 1 ? "" : "s"} in the next two weeks still missing from farmers. Buy them elsewhere if farmers don't bring them.`
-            : "Farmers have covered every product for the next two weeks."}
+            ? `${totalMissing} product line${totalMissing === 1 ? "" : "s"} still missing from farmers. Buy them elsewhere if farmers don't bring them.`
+            : "Farmers have covered every upcoming product."}
         </p>
       )}
 
       {(request.schedule || []).length === 0 ? (
         <div className="rounded-xl border bg-white p-6 text-center text-sm text-gray-500">
-          No upcoming days in the next two weeks.
+          No upcoming delivery days.
         </div>
       ) : (
         <div className="space-y-3">
@@ -199,6 +216,10 @@ export default function SupplyRequestDetailPage() {
             </div>
           ))}
         </div>
+      )}
+
+      {request.audience === "SELECTED" && (
+        <ChosenFarmersPanel request={request} canEdit={can("supply_requests", "edit")} onChanged={setRequest} />
       )}
 
       <p className="text-xs text-gray-500">

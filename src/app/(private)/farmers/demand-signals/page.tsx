@@ -1,304 +1,232 @@
 "use client";
 
-import { useState } from "react";
-import {
-  Sprout,
-  TrendingUp,
-  Store,
-  Calendar,
-  Users,
-  ShieldCheck,
-  CheckCircle2,
-  AlertCircle,
-  ArrowUpRight,
-  Info,
-  Clock,
-  Package,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { Lock, MapPin, Search, ShoppingCart, Sprout, Tag, TrendingUp } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  MOCK_FARMER_DEMAND_SIGNALS,
-  MOCK_MINAGRI_BENCHMARKS,
-  MOCK_TRACEABILITY_BATCHES,
-} from "@/app/services/minagriMockData";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import ProductSubmissionModal from "../_components/product-submission-modal";
+import { farmerDashboardService, type CropDemand, type FarmerPrice } from "@/app/services/farmerDashboardService";
 
-const fmt = (n: number) => `RWF ${Math.round(n).toLocaleString("en-RW")}`;
+const rwf = (n: number) => `RWF ${Math.round(n).toLocaleString("en-RW")}`;
 
-export default function FarmerDemandSignalsPage() {
-  const [activeTab, setActiveTab] = useState<"signals" | "market_prices" | "batches">("signals");
+type Tab = "wanted" | "prices";
+
+/**
+ * What buyers want now for the farmer's own crops, and what Food Bundles pays per unit for every crop:
+ * the same data as the mobile app's "Wanted now" and prices screens.
+ */
+export default function FarmerMarketPage() {
+  const [tab, setTab] = useState<Tab>("wanted");
+  const [demand, setDemand] = useState<CropDemand[] | null>(null);
+  const [prices, setPrices] = useState<FarmerPrice[] | null>(null);
+  const [search, setSearch] = useState("");
+  const [selling, setSelling] = useState(false);
+  const [error, setError] = useState(false);
+  // Food Bundles prices are shown after the farmer's first paid sale
+  const [pricesLocked, setPricesLocked] = useState(false);
+
+  const load = () => {
+    setError(false);
+    farmerDashboardService
+      .getMarket()
+      .then((market) => {
+        setDemand(market.demand);
+        setPrices(market.prices);
+        setPricesLocked(market.pricesLocked);
+      })
+      .catch(() => {
+        setError(true);
+        setDemand([]);
+        setPrices([]);
+      });
+  };
+
+  useEffect(load, []);
+
+  const hasCrops = (prices ?? []).some((p) => p.mine);
+  const visiblePrices = useMemo(() => {
+    const needle = search.trim().toLowerCase();
+    return (prices ?? []).filter(
+      (p) => !needle || p.productName.toLowerCase().includes(needle) || p.category?.toLowerCase().includes(needle)
+    );
+  }, [prices, search]);
+
+  const tabs: { key: Tab; label: string; icon: typeof TrendingUp; count?: number }[] = [
+    { key: "wanted", label: "Wanted now", icon: TrendingUp, count: demand?.length },
+    { key: "prices", label: "Food Bundles prices", icon: Tag },
+  ];
 
   return (
-    <div className="min-h-screen bg-gray-50/50 p-4 md:p-8 space-y-6">
-      {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-green-900 text-white p-6 rounded-2xl shadow-sm relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-96 h-96 bg-green-700/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="space-y-1 z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-800/80 border border-green-700 text-green-200 text-xs font-semibold">
-            <Sprout className="w-3.5 h-3.5" />
-            Demand-Driven Production & Market Visibility Portal
-          </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-            Farmer Demand Signals & Market Reference
-          </h1>
-          <p className="text-green-100/80 text-sm max-w-2xl">
-            Access transparent MINAGRI reference prices, explore aggregated restaurant demand forecasts, and plant crops with guaranteed off-take visibility.
+    <div className="min-h-screen bg-gray-50">
+      <main className="container mx-auto space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Wanted &amp; prices</h1>
+          <p className="mt-0.5 text-sm text-gray-500">
+            What buyers need right now for your crops, and what Food Bundles pays for each crop.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 z-10">
-          <div className="bg-green-800/80 border border-green-700 p-3 rounded-xl text-right">
-            <p className="text-xs text-green-200 font-medium">Contracted Buyers</p>
-            <p className="text-lg font-black text-white">129 Verified Businesses</p>
-          </div>
+        <div className="flex w-full gap-1 rounded-xl bg-white p-1 shadow-sm sm:w-fit" role="tablist">
+          {tabs.map(({ key, label, icon: Icon, count }) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={tab === key}
+              onClick={() => setTab(key)}
+              className={cn(
+                "flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors sm:flex-none",
+                tab === key ? "bg-green-600 text-white" : "text-gray-600 hover:bg-gray-50"
+              )}
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+              {count != null && (
+                <span className={cn("rounded-full px-1.5 text-xs", tab === key ? "bg-white/20" : "bg-gray-100")}>{count}</span>
+              )}
+            </button>
+          ))}
         </div>
-      </div>
 
-      {/* Top Summary Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="py-4 shadow-xs border-[#DCE6DF]">
-          <CardContent className="px-5 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-[#4A6358] uppercase tracking-wider">Demand Growth Trend</p>
-              <p className="text-2xl font-extrabold text-[#007A35] mt-1">+18.2% Q4</p>
-              <p className="text-xs text-[#007A35] mt-0.5 font-medium">Horticulture & Tubers demand</p>
+        {error && (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            Could not load the market data.{" "}
+            <button className="font-medium underline" onClick={load}>
+              Try again
+            </button>
+          </div>
+        )}
+
+        {tab === "wanted" &&
+          (demand === null ? (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 3 }, (_, i) => (
+                <Skeleton key={i} className="h-44 rounded-xl" />
+              ))}
             </div>
-            <div className="w-12 h-12 bg-[#EFFAF3] text-[#007A35] rounded-xl flex items-center justify-center border border-green-100">
-              <TrendingUp className="w-6 h-6" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="py-4 shadow-xs border-[#DCE6DF]">
-          <CardContent className="px-5 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-[#4A6358] uppercase tracking-wider">Aggregated Monthly Need</p>
-              <p className="text-2xl font-extrabold text-[#0B2E1F] mt-1">87,500 kg</p>
-              <p className="text-xs text-[#4A6358] mt-0.5 font-medium">Kigali restaurant orders</p>
-            </div>
-            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center border border-blue-100">
-              <Users className="w-6 h-6" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="py-4 shadow-xs border-[#DCE6DF]">
-          <CardContent className="px-5 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-[#4A6358] uppercase tracking-wider">Farm-Gate Sell-Through</p>
-              <p className="text-2xl font-extrabold text-[#0B2E1F] mt-1">94.6%</p>
-              <p className="text-xs text-[#007A35] mt-0.5 font-medium">Reduced post-harvest waste</p>
-            </div>
-            <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center border border-purple-100">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="py-4 shadow-xs border-[#DCE6DF]">
-          <CardContent className="px-5 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-[#4A6358] uppercase tracking-wider">MINAGRI Fresh Data</p>
-              <p className="text-2xl font-extrabold text-[#0B2E1F] mt-1">12 Markets</p>
-              <p className="text-xs text-[#4A6358] mt-0.5 font-medium">Updated today 08:30 AM</p>
-            </div>
-            <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center border border-amber-100">
-              <Store className="w-6 h-6" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex border-b border-[#DCE6DF] overflow-x-auto gap-2 bg-white px-4 pt-3 rounded-t-xl shadow-xs">
-        <button
-          onClick={() => setActiveTab("signals")}
-          className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition ${
-            activeTab === "signals"
-              ? "border-green-700 text-[#0B2E1F]"
-              : "border-transparent text-[#4A6358] hover:text-gray-900"
-          }`}
-        >
-          <Sprout className="w-4 h-4" />
-          Crop Production & Planting Signals (7.2)
-        </button>
-
-        <button
-          onClick={() => setActiveTab("market_prices")}
-          className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition ${
-            activeTab === "market_prices"
-              ? "border-green-700 text-[#0B2E1F]"
-              : "border-transparent text-[#4A6358] hover:text-gray-900"
-          }`}
-        >
-          <Store className="w-4 h-4" />
-          MINAGRI Reference Market Prices (7.1)
-        </button>
-
-        <button
-          onClick={() => setActiveTab("batches")}
-          className={`flex items-center gap-2 px-4 py-3 text-xs font-bold border-b-2 transition ${
-            activeTab === "batches"
-              ? "border-green-700 text-[#0B2E1F]"
-              : "border-transparent text-[#4A6358] hover:text-gray-900"
-          }`}
-        >
-          <Package className="w-4 h-4" />
-          Harvest Batch Provenance & Off-take (7.3)
-        </button>
-      </div>
-
-      {/* Tab 1: Planting Signals */}
-      {activeTab === "signals" && (
-        <div className="space-y-4">
-          <Card className="py-5 shadow-xs border-[#DCE6DF]">
-            <CardContent className="px-5">
-              <h3 className="text-base font-bold text-[#0B2E1F]">Demand-Driven Production Signals for Farmers</h3>
-              <p className="text-xs text-[#4A6358] mt-0.5">
-                Non-binding crop planting guidance derived from consolidated, anonymized restaurant purchasing contracts.
-              </p>
-            </CardContent>
-          </Card>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {MOCK_FARMER_DEMAND_SIGNALS.map((sig) => (
-              <Card key={sig.id} className="py-5 shadow-xs border-[#DCE6DF]">
-                <CardContent className="px-5 space-y-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <Badge className="bg-[#EFFAF3] text-[#0B2E1F] border-green-200 font-bold text-[10px]">
-                        {sig.region}
-                      </Badge>
-                      <h4 className="text-lg font-extrabold text-[#0B2E1F] mt-1">{sig.cropName}</h4>
-                    </div>
-                    <Badge className="bg-[#E3F3E8] text-[#0B2E1F] font-bold">
-                      {sig.demandGrowthTrend} Demand
-                    </Badge>
-                  </div>
-
-                  <div className="space-y-2 text-xs bg-[#F6F9F7] p-3.5 rounded-xl border border-gray-100 font-medium">
-                    <div className="flex justify-between text-[#4A6358]">
-                      <span>Target Delivery Window:</span>
-                      <span className="font-bold text-[#0B2E1F]">{sig.targetMonth}</span>
-                    </div>
-                    <div className="flex justify-between text-[#4A6358]">
-                      <span>Aggregated Monthly Demand:</span>
-                      <span className="font-bold text-[#0B2E1F] font-mono">{sig.aggregatedMonthlyDemandKg.toLocaleString()} kg</span>
-                    </div>
-                    <div className="flex justify-between text-[#4A6358]">
-                      <span>MINAGRI Benchmark Price:</span>
-                      <span className="font-bold text-[#0B2E1F] font-mono">{fmt(sig.minagriBenchmarkPrice)}/kg</span>
-                    </div>
-                    <div className="flex justify-between text-[#4A6358]">
-                      <span>Expected Farm-Gate Price:</span>
-                      <span className="font-extrabold text-green-900 font-mono">{fmt(sig.expectedFarmGatePrice)}/kg</span>
-                    </div>
-                  </div>
-
-                  <div className="p-3 bg-green-50/60 rounded-xl border border-green-100 text-xs space-y-1">
-                    <p className="text-green-900 font-bold flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5" />
-                      Recommended Planting Window:
+          ) : demand.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-green-50 text-green-600">
+                  <Sprout className="h-6 w-6" />
+                </span>
+                {hasCrops ? (
+                  <p className="max-w-md text-sm text-gray-600">
+                    No buyer needs your crops right now. Check back soon, or see Food Bundles prices to sell anyway.
+                  </p>
+                ) : (
+                  <>
+                    <p className="max-w-md text-sm text-gray-600">
+                      Choose the crops you grow to see what buyers need for them.
                     </p>
-                    <p className="text-[#0B2E1F] font-medium">{sig.recommendedPlantingWindow}</p>
-                  </div>
+                    <Button asChild className="bg-green-600 text-white hover:bg-green-700">
+                      <Link href="/farmers/profile">Choose my crops</Link>
+                    </Button>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {demand.map((d) => (
+                <Card key={d.productId} className="overflow-hidden border-green-100">
+                  <CardContent className="flex h-full flex-col gap-3 p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-lg font-semibold text-gray-900">{d.cropName}</p>
+                        <p className="text-sm text-gray-500">
+                          Buyers need {d.neededKg.toLocaleString()} kg · {d.orderCount} order{d.orderCount === 1 ? "" : "s"}
+                        </p>
+                      </div>
+                      {d.ratePerKg != null && (
+                        <div className="text-right">
+                          <p className="text-xl font-bold text-green-700">{rwf(d.ratePerKg)}</p>
+                          <p className="text-xs text-gray-500">per kg</p>
+                        </div>
+                      )}
+                    </div>
+                    <p className="flex items-center gap-1.5 text-sm text-gray-600">
+                      <MapPin className="h-4 w-4 text-gray-400" />
+                      {d.deliveryPoint ? `Bring it to ${d.deliveryPoint}` : "Farm-gate pickup"}
+                    </p>
+                    <Button
+                      onClick={() => setSelling(true)}
+                      className="mt-auto bg-green-600 text-white hover:bg-green-700"
+                    >
+                      <ShoppingCart className="mr-2 h-4 w-4" /> Sell this crop
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ))}
 
-                  <Button variant="green" size="sm" className="w-full font-bold text-xs">
-                    Commit Harvest Pre-Order ({sig.contractedBuyersCount} Buyers Ready)
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Tab 2: MINAGRI Reference Market Prices */}
-      {activeTab === "market_prices" && (
-        <div className="space-y-4">
-          <Card className="py-5 shadow-xs border-[#DCE6DF]">
-            <CardContent className="px-5">
-              <h3 className="text-base font-bold text-[#0B2E1F]">Fair Market Price Reference Table</h3>
-              <p className="text-xs text-[#4A6358] mt-0.5">
-                Transparent baseline prices gathered from MINAGRI daily API feeds across major regional agricultural markets.
+        {tab === "prices" && pricesLocked && (
+          <Card className="overflow-hidden border-green-200">
+            <CardContent className="flex flex-col items-center gap-3 bg-gradient-to-b from-green-50 to-white px-6 py-12 text-center">
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-green-600 text-white">
+                <Lock className="h-6 w-6" />
+              </span>
+              <h2 className="text-lg font-bold text-gray-900">Sell to Food Bundles and start receiving market prices</h2>
+              <p className="max-w-md text-sm text-gray-600">
+                After your first sale is paid, you see what Food Bundles pays for every crop, so you always know your price.
               </p>
+              <Button onClick={() => setSelling(true)} className="bg-green-600 text-white hover:bg-green-700">
+                <ShoppingCart className="mr-2 h-4 w-4" /> Sell my harvest
+              </Button>
             </CardContent>
           </Card>
+        )}
 
-          <Card className="py-0 border-[#DCE6DF] overflow-hidden shadow-xs">
-            <CardContent className="px-0 py-0">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-[#F6F9F7] text-[#4A6358] uppercase font-semibold">
-                  <tr>
-                    <th className="py-3 px-5">Product Name</th>
-                    <th className="py-3 px-5">Market & Region</th>
-                    <th className="py-3 px-5 text-right">MINAGRI Benchmark</th>
-                    <th className="py-3 px-5 text-right">Est. Farm-Gate Price</th>
-                    <th className="py-3 px-5 text-center">Data Freshness</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 font-medium">
-                  {MOCK_MINAGRI_BENCHMARKS.map((m) => (
-                    <tr key={m.id} className="hover:bg-gray-50/50">
-                      <td className="py-3 px-5 font-bold text-[#0B2E1F]">{m.productName}</td>
-                      <td className="py-3 px-5 text-[#4A6358]">{m.marketName} ({m.region})</td>
-                      <td className="py-3 px-5 text-right font-mono font-bold text-[#0B2E1F]">{fmt(m.minagriReferencePrice)}/{m.unit}</td>
-                      <td className="py-3 px-5 text-right font-mono font-bold text-[#007A35]">{fmt(Math.round(m.minagriReferencePrice * 0.82))}/{m.unit}</td>
-                      <td className="py-3 px-5 text-center">
-                        <Badge className="bg-[#EFFAF3] text-[#007A35] border-green-200 font-bold text-[10px]">
-                          {m.freshnessStatus}
-                        </Badge>
-                      </td>
-                    </tr>
+        {tab === "prices" && !pricesLocked && (
+          <Card>
+            <CardContent className="space-y-4 p-4 sm:p-6">
+              <div className="relative w-full sm:max-w-xs">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search crops or categories"
+                  className="pl-9"
+                />
+              </div>
+              {prices === null ? (
+                <div className="space-y-2">
+                  {Array.from({ length: 6 }, (_, i) => (
+                    <Skeleton key={i} className="h-11 rounded-lg" />
                   ))}
-                </tbody>
-              </table>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Tab 3: Harvest Batch Provenance */}
-      {activeTab === "batches" && (
-        <div className="space-y-4">
-          <Card className="py-5 shadow-xs border-[#DCE6DF]">
-            <CardContent className="px-5">
-              <h3 className="text-base font-bold text-[#0B2E1F]">Verifiable Harvest Batches & Provenance</h3>
-              <p className="text-xs text-[#4A6358] mt-0.5">
-                Verified supply chain tracking for farmer produce connected directly to restaurant buyers.
-              </p>
-            </CardContent>
-          </Card>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {MOCK_TRACEABILITY_BATCHES.map((b) => (
-              <Card key={b.batchId} className="py-5 shadow-xs border-[#DCE6DF]">
-                <CardContent className="px-5 space-y-3">
-                  <div className="flex justify-between items-start border-b border-gray-100 pb-3">
-                    <div>
-                      <span className="text-xs font-mono font-bold text-[#0B2E1F]">{b.batchId}</span>
-                      <h4 className="text-base font-bold text-[#0B2E1F] mt-0.5">{b.productName}</h4>
+                </div>
+              ) : visiblePrices.length === 0 ? (
+                <p className="py-8 text-center text-sm text-gray-500">No crop found.</p>
+              ) : (
+                <div className="divide-y rounded-lg border">
+                  {visiblePrices.map((p) => (
+                    <div key={p.productId} className="flex items-center gap-3 px-4 py-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="flex items-center gap-2 truncate font-medium text-gray-900">
+                          {p.productName}
+                          {p.mine && <Badge className="border-0 bg-green-100 text-[10px] text-green-800">Your crop</Badge>}
+                        </p>
+                        {p.category && <p className="text-xs text-gray-500">{p.category}</p>}
+                      </div>
+                      <p className={cn("text-right font-semibold", p.price ? "text-green-700" : "text-gray-400")}>
+                        {p.price ? `${rwf(p.price)} / ${p.unit}` : "No price yet"}
+                      </p>
                     </div>
-                    <Badge className="bg-[#EFFAF3] text-[#007A35] border-green-200 font-bold">
-                      {b.certification}
-                    </Badge>
-                  </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </main>
 
-                  <div className="space-y-1.5 text-xs text-[#4A6358]">
-                    <p><strong>Origin Farm:</strong> {b.originFarm} ({b.district})</p>
-                    <p><strong>Harvest Timestamp:</strong> {b.harvestDate}</p>
-                    <p><strong>Quality Grade:</strong> <strong className="text-[#007A35]">{b.qualityGrade}</strong></p>
-                    <p className="text-[11px] text-[#4A6358] font-mono bg-[#F6F9F7] p-2 rounded">
-                      Cold Chain Log: {b.temperatureLogs}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
+      <ProductSubmissionModal isOpen={selling} onClose={() => setSelling(false)} onSubmit={() => setSelling(false)} />
     </div>
   );
 }

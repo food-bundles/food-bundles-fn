@@ -1,476 +1,453 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Upload,
-  X,
+  Banknote,
   CheckCircle2,
-  Loader2,
+  Copy,
+  CreditCard,
+  HelpCircle,
   ImagePlus,
-  Paperclip,
+  Loader2,
+  Mail,
+  MessageCircle,
+  Package,
+  Phone,
+  RotateCcw,
+  Send,
+  Sprout,
+  Truck,
+  UserRound,
+  Warehouse,
+  Wrench,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { showToast } from "@/lib/toast";
 
+export type SupportAudience = "farmer" | "general";
+
+type Category = { value: string; label: string; icon: React.ComponentType<{ className?: string }> };
+
+/** Farmers sell and get paid; buyers order and pay. Each sees the topics that are theirs. */
+const CATEGORIES: Record<SupportAudience, Category[]> = {
+  farmer: [
+    { value: "selling", label: "Selling my harvest", icon: Sprout },
+    { value: "farmer_payments", label: "Getting paid", icon: Banknote },
+    { value: "aggregator", label: "Aggregator & drop-off", icon: Warehouse },
+    { value: "account", label: "My account", icon: UserRound },
+    { value: "technical", label: "App problem", icon: Wrench },
+    { value: "other", label: "Something else", icon: HelpCircle },
+  ],
+  general: [
+    { value: "orders", label: "Orders", icon: Package },
+    { value: "delivery", label: "Delivery", icon: Truck },
+    { value: "payments", label: "Payments", icon: CreditCard },
+    { value: "account", label: "My account", icon: UserRound },
+    { value: "technical", label: "App problem", icon: Wrench },
+    { value: "other", label: "Something else", icon: HelpCircle },
+  ],
+};
+
+const URGENCY = [
+  { value: "low", label: "Not urgent", hint: "A question" },
+  { value: "medium", label: "Soon", hint: "Something doesn't work" },
+  { value: "high", label: "Urgent", hint: "It blocks me" },
+];
+
+const CONTACT = [
+  { value: "phone", label: "Call me", icon: Phone },
+  { value: "whatsapp", label: "WhatsApp", icon: MessageCircle },
+  { value: "email", label: "Email", icon: Mail },
+];
+
+const MAX_SCREENSHOTS = 6;
+
 interface TicketFormProps {
-  selectedCategory?: string;
-  onCategoryChange?: (id: string) => void;
+  audience?: SupportAudience;
+  /** Prefilled from the signed-in account */
+  defaults?: { name?: string; phone?: string; email?: string };
 }
 
-const severityOptions = [
-  { value: "low", label: "Low - General question" },
-  { value: "medium", label: "Medium - Something isn't working" },
-  { value: "high", label: "High - Urgent / blocking me" },
-  { value: "critical", label: "Critical - Emergency" },
-];
+const emptyForm = (audience: SupportAudience, defaults: TicketFormProps["defaults"] = {}) => ({
+  name: defaults.name ?? "",
+  phone: defaults.phone ?? "",
+  email: defaults.email ?? "",
+  subject: "",
+  category: "",
+  severity: "",
+  // Farmers mostly answer the phone; others usually read email
+  preferredContact: audience === "farmer" || (!defaults.email && defaults.phone) ? "phone" : "email",
+  description: "",
+});
 
-const submitOptions = [
-  { value: "email", label: "Email (default)" },
-  { value: "phone", label: "Phone call" },
-  { value: "whatsapp", label: "WhatsApp" },
-];
-
-export function TicketForm({
-  selectedCategory,
-  onCategoryChange,
-}: TicketFormProps) {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    subject: "",
-    category: "",
-    severity: "",
-    preferredContact: "email",
-    description: "",
-  });
-
-  React.useEffect(() => {
-    if (selectedCategory) {
-      setForm((prev) => ({ ...prev, category: selectedCategory }));
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next.category;
-        return next;
-      });
-    }
-  }, [selectedCategory]);
-  const [screenshots, setScreenshots] = useState<File[]>([]);
-  const [previews, setPreviews] = useState<string[]>([]);
-  const [status, setStatus] = useState<
-    "idle" | "sending" | "success" | "error"
-  >("idle");
+export function TicketForm({ audience = "general", defaults }: TicketFormProps) {
+  const [form, setForm] = useState(() => emptyForm(audience, defaults));
+  const [screenshots, setScreenshots] = useState<{ file: File; url: string }[]>([]);
+  const [sending, setSending] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [submittedTicket, setSubmittedTicket] = useState<
-    string | null
-  >(null);
+  const [ticket, setTicket] = useState<{ number: string | null } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleChange = (
-    field: keyof typeof form,
-    value: string
-  ) => {
+  // The account loads after the first render; fill only what the person has not typed yet
+  useEffect(() => {
+    if (!defaults) return;
+    setForm((prev) => ({
+      ...prev,
+      name: prev.name || defaults.name || "",
+      phone: prev.phone || defaults.phone || "",
+      email: prev.email || defaults.email || "",
+    }));
+  }, [defaults?.name, defaults?.phone, defaults?.email]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const set = (field: keyof typeof form, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
+    const key = field === "phone" || field === "email" ? "contact" : field;
+    if (errors[key])
       setErrors((prev) => {
         const next = { ...prev };
-        delete next[field];
+        delete next[key];
         return next;
       });
-    }
   };
 
-  const handleFiles = (files: FileList | null) => {
+  const addFiles = (files: FileList | null) => {
     if (!files) return;
-    const current = Array.from(files);
-    const next = [...screenshots, ...current].slice(0, 6);
-    setScreenshots(next);
-
-    const nextPreviews = current.map((file) =>
-      URL.createObjectURL(file)
-    );
-    setPreviews((prev) => [...prev, ...nextPreviews].slice(0, 6));
-  };
-
-  const removeScreenshot = (index: number) => {
-    setScreenshots((prev) => prev.filter((_, i) => i !== index));
-    setPreviews((prev) => {
-      URL.revokeObjectURL(prev[index]);
-      return prev.filter((_, i) => i !== index);
+    const added = Array.from(files)
+      .filter((f) => f.type.startsWith("image/"))
+      .map((file) => ({ file, url: URL.createObjectURL(file) }));
+    setScreenshots((prev) => {
+      const next = [...prev, ...added];
+      next.slice(MAX_SCREENSHOTS).forEach((s) => URL.revokeObjectURL(s.url));
+      return next.slice(0, MAX_SCREENSHOTS);
     });
   };
 
+  const removeScreenshot = (index: number) =>
+    setScreenshots((prev) => {
+      URL.revokeObjectURL(prev[index].url);
+      return prev.filter((_, i) => i !== index);
+    });
+
   const validate = () => {
-    const newErrors: Record<string, string> = {};
-    if (!form.name.trim()) newErrors.name = "Please enter your name";
-    if (!form.email.trim()) {
-      newErrors.email = "Please enter your email";
-    } else if (!/^\S+@\S+\.\S+$/.test(form.email)) {
-      newErrors.email = "Please enter a valid email";
-    }
-    if (!form.subject.trim()) newErrors.subject = "Please add a subject";
-    if (!form.category) newErrors.category = "Please choose a category";
-    if (!form.description.trim() || form.description.trim().length < 10)
-      newErrors.description = "Describe your issue (at least 10 characters)";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const e: Record<string, string> = {};
+    if (!form.name.trim()) e.name = "Enter your name";
+    const phone = form.phone.replace(/[\s-]/g, "");
+    if (!phone && !form.email.trim()) e.contact = "Give a phone number or an email so we can answer you";
+    else if (phone && !/^\+?\d{9,13}$/.test(phone)) e.contact = "Enter a valid phone number, e.g. 0788 123 456";
+    else if (form.email.trim() && !/^\S+@\S+\.\S+$/.test(form.email)) e.contact = "Enter a valid email";
+    if (!form.category) e.category = "Choose what it is about";
+    if (form.description.trim().length < 10) e.description = "Tell us a bit more (at least 10 characters)";
+    if (form.preferredContact === "email" && !form.email.trim() && phone)
+      e.preferredContact = "Add an email, or choose Call me or WhatsApp";
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) {
-      showToast("error", "Please fix the highlighted fields");
-      return;
-    }
+  const handleSubmit = async (ev: React.FormEvent) => {
+    ev.preventDefault();
+    if (!validate()) return;
+    setSending(true);
 
-    setStatus("sending");
+    const categoryLabel = CATEGORIES[audience].find((c) => c.value === form.category)?.label ?? "Support";
+    const fields: Record<string, string> = {
+      ...form,
+      phone: form.phone.replace(/[\s-]/g, ""),
+      // The subject is optional for people; the team still needs one
+      subject: form.subject.trim() || `${categoryLabel}: ${form.description.trim().slice(0, 60)}`,
+    };
 
-    const hasAttachments = screenshots.length > 0;
     let body: BodyInit;
-    let headers: HeadersInit = {};
-
-    if (hasAttachments) {
+    const headers: HeadersInit = {};
+    if (screenshots.length) {
       const data = new FormData();
-      Object.entries(form).forEach(([key, value]) =>
-        data.append(key, value)
-      );
-      screenshots.forEach((file) => data.append("screenshots", file));
+      Object.entries(fields).forEach(([k, v]) => v && data.append(k, v));
+      screenshots.forEach((s) => data.append("screenshots", s.file));
       body = data;
     } else {
-      body = JSON.stringify(form);
-      headers = { "Content-Type": "application/json" };
+      body = JSON.stringify(Object.fromEntries(Object.entries(fields).filter(([, v]) => v)));
+      headers["Content-Type"] = "application/json";
     }
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/support-tickets`,
-        {
-          method: "POST",
-          body,
-          headers,
-        }
-      );
-      if (res.ok) {
-        let ticketNumber: string | null = null;
-        try {
-          const payload = await res.json();
-          ticketNumber = payload?.data?.ticketNumber ?? null;
-        } catch {
-          ticketNumber = null;
-        }
-        setSubmittedTicket(ticketNumber);
-        setStatus("success");
-        setForm({
-          name: "",
-          email: "",
-          subject: "",
-          category: "",
-          severity: "",
-          preferredContact: "email",
-          description: "",
-        });
-        setScreenshots([]);
-        setPreviews([]);
-        showToast("success", "Ticket submitted successfully!");
-        setTimeout(() => {
-          setStatus("idle");
-          setSubmittedTicket(null);
-        }, 15000);
-      } else {
-        setStatus("error");
-        showToast("error", "Failed to submit ticket. Please try again.");
-        setTimeout(() => setStatus("idle"), 4000);
-      }
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/support-tickets`, { method: "POST", body, headers });
+      if (!res.ok) throw new Error(String(res.status));
+      const payload = await res.json().catch(() => null);
+      setTicket({ number: payload?.data?.ticketNumber ?? null });
+      screenshots.forEach((s) => URL.revokeObjectURL(s.url));
+      setScreenshots([]);
+      setForm(emptyForm(audience, defaults));
     } catch {
-      setStatus("error");
-      showToast("error", "Network error. Please try again.");
-      setTimeout(() => setStatus("idle"), 4000);
+      showToast("error", "We could not send it. Check your connection and try again, or call us.");
+    } finally {
+      setSending(false);
     }
   };
 
+  if (ticket) {
+    const answer =
+      form.preferredContact === "email" ? "by email" : form.preferredContact === "whatsapp" ? "on WhatsApp" : "by phone";
+    return (
+      <div className="flex flex-col items-center px-4 py-10 text-center" role="status">
+        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100 text-green-600">
+          <CheckCircle2 className="h-8 w-8" />
+        </span>
+        <h3 className="mt-4 text-xl font-bold text-gray-900">We got your message</h3>
+        <p className="mt-1 max-w-sm text-sm text-gray-600">
+          Our team will answer you {answer} within 24 hours.
+        </p>
+        {ticket.number && (
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard?.writeText(ticket.number!);
+              showToast("success", "Ticket number copied");
+            }}
+            className="mt-5 inline-flex items-center gap-2 rounded-lg border border-dashed border-green-300 bg-green-50 px-4 py-2 font-mono text-sm font-semibold text-green-800 hover:bg-green-100"
+          >
+            {ticket.number}
+            <Copy className="h-4 w-4" />
+          </button>
+        )}
+        {ticket.number && <p className="mt-1 text-xs text-gray-500">Your ticket number. Keep it if you call us.</p>}
+        <Button variant="outline" className="mt-6" onClick={() => setTicket(null)}>
+          <RotateCcw className="mr-2 h-4 w-4" /> Send another message
+        </Button>
+      </div>
+    );
+  }
+
+  const fieldError = (key: string) =>
+    errors[key] ? (
+      <p className="text-xs text-red-600" role="alert">
+        {errors[key]}
+      </p>
+    ) : null;
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      {status === "success" && (
-        <div className="flex items-start gap-3 bg-green-50 border border-green-200 rounded-xl p-4">
-          <CheckCircle2 className="h-6 w-6 text-green-600 shrink-0 mt-0.5" />
-          <div>
-            <p className="font-semibold text-green-900 text-sm">
-              Ticket submitted!
-            </p>
-            {submittedTicket && (
-              <p className="text-green-700 text-xs mt-0.5">
-                Your ticket number is{" "}
-                <span className="font-mono font-semibold">
-                  {submittedTicket}
-                </span>
-                . Keep it for reference.
-              </p>
-            )}
-            <p className="text-green-700 text-xs mt-0.5">
-              Our team will get back to you within 24 hours.
-            </p>
+    <form onSubmit={handleSubmit} noValidate className="space-y-7">
+      {/* 1. What it is about */}
+      <fieldset className="space-y-3">
+        <legend className="mb-3 text-sm font-semibold text-gray-900">What do you need help with?</legend>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {CATEGORIES[audience].map(({ value, label, icon: Icon }) => {
+            const on = form.category === value;
+            return (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={on}
+                onClick={() => set("category", value)}
+                className={cn(
+                  "flex items-center gap-2.5 rounded-xl border px-3 py-3 text-left text-sm font-medium transition-colors",
+                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500",
+                  on
+                    ? "border-green-600 bg-green-50 text-green-800 ring-1 ring-green-600"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-green-300 hover:bg-green-50/50"
+                )}
+              >
+                <Icon className={cn("h-5 w-5 shrink-0", on ? "text-green-600" : "text-gray-400")} />
+                {label}
+              </button>
+            );
+          })}
+        </div>
+        {fieldError("category")}
+      </fieldset>
+
+      {/* 2. The problem */}
+      <div className="space-y-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="description" className="text-sm font-semibold text-gray-900">
+            Tell us what happened
+          </Label>
+          <Textarea
+            id="description"
+            value={form.description}
+            onChange={(e) => set("description", e.target.value)}
+            rows={5}
+            maxLength={2000}
+            placeholder={
+              audience === "farmer"
+                ? "For example: I brought 200 kg of beans on Monday and I have not been paid yet."
+                : "What did you try, what did you expect, and what happened instead?"
+            }
+            className={cn("resize-none bg-white", errors.description && "border-red-500")}
+          />
+          <div className="flex justify-between gap-2">
+            {fieldError("description") ?? <span />}
+            <span className="text-xs text-gray-400">{form.description.length}/2000</span>
           </div>
         </div>
-      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label htmlFor="name" className="text-sm font-medium text-gray-700">
-            Full Name
+          <Label htmlFor="subject" className="text-sm font-medium text-gray-700">
+            Short title <span className="font-normal text-gray-400">(optional)</span>
           </Label>
           <Input
-            id="name"
-            value={form.name}
-            onChange={(e) => handleChange("name", e.target.value)}
-            placeholder="Your full name"
-            className={cn(
-              "bg-white",
-              errors.name &&
-                "border-red-500 focus-visible:ring-red-500/30"
-            )}
+            id="subject"
+            value={form.subject}
+            onChange={(e) => set("subject", e.target.value)}
+            placeholder={audience === "farmer" ? "Not paid for my beans" : "Short summary"}
+            className="bg-white"
           />
-          {errors.name && (
-            <p className="text-xs text-red-600">{errors.name}</p>
-          )}
         </div>
 
-        <div className="space-y-1.5">
-          <Label
-            htmlFor="email"
-            className="text-sm font-medium text-gray-700"
-          >
-            Email
-          </Label>
-          <Input
-            id="email"
-            type="email"
-            value={form.email}
-            onChange={(e) => handleChange("email", e.target.value)}
-            placeholder="you@example.com"
-            className={cn(
-              "bg-white",
-              errors.email && "border-red-500 focus-visible:ring-red-500/30"
-            )}
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-gray-700">
+            Photos or screenshots <span className="font-normal text-gray-400">(optional, up to {MAX_SCREENSHOTS})</span>
+          </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              addFiles(e.target.files);
+              e.target.value = "";
+            }}
           />
-          {errors.email && (
-            <p className="text-xs text-red-600">{errors.email}</p>
-          )}
-        </div>
-      </div>
-
-      <div className="space-y-1.5">
-        <Label
-          htmlFor="subject"
-          className="text-sm font-medium text-gray-700"
-        >
-          Subject
-        </Label>
-        <Input
-          id="subject"
-          value={form.subject}
-          onChange={(e) => handleChange("subject", e.target.value)}
-          placeholder="Short summary of your issue"
-          className={cn(
-            "bg-white",
-            errors.subject &&
-              "border-red-500 focus-visible:ring-red-500/30"
-          )}
-        />
-        {errors.subject && (
-          <p className="text-xs text-red-600">{errors.subject}</p>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="space-y-1.5">
-          <Label className="text-sm font-medium text-gray-700">
-            Category
-          </Label>
-          <Select
-            value={form.category}
-            onValueChange={(value) => handleChange("category", value)}
-          >
-            <SelectTrigger
-              className={cn(
-                "bg-white",
-                errors.category &&
-                  "border-red-500 focus-visible:ring-red-500/30"
-              )}
-            >
-              <SelectValue placeholder="Choose category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="orders">Orders & Ordering</SelectItem>
-              <SelectItem value="delivery">
-                Delivery & Tracking
-              </SelectItem>
-              <SelectItem value="payments">Payments & Billing</SelectItem>
-              <SelectItem value="account">Account & Profile</SelectItem>
-              <SelectItem value="products">Products & Suppliers</SelectItem>
-              <SelectItem value="refunds">Refunds & Returns</SelectItem>
-              <SelectItem value="technical">Technical Issues</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
-            </SelectContent>
-          </Select>
-          {errors.category && (
-            <p className="text-xs text-red-600">{errors.category}</p>
-          )}
-        </div>
-
-        <div className="space-y-1.5">
-          <Label className="text-sm font-medium text-gray-700">
-            How urgent?
-          </Label>
-          <Select
-            value={form.severity}
-            onValueChange={(value) => handleChange("severity", value)}
-          >
-            <SelectTrigger className="bg-white">
-              <SelectValue placeholder="Select priority" />
-            </SelectTrigger>
-            <SelectContent>
-              {severityOptions.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-1.5">
-          <Label className="text-sm font-medium text-gray-700">
-            Preferred contact
-          </Label>
-          <Select
-            value={form.preferredContact}
-            onValueChange={(value) =>
-              handleChange("preferredContact", value)
-            }
-          >
-            <SelectTrigger className="bg-white">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {submitOptions.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="space-y-1.5">
-        <Label className="text-sm font-medium text-gray-700">
-          Describe your issue
-        </Label>
-        <Textarea
-          value={form.description}
-          onChange={(e) => handleChange("description", e.target.value)}
-          rows={5}
-          placeholder="Please describe the issue in as much detail as possible. Include steps you took, error messages, and anything else that may help us resolve it quickly."
-          className={cn(
-            "bg-white resize-none",
-            errors.description &&
-              "border-red-500 focus-visible:ring-red-500/30"
-          )}
-        />
-        {errors.description && (
-          <p className="text-xs text-red-600">{errors.description}</p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label className="text-sm font-medium text-gray-700">
-          Attach screenshots (max 6)
-        </Label>
-
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          className="hidden"
-          onChange={(e) => handleFiles(e.target.files)}
-        />
-
-        {previews.length > 0 && (
           <div className="flex flex-wrap gap-2">
-            {previews.map((src, i) => (
-              <div
-                key={i}
-                className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 group"
-              >
+            {screenshots.map((s, i) => (
+              <div key={s.url} className="relative h-20 w-20 overflow-hidden rounded-lg border border-gray-200">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={src}
-                  alt={`screenshot-${i + 1}`}
-                  className="w-full h-full object-cover"
-                />
+                <img src={s.url} alt={`Attachment ${i + 1}`} className="h-full w-full object-cover" />
                 <button
                   type="button"
                   onClick={() => removeScreenshot(i)}
-                  className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 hover:bg-black/80 transition-colors"
-                  aria-label="Remove screenshot"
+                  className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white hover:bg-black/80"
+                  aria-label={`Remove attachment ${i + 1}`}
                 >
                   <X className="h-3 w-3" />
                 </button>
               </div>
             ))}
-            {previews.length < 6 && (
+            {screenshots.length < MAX_SCREENSHOTS && (
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center gap-1 text-gray-400 hover:border-green-500 hover:text-green-600 transition-colors"
+                className="flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-gray-300 text-gray-500 transition-colors hover:border-green-500 hover:text-green-600"
               >
                 <ImagePlus className="h-5 w-5" />
-                <span className="text-[10px]">Add</span>
+                <span className="text-[11px] font-medium">Add photo</span>
               </button>
             )}
           </div>
-        )}
-
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="inline-flex items-center gap-2 text-sm text-green-700 hover:text-green-800 underline-offset-2 hover:underline"
-        >
-          <Paperclip className="h-4 w-4" />
-          Upload screenshot
-        </button>
+        </div>
       </div>
+
+      {/* 3. How urgent */}
+      <fieldset>
+        <legend className="mb-2 text-sm font-semibold text-gray-900">How urgent is it?</legend>
+        <div className="grid grid-cols-3 gap-2">
+          {URGENCY.map((u) => {
+            const on = form.severity === u.value;
+            return (
+              <button
+                key={u.value}
+                type="button"
+                aria-pressed={on}
+                onClick={() => set("severity", on ? "" : u.value)}
+                className={cn(
+                  "rounded-xl border px-3 py-2.5 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500",
+                  on ? "border-green-600 bg-green-50 ring-1 ring-green-600" : "border-gray-200 bg-white hover:bg-gray-50"
+                )}
+              >
+                <span className={cn("block text-sm font-semibold", on ? "text-green-800" : "text-gray-800")}>{u.label}</span>
+                <span className="block text-xs text-gray-500">{u.hint}</span>
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
+
+      {/* 4. Who to answer, and how */}
+      <fieldset className="space-y-4 rounded-xl bg-gray-50 p-4">
+        <legend className="sr-only">How we answer you</legend>
+        <p className="text-sm font-semibold text-gray-900">How should we answer you?</p>
+        <div className="space-y-1.5">
+          <Label htmlFor="name" className="text-sm font-medium text-gray-700">
+            Your name
+          </Label>
+          <Input
+            id="name"
+            autoComplete="name"
+            value={form.name}
+            onChange={(e) => set("name", e.target.value)}
+            className={cn("bg-white", errors.name && "border-red-500")}
+          />
+          {fieldError("name")}
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
+              Phone number
+            </Label>
+            <Input
+              id="phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              value={form.phone}
+              onChange={(e) => set("phone", e.target.value)}
+              placeholder="0788 123 456"
+              className={cn("bg-white", errors.contact && "border-red-500")}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+              Email <span className="font-normal text-gray-400">(optional)</span>
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              value={form.email}
+              onChange={(e) => set("email", e.target.value)}
+              placeholder="you@example.com"
+              className={cn("bg-white", errors.contact && "border-red-500")}
+            />
+          </div>
+        </div>
+        {fieldError("contact") ?? <p className="text-xs text-gray-500">A phone number or an email is enough.</p>}
+
+        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Preferred way to answer">
+          {CONTACT.map(({ value, label, icon: Icon }) => {
+            const on = form.preferredContact === value;
+            return (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                onClick={() => set("preferredContact", value)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors",
+                  on ? "border-green-600 bg-green-600 text-white" : "border-gray-200 bg-white text-gray-700 hover:bg-gray-100"
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </button>
+            );
+          })}
+        </div>
+        {fieldError("preferredContact")}
+      </fieldset>
 
       <Button
         type="submit"
-        disabled={status === "sending"}
-        className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-60 py-2.5 text-sm"
+        disabled={sending}
+        className="h-11 w-full bg-green-600 text-base font-semibold text-white hover:bg-green-700 sm:w-auto sm:px-8"
       >
-        {status === "sending" ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Submitting ticket...
-          </>
-        ) : (
-          <>
-            <Upload className="h-4 w-4" />
-            Submit Support Ticket
-          </>
-        )}
+        {sending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+        {sending ? "Sending…" : "Send message"}
       </Button>
-
- 
     </form>
   );
 }

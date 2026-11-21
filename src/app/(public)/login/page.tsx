@@ -188,11 +188,12 @@ function LoginForm() {
 
       // If user not found, redirect to Google signup page
       if (response.userNotFound) {
-        const params = new URLSearchParams({
-          email: response.email,
-          name: response.name || "",
-        });
-        window.location.href = `/google-signup?${params.toString()}`;
+        // The pass proves Google verified this email; kept for this tab only, not in the URL
+        sessionStorage.setItem(
+          "googleSignup",
+          JSON.stringify({ token: response.signupToken, email: response.email, name: response.name || "" }),
+        );
+        window.location.href = "/google-signup";
         return;
       }
 
