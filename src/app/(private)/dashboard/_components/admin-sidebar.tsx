@@ -247,6 +247,11 @@ const menuItems = [
     href: "/dashboard/deposits",
   },
   {
+    icon: Wallet,
+    label: "MVend Wallet",
+    href: "/dashboard/mvend-wallet",
+  },
+  {
     icon: MailOpen,
     label: "Newsletter",
     href: "/dashboard/newsletter",
