@@ -32,6 +32,7 @@ const PAGE_MODULES: Array<[string, string]> = [
   ["/dashboard/restaurant-kyc", "restaurant_kyc"],
   ["/dashboard/vouchers", "vouchers"],
   ["/dashboard/deposits", "deposits"],
+  ["/dashboard/mvend-wallet", "mvend_wallet"],
   ["/dashboard/payments", "deposits"],
   ["/dashboard/newsletter", "newsletter"],
   ["/dashboard/invitations", "invitations"],
