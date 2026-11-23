@@ -101,7 +101,7 @@ export function FarmerSidebar({ isOpen, onClose }: FarmerSidebarProps) {
   const userName = userData?.name || userData?.username || userData?.phone || "";
 
   return (
-    <div className="relative h-screen w-60 min-w-60 overflow-hidden bg-[#0B2E1F] text-white">
+    <div className="relative h-screen supports-[height:100dvh]:h-dvh w-60 min-w-60 overflow-hidden bg-[#0B2E1F] text-white">
       {/* Soft glows from the food.rw hero */}
       <div
         aria-hidden="true"
@@ -113,7 +113,7 @@ export function FarmerSidebar({ isOpen, onClose }: FarmerSidebarProps) {
       />
       <div
         className={cn(
-          "relative z-10 flex h-screen w-60 min-w-60 shrink-0 flex-col transition-transform duration-300 ease-in-out",
+          "relative z-10 flex h-screen supports-[height:100dvh]:h-dvh w-60 min-w-60 shrink-0 flex-col transition-transform duration-300 ease-in-out",
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         )}
       >

@@ -494,7 +494,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
     userData?.role === "SUPERUSER" ? "Super Admin" : userData?.adminRole?.name || userData?.role || "Role";
 
   return (
-    <div className="relative w-60 min-w-60 h-screen overflow-hidden bg-[#0B2E1F] text-white">
+    <div className="relative w-60 min-w-60 h-screen supports-[height:100dvh]:h-dvh overflow-hidden bg-[#0B2E1F] text-white">
       {/* Soft glows from the site's hero gradient */}
       <div
         aria-hidden="true"
@@ -509,7 +509,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
           fixed md:relative
           ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
           z-50 md:z-auto
-          w-60 min-w-60 h-screen flex flex-col shrink-0
+          w-60 min-w-60 h-screen supports-[height:100dvh]:h-dvh flex flex-col shrink-0
           transition-transform duration-300 ease-in-out relative
         `}
       >
@@ -681,7 +681,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         </nav>
 
         {/* Account */}
-        <div className="relative z-10 shrink-0 border-t border-white/10 p-3">
+        <div className="relative z-10 shrink-0 border-t border-white/10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           {userDropdownOpen && (
             <div className="absolute bottom-full left-3 right-3 mb-2 overflow-hidden rounded-xl bg-white text-[#0B2E1F] shadow-[0_20px_40px_-12px_#000]">
               <div className="border-b border-[#DCE6DF] px-3 py-2.5">
@@ -698,6 +698,8 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                 href="/"
                 className="flex min-h-10 items-center gap-2 px-3 text-[14px] hover:bg-[#F6F9F7]"
               >
+                <ArrowUpRight className="h-4 w-4" />
+                Visit food.rw
               </Link>
               <button
                 type="button"

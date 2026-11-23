@@ -34,7 +34,7 @@ export default function TraderLayout({
   }
 
   return (
-    <div className="flex h-screen bg-white">
+    <div className="flex h-screen supports-[height:100dvh]:h-dvh bg-white">
       {/* Sidebar */}
       <div
         className={`${

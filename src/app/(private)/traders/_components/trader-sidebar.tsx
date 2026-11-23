@@ -129,13 +129,13 @@ export function TraderSidebar({ isOpen, onClose }: TraderSidebarProps) {
   };
 
   return (
-    <div className="relative w-60 min-w-60 h-screen overflow-hidden bg-green-800">
+    <div className="relative w-60 min-w-60 h-screen supports-[height:100dvh]:h-dvh overflow-hidden bg-green-800">
       <div
         className={`
           fixed md:relative
           ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
           z-50 md:z-auto
-          w-60 min-w-60 h-screen border-r border-gray-200 flex flex-col shrink-0 
+          w-60 min-w-60 h-screen supports-[height:100dvh]:h-dvh border-r border-gray-200 flex flex-col shrink-0 
           transition-transform duration-300 ease-in-out relative
         `}
         style={{ backgroundColor: "transparent" }}
