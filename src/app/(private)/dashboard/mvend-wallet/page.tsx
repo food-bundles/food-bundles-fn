@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAdminAccess } from "@/app/hooks/useAdminAccess";
 import { mvendService, type MvendOverview, type MvendTransaction } from "@/app/services/mvendService";
+import RegisterMerchantModal from "./_components/RegisterMerchantModal";
 
 const rwf = (n: number) => `${Math.round(n).toLocaleString()} RWF`;
 
@@ -44,6 +45,7 @@ export default function MvendWalletPage() {
   const [amount, setAmount] = useState("");
   const [payer, setPayer] = useState("");
   const [sending, setSending] = useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -80,6 +82,7 @@ export default function MvendWalletPage() {
   };
 
   const connected = !!overview?.status.connected;
+  const registered = !!overview?.merchant?.memberId;
 
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6">
@@ -119,12 +122,23 @@ export default function MvendWalletPage() {
         <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5" aria-label="Connection">
           <p className="m-0 text-sm font-semibold text-gray-900">Connecting to MVend</p>
           <p className="m-0 mt-1 text-[13px] text-gray-600">The wallet works once every step below is done.</p>
+          {!registered && can("mvend_wallet", "settings") && (
+            <Button size="sm" className="mt-3 bg-[#007A35] hover:bg-[#0F5C36]" onClick={() => setRegisterOpen(true)}>
+              Register merchant wallet
+            </Button>
+          )}
+          {registered && (
+            <p className="m-0 mt-2 text-[13px] text-gray-700">
+              Registered at MVend as member <b>{overview?.merchant?.memberId}</b>
+              {overview?.merchant?.walletStatus ? ` · wallet ${overview.merchant.walletStatus.toLowerCase()}` : " · waiting for MVend to create the wallet"}
+            </p>
+          )}
           <ul className="m-0 mt-3 list-none space-y-2 p-0">
             {overview.status.steps.map((s) => (
               <li key={s.key} className="flex items-start gap-2 text-[13px]">
                 {s.ok ? (
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-700" aria-label="Done" />
-                ) : s.key === "pin" ? (
+                ) : s.key === "pinScheme" ? (
                   <Circle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-label="To confirm" />
                 ) : (
                   <X className="mt-0.5 h-4 w-4 shrink-0 text-red-600" aria-label="Missing" />
@@ -224,6 +238,8 @@ export default function MvendWalletPage() {
           </div>
         )}
       </section>
+
+      <RegisterMerchantModal open={registerOpen} onClose={() => setRegisterOpen(false)} onDone={load} />
 
       <Dialog open={topUpOpen} onOpenChange={setTopUpOpen}>
         <DialogContent className="sm:max-w-md bg-white">

@@ -11,6 +11,7 @@ export interface MvendStep {
 
 export interface MvendOverview {
   status: { connected: boolean; steps: MvendStep[]; baseUrl: string };
+  merchant: MvendMerchant | null;
   wallet: { walletId: string | null; msisdn: string | null };
   balance: { account: number; available: number } | null;
   balanceError: string | null;
@@ -47,5 +48,28 @@ export const mvendService = {
   topUp: async (amount: number, payerPhone: string) => {
     const res = await createAxiosClient().post("/mvend/topup", { amount, payerPhone });
     return res.data as { message: string; data: MvendTransaction };
+  },
+};
+
+/** Food Bundles' registration as an MVend merchant (saved once registered) */
+export interface MvendMerchant {
+  memberId?: string | null;
+  msisdn?: string | null;
+  walletId?: string | null;
+  walletStatus?: string | null;
+  businessName?: string | null;
+  registeredAt?: string | null;
+}
+
+export const mvendMerchantService = {
+  /** Business + representative details, with ID photos, selfie and RDB document (form data) */
+  register: async (form: FormData) => {
+    const res = await createAxiosClient().post("/mvend/merchant/register", form, { headers: { "Content-Type": "multipart/form-data" } });
+    return res.data as { message: string; data: MvendMerchant };
+  },
+  /** MVend's Rwanda locations: provinces, then districts / sectors / cells / villages of the one above */
+  locations: async (level: "provinces" | "districts" | "sectors" | "cells" | "villages", parentId?: string) => {
+    const res = await createAxiosClient().get(`/mvend/locations/${level}${parentId ? `/${encodeURIComponent(parentId)}` : ""}`);
+    return (res.data.data ?? []) as Record<string, unknown>[];
   },
 };
