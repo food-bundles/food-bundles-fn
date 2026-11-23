@@ -138,8 +138,8 @@ export default function MvendWalletPage() {
               <li key={s.key} className="flex items-start gap-2 text-[13px]">
                 {s.ok ? (
                   <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-700" aria-label="Done" />
-                ) : s.key === "pinScheme" ? (
-                  <Circle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-label="To confirm" />
+                ) : ["registered", "wallet", "pin"].includes(s.key) ? (
+                  <Circle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-label="To do" />
                 ) : (
                   <X className="mt-0.5 h-4 w-4 shrink-0 text-red-600" aria-label="Missing" />
                 )}
