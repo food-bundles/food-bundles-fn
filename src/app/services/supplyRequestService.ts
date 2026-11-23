@@ -233,6 +233,18 @@ export const supplyRequestService = {
   setStatus: async (id: string, status: "OPEN" | "CLOSED" | "CANCELLED") =>
     data<SupplyRequest>(await createAxiosClient().patch(`/supply-requests/${id}/status`, { status })),
 
+  // GET /supply-requests/needed-products: products farmers may sell now without registering them
+  neededProducts: async () =>
+    data<{ products: { id: string; productName: string; unit: string }[]; updatedAt: string | null }>(
+      await createAxiosClient().get("/supply-requests/needed-products")
+    ),
+
+  // PUT /supply-requests/needed-products: replaces the list farmers see on the Sell screen
+  setNeededProducts: async (productIds: string[]) =>
+    data<{ products: { id: string; productName: string; unit: string }[]; updatedAt: string | null }>(
+      await createAxiosClient().put("/supply-requests/needed-products", { productIds })
+    ),
+
   /** Customers the user may create requests for */
   customers: async () => data<RequestCustomer[]>(await createAxiosClient().get("/supply-requests/customers")),
 

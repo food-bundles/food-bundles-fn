@@ -39,7 +39,7 @@ export default function AdminLayout({
           <ProductProvider>
             <PaymentMethodProvider>
             <NotificationRecipientProvider>
-              <div className={`flex h-screen bg-[#F6F9F7] ${siteFontVariables}`}>
+              <div className={`flex h-screen supports-[height:100dvh]:h-dvh bg-[#F6F9F7] ${siteFontVariables}`}>
               {/* Sidebar */}
               <div
                 className={`${

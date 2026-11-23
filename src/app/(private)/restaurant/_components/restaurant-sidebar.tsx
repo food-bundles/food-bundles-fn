@@ -77,7 +77,7 @@ export function RestaurantSidebar({ isOpen, onClose }: RestaurantSidebarProps) {
         "fixed md:relative",
         isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
         "z-50 md:z-auto",
-        "w-60 min-w-60 h-screen flex flex-col shrink-0",
+        "w-60 min-w-60 h-screen supports-[height:100dvh]:h-dvh flex flex-col shrink-0",
         "transition-transform duration-300 ease-in-out",
         "relative overflow-hidden bg-[#0B2E1F] text-white",
       )}

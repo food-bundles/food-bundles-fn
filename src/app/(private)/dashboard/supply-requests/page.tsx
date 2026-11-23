@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, ClipboardList, Loader2, MapPin, Plus, UserRound, Users } from "lucide-react";
+import { CalendarDays, ClipboardList, Loader2, MapPin, Plus, Sprout, UserRound, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,6 +24,7 @@ import {
 } from "@/app/services/supplyRequestService";
 import { SupplyRequestForm } from "./_components/SupplyRequestForm";
 import { RequestPlaceDialog } from "./_components/RequestPlaceDialog";
+import { NeededProductsDialog } from "./_components/NeededProductsDialog";
 
 const STATUS_FILTERS = [
   { value: "OPEN", label: "Open" },
@@ -57,6 +58,7 @@ export default function SupplyRequestsPage() {
   const [status, setStatus] = useState("OPEN");
   const [requests, setRequests] = useState<SupplyRequest[] | null>(null);
   const [formOpen, setFormOpen] = useState(false);
+  const [neededOpen, setNeededOpen] = useState(false);
 
   const load = useCallback(async () => {
     setRequests(null);
@@ -85,11 +87,16 @@ export default function SupplyRequestsPage() {
             into that customer&apos;s order for the day.
           </p>
         </div>
-        {canCreate && tab === "requests" && (
-          <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => setFormOpen(true)}>
-            <Plus className="mr-1 h-4 w-4" /> New request
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={() => setNeededOpen(true)}>
+            <Sprout className="mr-1 h-4 w-4 text-green-600" /> Needed from farmers
           </Button>
-        )}
+          {canCreate && tab === "requests" && (
+            <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => setFormOpen(true)}>
+              <Plus className="mr-1 h-4 w-4" /> New request
+            </Button>
+          )}
+        </div>
       </div>
 
       {canAssign && (
@@ -216,6 +223,7 @@ export default function SupplyRequestsPage() {
       )}
 
       <SupplyRequestForm open={formOpen} onClose={() => setFormOpen(false)} onSaved={() => load()} />
+      <NeededProductsDialog open={neededOpen} canEdit={canEditRequests} onClose={() => setNeededOpen(false)} />
       <RequestPlaceDialog
         request={placeTarget}
         canCreateSite={canCreateSite}
