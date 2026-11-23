@@ -45,6 +45,7 @@ import {
   MapPin,
   QrCode,
   ArrowUpRight,
+  Plug,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -80,6 +81,8 @@ const searchKeywords: Record<string, string[]> = {
   "/dashboard/restaurant-kyc": ["verification", "documents", "identity", "compliance", "location", "zone"],
   "/dashboard/vouchers": ["loans", "credit", "card", "bnpl", "repayment", "lending"],
   "/dashboard/deposits": ["wallet", "money", "top up", "balance", "transactions", "payments"],
+  "/dashboard/ebm": ["kayko", "ebm", "rra", "invoice", "receipt", "tax", "integrations", "partners"],
+  "/dashboard/mvend-wallet": ["mvend", "gwiza", "wallet", "pay farmers", "top up", "integrations", "partners"],
   "/dashboard/newsletter": ["email", "subscribers", "campaign", "mail"],
   "/dashboard/invitations": ["aggregator applications", "umukusanyi", "qr", "agreement", "collector", "invite", "onboarding", "join", "referral"],
   "/dashboard/users/lookup": ["find", "search", "user", "account", "phone"],
@@ -190,11 +193,6 @@ const menuItems = [
     ],
   },
   {
-    icon: DollarSign,
-    label: "ebm",
-    href: "/dashboard/ebm",
-  },
-  {
     icon: Crown,
     label: "Subscriptions",
     href: "/dashboard/subscriptions",
@@ -247,9 +245,22 @@ const menuItems = [
     href: "/dashboard/deposits",
   },
   {
-    icon: Wallet,
-    label: "MVend Wallet",
-    href: "/dashboard/mvend-wallet",
+    // Services from partner companies and institutions, each named after its provider
+    icon: Plug,
+    label: "Integrations",
+    href: "/dashboard/integrations",
+    subItems: [
+      {
+        icon: DollarSign,
+        label: "Kayko EBM",
+        href: "/dashboard/ebm",
+      },
+      {
+        icon: Wallet,
+        label: "MVend Wallet",
+        href: "/dashboard/mvend-wallet",
+      },
+    ],
   },
   {
     icon: MailOpen,
