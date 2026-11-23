@@ -152,10 +152,10 @@ export const submissionService = {
     };
   },
 
-  /** Stage 4: pay by MoMo (PayPack cashout) to the given number */
-  paySubmissionMomo: async (submissionId: string, phoneNumber: string) => {
+  /** Stage 4: pay to the given MoMo number, by PayPack (MOMO) or from the MVend wallet (MVEND) */
+  paySubmissionMomo: async (submissionId: string, phoneNumber: string, method: "MOMO" | "MVEND" = "MOMO") => {
     const axiosClient = createAxiosClient();
-    const response = await axiosClient.post(`/submissions/${submissionId}/payout`, { phoneNumber });
+    const response = await axiosClient.post(`/submissions/${submissionId}/payout`, { phoneNumber, method });
     return response.data;
   },
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Banknote, Loader2, Lock, Smartphone } from "lucide-react";
+import { Banknote, Loader2, Lock, Smartphone, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -335,7 +335,9 @@ export function VerifySubmissionModal({ submission, onClose, onDone }: StageModa
 
 // ─── Stage 4: pay the farmer (MoMo or cash) ──────────────────────────────────
 export function PaySubmissionModal({ submission, onClose, onDone }: StageModalProps) {
-  const [method, setMethod] = useState<"MOMO" | "CASH">("MOMO");
+  const [method, setMethod] = useState<"MOMO" | "MVEND" | "CASH">("MOMO");
+  const { can } = useAdminAccess();
+  const canMvend = can("mvend_wallet", "pay_farmers");
   const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -353,6 +355,9 @@ export function PaySubmissionModal({ submission, onClose, onDone }: StageModalPr
       if (method === "CASH") {
         await submissionService.paySubmissionCash(submission.id);
         toast.success("Payment recorded. The farmer gets an SMS receipt.");
+      } else if (method === "MVEND") {
+        await submissionService.paySubmissionMomo(submission.id, phone.trim(), "MVEND");
+        toast.success("Sent from the MVend wallet. It completes when MVend confirms.");
       } else {
         await submissionService.paySubmissionMomo(submission.id, phone.trim());
         toast.success("MoMo payment sent. Confirm it in the payout history once it arrives.");
@@ -368,6 +373,7 @@ export function PaySubmissionModal({ submission, onClose, onDone }: StageModalPr
 
   const options = [
     { key: "MOMO" as const, label: "Mobile money", hint: "Send to the farmer's MoMo", icon: Smartphone },
+    ...(canMvend ? [{ key: "MVEND" as const, label: "MVend wallet", hint: "From Food Bundles' wallet to their MoMo", icon: Wallet }] : []),
     { key: "CASH" as const, label: "Cash", hint: "Already paid by hand", icon: Banknote },
   ];
 
@@ -386,7 +392,7 @@ export function PaySubmissionModal({ submission, onClose, onDone }: StageModalPr
             <span className="text-sm text-green-800">Amount</span>
             <span className="text-xl font-bold text-green-800">{rwf(submission.totalAmount)}</span>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className={`grid gap-2 ${options.length === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
             {options.map((option) => (
               <button
                 key={option.key}
@@ -404,7 +410,7 @@ export function PaySubmissionModal({ submission, onClose, onDone }: StageModalPr
               </button>
             ))}
           </div>
-          {method === "MOMO" && (
+          {(method === "MOMO" || method === "MVEND") && (
             <div className="space-y-1.5">
               <Label htmlFor="pay-phone">MoMo number</Label>
               <Input
@@ -427,7 +433,7 @@ export function PaySubmissionModal({ submission, onClose, onDone }: StageModalPr
           </Button>
           <Button
             onClick={submit}
-            disabled={saving || (method === "MOMO" && !phone.trim())}
+            disabled={saving || (method !== "CASH" && !phone.trim())}
             className="bg-green-600 hover:bg-green-700"
           >
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
