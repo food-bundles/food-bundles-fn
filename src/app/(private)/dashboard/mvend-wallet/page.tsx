@@ -82,7 +82,8 @@ export default function MvendWalletPage() {
   };
 
   const connected = !!overview?.status.connected;
-  const registered = !!overview?.merchant?.memberId;
+  // Registered here, or set up on the server (MVEND_MEMBER_ID) for a member registered elsewhere
+  const registered = !!overview?.merchant?.memberId || !!overview?.status.steps.find((s) => s.key === "registered")?.ok;
 
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6">
@@ -129,7 +130,8 @@ export default function MvendWalletPage() {
           )}
           {registered && (
             <p className="m-0 mt-2 text-[13px] text-gray-700">
-              Registered at MVend as member <b>{overview?.merchant?.memberId}</b>
+              Registered at MVend as member{" "}
+              <b>{overview?.merchant?.memberId ?? overview?.status.steps.find((s) => s.key === "registered")?.detail?.replace(/^Member /, "")}</b>
               {overview?.merchant?.walletStatus ? ` · wallet ${overview.merchant.walletStatus.toLowerCase()}` : " · waiting for MVend to create the wallet"}
             </p>
           )}
