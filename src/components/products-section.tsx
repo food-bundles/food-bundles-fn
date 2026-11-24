@@ -122,7 +122,6 @@ const ProductCard = memo(function ProductCard({
   const cartItem = cartItems.find((item) => item.productId === id);
   const isInCart = !!cartItem;
   const cartQuantity = cartItem?.quantity || 0;
-  const isUpdateDisabled = isInCart && quantity === cartQuantity;
 
   // Get role-based price with fallback
   const displayPrice = productData ? getRoleBasedPrice(productData, userRole || 'RESTAURANT', customerTypeId) : (price || 0);
@@ -325,8 +324,9 @@ const ProductCard = memo(function ProductCard({
           </button>
         </div>
 
-        {isInCart && isUpdateDisabled ? (
-          // Already in the cart with this quantity: offer to take it out
+        {isInCart ? (
+          // In the cart: − / + change it (saved automatically), ✕ takes it out.
+          // Add only shows for products not in the cart yet.
           <button
             type="button"
             onClick={async () => {
@@ -352,18 +352,18 @@ const ProductCard = memo(function ProductCard({
           <button
             type="button"
             onClick={handleCartAction}
-            disabled={isAddingToCart || isUpdateDisabled}
-            aria-label={isInCart ? `Update ${name} in cart` : `Add ${name} to cart`}
-            className={`flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full px-4 text-sm font-bold text-white transition-colors active:scale-95 ${
-              isInCart ? "bg-[#00A43A] hover:bg-[#007A35]" : "bg-[#0B2E1F] hover:bg-[#0F5C36]"
-            } ${isAddingToCart || isUpdateDisabled ? "opacity-50" : ""}`}
+            disabled={isAddingToCart}
+            aria-label={`Add ${name} to cart`}
+            className={`flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full bg-[#0B2E1F] px-4 text-sm font-bold text-white transition-colors hover:bg-[#0F5C36] active:scale-95 ${
+              isAddingToCart ? "opacity-50" : ""
+            }`}
           >
             {isAddingToCart ? (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
             ) : (
               <>
                 <ShoppingCart className="h-4 w-4" />
-                <span>{isInCart ? "Update" : "Add"}</span>
+                <span> Add</span>
               </>
             )}
           </button>
@@ -857,10 +857,7 @@ export function ProductsSection({
                       <ShoppingCart className="h-5 w-5 text-[#007A35]" />
                     </span>
                     <div>
-                      <p className="m-0 text-[16px] font-bold text-[#0B2E1F]">No account needed to fill your cart</p>
-                      <p className="m-0 text-sm text-[#4A6358]">
-                        Your cart is saved on this device. Log in or sign up at checkout to confirm your prices and delivery.
-                      </p>
+                      <p className="m-0 text-[16px] font-bold text-[#0B2E1F]">Welcome to our shop</p>
                     </div>
                   </div>
                   <button
