@@ -15,6 +15,7 @@ import {
   type CartItem,
 } from "@/app/services/cartService";
 import { useAuth } from "./auth-context";
+import { useCartLiveUpdates } from "@/hooks/useCartLiveUpdates";
 
 // ── Guest cart ────────────────────────────────────────────────────────────
 // Visitors who are not logged in can still fill a cart. It lives in this
@@ -174,6 +175,9 @@ export function CartProvider({ children }: CartProviderProps) {
       refreshingRef.current = false;
     }
   }, [isAuthenticated, user, authLoading]);
+
+  // Cart changed on the mobile app or another tab: re-read it quietly, no refresh needed
+  useCartLiveUpdates(isAuthenticated ? user?.id : null, () => void refreshCart(true));
 
   const addToCart = useCallback(
     async (productId: string, quantity: number, product?: GuestProductInfo): Promise<boolean> => {
