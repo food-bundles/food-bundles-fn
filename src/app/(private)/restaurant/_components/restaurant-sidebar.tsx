@@ -12,6 +12,7 @@ import {
   Plus,
   Settings,
   ArrowUpRight,
+  BookOpen,
   type LucideIcon,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -29,6 +30,7 @@ export const menuGroups: { title: string; items: MenuItem[] }[] = [
       { icon: Store, label: "Shop", href: "/restaurant" },
       { icon: ShoppingCart, label: "Orders", href: "/restaurant/orders" },
       { icon: Bell, label: "Updates", href: "/restaurant/updates" },
+      { icon: BookOpen, label: "Menus", href: "/restaurant/menus" },
     ],
   },
   {
@@ -65,10 +67,11 @@ export function RestaurantSidebar({ isOpen, onClose }: RestaurantSidebarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
 
-  // Affiliators don't manage affiliators
+  // Affiliators don't manage affiliators or the business's menus
+  const ownerOnly = ["/restaurant/affiliators", "/restaurant/menus"];
   const groups = menuGroups.map((g) => ({
     ...g,
-    items: g.items.filter((item) => !(item.href === "/restaurant/affiliators" && user?.role === "AFFILIATOR")),
+    items: g.items.filter((item) => !(ownerOnly.includes(item.href) && user?.role === "AFFILIATOR")),
   }));
 
   return (
