@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useAdminAccess } from "@/app/hooks/useAdminAccess";
 import { mvendService, type MvendOverview, type MvendTransaction } from "@/app/services/mvendService";
 import RegisterMerchantModal from "./_components/RegisterMerchantModal";
+import RegisterAgainDialog from "./_components/RegisterAgainDialog";
 
 const rwf = (n: number) => `${Math.round(n).toLocaleString()} RWF`;
 
@@ -46,6 +47,7 @@ export default function MvendWalletPage() {
   const [payer, setPayer] = useState("");
   const [sending, setSending] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
+  const [againOpen, setAgainOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -134,6 +136,11 @@ export default function MvendWalletPage() {
               <b>{overview?.merchant?.memberId ?? overview?.status.steps.find((s) => s.key === "registered")?.detail?.replace(/^Member /, "")}</b>
               {overview?.merchant?.walletStatus ? ` · wallet ${overview.merchant.walletStatus.toLowerCase()}` : " · waiting for MVend to create the wallet"}
             </p>
+          )}
+          {registered && can("mvend_wallet", "settings") && (
+            <Button size="sm" variant="outline" className="mt-3" onClick={() => setAgainOpen(true)}>
+              Register again
+            </Button>
           )}
           <ul className="m-0 mt-3 list-none space-y-2 p-0">
             {overview.status.steps.map((s) => (
@@ -242,6 +249,15 @@ export default function MvendWalletPage() {
       </section>
 
       <RegisterMerchantModal open={registerOpen} onClose={() => setRegisterOpen(false)} onDone={load} />
+      <RegisterAgainDialog
+        open={againOpen}
+        memberId={overview?.merchant?.memberId ?? overview?.status.steps.find((s) => s.key === "registered")?.detail?.replace(/^Member /, "") ?? ""}
+        onClose={() => setAgainOpen(false)}
+        onCleared={(canRegister) => {
+          void load();
+          if (canRegister) setRegisterOpen(true);
+        }}
+      />
 
       <Dialog open={topUpOpen} onOpenChange={setTopUpOpen}>
         <DialogContent className="sm:max-w-md bg-white">
