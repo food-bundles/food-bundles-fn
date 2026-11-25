@@ -1,205 +1,131 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { DataTable } from "@/components/data-table";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { format } from "date-fns";
+import { toast } from "sonner";
 import { ColumnDef } from "@tanstack/react-table";
+import { KeyRound, MoreHorizontal, Pause, Play, RotateCcw, ShieldCheck, ShoppingBag, Trash, Trash2, X } from "lucide-react";
+import { DataTable } from "@/components/data-table";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash, Loader2, Eye, ShoppingBag } from "lucide-react";
-import { affiliatorService } from "@/app/services/affiliatorService";
-import { toast } from "sonner";
-import { format } from "date-fns";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/app/contexts/auth-context";
-import { useRouter } from "next/navigation";
-
-interface Affiliator {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-    createdAt: string;
-    updatedAt: string;
-    password?: string;
-    phone?: string | null;
-    restaurantId: string;
-    restaurant?: {
-        id: string;
-        name: string;
-        email?: string;
-    };
-    orders?: any[];
-}
+import {
+    affiliatorManageService,
+    apiMessage,
+    type AffiliatorInvitation,
+    type AffiliatorPermissionOption,
+    type ManagedAffiliator,
+} from "@/app/services/affiliatorManageService";
+import { InviteDialog } from "./_components/InviteDialog";
+import { PermissionsDialog } from "./_components/PermissionsDialog";
+import { DeleteDialog } from "./_components/DeleteDialog";
+import { OrdersDialog } from "./_components/OrdersDialog";
 
 export default function AffiliatorsPage() {
     const { user } = useAuth();
     const router = useRouter();
+    const [tab, setTab] = useState<"active" | "trash">("active");
+    const [affiliators, setAffiliators] = useState<ManagedAffiliator[]>([]);
+    const [invitations, setInvitations] = useState<AffiliatorInvitation[]>([]);
+    const [options, setOptions] = useState<AffiliatorPermissionOption[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [inviteOpen, setInviteOpen] = useState(false);
+    const [pending, setPending] = useState<AffiliatorInvitation | null>(null);
+    const [editing, setEditing] = useState<ManagedAffiliator | null>(null);
+    const [deleting, setDeleting] = useState<ManagedAffiliator | null>(null);
+    const [ordersOf, setOrdersOf] = useState<ManagedAffiliator | null>(null);
+
+    const isAffiliator = user?.role === "AFFILIATOR";
 
     useEffect(() => {
-        // Redirect affiliators away from this page
-        if (user?.role === "AFFILIATOR") {
-            router.push("/restaurant");
-        }
-    }, [user, router]);
+        // Affiliators act for a business; they don't manage other affiliators
+        if (isAffiliator) router.push("/restaurant");
+    }, [isAffiliator, router]);
 
-    // Don't render content for affiliators
-    if (user?.role === "AFFILIATOR") {
-        return null;
-    }
-    const [data, setData] = useState<Affiliator[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    const [currentAffiliator, setCurrentAffiliator] = useState<Affiliator | null>(null);
-    const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isOrdersDialogOpen, setIsOrdersDialogOpen] = useState(false);
-    const [isLoadingOrders, setIsLoadingOrders] = useState(false);
-    const [selectedAffiliatorOrders, setSelectedAffiliatorOrders] = useState<any[]>([]);
-
-    const fetchAffiliators = async () => {
+    const load = useCallback(async () => {
+        setLoading(true);
         try {
-            setLoading(true);
-            const res = await affiliatorService.getMyAffiliators();
-            setData(res.data);
-        } catch (error) {
-            toast.error("Failed to fetch affiliators");
+            const res = await affiliatorManageService.list(tab === "trash");
+            setAffiliators(res.affiliators);
+            setInvitations(res.invitations);
+        } catch (err) {
+            toast.error(apiMessage(err, "Failed to load affiliators"));
         } finally {
             setLoading(false);
         }
-    };
-
-    const fetchAffiliatorOrders = async (id: string) => {
-        try {
-            setIsLoadingOrders(true);
-            const res = await affiliatorService.getAffiliator(id);
-            setSelectedAffiliatorOrders(res.data.orders || []);
-            setIsOrdersDialogOpen(true);
-        } catch (error) {
-            toast.error("Failed to fetch affiliator orders");
-        } finally {
-            setIsLoadingOrders(false);
-        }
-    };
+    }, [tab]);
 
     useEffect(() => {
-        fetchAffiliators();
-    }, []);
+        if (isAffiliator) return;
+        load();
+    }, [load, isAffiliator]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSubmitting(true);
+    useEffect(() => {
+        if (isAffiliator) return;
+        affiliatorManageService.permissions().then(setOptions).catch(() => setOptions([]));
+    }, [isAffiliator]);
+
+    const act = async (run: () => Promise<unknown>, done: string) => {
         try {
-            if (currentAffiliator) {
-                await affiliatorService.updateAffiliator(currentAffiliator.id, {
-                    name: formData.name,
-                    phone: formData.phone,
-                });
-                toast.success("Affiliator updated successfully");
-            } else {
-                await affiliatorService.createAffiliator(formData);
-                toast.success("Affiliator created successfully");
-            }
-            setIsDialogOpen(false);
-            fetchAffiliators();
-            resetForm();
-        } catch (error) {
-            toast.error(currentAffiliator ? "Failed to update affiliator" : "Failed to create affiliator");
-        } finally {
-            setIsSubmitting(false);
+            await run();
+            toast.success(done);
+            load();
+        } catch (err) {
+            toast.error(apiMessage(err, "Something went wrong"));
         }
     };
 
-    const handleDelete = async () => {
-        if (!currentAffiliator) return;
-        setIsSubmitting(true);
-        try {
-            await affiliatorService.deleteAffiliator(currentAffiliator.id);
-            toast.success("Affiliator deleted successfully");
-            setIsDeleteDialogOpen(false);
-            fetchAffiliators();
-        } catch (error) {
-            toast.error("Failed to delete affiliator");
-        } finally {
-            setIsSubmitting(false);
-            setCurrentAffiliator(null);
-        }
-    };
+    const labelOf = (key: string) => options.find((p) => p.key === key)?.label ?? key;
 
-    const resetForm = () => {
-        setFormData({ name: "", email: "", phone: "" });
-        setCurrentAffiliator(null);
-    };
-
-    const openEditDialog = (affiliator: Affiliator) => {
-        setCurrentAffiliator(affiliator);
-        setFormData({
-            name: affiliator.name,
-            email: affiliator.email,
-            phone: affiliator.phone || ""
-        });
-        setIsDialogOpen(true);
-    };
-
-    const openDeleteDialog = (affiliator: Affiliator) => {
-        setCurrentAffiliator(affiliator);
-        setIsDeleteDialogOpen(true);
-    };
-
-    const columns: ColumnDef<Affiliator>[] = [
+    const columns: ColumnDef<ManagedAffiliator>[] = [
+        { accessorKey: "name", header: "Name" },
+        { accessorKey: "phone", header: "Phone", cell: ({ row }) => row.original.phone || "N/A" },
         {
-            accessorKey: "name",
-            header: "Name",
+            accessorKey: "status",
+            header: "Status",
+            cell: ({ row }) =>
+                tab === "trash" ? (
+                    <Badge variant="outline" className="text-gray-500">In trash</Badge>
+                ) : row.original.status === "ACTIVE" ? (
+                    <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Active</Badge>
+                ) : (
+                    <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">Paused</Badge>
+                ),
         },
         {
-            accessorKey: "phone",
-            header: "Phone",
-            cell: ({ row }: { row: any }) => row.original.phone || "N/A",
+            id: "permissions",
+            header: "Can",
+            cell: ({ row }) => {
+                const list = row.original.permissions;
+                if (!list.length) return <span className="text-xs text-gray-400">Nothing yet</span>;
+                return (
+                    <span className="text-xs text-gray-600" title={list.map(labelOf).join("\n")}>
+                        {list.length === options.length ? "Everything" : `${list.length} of ${options.length || list.length}`}
+                    </span>
+                );
+            },
         },
-        user?.role === "ADMIN" ? {
-            accessorKey: "restaurant.name",
-            header: "Restaurant",
-            cell: ({ row }: { row: any }) => row.original.restaurant?.name || "N/A",
-        } : null,
+        { id: "orders", header: "Orders", cell: ({ row }) => row.original._count?.orders ?? 0 },
         {
             accessorKey: "createdAt",
-            header: "Created At",
-            cell: ({ row }: { row: any }) => {
-                try {
-                    return format(new Date(row.original.createdAt), "PPP");
-                } catch {
-                    return "Invalid Date";
-                }
-            },
+            header: "Added",
+            cell: ({ row }) => format(new Date(row.original.createdAt), "PP"),
         },
         {
             id: "actions",
-            cell: ({ row }: { row: any }) => {
-                const affiliator = row.original;
+            size: 50,
+            cell: ({ row }) => {
+                const a = row.original;
                 return (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -209,180 +135,101 @@ export default function AffiliatorsPage() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => {
-                                setCurrentAffiliator(affiliator);
-                                fetchAffiliatorOrders(affiliator.id);
-                            }}>
-                                <ShoppingBag className="mr-2 h-4 w-4" /> View Orders
+                            <DropdownMenuLabel>{a.name}</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => setOrdersOf(a)}>
+                                <ShoppingBag className="mr-2 h-4 w-4" /> View orders
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openEditDialog(affiliator)}>
-                                <Pencil className="mr-2 h-4 w-4" /> Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onClick={() => openDeleteDialog(affiliator)}
-                                className="text-red-600 focus:text-red-600"
-                            >
-                                <Trash className="mr-2 h-4 w-4" /> Delete
-                            </DropdownMenuItem>
+                            {tab === "active" ? (
+                                <>
+                                    <DropdownMenuItem onClick={() => setEditing(a)}>
+                                        <ShieldCheck className="mr-2 h-4 w-4" /> Permissions
+                                    </DropdownMenuItem>
+                                    {a.status === "ACTIVE" ? (
+                                        <DropdownMenuItem onClick={() => act(() => affiliatorManageService.setStatus(a.id, "INACTIVE"), `${a.name} is paused`)}>
+                                            <Pause className="mr-2 h-4 w-4" /> Deactivate
+                                        </DropdownMenuItem>
+                                    ) : (
+                                        <DropdownMenuItem onClick={() => act(() => affiliatorManageService.setStatus(a.id, "ACTIVE"), `${a.name} is active again`)}>
+                                            <Play className="mr-2 h-4 w-4" /> Activate
+                                        </DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                        className="text-red-600 focus:text-red-600"
+                                        onClick={() => act(() => affiliatorManageService.trash(a.id), `${a.name} moved to trash`)}
+                                    >
+                                        <Trash className="mr-2 h-4 w-4" /> Move to trash
+                                    </DropdownMenuItem>
+                                </>
+                            ) : (
+                                <>
+                                    <DropdownMenuItem onClick={() => act(() => affiliatorManageService.restore(a.id), `${a.name} restored`)}>
+                                        <RotateCcw className="mr-2 h-4 w-4" /> Restore
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => setDeleting(a)}>
+                                        <Trash2 className="mr-2 h-4 w-4" /> Delete for good
+                                    </DropdownMenuItem>
+                                </>
+                            )}
                         </DropdownMenuContent>
                     </DropdownMenu>
                 );
             },
-            size: 50,
         },
-    ].filter(Boolean) as ColumnDef<Affiliator>[];
+    ];
+
+    if (isAffiliator) return null;
 
     return (
         <div className="p-6 space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h2 className="text-2xl font-bold tracking-tight text-gray-900">Affiliators</h2>
-                    <p className="text-sm text-gray-500 mt-1">Manage your associates here.</p>
+                    <p className="text-sm text-gray-500 mt-1">People who order for your business, with only the permissions you give them.</p>
                 </div>
-                <Button onClick={() => { resetForm(); setIsDialogOpen(true); }} className="bg-green-700 hover:bg-green-600">
-                    Add Affiliator
+                <Button onClick={() => { setPending(null); setInviteOpen(true); }} className="bg-green-700 hover:bg-green-600">
+                    Invite affiliator
                 </Button>
             </div>
 
+            {tab === "active" && invitations.length > 0 && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 space-y-3">
+                    <p className="text-sm font-medium text-amber-900">Waiting for a code</p>
+                    {invitations.map((inv) => (
+                        <div key={inv.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-white px-3 py-2 border">
+                            <div className="text-sm">
+                                <span className="font-medium">{inv.name}</span>
+                                <span className="text-gray-500"> · {inv.phone} · expires {format(new Date(inv.expiresAt), "p")}</span>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button size="sm" variant="outline" onClick={() => { setPending(inv); setInviteOpen(true); }}>
+                                    <KeyRound className="mr-1 h-4 w-4" /> Enter code
+                                </Button>
+                                <Button size="sm" variant="ghost" onClick={() => act(() => affiliatorManageService.cancelInvite(inv.id), "Invitation cancelled")}>
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <Tabs value={tab} onValueChange={(v) => setTab(v as "active" | "trash")}>
+                <TabsList>
+                    <TabsTrigger value="active">Affiliators</TabsTrigger>
+                    <TabsTrigger value="trash">Trash</TabsTrigger>
+                </TabsList>
+            </Tabs>
+
             <div className="bg-white rounded-lg border shadow-sm">
-                <DataTable
-                    columns={columns}
-                    data={data}
-                    isLoading={loading}
-                    showSearch
-                    searchKey="name"
-                    searchPlaceholder="Search by name..."
-                />
+                <DataTable columns={columns} data={affiliators} isLoading={loading} showSearch searchKey="name" searchPlaceholder="Search by name..." />
             </div>
 
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{currentAffiliator ? "Edit Affiliator" : "Add Affiliator"}</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Name</Label>
-                            <Input
-                                id="name"
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                required
-                                placeholder="John Doe"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="phone">Phone Number</Label>
-                            <Input
-                                id="phone"
-                                value={formData.phone}
-                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                placeholder="+250 780 000 000"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input
-                                id="email"
-                                type="email"
-                                value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                required={!formData.phone}
-                                disabled={!!currentAffiliator}
-                                placeholder="john.doe@example.com"
-                                className={currentAffiliator ? "bg-gray-100" : ""}
-                            />
-                            {currentAffiliator && (
-                                <p className="text-xs text-muted-foreground">Email cannot be changed.</p>
-                            )}
-                            {!formData.phone && !currentAffiliator && (
-                                <p className="text-xs text-orange-600">Email is required if phone is not provided.</p>
-                            )}
-                        </div>
-                        <DialogFooter className="pt-4">
-                            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                                Cancel
-                            </Button>
-                            <Button type="submit" disabled={isSubmitting} className="bg-green-700 hover:bg-green-600">
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {currentAffiliator ? "Save Changes" : "Create Affiliator"}
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
-
-            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the affiliator
-                            <span className="font-semibold text-gray-900"> {currentAffiliator?.name}</span>.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isSubmitting}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleDelete}
-                            className="bg-red-600 hover:bg-red-700 text-white focus:ring-red-600"
-                            disabled={isSubmitting}
-                        >
-                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Delete"}
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-
-            <Dialog open={isOrdersDialogOpen} onOpenChange={setIsOrdersDialogOpen}>
-                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>Orders for {currentAffiliator?.name}</DialogTitle>
-                    </DialogHeader>
-                    <div className="py-4">
-                        {isLoadingOrders ? (
-                            <div className="flex justify-center p-8">
-                                <Loader2 className="h-8 w-8 animate-spin text-green-700" />
-                            </div>
-                        ) : selectedAffiliatorOrders.length === 0 ? (
-                            <div className="text-center p-8 text-gray-500">
-                                No orders found for this affiliator.
-                            </div>
-                        ) : (
-                            <div className="border rounded-lg overflow-hidden">
-                                <table className="w-full text-sm text-left">
-                                    <thead className="bg-gray-50 text-gray-700 font-medium border-b">
-                                        <tr>
-                                            <th className="px-4 py-3">Order #</th>
-                                            <th className="px-4 py-3">Amount</th>
-                                            <th className="px-4 py-3">Status</th>
-                                            <th className="px-4 py-3">Date</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y">
-                                        {selectedAffiliatorOrders.map((order) => (
-                                            <tr key={order.id} className="hover:bg-gray-50">
-                                                <td className="px-4 py-3 font-medium">{order.orderNumber}</td>
-                                                <td className="px-4 py-3">{order.totalAmount.toLocaleString()} RWF</td>
-                                                <td className="px-4 py-3">
-                                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${order.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
-                                                        order.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
-                                                            'bg-gray-100 text-gray-700'
-                                                        }`}>
-                                                        {order.status}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-3">{format(new Date(order.createdAt), "PP")}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
-                    </div>
-                </DialogContent>
-            </Dialog>
+            <InviteDialog open={inviteOpen} onOpenChange={setInviteOpen} options={options} pending={pending} onDone={load} />
+            <PermissionsDialog affiliator={editing} options={options} onClose={() => setEditing(null)} onDone={load} />
+            <DeleteDialog affiliator={deleting} onClose={() => setDeleting(null)} onDone={load} />
+            <OrdersDialog affiliator={ordersOf} onClose={() => setOrdersOf(null)} />
         </div>
     );
 }
