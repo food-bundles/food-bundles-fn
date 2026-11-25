@@ -7,8 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { mvendMerchantService } from "@/app/services/mvendService";
 
-const apiMessage = (e: unknown, fallback: string) =>
-  (e as { response?: { data?: { message?: string } } })?.response?.data?.message ?? fallback;
+// The server's reason, else the network's (e.g. "Network Error" when the backend is down or restarting)
+const apiMessage = (e: unknown, fallback: string) => {
+  const err = e as { response?: { status?: number; data?: { message?: string } }; message?: string };
+  if (err?.response?.data?.message) return err.response.data.message;
+  if (err?.response?.status) return `${fallback} (HTTP ${err.response.status})`;
+  return err?.message ? `${fallback}: ${err.message}` : fallback;
+};
 
 /**
  * Register the merchant wallet again (e.g. MVend asks for another phone number):
