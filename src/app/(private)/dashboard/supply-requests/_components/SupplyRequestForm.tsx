@@ -236,7 +236,7 @@ export function SupplyRequestForm({ open, request, onClose, onSaved }: SupplyReq
   const [neededTime, setNeededTime] = useState("08:00");
   const [audience, setAudience] = useState<Audience>("NEARBY");
   const [chosen, setChosen] = useState<Set<string>>(new Set());
-  const [aggregator, setAggregator] = useState<AggregatorChoice>(null);
+  const [aggregators, setAggregators] = useState<AggregatorChoice[]>([]);
   const { user: me, can } = useAdminAccess();
   // An aggregator's own requests are theirs; everyone else says who handles it
   const choosesAggregator = !editing && !!me && me.role !== "AGGREGATOR";
@@ -321,7 +321,7 @@ export function SupplyRequestForm({ open, request, onClose, onSaved }: SupplyReq
       setNeededTime("08:00");
       setAudience("NEARBY");
       setChosen(new Set());
-      setAggregator(null);
+      setAggregators([]);
       setLines([newLine()]);
     }
   }, [open, request]);
@@ -548,7 +548,7 @@ export function SupplyRequestForm({ open, request, onClose, onSaved }: SupplyReq
             neededTime: neededTime || null,
             audience,
             ...(audience === "SELECTED" ? { farmerIds: [...chosen] } : {}),
-            ...(choosesAggregator && aggregator ? { aggregatorId: aggregator.id } : {}),
+            ...(choosesAggregator && aggregators.length > 0 ? { aggregatorIds: aggregators.map((a) => a.id) } : {}),
             items,
           });
       toast.success(
@@ -945,14 +945,14 @@ export function SupplyRequestForm({ open, request, onClose, onSaved }: SupplyReq
                 </div>
               </Section>
 
-              {/* The days of each product: tick to add, untick or ✕ to remove, own quantity per day */}
+              {/* The days of each product: tick to add, untick or remove, own quantity per day */}
               {schedule !== "ONCE" && (
                 <Section
                   title="Days for each product"
                   hint={
                     schedule === "WEEKLY"
-                      ? "Tick the weekdays each product is needed. Remove a day with ✕, or give it its own quantity."
-                      : "Tick the dates each product is needed. Remove a day with ✕, or give it its own quantity."
+                      ? "Tick the weekdays each product is needed. Remove a day with its remove button, or give it its own quantity."
+                      : "Tick the dates each product is needed. Remove a day with its remove button, or give it its own quantity."
                   }
                 >
                   {schedule === "DATES" && dates.length === 0 ? (
@@ -1089,6 +1089,7 @@ export function SupplyRequestForm({ open, request, onClose, onSaved }: SupplyReq
               {audience === "SELECTED" ? (
                 <ChooseFarmers
                   productIds={productIds}
+                  customerId={restaurantId || undefined}
                   selected={chosen}
                   onChange={(next) => {
                     setChosen(next);
@@ -1110,8 +1111,8 @@ export function SupplyRequestForm({ open, request, onClose, onSaved }: SupplyReq
                   <ChooseAggregator
                     restaurantId={restaurantId}
                     customerDistrict={customer?.district}
-                    value={aggregator}
-                    onChange={setAggregator}
+                    value={aggregators}
+                    onChange={setAggregators}
                     canCreate={can("admins", "create")}
                     disabled={saving}
                   />
@@ -1159,7 +1160,7 @@ export function SupplyRequestForm({ open, request, onClose, onSaved }: SupplyReq
                       ? [
                           {
                             label: "Handled by",
-                            value: aggregator ? aggregator.name : "The nearest aggregator, automatically",
+                            value: aggregators.length ? aggregators.map((a) => a.name).join(", ") : "The nearest aggregator, automatically",
                             step: "Who" as StepName,
                           },
                         ]

@@ -15,16 +15,17 @@ import { errorMessage, RequestPlaceOptions, supplyRequestService } from "@/app/s
 
 type Aggregator = RequestPlaceOptions["aggregators"][number];
 
-/** The aggregator picked for a request; null = the nearest one, automatically */
-export type AggregatorChoice = { id: string; name: string } | null;
+/** An aggregator picked for a request. A request can have several; none = the nearest one, automatically */
+export type AggregatorChoice = { id: string; name: string };
 
 interface ChooseAggregatorProps {
   /** The customer of the request: aggregators nearest the site serving them come first */
   restaurantId: string;
   /** The customer's district: the starting place of a new aggregator */
   customerDistrict?: string | null;
-  value: AggregatorChoice;
-  onChange: (next: AggregatorChoice) => void;
+  /** The aggregators chosen, the main one first; empty = automatic */
+  value: AggregatorChoice[];
+  onChange: (next: AggregatorChoice[]) => void;
   /** May create dashboard users (admins.create) */
   canCreate: boolean;
   disabled?: boolean;
@@ -149,7 +150,7 @@ export function ChooseAggregator({
         openSubmissions: 0,
       };
       setAggregators((prev) => [...(prev ?? []), fresh]);
-      onChange({ id: admin.id, name: admin.username });
+      onChange([...value, { id: admin.id, name: admin.username }]);
       setCreated({ name: admin.username, login: form.email.trim(), password: form.password });
       setCreating(false);
       toast.success(`${admin.username} is now an aggregator and handles this request`);
@@ -173,10 +174,12 @@ export function ChooseAggregator({
       .catch(() => toast.error("Could not copy; write them down"));
   };
 
+  // Tick to add, tick again to remove; the first one ticked is the main one
   const pick = (a: Aggregator) => {
     setCreated(null);
-    onChange(value?.id === a.id ? null : { id: a.id, name: a.username });
+    onChange(value.some((v) => v.id === a.id) ? value.filter((v) => v.id !== a.id) : [...value, { id: a.id, name: a.username }]);
   };
+  const automaticOn = value.length === 0;
 
   return (
     <div className="space-y-3">
@@ -184,18 +187,18 @@ export function ChooseAggregator({
       <button
         type="button"
         role="radio"
-        aria-checked={value === null}
+        aria-checked={automaticOn}
         disabled={disabled}
         onClick={() => {
           setCreated(null);
-          onChange(null);
+          onChange([]);
         }}
         className={cn(
           "flex w-full items-start gap-3 rounded-xl border p-3 text-left transition-colors",
-          value === null ? "border-green-600 bg-green-50 ring-1 ring-green-600" : "hover:bg-gray-50"
+          automaticOn ? "border-green-600 bg-green-50 ring-1 ring-green-600" : "hover:bg-gray-50"
         )}
       >
-        <span className={cn("rounded-lg p-1.5", value === null ? "bg-green-600 text-white" : "bg-gray-100 text-gray-500")}>
+        <span className={cn("rounded-lg p-1.5", automaticOn ? "bg-green-600 text-white" : "bg-gray-100 text-gray-500")}>
           <Sparkles className="h-4 w-4" />
         </span>
         <span className="min-w-0 flex-1">
@@ -208,8 +211,41 @@ export function ChooseAggregator({
                 : "Whoever is nearest the customer's aggregation site when farmers submit."}
           </span>
         </span>
-        {value === null && <Check className="h-4 w-4 text-green-600" />}
+        {automaticOn && <Check className="h-4 w-4 text-green-600" />}
       </button>
+
+      {value.length > 0 && (
+        <div className="rounded-xl border border-green-200 bg-green-50/60 p-3 text-sm">
+          <p className="font-semibold text-gray-900">
+            {value.length === 1 ? "Handled by 1 aggregator" : `Handled by ${value.length} aggregators`}
+          </p>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {value.map((v, i) => (
+              <span
+                key={v.id}
+                className="inline-flex items-center gap-1 rounded-full bg-white py-0.5 pl-2.5 pr-1 text-xs font-medium text-green-800 ring-1 ring-green-200"
+              >
+                {v.name}
+                {i === 0 && value.length > 1 && <span className="text-[10px] text-gray-500">(main)</span>}
+                <button
+                  type="button"
+                  onClick={() => onChange(value.filter((x) => x.id !== v.id))}
+                  className="rounded-full p-0.5 hover:bg-green-100"
+                  aria-label={`Remove ${v.name}`}
+                  disabled={disabled}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+          {value.length > 1 && (
+            <p className="mt-1.5 text-xs text-gray-600">
+              All of them are told about the request. Each farmer&apos;s harvest goes to the one whose site is nearest that farmer.
+            </p>
+          )}
+        </div>
+      )}
 
       {error && <p className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
@@ -258,14 +294,14 @@ export function ChooseAggregator({
             {canCreate && !creating && " Create one with New aggregator."}
           </p>
         ) : (
-          <ul className="max-h-64 divide-y overflow-y-auto" role="radiogroup" aria-label="Aggregators">
+          <ul className="max-h-64 divide-y overflow-y-auto" aria-label="Aggregators">
             {shown.map((a) => {
-              const on = value?.id === a.id;
+              const on = value.some((v) => v.id === a.id);
               return (
                 <li key={a.id}>
                   <button
                     type="button"
-                    role="radio"
+                    role="checkbox"
                     aria-checked={on}
                     disabled={disabled}
                     onClick={() => pick(a)}
@@ -273,7 +309,7 @@ export function ChooseAggregator({
                   >
                     <span
                       className={cn(
-                        "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border",
+                        "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border",
                         on ? "border-green-600 bg-green-600 text-white" : "border-gray-300"
                       )}
                     >

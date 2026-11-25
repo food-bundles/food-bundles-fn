@@ -83,7 +83,9 @@ export function RequestPlaceDialog({ request, canCreateSite, onClose, onSaved }:
   const [mode, setMode] = useState<"pick" | "create">("pick");
   const [search, setSearch] = useState("");
   const [siteId, setSiteId] = useState<string | null>(null);
-  const [aggregatorId, setAggregatorId] = useState<string>(NO_AGGREGATOR);
+  // The aggregators in charge, the main one first; empty = the nearest one for each submission
+  const [aggregatorIds, setAggregatorIds] = useState<string[]>([]);
+  const [initialIds, setInitialIds] = useState<string[]>([]);
   const [newSite, setNewSite] = useState({ name: "", latitude: "", longitude: "" });
   const [newPlace, setNewPlace] = useState<LocationValue>(EMPTY_PLACE);
   const [saving, setSaving] = useState(false);
@@ -98,7 +100,10 @@ export function RequestPlaceDialog({ request, canCreateSite, onClose, onSaved }:
     setMode("pick");
     setSearch("");
     setSiteId(request.aggregationSite?.id ?? null);
-    setAggregatorId(request.assignedAggregator?.id ?? NO_AGGREGATOR);
+    const current =
+      request.assignedAggregators?.map((a) => a.id) ?? (request.assignedAggregator ? [request.assignedAggregator.id] : []);
+    setAggregatorIds(current);
+    setInitialIds(current);
     setNewSite({ name: "", latitude: "", longitude: "" });
     setNewPlace({ ...EMPTY_PLACE });
     setOptions(null);
@@ -121,7 +126,14 @@ export function RequestPlaceDialog({ request, canCreateSite, onClose, onSaved }:
       : sorted;
   }, [options, search, request]);
 
-  const chosenAggregator = options?.aggregators.find((a) => a.id === aggregatorId);
+  const chosenAggregators = aggregatorIds
+    .map((id) => options?.aggregators.find((a) => a.id === id))
+    .filter((a): a is RequestPlaceOptions["aggregators"][number] => !!a);
+  // The first one ticked: their site serves a request that has none
+  const chosenAggregator = chosenAggregators[0];
+  const toggleAggregator = (id: string) =>
+    setAggregatorIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const aggregatorsChanged = aggregatorIds.length !== initialIds.length || aggregatorIds.some((id, i) => id !== initialIds[i]);
   // Nearest the request's site: who usually ends up handling it when nobody is put in charge
   const nearestAggregator = options?.aggregators.find((a) => a.automatic);
   const chosenSite = options?.sites.find((s) => s.id === siteId);
@@ -138,9 +150,12 @@ export function RequestPlaceDialog({ request, canCreateSite, onClose, onSaved }:
     ) : (
       <span className="text-amber-700">No site chosen yet</span>
     );
-  const aggregatorSummary = chosenAggregator
-    ? [chosenAggregator.username, chosenAggregator.aggregationSite?.name, chosenAggregator.phone].filter(Boolean).join(" · ")
-    : "None chosen: each submission goes to the nearest aggregator";
+  const aggregatorSummary =
+    chosenAggregators.length > 1
+      ? `${chosenAggregators.map((a) => a.username).join(", ")}: each submission goes to the one nearest the farmer`
+      : chosenAggregator
+        ? [chosenAggregator.username, chosenAggregator.aggregationSite?.name, chosenAggregator.phone].filter(Boolean).join(" · ")
+        : "None chosen: each submission goes to the nearest aggregator";
   const coordsGiven = newSite.latitude.trim() !== "" || newSite.longitude.trim() !== "";
   const lat = Number(newSite.latitude);
   const lng = Number(newSite.longitude);
@@ -154,7 +169,7 @@ export function RequestPlaceDialog({ request, canCreateSite, onClose, onSaved }:
       Math.abs(lng) <= 180);
   const createValid = newSite.name.trim() !== "" && coordsValid && (coordsGiven || !!newPlace.district || !!newPlace.province);
   // Choosing only an aggregator is enough: they handle the request (through their site when they have one)
-  const canSave = mode === "create" ? createValid : !!siteId || aggregatorId !== NO_AGGREGATOR;
+  const canSave = mode === "create" ? createValid : !!siteId || aggregatorIds.length > 0 || aggregatorsChanged;
 
   const save = async () => {
     if (!request || !canSave) return;
@@ -173,7 +188,7 @@ export function RequestPlaceDialog({ request, canCreateSite, onClose, onSaved }:
       }
       const updated = await supplyRequestService.setPlace(request.id, {
         ...(aggregationSiteId ? { aggregationSiteId } : {}),
-        aggregatorId: aggregatorId === NO_AGGREGATOR ? null : aggregatorId,
+        aggregatorIds,
       });
       toast.success("Request updated. Farmers and aggregators near the site are being told about it.");
       onSaved(updated);
@@ -335,28 +350,28 @@ export function RequestPlaceDialog({ request, canCreateSite, onClose, onSaved }:
             {/* Who handles it */}
             <CollapsibleSection
               icon={UserRound}
-              title="Aggregator in charge"
+              title="Aggregators in charge"
               optional
               summary={aggregatorSummary}
               open={aggregatorOpen}
               onToggle={() => setAggregatorOpen((v) => !v)}
             >
               <p className="text-xs text-gray-500">
-                Pick any aggregator, near or not; no site is needed. They are told about the request and receive all
-                the farmers&apos; submissions for it. Without one, each submission goes to the aggregator nearest the
-                farmer.
+                Tick one or more aggregators, near or not; no site is needed. They are all told about the request, and
+                each farmer&apos;s submission goes to the one whose site is nearest that farmer. Without any, each
+                submission goes to the aggregator nearest the farmer.
               </p>
-              <div className="max-h-48 overflow-y-auto rounded-lg border" role="radiogroup">
+              <div className="max-h-48 overflow-y-auto rounded-lg border">
                 {[{ id: NO_AGGREGATOR }, ...options.aggregators].map((a) => {
-                  const selected = aggregatorId === a.id;
+                  const selected = a.id === NO_AGGREGATOR ? aggregatorIds.length === 0 : aggregatorIds.includes(a.id);
                   const agg = a.id === NO_AGGREGATOR ? null : (a as RequestPlaceOptions["aggregators"][number]);
                   return (
                     <button
                       key={a.id}
                       type="button"
-                      role="radio"
+                      role={a.id === NO_AGGREGATOR ? "radio" : "checkbox"}
                       aria-checked={selected}
-                      onClick={() => setAggregatorId(a.id)}
+                      onClick={() => (a.id === NO_AGGREGATOR ? setAggregatorIds([]) : toggleAggregator(a.id))}
                       className={cn(
                         "flex w-full items-center gap-3 border-b px-3 py-2 text-left last:border-b-0 hover:bg-gray-50",
                         selected && "bg-green-50 hover:bg-green-50"
