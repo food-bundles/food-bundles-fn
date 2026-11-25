@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, CalendarDays, Clock, Pencil, Users } from "lucide-react";
+import { ArrowLeft, CalendarDays, Check, Clock, Pencil, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -196,7 +196,11 @@ export default function SupplyRequestDetailPage() {
                         <td className="px-3 py-2 text-right">{line.submitted}</td>
                         <td className="px-3 py-2 text-right text-green-700">{line.received}</td>
                         <td className={`px-3 py-2 text-right font-semibold ${line.missing > 0 ? "text-amber-700" : "text-green-700"}`}>
-                          {line.missing > 0 ? line.missing : "✓"}
+                          {line.missing > 0 ? (
+                            line.missing
+                          ) : (
+                            <Check className="ml-auto h-4 w-4" aria-label="Nothing missing" />
+                          )}
                         </td>
                         <td className="px-4 py-2 text-xs text-gray-600">
                           {line.submissions.length === 0

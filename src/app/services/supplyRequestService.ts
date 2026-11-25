@@ -98,6 +98,8 @@ export interface SupplyRequest {
   aggregationSite?: { id: string; name: string; district: string | null } | null;
   /** Aggregator an admin chose to handle the request (told about it, gets its farmers' submissions) */
   assignedAggregator?: { id: string; username: string; phone: string | null } | null;
+  /** Every aggregator chosen to handle it, the main one first (assignedAggregator is that first one) */
+  assignedAggregators?: { id: string; username: string; phone: string | null }[];
   _count?: { items: number; orders: number };
   items?: Array<{
     id: string;
@@ -187,7 +189,8 @@ export const supplyRequestService = {
     audience: Audience;
     farmerIds?: string[];
     /** The aggregator who handles it; left out = the nearest one, automatically */
-    aggregatorId?: string;
+    /** The aggregators who handle it; left out = the nearest one, automatically */
+    aggregatorIds?: string[];
     items: SupplyRequestItemInput[];
   }) => data<SupplyRequest>(await createAxiosClient().post("/supply-requests", payload)),
 
@@ -197,6 +200,8 @@ export const supplyRequestService = {
     province?: string;
     district?: string;
     sector?: string;
+    /** Only farmers who already submitted to one of this customer's supply requests */
+    suppliedTo?: string;
     search?: string;
     page?: number;
   }) =>
@@ -227,7 +232,8 @@ export const supplyRequestService = {
     ),
 
   // PATCH /supply-requests/:id/place: where the request is served and who handles it (null clears)
-  setPlace: async (id: string, place: { aggregationSiteId?: string | null; aggregatorId?: string | null }) =>
+  // aggregatorIds replaces the request's aggregators ([] = automatic)
+  setPlace: async (id: string, place: { aggregationSiteId?: string | null; aggregatorIds?: string[] }) =>
     data<SupplyRequest>(await createAxiosClient().patch(`/supply-requests/${id}/place`, place)),
 
   setStatus: async (id: string, status: "OPEN" | "CLOSED" | "CANCELLED") =>

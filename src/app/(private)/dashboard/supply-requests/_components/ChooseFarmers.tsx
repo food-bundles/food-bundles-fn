@@ -1,16 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCheck, Loader2, MapPin, Search, Sprout, Users, X } from "lucide-react";
+import { BadgeCheck, Check, CheckCheck, History, Loader2, MapPin, Phone, Search, Sprout, Users, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LocationFields, type LocationValue } from "@/components/location-fields";
 import { cn } from "@/lib/utils";
-import { errorMessage, FarmerReach, supplyRequestService } from "@/app/services/supplyRequestService";
+import { errorMessage, FarmerReach, RequestCustomer, supplyRequestService } from "@/app/services/supplyRequestService";
 
 const EMPTY_PLACE: LocationValue = { province: "", district: "", sector: "", cell: "", village: "" };
+
+/** "John Kalisa" → "JK"; a farmer without a name gets "?" */
+const initials = (name: string | null) =>
+  (name ?? "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase())
+    .join("") || "?";
 
 interface ChooseFarmersProps {
   /** The products of the request: farmers who grow (or sold) one of them are listed */
@@ -18,15 +26,21 @@ interface ChooseFarmersProps {
   selected: Set<string>;
   onChange: (next: Set<string>) => void;
   disabled?: boolean;
+  /** The request's customer: offered first in "Supplied before to" */
+  customerId?: string;
 }
 
 /**
  * Pick the farmers who may see and supply a request: filter by place (province → district → sector),
  * see how many farmers each place and each requested crop has, then tick farmers one by one or all at
  * once. Choices are kept while the place changes, so farmers from several places can be combined.
+ * "Supplied before to" narrows the list to farmers who already submitted to a given customer (a school…).
  */
-export function ChooseFarmers({ productIds, selected, onChange, disabled }: ChooseFarmersProps) {
+export function ChooseFarmers({ productIds, selected, onChange, disabled, customerId }: ChooseFarmersProps) {
   const [place, setPlace] = useState<LocationValue>(EMPTY_PLACE);
+  // Only farmers who already submitted to this customer's supply requests ("" = any farmer)
+  const [suppliedTo, setSuppliedTo] = useState("");
+  const [customers, setCustomers] = useState<RequestCustomer[]>([]);
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
@@ -40,8 +54,20 @@ export function ChooseFarmers({ productIds, selected, onChange, disabled }: Choo
     return () => clearTimeout(timer);
   }, [search]);
 
+  // The customers the person works with, for "Supplied before to"
+  useEffect(() => {
+    let active = true;
+    supplyRequestService
+      .customers()
+      .then((list) => active && setCustomers(list || []))
+      .catch(() => active && setCustomers([]));
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const productKey = productIds.join(",");
-  useEffect(() => setPage(1), [place.province, place.district, place.sector, query, productKey]);
+  useEffect(() => setPage(1), [place.province, place.district, place.sector, query, productKey, suppliedTo]);
 
   useEffect(() => {
     let active = true;
@@ -53,6 +79,7 @@ export function ChooseFarmers({ productIds, selected, onChange, disabled }: Choo
         province: place.province || undefined,
         district: place.district || undefined,
         sector: place.sector || undefined,
+        suppliedTo: suppliedTo || undefined,
         search: query || undefined,
         page,
       })
@@ -62,7 +89,7 @@ export function ChooseFarmers({ productIds, selected, onChange, disabled }: Choo
     return () => {
       active = false;
     };
-  }, [productKey, place.province, place.district, place.sector, query, page]);
+  }, [productKey, place.province, place.district, place.sector, suppliedTo, query, page]);
 
   const toggle = (id: string) => {
     const next = new Set(selected);
@@ -100,6 +127,34 @@ export function ChooseFarmers({ productIds, selected, onChange, disabled }: Choo
             You can choose farmers in {reach.limitedToDistrict} only, the district of your aggregation site.
           </p>
         )}
+        <div className="mt-3 border-t pt-3">
+          <label htmlFor="supplied-to" className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-gray-800">
+            <History className="h-4 w-4 text-green-600" /> Supplied before to
+          </label>
+          <select
+            id="supplied-to"
+            className="h-9 w-full rounded-md border border-gray-300 bg-white px-2 text-sm sm:w-80"
+            value={suppliedTo}
+            onChange={(e) => setSuppliedTo(e.target.value)}
+            disabled={disabled}
+          >
+            <option value="">Any farmer</option>
+            {[...customers]
+              .sort((a, b) => Number(b.id === customerId) - Number(a.id === customerId) || a.name.localeCompare(b.name))
+              .map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                  {c.id === customerId ? " (this request's customer)" : ""}
+                  {c.customerType?.name ? ` · ${c.customerType.name.toLowerCase()}` : ""}
+                </option>
+              ))}
+          </select>
+          <p className="mt-1 text-xs text-gray-500">
+            {suppliedTo
+              ? "Only farmers who already submitted to this customer's supply requests."
+              : "Pick a school or other customer to see only the farmers who already supplied it."}
+          </p>
+        </div>
       </div>
 
       {error && <p className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</p>}
@@ -184,45 +239,84 @@ export function ChooseFarmers({ productIds, selected, onChange, disabled }: Choo
         {reach && reach.farmers.items.length === 0 ? (
           <p className="px-4 py-10 text-center text-sm text-gray-500">
             No farmer {productIds.length ? "grows these crops " : ""}in {placeLabel}
+            {suppliedTo ? ` who supplied ${customers.find((c) => c.id === suppliedTo)?.name ?? "this customer"} before` : ""}
             {query ? ` matching "${query}"` : ""}.
           </p>
         ) : (
-          <ul className="max-h-80 divide-y overflow-y-auto">
+          <ul className="max-h-96 space-y-2 overflow-y-auto p-2" aria-label="Farmers">
             {(reach?.farmers.items ?? []).map((f) => {
               const on = selected.has(f.id);
+              const place = [f.sector, f.district].filter(Boolean).join(", ");
               return (
                 <li key={f.id}>
                   <label
                     className={cn(
-                      "flex cursor-pointer items-center gap-3 px-3 py-2.5 hover:bg-gray-50",
-                      on && "bg-green-50/60",
-                      disabled && "cursor-not-allowed"
+                      "group flex cursor-pointer items-center gap-3 rounded-xl border bg-white p-3 transition-colors",
+                      on ? "border-green-500 bg-green-50/70 ring-1 ring-green-500" : "border-gray-200 hover:border-green-300 hover:bg-gray-50",
+                      disabled && "cursor-not-allowed opacity-70"
                     )}
                   >
+                    {/* The real checkbox stays for keyboards and screen readers; the round mark on the right shows it */}
                     <input
                       type="checkbox"
-                      className="h-4 w-4 accent-green-600"
+                      className="sr-only"
                       checked={on}
                       disabled={disabled}
                       onChange={() => toggle(f.id)}
                     />
+                    <span
+                      className={cn(
+                        "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
+                        on ? "bg-green-600 text-white" : "bg-green-100 text-green-800"
+                      )}
+                      aria-hidden="true"
+                    >
+                      {initials(f.name)}
+                    </span>
+
                     <span className="min-w-0 flex-1">
                       <span className="flex flex-wrap items-center gap-1.5">
-                        <span className="font-medium text-gray-900">{f.name || "Unnamed farmer"}</span>
+                        <span className="truncate font-semibold text-gray-900">{f.name || "Unnamed farmer"}</span>
                         {f.hasSold && (
-                          <Badge className="border-0 bg-blue-50 text-[10px] text-blue-700">Sold before</Badge>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-medium text-green-800">
+                            <BadgeCheck className="h-3 w-3" /> Sold to us before
+                          </span>
                         )}
                       </span>
-                      <span className="block text-xs text-gray-500">
-                        {[f.phone, [f.sector, f.district].filter(Boolean).join(", ")].filter(Boolean).join(" · ")}
+                      <span className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-gray-500">
+                        {f.phone && (
+                          <span className="inline-flex items-center gap-1">
+                            <Phone className="h-3 w-3" /> {f.phone}
+                          </span>
+                        )}
+                        {place && (
+                          <span className="inline-flex items-center gap-1">
+                            <MapPin className="h-3 w-3" /> {place}
+                          </span>
+                        )}
                       </span>
-                    </span>
-                    <span className="hidden flex-wrap justify-end gap-1 sm:flex">
-                      {f.crops.map((c) => (
-                        <span key={c.productId} className="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] text-gray-700">
-                          {c.productName}
+                      {f.crops.length > 0 && (
+                        <span className="mt-1.5 flex flex-wrap gap-1">
+                          {f.crops.map((c) => (
+                            <span
+                              key={c.productId}
+                              className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-white px-2 py-0.5 text-[11px] font-medium text-green-800"
+                            >
+                              <Sprout className="h-3 w-3" /> {c.productName}
+                            </span>
+                          ))}
                         </span>
-                      ))}
+                      )}
+                    </span>
+
+                    <span
+                      className={cn(
+                        "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                        on ? "border-green-600 bg-green-600 text-white" : "border-gray-300 text-transparent group-hover:border-green-400"
+                      )}
+                      aria-hidden="true"
+                    >
+                      <Check className="h-3.5 w-3.5" />
                     </span>
                   </label>
                 </li>
@@ -254,9 +348,38 @@ export function ChooseFarmers({ productIds, selected, onChange, disabled }: Choo
         )}
       </div>
 
-      <p className={cn("text-sm font-medium", selected.size ? "text-green-700" : "text-gray-500")}>
-        {selected.size.toLocaleString()} farmer{selected.size === 1 ? "" : "s"} chosen. Only they will see this request.
-      </p>
+      {/* What is chosen so far (across places and pages) */}
+      <div
+        className={cn(
+          "flex items-center gap-3 rounded-xl border px-4 py-3",
+          selected.size ? "border-green-200 bg-green-50" : "border-dashed border-gray-300 bg-gray-50"
+        )}
+        aria-live="polite"
+      >
+        <span
+          className={cn(
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+            selected.size ? "bg-green-600 text-white" : "bg-gray-200 text-gray-500"
+          )}
+        >
+          <Users className="h-4 w-4" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className={cn("block text-sm font-semibold", selected.size ? "text-green-900" : "text-gray-700")}>
+            {selected.size
+              ? `${selected.size.toLocaleString()} farmer${selected.size === 1 ? "" : "s"} chosen`
+              : "No farmer chosen yet"}
+          </span>
+          <span className="block text-xs text-gray-500">
+            {selected.size ? "Only they will see this request." : "Tick the farmers who may see and supply this request."}
+          </span>
+        </span>
+        {selected.size > 0 && (
+          <Button type="button" size="sm" variant="ghost" onClick={() => onChange(new Set())} disabled={disabled}>
+            <X className="mr-1 h-4 w-4" /> Clear
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

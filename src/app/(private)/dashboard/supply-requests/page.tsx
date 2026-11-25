@@ -203,8 +203,14 @@ export default function SupplyRequestsPage() {
                     <p className="mt-1 flex items-center gap-1.5 text-xs text-gray-600">
                       <UserRound className="h-3.5 w-3.5 shrink-0 text-green-700" />
                       <span className="truncate">
-                        Handled by {r.assignedAggregator.username}
-                        {r.assignedAggregator.phone ? ` · ${r.assignedAggregator.phone}` : ""}
+                        {(r.assignedAggregators?.length ?? 0) > 1 ? (
+                          <>Handled by {r.assignedAggregators!.map((a) => a.username).join(", ")}</>
+                        ) : (
+                          <>
+                            Handled by {r.assignedAggregator.username}
+                            {r.assignedAggregator.phone ? ` · ${r.assignedAggregator.phone}` : ""}
+                          </>
+                        )}
                       </span>
                     </p>
                   )}

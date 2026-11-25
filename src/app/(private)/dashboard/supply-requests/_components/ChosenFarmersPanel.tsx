@@ -115,7 +115,13 @@ export function ChosenFarmersPanel({ request, canEdit, onChanged }: ChosenFarmer
             <DialogTitle>Add farmers</DialogTitle>
             <DialogDescription>New farmers are told about the request. Farmers already on it are not told again.</DialogDescription>
           </DialogHeader>
-          <ChooseFarmers productIds={productIds} selected={picked} onChange={setPicked} disabled={busy !== null} />
+          <ChooseFarmers
+            productIds={productIds}
+            customerId={request.restaurant.id}
+            selected={picked}
+            onChange={setPicked}
+            disabled={busy !== null}
+          />
           <DialogFooter>
             <Button variant="outline" onClick={() => setAdding(false)} disabled={busy !== null}>
               Cancel
