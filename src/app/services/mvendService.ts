@@ -67,6 +67,11 @@ export const mvendMerchantService = {
     const res = await createAxiosClient().post("/mvend/merchant/register", form, { headers: { "Content-Type": "multipart/form-data" } });
     return res.data as { message: string; data: MvendMerchant };
   },
+  /** Register again: forget our saved member (kept in history); nothing is deleted at MVend */
+  reset: async () => {
+    const res = await createAxiosClient().post("/mvend/merchant/reset");
+    return res.data as { message: string; data: { clearedMemberId: string | null; serverEnvMemberId: string | null } };
+  },
   /** MVend's Rwanda locations: provinces, then districts / sectors / cells / villages of the one above */
   locations: async (level: "provinces" | "districts" | "sectors" | "cells" | "villages", parentId?: string) => {
     const res = await createAxiosClient().get(`/mvend/locations/${level}${parentId ? `/${encodeURIComponent(parentId)}` : ""}`);
