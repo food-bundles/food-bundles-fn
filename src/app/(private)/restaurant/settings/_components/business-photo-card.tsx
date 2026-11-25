@@ -29,6 +29,9 @@ export function BusinessPhotoCard() {
       .finally(() => setLoading(false));
   }, [user?.id]);
 
+  // The photo is the business owner's to manage
+  if (user?.role === "AFFILIATOR") return null;
+
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { ColumnDef } from "@tanstack/react-table";
-import { KeyRound, MoreHorizontal, Pause, Play, RotateCcw, ShieldCheck, ShoppingBag, Trash, Trash2, X } from "lucide-react";
+import { KeyRound, MoreHorizontal, Pause, Play, RotateCcw, ShieldCheck, ShoppingBag, Trash, Trash2 } from "lucide-react";
 import { DataTable } from "@/components/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,6 @@ import { useAuth } from "@/app/contexts/auth-context";
 import {
     affiliatorManageService,
     apiMessage,
-    type AffiliatorInvitation,
     type AffiliatorPermissionOption,
     type ManagedAffiliator,
 } from "@/app/services/affiliatorManageService";
@@ -36,11 +35,9 @@ export default function AffiliatorsPage() {
     const router = useRouter();
     const [tab, setTab] = useState<"active" | "trash">("active");
     const [affiliators, setAffiliators] = useState<ManagedAffiliator[]>([]);
-    const [invitations, setInvitations] = useState<AffiliatorInvitation[]>([]);
     const [options, setOptions] = useState<AffiliatorPermissionOption[]>([]);
     const [loading, setLoading] = useState(true);
     const [inviteOpen, setInviteOpen] = useState(false);
-    const [pending, setPending] = useState<AffiliatorInvitation | null>(null);
     const [editing, setEditing] = useState<ManagedAffiliator | null>(null);
     const [deleting, setDeleting] = useState<ManagedAffiliator | null>(null);
     const [ordersOf, setOrdersOf] = useState<ManagedAffiliator | null>(null);
@@ -57,7 +54,6 @@ export default function AffiliatorsPage() {
         try {
             const res = await affiliatorManageService.list(tab === "trash");
             setAffiliators(res.affiliators);
-            setInvitations(res.invitations);
         } catch (err) {
             toast.error(apiMessage(err, "Failed to load affiliators"));
         } finally {
@@ -144,6 +140,14 @@ export default function AffiliatorsPage() {
                                     <DropdownMenuItem onClick={() => setEditing(a)}>
                                         <ShieldCheck className="mr-2 h-4 w-4" /> Permissions
                                     </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        onClick={() => {
+                                            if (!window.confirm(`Send ${a.name} a new login code by SMS? It replaces their current password.`)) return;
+                                            act(() => affiliatorManageService.resendLogin(a.id), `New login code sent to ${a.phone ?? "their phone"}`);
+                                        }}
+                                    >
+                                        <KeyRound className="mr-2 h-4 w-4" /> Send new login code
+                                    </DropdownMenuItem>
                                     {a.status === "ACTIVE" ? (
                                         <DropdownMenuItem onClick={() => act(() => affiliatorManageService.setStatus(a.id, "INACTIVE"), `${a.name} is paused`)}>
                                             <Pause className="mr-2 h-4 w-4" /> Deactivate
@@ -188,32 +192,10 @@ export default function AffiliatorsPage() {
                     <h2 className="text-2xl font-bold tracking-tight text-gray-900">Affiliators</h2>
                     <p className="text-sm text-gray-500 mt-1">People who order for your business, with only the permissions you give them.</p>
                 </div>
-                <Button onClick={() => { setPending(null); setInviteOpen(true); }} className="bg-green-700 hover:bg-green-600">
-                    Invite affiliator
+                <Button onClick={() => setInviteOpen(true)} className="bg-green-700 hover:bg-green-600">
+                    Add affiliator
                 </Button>
             </div>
-
-            {tab === "active" && invitations.length > 0 && (
-                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 space-y-3">
-                    <p className="text-sm font-medium text-amber-900">Waiting for a code</p>
-                    {invitations.map((inv) => (
-                        <div key={inv.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-white px-3 py-2 border">
-                            <div className="text-sm">
-                                <span className="font-medium">{inv.name}</span>
-                                <span className="text-gray-500"> · {inv.phone} · expires {format(new Date(inv.expiresAt), "p")}</span>
-                            </div>
-                            <div className="flex gap-2">
-                                <Button size="sm" variant="outline" onClick={() => { setPending(inv); setInviteOpen(true); }}>
-                                    <KeyRound className="mr-1 h-4 w-4" /> Enter code
-                                </Button>
-                                <Button size="sm" variant="ghost" onClick={() => act(() => affiliatorManageService.cancelInvite(inv.id), "Invitation cancelled")}>
-                                    <X className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )}
 
             <Tabs value={tab} onValueChange={(v) => setTab(v as "active" | "trash")}>
                 <TabsList>
@@ -226,7 +208,7 @@ export default function AffiliatorsPage() {
                 <DataTable columns={columns} data={affiliators} isLoading={loading} showSearch searchKey="name" searchPlaceholder="Search by name..." />
             </div>
 
-            <InviteDialog open={inviteOpen} onOpenChange={setInviteOpen} options={options} pending={pending} onDone={load} />
+            <InviteDialog open={inviteOpen} onOpenChange={setInviteOpen} options={options} onDone={load} />
             <PermissionsDialog affiliator={editing} options={options} onClose={() => setEditing(null)} onDone={load} />
             <DeleteDialog affiliator={deleting} onClose={() => setDeleting(null)} onDone={load} />
             <OrdersDialog affiliator={ordersOf} onClose={() => setOrdersOf(null)} />

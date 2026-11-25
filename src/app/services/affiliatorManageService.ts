@@ -1,6 +1,9 @@
 import createAxiosClient from "@/app/hooks/axiosClient";
 
-/** A customer's own affiliators: invite with a code, permissions, pause, trash, delete with a code */
+/**
+ * A customer's own affiliators: create (login details sent by SMS), permissions,
+ * pause, trash, delete with a code
+ */
 
 export interface AffiliatorPermissionOption {
   key: string;
@@ -19,31 +22,20 @@ export interface ManagedAffiliator {
   _count?: { orders: number };
 }
 
-export interface AffiliatorInvitation {
-  id: string;
-  name: string;
-  phone: string;
-  permissions: string[];
-  expiresAt: string;
-}
-
 const api = () => createAxiosClient();
 const data = <T,>(p: Promise<{ data: { data: T; message?: string } }>) => p.then((r) => r.data.data);
 
 export const affiliatorManageService = {
   permissions: () => data<AffiliatorPermissionOption[]>(api().get("/affiliators/manage/permissions")),
   list: (trash = false) =>
-    data<{ affiliators: ManagedAffiliator[]; invitations: AffiliatorInvitation[] }>(
-      api().get("/affiliators/manage", { params: trash ? { trash: 1 } : {} }),
+    data<{ affiliators: ManagedAffiliator[] }>(api().get("/affiliators/manage", { params: trash ? { trash: 1 } : {} })),
+  /** Creates the affiliator; their phone gets an SMS with the phone number and a password to log in */
+  create: (body: { name: string; phone: string; email?: string; permissions: string[] }) =>
+    data<{ affiliator: ManagedAffiliator; sentTo: string; smsSent: boolean; existingAccount: boolean }>(
+      api().post("/affiliators/manage", body),
     ),
-  /** Step 1: a code is sent to the affiliator's phone */
-  invite: (body: { name: string; phone: string; email?: string; permissions: string[] }) =>
-    data<{ invitationId: string; phone: string; expiresAt: string }>(api().post("/affiliators/manage/invite", body)),
-  resend: (invitationId: string) => data(api().post(`/affiliators/manage/invite/${invitationId}/resend`)),
-  /** Step 2: the code the affiliator received; only then the affiliator exists */
-  confirm: (invitationId: string, otp: string) =>
-    data<ManagedAffiliator>(api().post(`/affiliators/manage/invite/${invitationId}/confirm`, { otp })),
-  cancelInvite: (invitationId: string) => data(api().delete(`/affiliators/manage/invite/${invitationId}`)),
+  /** Lost SMS: a new login code replaces the affiliator's password */
+  resendLogin: (id: string) => data<{ sentTo: string }>(api().post(`/affiliators/manage/${id}/resend-login`)),
   setPermissions: (id: string, permissions: string[]) => data(api().patch(`/affiliators/manage/${id}/permissions`, { permissions })),
   setStatus: (id: string, status: "ACTIVE" | "INACTIVE") => data(api().patch(`/affiliators/manage/${id}/status`, { status })),
   trash: (id: string) => data(api().post(`/affiliators/manage/${id}/trash`)),
