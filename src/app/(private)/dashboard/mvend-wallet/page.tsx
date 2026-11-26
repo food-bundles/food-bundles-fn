@@ -11,6 +11,7 @@ import { useAdminAccess } from "@/app/hooks/useAdminAccess";
 import { mvendService, type MvendOverview, type MvendTransaction } from "@/app/services/mvendService";
 import RegisterMerchantModal from "./_components/RegisterMerchantModal";
 import RegisterAgainDialog from "./_components/RegisterAgainDialog";
+import SetPinDialog from "./_components/SetPinDialog";
 
 const rwf = (n: number) => `${Math.round(n).toLocaleString()} RWF`;
 
@@ -48,6 +49,7 @@ export default function MvendWalletPage() {
   const [sending, setSending] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [againOpen, setAgainOpen] = useState(false);
+  const [pinOpen, setPinOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -86,6 +88,8 @@ export default function MvendWalletPage() {
   const connected = !!overview?.status.connected;
   // Registered here, or set up on the server (MVEND_MEMBER_ID) for a member registered elsewhere
   const registered = !!overview?.merchant?.memberId || !!overview?.status.steps.find((s) => s.key === "registered")?.ok;
+  const walletReady = !!overview?.status.steps.find((s) => s.key === "wallet")?.ok;
+  const pinSet = !!overview?.status.steps.find((s) => s.key === "pin")?.ok;
 
   return (
     <div className="flex flex-col gap-5 p-4 sm:p-6">
@@ -136,6 +140,12 @@ export default function MvendWalletPage() {
               <b>{overview?.merchant?.memberId ?? overview?.status.steps.find((s) => s.key === "registered")?.detail?.replace(/^Member /, "")}</b>
               {overview?.merchant?.walletStatus ? ` · wallet ${overview.merchant.walletStatus.toLowerCase()}` : " · waiting for MVend to create the wallet"}
             </p>
+          )}
+          {/* Wallet created by MVend, PIN not set yet: the last step */}
+          {walletReady && !pinSet && can("mvend_wallet", "settings") && (
+            <Button size="sm" className="mr-2 mt-3 bg-[#007A35] hover:bg-[#0F5C36]" onClick={() => setPinOpen(true)}>
+              Set wallet PIN
+            </Button>
           )}
           {registered && can("mvend_wallet", "settings") && (
             <Button size="sm" variant="outline" className="mt-3" onClick={() => setAgainOpen(true)}>
@@ -249,6 +259,7 @@ export default function MvendWalletPage() {
       </section>
 
       <RegisterMerchantModal open={registerOpen} onClose={() => setRegisterOpen(false)} onDone={load} />
+      <SetPinDialog open={pinOpen} onClose={() => setPinOpen(false)} onDone={load} />
       <RegisterAgainDialog
         open={againOpen}
         memberId={overview?.merchant?.memberId ?? overview?.status.steps.find((s) => s.key === "registered")?.detail?.replace(/^Member /, "") ?? ""}

@@ -49,6 +49,12 @@ export const mvendService = {
     const res = await createAxiosClient().post("/mvend/topup", { amount, payerPhone });
     return res.data as { message: string; data: MvendTransaction };
   },
+
+  /** The merchant wallet's PIN (first time, after MVend created the wallet); kept encrypted on the server */
+  setPin: async (pin: string, confirmPin: string) => {
+    const res = await createAxiosClient().post("/mvend/wallet/pin", { pin, confirmPin });
+    return res.data as { message: string; data: { pinSet: boolean; verified: boolean; warning?: string } };
+  },
 };
 
 /** Food Bundles' registration as an MVend merchant (saved once registered) */
