@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,11 +23,13 @@ export default function SetPinDialog({ open, onClose, onDone }: { open: boolean;
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [busy, setBusy] = useState(false);
+  const [show, setShow] = useState(false);
   const valid = /^\d{4,6}$/.test(pin) && pin === confirmPin;
 
   const close = () => {
     setPin("");
     setConfirmPin("");
+    setShow(false);
     onClose();
   };
 
@@ -58,8 +60,31 @@ export default function SetPinDialog({ open, onClose, onDone }: { open: boolean;
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3">
-          <Input type="password" inputMode="numeric" autoComplete="new-password" placeholder="New PIN" value={pin} onChange={(e) => setPin(digits(e.target.value))} aria-label="New PIN" />
-          <Input type="password" inputMode="numeric" autoComplete="new-password" placeholder="Repeat the PIN" value={confirmPin} onChange={(e) => setConfirmPin(digits(e.target.value))} aria-label="Repeat the PIN" />
+          {[
+            { label: "New PIN", value: pin, set: setPin },
+            { label: "Repeat the PIN", value: confirmPin, set: setConfirmPin },
+          ].map((f) => (
+            <div key={f.label} className="relative">
+              <Input
+                type={show ? "text" : "password"}
+                inputMode="numeric"
+                autoComplete="new-password"
+                placeholder={f.label}
+                value={f.value}
+                onChange={(e) => f.set(digits(e.target.value))}
+                aria-label={f.label}
+                className="pr-10 tracking-widest"
+              />
+              <button
+                type="button"
+                onClick={() => setShow((s) => !s)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-800"
+                aria-label={show ? "Hide the PIN" : "Show the PIN"}
+              >
+                {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          ))}
           {confirmPin.length > 0 && pin !== confirmPin && <p className="m-0 text-[13px] text-red-600">The two PINs are different.</p>}
         </div>
         <DialogFooter>
