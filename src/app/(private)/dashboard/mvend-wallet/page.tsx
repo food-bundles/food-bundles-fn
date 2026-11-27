@@ -5,13 +5,12 @@ import { format } from "date-fns";
 import { ArrowDownLeft, ArrowUpRight, Check, Circle, Loader2, RefreshCw, Wallet, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAdminAccess } from "@/app/hooks/useAdminAccess";
 import { mvendService, type MvendOverview, type MvendTransaction } from "@/app/services/mvendService";
 import RegisterMerchantModal from "./_components/RegisterMerchantModal";
 import RegisterAgainDialog from "./_components/RegisterAgainDialog";
 import SetPinDialog from "./_components/SetPinDialog";
+import MvendStatement from "./_components/MvendStatement";
 
 const rwf = (n: number) => `${Math.round(n).toLocaleString()} RWF`;
 
@@ -25,15 +24,18 @@ const STATUS_STYLE: Record<MvendTransaction["status"], string> = {
   PENDING: "bg-amber-100 text-amber-800",
   FAILED: "bg-red-100 text-red-700",
 };
+// STATEMENT: MVend's own record, the only place money paid into the wallet shows
+const STATEMENT = "STATEMENT";
 const TABS = [
   ["", "All"],
-  ["TOPUP", "Top-ups"],
   ["PAYOUT", "Farmer payments"],
+  [STATEMENT, "MVend statement"],
 ] as const;
 
 /**
- * Food Bundles' MVend merchant wallet: connection, balance, top-ups and the
- * farmer payments made from it, with who did each one.
+ * Food Bundles' MVend merchant wallet: connection, balance, the farmer payments
+ * made from it (with who did each one) and MVend's statement. MVend doesn't let
+ * us top it up: it fills with what people pay into it.
  */
 export default function MvendWalletPage() {
   const { can } = useAdminAccess();
@@ -43,21 +45,25 @@ export default function MvendWalletPage() {
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [topUpOpen, setTopUpOpen] = useState(false);
-  const [amount, setAmount] = useState("");
-  const [payer, setPayer] = useState("");
-  const [sending, setSending] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [againOpen, setAgainOpen] = useState(false);
   const [pinOpen, setPinOpen] = useState(false);
+  // Bumped by Refresh so the statement reloads too
+  const [reloadKey, setReloadKey] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [o, t] = await Promise.all([mvendService.overview(), mvendService.transactions({ page, limit: 20, type: tab || undefined })]);
+      const onStatement = tab === STATEMENT;
+      const [o, t] = await Promise.all([
+        mvendService.overview(),
+        onStatement ? null : mvendService.transactions({ page, limit: 20, type: tab || undefined }),
+      ]);
       setOverview(o);
-      setRows(t.transactions);
-      setPages(t.pagination.totalPages);
+      if (t) {
+        setRows(t.transactions);
+        setPages(t.pagination.totalPages);
+      }
     } catch (e) {
       toast.error(apiMessage(e, "Couldn't load the MVend wallet"));
     } finally {
@@ -68,22 +74,6 @@ export default function MvendWalletPage() {
   useEffect(() => {
     load();
   }, [load]);
-
-  const topUp = async () => {
-    setSending(true);
-    try {
-      const res = await mvendService.topUp(Number(amount), payer.trim());
-      toast.success(res.message);
-      setTopUpOpen(false);
-      setAmount("");
-      setPayer("");
-      load();
-    } catch (e) {
-      toast.error(apiMessage(e, "Top-up failed"));
-    } finally {
-      setSending(false);
-    }
-  };
 
   const connected = !!overview?.status.connected;
   // Registered here, or set up on the server (MVEND_MEMBER_ID) for a member registered elsewhere
@@ -101,7 +91,7 @@ export default function MvendWalletPage() {
           <div>
             <h2 className="m-0 text-[22px] font-bold text-[#0B2E1F]">MVend wallet</h2>
             <p className="m-0 mt-1 text-[14px] text-[#4A6358]">
-              Food Bundles&apos; merchant wallet: top it up, and pay farmers from it.
+              Food Bundles&apos; merchant wallet: it receives what people pay into it, and pays farmers from it.
               {overview?.wallet.walletId && ` Wallet ${overview.wallet.walletId}`}
             </p>
           </div>
@@ -113,14 +103,17 @@ export default function MvendWalletPage() {
           </span>
           {overview?.balanceError && <span className="max-w-[280px] text-right text-[12px] text-red-600">{overview.balanceError}</span>}
           <div className="mt-1 flex gap-2">
-            <Button variant="outline" size="sm" onClick={load} disabled={loading}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                load();
+                setReloadKey((k) => k + 1);
+              }}
+              disabled={loading}
+            >
               <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} /> Refresh
             </Button>
-            {can("mvend_wallet", "topup") && (
-              <Button size="sm" className="bg-[#007A35] hover:bg-[#0F5C36]" disabled={!connected} onClick={() => setTopUpOpen(true)}>
-                <ArrowDownLeft className="mr-1.5 h-3.5 w-3.5" /> Top up
-              </Button>
-            )}
           </div>
         </div>
       </section>
@@ -192,7 +185,9 @@ export default function MvendWalletPage() {
             </button>
           ))}
         </div>
-        {loading && !rows.length ? (
+        {tab === STATEMENT ? (
+          <MvendStatement reloadKey={reloadKey} />
+        ) : loading && !rows.length ? (
           <div className="flex items-center justify-center gap-2 p-10 text-[#4A6358]">
             <Loader2 className="h-5 w-5 animate-spin" /> Loading…
           </div>
@@ -241,7 +236,7 @@ export default function MvendWalletPage() {
             </table>
           </div>
         )}
-        {pages > 1 && (
+        {tab !== STATEMENT && pages > 1 && (
           <div className="flex items-center justify-between border-t border-[#EEF3EF] px-4 py-3 text-[13px] text-[#4A6358]">
             <span>
               Page {page} of {pages}
@@ -269,34 +264,6 @@ export default function MvendWalletPage() {
           if (canRegister) setRegisterOpen(true);
         }}
       />
-
-      <Dialog open={topUpOpen} onOpenChange={setTopUpOpen}>
-        <DialogContent className="sm:max-w-md bg-white">
-          <DialogHeader>
-            <DialogTitle>Top up the MVend wallet</DialogTitle>
-            <DialogDescription>The payer gets a MoMo request on their phone and approves it with their PIN.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <label className="block">
-              <span className="mb-1 block text-sm font-medium">Amount (RWF)</span>
-              <Input type="number" min="100" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="e.g. 500000" />
-            </label>
-            <label className="block">
-              <span className="mb-1 block text-sm font-medium">Pay from MoMo number</span>
-              <Input inputMode="tel" value={payer} onChange={(e) => setPayer(e.target.value)} placeholder="078XXXXXXX" />
-            </label>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setTopUpOpen(false)} disabled={sending}>
-              Cancel
-            </Button>
-            <Button onClick={topUp} disabled={sending || !amount || !payer.trim()} className="bg-[#007A35] hover:bg-[#0F5C36]">
-              {sending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Request {amount ? rwf(Number(amount)) : "top-up"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -31,6 +31,20 @@ export interface MvendTransaction {
   createdAt: string;
 }
 
+/** A line of MVend's statement (IN: paid into our wallet, OUT: sent from it) */
+export interface MvendStatementEntry {
+  id: string;
+  date: string | null;
+  direction: "IN" | "OUT";
+  amount: number;
+  fee: number;
+  currency: string;
+  counterpartyName: string | null;
+  counterpartyMsisdn: string | null;
+  narration: string | null;
+  status: string | null;
+}
+
 export const mvendService = {
   overview: async (): Promise<MvendOverview> => {
     const res = await createAxiosClient().get("/mvend/wallet");
@@ -45,9 +59,10 @@ export const mvendService = {
     };
   },
 
-  topUp: async (amount: number, payerPhone: string) => {
-    const res = await createAxiosClient().post("/mvend/topup", { amount, payerPhone });
-    return res.data as { message: string; data: MvendTransaction };
+  /** MVend's own statement of the wallet: money received (people paying into it) and sent */
+  statement: async (params: { page?: number; limit?: number }) => {
+    const res = await createAxiosClient().get("/mvend/statement", { params });
+    return res.data.data as { entries: MvendStatementEntry[]; page: number; limit: number; hasMore: boolean };
   },
 
   /** The merchant wallet's PIN (first time, after MVend created the wallet); kept encrypted on the server */
